@@ -63,6 +63,7 @@ export function animClip(id){ let clip = CLIP.get(id); if(clip !== undefined) re
     INDEX.bones.forEach((b, i) => tracks.push(new THREE.QuaternionKeyframeTrack(pre + b + '.quaternion', D.rot[i].t, D.rot[i].v)));
     clip = new THREE.AnimationClip(id, m.dur, tracks); clip.userData = m; ROOT.set(id, ANIMLIB.decode.root && D.root ? D.root : NOROOT);
   }catch(e){ console.warn('[anim-lib]', id, 'not decoded —', e && e.message); clip = null; }
+  clip.uuid = 'xk-' + id;   // MERGE 15 its own id as its uuid: a mixer keys its actions by the clip's uuid, and clips made while the dice are seeded (core/dice.js hands three's uuid draws back) would otherwise share one
   CLIP.set(id, clip); return clip; }
 // where a travelling clip's root is at time t: out = [x, z, yaw] (metres on the operator's scale, radians; all 0 at t = 0, and for a clip without a root track)
 export function animRootAt(id, t, out){ out[0] = out[1] = out[2] = 0; let R = ROOT.get(id); if(R === undefined){ animClip(id); R = ROOT.get(id); } if(!R || !R.t) return out;
