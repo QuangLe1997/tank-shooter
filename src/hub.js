@@ -259,6 +259,7 @@ export * from './actors/real-cav.js';
 export * from './actors/gun-feel.js';   // GUN 3 the feel of a shot: a burst that climbs and settles, the case out of the port, the bolt / the pump worked, the hit mark
 export * from './actors/gun-reload.js';   // GUN 2 the reload as real steps per weapon family: the plan, the hands, what they hold, no teleporting
 export * from './actors/gun-hands.js';   // GUN 1 the hands held to a man's joints: trigger finger, wrists, the support arm's reach, the eye
+export * from './actors/gun-carry.js';   // CARRY 1 the slung rifle, the second weapon on his back, the swap, the run carry
 export * from './actors/gun-fit.js';   // Z360 each hand weapon's hold read off its own model (grip, palm, butt, sight, bore)
 export * from './actors/real-troops.js';
 export * from './actors/troop-skin.js';   // Z344 the infantry skinned on the GPU: one body a side, each man's joints in a float texture

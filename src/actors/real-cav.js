@@ -49,6 +49,7 @@ function holdGun(R, G){ const p = S.player, id = p && p.guns && p.guns.length ? 
   for(const [k, o] of Object.entries(R.arms._metric || {})) o.visible = mode === 'met' && k === want;
   if(!u.muzzle) return; if(mode === 'met'){ met.add(u.muzzle); u.muzzle.position.fromArray(met.userData.muzzle); }
   else { R.cb.add(u.muzzle); u.muzzle.position.fromArray(want === '_carbine' ? REALCAV.carbine.muzzle : R.arms[want].userData.muzzle); } }
+import { carryAfter, carryGun } from '../hub.js';   // CARRY 1 (actors/gun-carry.js)
 // Z297 THE SOLDIER'S HOLD: the gun first — its butt in his shoulder pocket (on top of the shoulder for the RPG, at the hip for the minigun and flamethrower),
 //   its bore along where he aims (up / down to the target too) — then his hands onto it by IK: the right on the pistol grip, trigger finger along the guard,
 //   the left under the handguard; fingers closed round both. Every shot kicks it STRAIGHT BACK along the bore with a little muzzle climb, a spring
@@ -151,6 +152,7 @@ function holdReal(R, G, dt, P){ const met = R.arms._metric && R.arms._metric[R.a
   gunPoint(_gt, g.butt, len, _gw.set(0, 0, 0), _gq); _gp.sub(_gt).addScaledVector(_gx, rc.z);
   if(R.spr * (1 - low) > 0.001 && !g.hold && !tuck) carryPose(R, D, g, len, R.spr * (1 - low));   // Z360 at a sprint: across his chest (GUN 2 eased out as a reload brings the gun to his hands: it cut)
   if(g.load && low > 0.001 && !tuck) loadPose(D, g, len, low, yaw + odw * (g.load.clear || 0), prone);   // Z411 the B41 off his shoulder, stood up to be loaded at its muzzle
+  carryGun(R, D, FR, g, len, dt, P, low);   // CARRY 1 at a run, not firing: the rifle at the ready carry (actors/gun-carry.js)
   if(foot) gunEase(R, D, FR, dt);   // GUN 2 a jump of the gun in his chest's frame (a reload begun at a sprint, a hold that flips) eased out, never a teleport
   _gm.compose(_gp, _gq, _gt.set(1, 1, 1)); _mi.copy(G.matrixWorld).invert(); _gm.premultiply(_mi); _gm.decompose(met.position, met.quaternion, met.scale); met.updateMatrixWorld(true);
   // hands onto it: the wrist just behind / above each contact, so the grip sits in the palm; elbows down (the right one out)
@@ -422,7 +424,7 @@ function poseRealCav(CV, dt, P){
   holdGun(R, G);   // Z295 the hand weapon for the gun in use
   const cw = R.pup && !P.dead ? climbW() : 0;   // Z451 on a wall: the rifle slung across his back, his hands on the face — eased off his hold and back into it
   if(cw >= 0.999 && climbArms(R, G, 1)){ steadyHead(R, dt); return; }
-  if(R.pup && !P.dead && holdReal(R, G, dt, P)){ if(cw > 0.001) climbArms(R, G, cw); mountHand(R); steadyHead(R, dt); return; }   // (Z342 climbing on / off, the left hand takes hold of the ride · Z343 the head held steady)   // Z297 the special-forces soldier holds his weapon for real
+  if(R.pup && !P.dead && holdReal(R, G, dt, P)){ carryAfter(R, G, dt, P); if(cw > 0.001) climbArms(R, G, cw); mountHand(R); steadyHead(R, dt); return; }   // (Z342 climbing on / off, the left hand takes hold of the ride · Z343 the head held steady)   // Z297 the special-forces soldier holds his weapon for real
   // the carbine: grip in the right palm, barrel through the left hand (or straight ahead when the left hand is off the gun), pushed back by the recoil
   R.rh.getWorldPosition(_a); if(R.rhm){ R.rhm.getWorldPosition(_b); _a.lerp(_b, 0.5); }
   (R.lhm || R.lh).getWorldPosition(_b); _d.subVectors(_b, _a); const span = _d.length();

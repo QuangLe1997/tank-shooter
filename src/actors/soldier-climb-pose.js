@@ -7,7 +7,7 @@
 //   shoulder, from the moment he steps to the face until he is up on top — eased off his hold and back into it.
 import * as THREE from 'three';
 import { CLIMB } from '../../config.js';
-import { CV, LEGKIT, S, climbRecess, curlHand, ik2, lookAtHold, rollHand } from '../hub.js';
+import { CV, LEGKIT, S, carryBack, climbRecess, curlHand, ik2, lookAtHold, rollHand } from '../hub.js';
 
 const C = CLIMB, V3 = () => new THREE.Vector3(), UP = new THREE.Vector3(0, 1, 0);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v)), smooth = k => k * k * (3 - 2 * k);
@@ -54,7 +54,7 @@ export function climbArms(R, G, w){ const D = R.pup && R.pup.D, K = CV.climb; if
   _fw.set(Math.sin(f), 0, Math.cos(f)); _rt.set(-Math.cos(f), 0, Math.sin(f));
   // the rifle across his back: its centre a hand behind the upper back, the muzzle up over the left shoulder, its top away from him
   const met = R.arms._metric && R.arms._metric[R.armK], gun = met && met.visible ? met : R.cb;
-  if(gun){ D.Spine2.getWorldPosition(_gp); _gp.addScaledVector(_fw, -0.19).addScaledVector(UP, 0.02);
+  if(gun && !carryBack(R, G)){ D.Spine2.getWorldPosition(_gp); _gp.addScaledVector(_fw, -0.19).addScaledVector(UP, 0.02);
     _gx.copy(UP).multiplyScalar(-Math.cos(0.62)).addScaledVector(_rt, Math.sin(0.62));   // (+X runs to the butt: down toward his right hip)
     _gy.copy(_fw).negate().addScaledVector(_gx, _fw.dot(_gx)).normalize(); _gz.crossVectors(_gx, _gy); _gm.makeBasis(_gx, _gy, _gz); _gq.setFromRotationMatrix(_gm);
     _gm.compose(_gp, _gq, _s1); _mi.copy(G.matrixWorld).invert(); _gm.premultiply(_mi);

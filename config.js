@@ -1747,6 +1747,48 @@ export const GUNFEEL = {
   //   most max rad, eased at rate /s, none while the foot is lifted more than clear m
   feet:{ turnStep:0.4, hips:0.4, hipsK:0.7, slope:{ k:0.85, max:0.4, ahead:0.14, back:0.06, rate:12, clear:0.04 } },
 };
+// CARRY 1 HOW A RIFLEMAN CARRIES HIS WEAPONS WHEN HE IS NOT AIMING THEM (actors/gun-carry.js; on false / ?oldcarry = none of it: the gun is always in his hands as before).
+//   sling = when his hands leave the gun. ON HIS BACK: climb / drone = on a wall's face, flying the FPV drone; patrol = nobody has suspected him (the eye chip
+//     closed), he is stood and has not fired, aimed, reloaded or been hit for quiet s, going no faster than maxV m/s; mounted = sat on a ride too (off:
+//     as it was). HUNG IN FRONT: knife = the knife's thrust (knifeT s), revive = standing a downed mate up. strap = the sling itself is drawn.
+//     t = s to sling it / to bring it round / to bring it round the moment he fires or aims; the trigger waits for it at most block s, and only while it
+//     is more than `clear` of the way off
+//   slot = where a gun lies on his back, in the back's own frame (rigid with Spine1, the bone his pack hangs on; origin at the Spine2 joint): at = its
+//     UPPER END (the butt plate) [toward the shoulder blade it hangs from, up, behind the spine] m — just under the top of the shoulder, clear of the pack;
+//     tilt = off the spine (rad), more for a long weapon so its muzzle hangs no more than drop m under the butt (at most tiltMax); prone = lying down
+//     [tilt, upper end's side m, extra depth m, eased /s] — in along the spine, the helmet comes back; stack = the extra depth of the one slung OVER the
+//     one worn (the mirror diagonal); a kind in `up` hangs the other way up (the B41: its warhead at the shoulder) and goes round upVia m lower;
+//     via = the two points the grip passes on its way round [side, up, behind] m (out at his side, behind the shoulder); slide = how fast the worn one
+//     crosses to the right-shoulder diagonal after a swap (diagonals /s); its rock in the back's plane: sway rad with the stride, lag rad per m/s² of the
+//     chest's sideways shove, at most max, on a spring k / z (damped: it does not flap)
+//   hang = hung in front on the sling, in his pelvis' frame (his belly does not turn with his chest): the grip's station [his right, up, ahead] of the
+//     Spine joint m (the right of his belly), the muzzle pitch rad under the level to his left, t s in / out, let down `clear` m out ahead of his chest on the way
+//   back = THE SECOND WEAPON worn on his back when he owns two (mounted: on a ride too, seat m further out — sat upright his shoulders come back; skip = kinds never worn)
+//   swap = cycleGun as a real swap: t s for the whole of it (the old one is on his back by `out` of it, the new one leaves at `in`); the trigger waits
+//     block s (it was 0.1 s, with the gun changing in no time at all) and a held trigger hurries the swap to be done by then
+//   ready = LOW READY (moving, not firing): the muzzle down pitch rad in all (REALCAV.ready gave it 0.35), turned about the butt
+//   run = THE RUN CARRY (stood, running, not firing, not aiming): weighed in over v m/s; the grip at [his right, up, ahead] of Spine1, the muzzle turned
+//     yaw to his left and pitch down, canted roll; bob = with the stride [the grip's drop at each footfall m, the muzzle's nod rad, its swing rad, the
+//     grip's pump ahead / back m]; rate = in / out per s; clear = how far out ahead it swings going to / from port arms
+//   shoulder.k = how much faster (per s, on top of the 5 /s the low-ready falls at) the gun comes to his shoulder once he aims or fires
+//   hands = a hand's weight on the gun over the way round: off = [the other hand lets go from…to, the carrying hand from…to]; reach = the most an arm
+//     straightens (of its length); hang = [out from the shoulder m, of the arm's length, forward rad], swing rad with the stride, crouch = forward rad
+//     kneeling; drone = each wrist [out, up, ahead] of the Spine2 joint m (the controller); revive = [in from the shoulder, up, ahead] m (down to the
+//     mate); knife = the thrust [from, to m ahead of the shoulder, up]
+//   strap = the sling's ribbon: w wide; its swivels at rear / front (shares of the gun's length from its middle) and `under` the bore; in his hands it
+//     sags `sag` m; on his back it runs over the shoulder (top m over the joint) and through `back` [toward that shoulder, up, behind] of the back's
+//     frame — the chest, the breastbone, the far ribs, under the far arm, behind the far hip; hung in front it goes behind the neck [back, up] m
+export const GUNCARRY = { on:!(typeof location !== 'undefined' && /[?&]oldcarry\b/.test(location.search)),
+  sling:{ climb:true, drone:true, revive:true, knife:true, patrol:true, mounted:false, strap:true, quiet:6, maxV:5.2, t:[0.55, 0.4, 0.22], block:0.25, clear:0.12, knifeT:0.5 },
+  slot:{ at:[0.2, 0.02, 0.24], tilt:0.72, tiltMax:0.88, drop:0.69, prone:[0.12, 0.05, 0.02, 4], stack:0.06, up:['rpg'], upVia:-0.3, via:[[0.34, -0.10, -0.27], [0.4, 0.04, 0.24]], slide:2.2, sway:0.03, lag:0.004, max:0.05, k:60, z:0.7 },
+  hang:{ at:[0.05, 0.0, 0.27], pitch:0.9, t:0.2, clear:0.1 },
+  back:{ on:true, mounted:true, seat:0.07, skip:[] },
+  swap:{ on:true, t:0.5, block:0.25, out:0.6, in:0.3 },
+  ready:{ pitch:0.68 },
+  run:{ on:true, v:[2.6, 3.6], at:[0.2, -0.22, 0.42], yaw:0.8, pitch:0.62, roll:0.25, bob:[0.025, 0.04, 0.03, 0.02], rate:[6, 14], clear:0.08 },
+  shoulder:{ k:4 },
+  hands:{ off:[0.02, 0.3, 0.45, 0.8], reach:0.95, hang:[0.07, 0.93, 0.1], swing:0.3, crouch:0.55, drone:[0.1, -0.12, 0.26], revive:[0.06, -0.5, 0.38], knife:[0.2, 0.58, -0.08] },
+  strap:{ color:0x23241f, w:0.028, rear:0.4, front:-0.24, under:-0.03, sag:0.09, top:0.09, back:[[0.1, 0.02, -0.25], [0, -0.1, -0.29], [-0.12, -0.2, -0.35], [-0.26, -0.3, -0.1], [-0.2, -0.38, 0.2]], neck:[0.07, 0.03] } };
 // Z343 HIS UPPER BODY IN TIME WITH HIS LEGS (actors/soldier-upper.js): the chest's speed and acceleration smoothed (/s), the acceleration capped (m/s²),
 //   a jump of more than `reset` m starts it afresh; the lean into a change of pace (rad per m/s² ahead / to the side, at most leanMax, on a spring of
 //   stiffness leanK and damping leanZ); the shoulders' turn against each stride and the trunk's sway over the standing foot (rad); breathing (rad, Hz);
