@@ -7,7 +7,7 @@
 //   M79), a flame (the thrower), an arc that jumps to the next man (the energy rifle). Not the tank's: never in its shop, never kept in its arsenal.
 import * as THREE from 'three';
 import { RIDER_TURN, TROOPER, XHAIR, REAL } from '../../config.js';
-import { GUNS, MOBILE, PAD, PROFILE, S, fpvFire, boreNow, burstRound, burstSpread, camKick, shotCase, aimTarget, cMod, fireFlame, gunFlash, gunLight, fireMortar, floatText, magCap, playerRange, rifleFX, ringPulse, sfx, spawnBullet, spawnPart, startReload, updateGunHUD, airShot, CV, fireLine, climbPerch, gunSound } from '../hub.js';
+import { GUNS, MOBILE, PAD, PROFILE, S, fpvFire, boreNow, burstRound, burstSpread, camKick, shotCase, aimTarget, cMod, fireFlame, gunFlash, gunLight, fireMortar, floatText, magCap, playerRange, rifleFX, ringPulse, sfx, spawnBullet, spawnPart, startReload, updateGunHUD, airShot, CV, fireLine, climbPerch, gunSound, ammoOnGive } from '../hub.js';
 
 const _v = new THREE.Vector3();
 // Z359 the rifle he may carry in from the start (CHUẨN BỊ TRẬN · TRANG BỊ, and Z411 KHO SÚNG in soldier mode) · Z411 every hand weapon of his, by tier — it listed
@@ -23,8 +23,8 @@ export function trooperGunPick(){ const p = S.player, have = new Set(p.guns.map(
 // into his hands' rack (a gun he has is filled up again); his kit is his, the tank's arsenal is not touched
 export function trooperGive(id){ const p = S.player, g = GUNS[id]; if(!p || !g) return; const inst = p.guns.find(x => x.id === id);
   if(inst){ const st = Math.min(TROOPER.star.max, (inst.star || 1) + 1), up = st > (inst.star || 1); inst.star = st; inst.ammo = magCap(g); inst.rU = 0;   // Z352 the same gun again: a star up (more damage, a quicker trigger), and full
-    floatText(g.name + (up ? ' ★' + st : ' — ĐẦY ĐẠN'), up ? '#ffd24a' : '#9be04a', p.pos, up ? 20 : 16); if(up){ ringPulse(p.pos, 0xffd24a, 2.4); sfx('levelup'); } }
-  else { p.guns.push({ id, ammo:magCap(g), rU:0, rD:0 }); floatText(g.name + ' — NHẶT ĐƯỢC (' + p.guns.length + ')', '#ffd24a', p.pos, 20); }
+    floatText(g.name + (up ? ' ★' + st : ' — ĐẦY ĐẠN'), up ? '#ffd24a' : '#9be04a', p.pos, up ? 20 : 16); if(up){ ringPulse(p.pos, 0xffd24a, 2.4); sfx('levelup'); } ammoOnGive(id, false); }   // SUPPLY 1 …and it brings a magazine for the reserve
+  else { p.guns.push({ id, ammo:magCap(g), rU:0, rD:0 }); floatText(g.name + ' — NHẶT ĐƯỢC (' + p.guns.length + ')', '#ffd24a', p.pos, 20); ammoOnGive(id, true); }   // SUPPLY 1 a new gun comes with magazines of its own (game/logistics.js)
   updateGunHUD(); }
 export function soldierFire(now, range){ const p = S.player; if(!p || !p.guns.length) return; if(fpvFire()) return;   // DRONE 2 no shot while he flies the FPV drone: the trigger sets it off (combat/drone-skills.js)
   const inst = p.guns[p.gunIdx], g = GUNS[inst.id];

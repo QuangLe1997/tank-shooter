@@ -1,7 +1,7 @@
 // combat/guns.js — ARMS DOCTRINE helpers: damage class × armour, range falloff, battlefield conditions, smart gun pick
 import * as THREE from 'three';
 import { DMG_TYPE, ARMOR, ENV, FORT, GUNHOLD, INFGUN, LOOT } from '../../config.js';
-import { BIOME, CV, GUNS, S, reloadPlan, brakeBlast, enemies, floatText, gunFlash, gunLight, heightAt, ringPulse, scene, sfx, spawnPart, updateGunHUD, weatherDef, weatherRange, tentHidesFromPlayer } from '../hub.js';
+import { BIOME, CV, GUNS, S, ammoDry, ammoLoad, ammoReserve, reloadPlan, brakeBlast, enemies, floatText, gunFlash, gunLight, heightAt, ringPulse, scene, sfx, spawnPart, updateGunHUD, weatherDef, weatherRange, tentHidesFromPlayer } from '../hub.js';
 
 // ---- ARMS DOCTRINE helpers: damage class × armour, range falloff, battlefield conditions ----
 export let ENVMOD = { night:false, fire:1, he:1 };
@@ -44,7 +44,8 @@ const _GID=new Map(); export function gunIdOf(g){ if(!_GID.size) for(const k in 
 export function magCap(g){ const id=gunIdOf(g); return Math.round(g.mag * S.player.ammoMul * (S.player.magMul||1)); }   // Z115 + BĂNG ĐẠN parts   // ammoMul = buff, magMul = BIG MAGAZINE upgrade
 // GUN 2 the reload is a plan of real steps (actors/gun-reload.js reloadPlan): run dry it takes the gun's own time, as ever; begun with rounds left (reloadNow) there is
 //   no bolt to rack — that much shorter — and a gun loaded round by round takes only as long as the rounds missing; each step makes its own sound when the hands are seen doing it
-export function startReload(now, inst){ const p=S.player; inst=inst||p.guns[p.gunIdx]; if(!inst||p.infiniteAmmo||inst.rU) return; const g=GUNS[inst.id], cap=magCap(g), dry=inst.ammo<=0, P=reloadPlan(INFGUN.map[inst.id], dry, 1-Math.max(0,inst.ammo)/cap);
+export function startReload(now, inst){ const p=S.player; inst=inst||p.guns[p.gunIdx]; if(!inst||p.infiniteAmmo||inst.rU) return; if(!ammoReserve(inst)){ ammoDry(inst, now); return; }   // SUPPLY 1 nothing in reserve: no reload — the gun is dry until rounds come (game/logistics.js)
+  const g=GUNS[inst.id], cap=magCap(g), dry=inst.ammo<=0, P=reloadPlan(INFGUN.map[inst.id], dry, 1-Math.max(0,inst.ammo)/cap);
   const r=g.reload*(p.reloadMul||1)*P.k; inst.rD=r; inst.rU=now+r; inst.rDry=dry; inst.rLoad=P.load; inst.rN=Math.max(1, cap-Math.max(0,inst.ammo));
   if(inst===p.guns[p.gunIdx]){ if(!(CV.real && CV.real.pup && r>=GUNHOLD.reload.min)) sfx('reload'); updateGunHUD(); } }
 export function reloadNow(){ const p=S.player; if(!p||!p.guns.length||S.mode!=='playing') return; const inst=p.guns[p.gunIdx]; if(inst.rU||p.infiniteAmmo||inst.ammo>=magCap(GUNS[inst.id])) return; startReload(performance.now()/1000, inst); }   // MASTERY: higher level reloads faster
@@ -68,7 +69,7 @@ export function updateReload(now){
   const eq=p.guns[p.gunIdx];
   // complete reloads on time for EVERY gun — a reloading gun finishes in the background while you use another
   for(const gi of p.guns){
-    if(gi.rU && now>=gi.rU){ gi.ammo=magCap(GUNS[gi.id]); gi.rU=0;
+    if(gi.rU && now>=gi.rU){ gi.ammo=ammoLoad(gi); gi.rU=0;   // SUPPLY 1 topped up out of the reserve: what was left in the magazine stays in it
       if(gi===eq){ p.readyUntil=now+0.55; ringPulse(p.pos, 0x9be35a, p.radius*1.9); sfx('reloaded'); }
       else { floatText(GUNS[gi.id].name+' SẴN SÀNG', '#9be35a', p.pos, 14); }
       updateGunHUD();

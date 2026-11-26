@@ -4,16 +4,16 @@
 //   loot also brings a MEDAL (experience toward the next rank) and an AMMO CRATE (every gun full, his skill ready again). The HQ's SUPPLY DROP (a rank, a perk)
 //   lands a new gun, a medkit and a crate beside him.
 import * as THREE from 'three';
-import { TROOPER } from '../../config.js';
-import { GUNS, POWERUPS, S, dropPowerup, floatText, gainXp, magCap, ringPulse, sfx, trooperGive, trooperGunPick, trooperLoot, updateGunHUD } from '../hub.js';
+import { LOGISTICS, TROOPER } from '../../config.js';
+import { GUNS, POWERUPS, S, ammoCrate, dropPowerup, floatText, gainXp, magCap, ringPulse, sfx, trooperGive, trooperGunPick, trooperLoot, updateGunHUD } from '../hub.js';
 
 // an enemy's weapon as a pick-up (the gun crate's look, the gun's own name and photo on the toast)
 export function wpnDef(id){ const g = GUNS[id]; return { id:'wpn_' + id, gun:id, svg:'gun', color:0xaef0a0, vi:g.name, ds:'Súng của địch · khẩu đã có thì lên ★', cat:'gun', tier:(g.tier || 1) >= 3 ? 2 : 1,
   apply(p){ p._gotGun = id; trooperGive(id); } }; }
 export const MEDAL = { id:'medal', svg:'star', color:0xffd86a, vi:'HUY CHƯƠNG', ds:'Kinh nghiệm cho cấp bậc kế tiếp', cat:'gem', tier:1,
   apply(p){ gainXp(Math.round(TROOPER.drop.medalXp * (1 + 0.25 * ((S.stage || 1) - 1))), p.pos); } };
-export const AMMO = { id:'ammobox', svg:'mag', color:0xd8c070, vi:'THÙNG ĐẠN', ds:'Đầy đạn mọi súng · kỹ năng sẵn sàng ngay', cat:'ammo', tier:0,
-  apply(p){ for(const g of p.guns){ g.ammo = magCap(GUNS[g.id]); g.rU = 0; } p.spellCdUntil = 0; updateGunHUD(); } };
+export const AMMO = { id:'ammobox', svg:'mag', color:0xd8c070, vi:'THÙNG ĐẠN', ds:LOGISTICS.say.crateDs, cat:'ammo', tier:0,   // SUPPLY 1 …and a share of every class's reserve (game/logistics.js ammoCrate)
+  apply(p){ for(const g of p.guns){ g.ammo = magCap(GUNS[g.id]); g.rU = 0; } p.spellCdUntil = 0; ammoCrate(); updateGunHUD(); } };
 // the soldier's loot table: now and then a medal or an ammo crate, else what a man can use (loot/powerups.js trooperLoot)
 export function soldierLoot(tier){ if(Math.random() < TROOPER.drop.item) return Math.random() < 0.5 ? MEDAL : AMMO; return trooperLoot(tier); }
 // the heaviest hand weapons he has not got yet (else his own, for a star)

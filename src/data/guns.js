@@ -18,16 +18,19 @@ export const GUNS = {   // ARMS DOCTRINE (Z75): type = damage class (config DMG_
   //   (flashK = muzzle-flash size ×, kickK = the view's kick ×, supp = suppressed: a faint flash, no muzzle smoke)
   t_ak:      { name:'AK-47', svg:'ak', tier:2, trooper:true, type:'KIN', dmg:16, fireCd:0.13, mag:30, reload:2.4, bspeed:92, frags:1, spread:0.035, color:0xffc870, r:0.18, life:1.15, knock:0.55, fx:'spark', rng:1.05, fall:0.6, snd:'shoot_ak', flashK:1.35, kickK:1.45 },
   t_m4:      { name:'M4 GIẢM THANH', svg:'m4', tier:2, trooper:true, type:'KIN', dmg:13, fireCd:0.1, mag:30, reload:2.0, bspeed:108, frags:1, spread:0.014, color:0xfff0c8, r:0.15, life:1.2, knock:0.4, fx:'spark', rng:1.15, fall:0.65, snd:'shoot_m4s', flashK:0.2, kickK:0.7, supp:true },
-  t_mp5:     { name:'TIỂU LIÊN MP5', svg:'mp5', tier:2, trooper:true, type:'KIN', dmg:9, fireCd:0.068, mag:30, reload:1.7, bspeed:84, frags:1, spread:0.05, color:0xffe0a0, r:0.15, life:0.8, knock:0.35, fx:'spark', rng:0.75, fall:0.5, snd:'shoot_mp5', flashK:0.8, kickK:0.75 },
+  t_mp5:     { name:'TIỂU LIÊN MP5', svg:'mp5', tier:2, trooper:true, type:'KIN', dmg:9, fireCd:0.068, mag:30, reload:1.7, bspeed:84, frags:1, spread:0.05, color:0xffe0a0, r:0.15, life:0.8, knock:0.35, fx:'spark', rng:0.75, fall:0.5, snd:'shoot_mp5', flashK:0.8, kickK:0.75, ammo:'pistol' },
   t_energy:  { name:'SÚNG XUNG ĐIỆN', svg:'arc', tier:3, trooper:true, type:'ELEC', dmg:30, fireCd:0.3, mag:20, reload:2.6, bspeed:120, frags:1, spread:0.03, color:0x5aa0ff, r:0.22, life:1.0, chain:2, chainR:7, knock:0.6, fx:'shock', rng:0.85, fall:0.8, snd:'shoot_tesla' },
   // Z387 the four downloaded Meshy community scans as his weapons (assets/models/real/gun/inf, tools/scene-import.mjs): a heavy rust-iron assault rifle, a scoped
   //   marksman's rifle that punches through a man, a green-coiled rail rifle whose slug goes through a squad, a saw launcher hurling a spinning blade at short range
   t_rust:    { name:'SÚNG TRƯỜNG THÉP GỈ', svg:'rustAr', tier:2, trooper:true, type:'KIN', dmg:19, fireCd:0.14, mag:30, reload:2.6, bspeed:94, frags:1, spread:0.04, color:0xffc060, r:0.19, life:1.15, knock:0.65, fx:'spark', rng:1.05, fall:0.6, snd:'shoot_ak', flashK:1.45, kickK:1.6 },
   t_dmr:     { name:'SÚNG TỈA BÁN TỰ ĐỘNG', svg:'dmr', tier:3, trooper:true, type:'AP', dmg:52, fireCd:0.55, mag:10, reload:2.8, bspeed:150, frags:1, spread:0.004, color:0xfff0c8, r:0.18, life:1.3, pierce:1, knock:1.1, fx:'pierce', rng:1.35, fall:0.9, snd:'shoot_rifle', flashK:1.1, kickK:1.3 },
   t_rail:    { name:'SÚNG RAY NGỌC', svg:'railH', tier:3, trooper:true, type:'AP', dmg:120, fireCd:1.6, mag:4, reload:3.4, bspeed:240, frags:1, spread:0, color:0x7dffb0, r:0.24, life:1.2, pierce:4, knock:2.0, fx:'pierce', rng:1.55, fall:1, snd:'shoot_railgun', flashK:1.2, kickK:1.2 },
-  t_saw:     { name:'SÚNG BẮN LƯỠI CƯA', svg:'saw', tier:2, trooper:true, type:'KIN', dmg:36, fireCd:0.42, mag:12, reload:2.6, bspeed:58, frags:1, spread:0.02, color:0xd8d8d0, r:0.34, life:0.75, pierce:3, knock:1.4, fx:'spark', rng:0.7, fall:0.5, snd:'shoot_shotgun', flashK:0.6, kickK:1.1 },
+  t_saw:     { name:'SÚNG BẮN LƯỠI CƯA', svg:'saw', tier:2, trooper:true, type:'KIN', dmg:36, fireCd:0.42, mag:12, reload:2.6, bspeed:58, frags:1, spread:0.02, color:0xd8d8d0, r:0.34, life:0.75, pierce:3, knock:1.4, fx:'spark', rng:0.7, fall:0.5, snd:'shoot_shotgun', flashK:0.6, kickK:1.1, ammo:'blade' },
 };
 // Z149 what the blast adds on top of a direct hit (0 for guns without a contact blast; mortar-type shells hit by area only)
 export function gunSplash(g){ return g && g.aoe && !g.special ? (g.splash??0.8) : 0; }
 // one trigger pull on a single target the round strikes: pellets × damage, plus its blast
 export function gunShotDmg(g){ return (g.dmg||0)*(g.frags||1)*(1+gunSplash(g)); }
+// SUPPLY 1 the class of ammunition a gun eats (config LOGISTICS.start: one reserve a class) — read off the entry; `ammo` names it only where the entry cannot say
+//   (the MP5's pistol rounds, the saw launcher's blades)
+export function ammoKind(g){ return !g ? 'rifle' : g.ammo || (g.rocket ? 'rocket' : g.special === 'mortar' ? 'shell' : g.special === 'flame' ? 'fuel' : g.type === 'ELEC' ? 'cell' : (g.frags || 1) > 1 ? 'shot' : g.type === 'AP' ? 'heavy' : g.mag >= 100 ? 'belt' : 'rifle'); }

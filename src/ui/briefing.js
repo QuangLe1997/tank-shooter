@@ -1,6 +1,6 @@
 // ui/briefing.js — STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin; XK-UI its back button: to the battle setup (a fresh launch from it) or home (asks mid-run)
 import { CONTRACTS, DMG_TYPE, OBJECTIVES, OBJ_REWARD } from '../../config.js';
-import { bigEventsReset, sideMissionsReset, directorReset, opTitle, placeLine, capVi, askConfirm, quitToMenu, openBattleSetup, BS, BIOME, GUNS, PROFILE, S, WAVE, biomeVi, bossForStage, camera, coachFirstRun, conditionsText, escapeHtml, floatText, gunPicEl, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, renderer, resetEnvEvents, resetSurprises, saveProfile, sayVoice, scene, setFocus, setIcon, sfx, show, spawnRelic, storyBrief, storyReset, tapEl, voiceStage, spellNow, briefTeam, nemBrief, droneWarReset } from '../hub.js';
+import { bigEventsReset, sideMissionsReset, directorReset, opTitle, placeLine, capVi, askConfirm, quitToMenu, openBattleSetup, BS, BIOME, GUNS, PROFILE, S, WAVE, biomeVi, bossForStage, camera, coachFirstRun, conditionsText, escapeHtml, floatText, gunPicEl, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, renderer, resetEnvEvents, resetSurprises, saveProfile, sayVoice, scene, setFocus, setIcon, sfx, show, spawnRelic, storyBrief, storyReset, tapEl, voiceStage, spellNow, briefTeam, nemBrief, droneWarReset, ammoHud } from '../hub.js';
 
 // ----- STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin -----
 export let _brCtx = null;   // what chooseContract should do on confirm: {first?} (stage1) or {stage,biomeName,accentHex} (stage 2+)
@@ -81,7 +81,7 @@ export function updateGunHUD(){
   // rebuilt only when the gun/level changes, and a shot only rewrites the ammo text.
   const chip=document.getElementById('weaponchip');
   if(chip){
-    const reloading = inst.rU>performance.now()/1000, ammo = p.infiniteAmmo ? '∞' : (inst.ammo+'/'+magCap(g)), lv=inst.star||1, key=inst.id+':'+lv;   // Z352 a soldier's gun shows its stars
+    const reloading = inst.rU>performance.now()/1000, H = p.infiniteAmmo ? null : ammoHud(inst, g), ammo = H ? H.t : '∞', red = reloading || !!H && H.w==='dry', lv=inst.star||1, key=inst.id+':'+lv;   // SUPPLY 1 magazine / reserve and its warning (game/logistics.js); out of ammunition wears the reloading red   // Z352 a soldier's gun shows its stars
     if(chip._key!==key){ chip._key=key;
       const ic=gunPicEl(inst.id, 'wc-ic');   // Z150 the gun's own photo, same as the arsenal
       const nm=document.createElement('span'); nm.className='wc-nm'; nm.textContent=g.name+(lv>1?' ★'+lv:'');   // MASTERY level tag
@@ -89,7 +89,7 @@ export function updateGunHUD(){
       const am=document.createElement('span'); am.className='wc-am'; chip._am=am; chip._amT=null; chip._rl=null;
       chip.replaceChildren(ic,nm,am); }
     const t = reloading ? 'NẠP' : ammo; if(chip._amT!==t){ chip._amT=t; chip._am.textContent=t; }   // (Z324 short)
-    if(chip._rl!==reloading){ chip._rl=reloading; chip.classList.toggle('reloading', reloading); }
+    if(chip._rl!==red){ chip._rl=red; chip.classList.toggle('reloading', red); }
   }
   const list=document.getElementById('gunlist');
   const lkey=p.guns.map(gi=>gi.id).join(',')+'|'+p.gunIdx;

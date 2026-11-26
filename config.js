@@ -2502,3 +2502,16 @@ export const COOP = { proto:1, snapHz:20, inputHz:30,
   link:{ pingMs:2000, deadMs:8000, queueMax:64, retryBaseMs:400, retryMaxMs:5000, retryK:1.8, retryJitter:0.25, retries:20 },
   session:{ tickMs:250, pingMs:1000, helloMs:3000, peerLostMs:15000 },
   ids:{ host:1, guest:2, firstEntity:16 } };
+// SUPPLY 1 AMMUNITION IS A SUPPLY LINE (game/logistics.js; a gun's ammunition class: data/guns.js ammoKind) — "magazines" = × the gun's own magazine; rounds, s.
+//   start: the reserve he sets out with by class, in magazines of the gun he carries in it (× diff by the difficulty setting); a new stage and a new life bring every class
+//     back up to it · capK: a class's reserve holds at most capK × that · warn: the reserve at or under `low` magazines = ÍT ĐẠN, none = BĂNG CUỐI, none and an empty
+//     magazine = HẾT ĐẠN (a dry trigger says so at most every `say` s) · regen: the way out — the reserve of his issue weapon (the first gun of his rack) fills back by
+//     itself up to `mags` magazines, one magazine every magT s (loose rounds from the bottom of his pack) · give: a gun picked up brings `fresh` magazines of its own
+//     (one he had already: `again`) · crate: the THÙNG ĐẠN loot (the supply truck's crate, the relief drop) brings `share` of every class's start load, a magazine at least ·
+//   tick: s between two looks of the module (never per frame) · say: every line of text of the modules ({n} a number, {c} the class's name).
+export const LOGISTICS = { tick:0.25,
+  start:{ rifle:5, pistol:5, belt:2, shot:5, heavy:5, rocket:4, shell:3, fuel:2, cell:4, blade:4 }, diff:{ recruit:1.3, soldier:1, veteran:0.8 }, capK:1.6,
+  warn:{ low:1, say:5 }, regen:{ mags:1, magT:28 }, give:{ fresh:2, again:1 }, crate:{ share:0.6 },
+  say:{ cls:{ rifle:'ĐẠN 7.62', pistol:'ĐẠN 9 MM', belt:'ĐẠN DÂY', shot:'ĐẠN GHÉM', heavy:'ĐẠN 12.7', rocket:'ĐẠN B41', shell:'LỰU 40 MM', fuel:'XĂNG ĐẶC', cell:'PIN', blade:'LƯỠI CƯA' },
+    low:'ÍT ĐẠN', last:'BĂNG CUỐI', dry:'HẾT ĐẠN', dryTip:'HẾT ĐẠN — ĐỔI SÚNG!', got:'+{n} {c}', full:'ĐẦY ĐẠN',
+    crateDs:'Đầy băng mọi súng · thêm đạn dự trữ · kỹ năng sẵn sàng ngay' } };
