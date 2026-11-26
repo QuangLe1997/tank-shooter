@@ -107,11 +107,14 @@ export function nemSlip(e){ const R = NEM, f = e.nemFlee; if(f){ if(f.mortal) re
 // the field's edge behind him: of three bearings the one farthest from the player
 function fleeTo(e, now, mortal){ const E = N.escape, p = S.player, a0 = Math.atan2(e.pos.z, e.pos.x); let bx = e.pos.x, bz = e.pos.z, bd = -1;
   for(let k = -1; k <= 1; k++){ const q = fieldEdgePoint(a0 + k * E.fan, 1.5), d = p ? Math.hypot(q[0] - p.pos.x, q[1] - p.pos.z) : 1; if(d > bd){ bd = d; bx = q[0]; bz = q[1]; } }
-  e.nemFlee = { tx:bx, tz:bz, t0:now, end:now + E.leaveMax, puff:0, mortal:!!mortal }; e.aimT = 0; e.burstLeft = 0; e.loot = false; }
-// actors/infantry.js, instead of everything else he does: he runs for the edge trailing smoke, and is gone there — or once out of the frame, or when it has taken too long
+  e.nemFlee = { tx:bx, tz:bz, t0:now, end:now + E.leaveMax, puff:0, stuck:0, gone:0, mortal:!!mortal }; e.aimT = 0; e.burstLeft = 0; e.loot = false; }
+// actors/infantry.js, instead of everything else he does: he runs for the edge trailing smoke, and is gone there — or once out of the frame, or when it has taken too
+//   long. Held up (a wall of his own citadel in the way: no ground made for `stuck` s) he pops one more canister at his feet and is gone inside it `vanish` s later
 export function nemFleeStep(e, dt, now, edt){ const f = e.nemFlee, m = e.mesh, E = N.escape, x0 = e.pos.x, z0 = e.pos.z, dx = f.tx - x0, dz = f.tz - z0, d = Math.hypot(dx, dz) || 1, sp = e.def.speed * E.run;
-  if(d < 2.5 || now > f.end || now - f.t0 > E.leaveMin && (!inField(x0, z0, 2.2) || !inCamView(x0, z0))){ nemLeave(e); return; }
+  if(d < 2.5 || now > f.end || f.gone && now > f.gone || now - f.t0 > E.leaveMin && (!inField(x0, z0, 2.2) || !inCamView(x0, z0))){ nemLeave(e); return; }
   e.pos.x += dx / d * sp * edt; e.pos.z += dz / d * sp * edt; infPushBlocks(e.pos); clampField(e.pos, 1.5);
+  f.stuck = Math.hypot(e.pos.x - x0, e.pos.z - z0) < sp * edt * 0.35 ? f.stuck + dt : Math.max(0, f.stuck - dt);
+  if(!f.gone && (f.stuck > E.stuck || now > f.end - E.vanish)){ f.gone = now + E.vanish; throwSmoke(e.pos.x, e.pos.z, 'e', now); }
   let a = Math.atan2(dx, dz) - e.facing; while(a > Math.PI) a -= 6.283185; while(a < -Math.PI) a += 6.283185; e.facing += a * Math.min(1, dt * 8);
   const y = heightAt(e.pos.x, e.pos.z); m.position.set(e.pos.x, y, e.pos.z); m.rotation.y = e.facing; e.intent = 'flee'; e.r = 0.55;
   if(now > f.puff){ f.puff = now + E.puff; spawnPart(e.pos.x, y + 1, e.pos.z, (Math.random() - 0.5) * 0.8, 0.4, (Math.random() - 0.5) * 0.8, { color:0xd9d6cc, size:2.2, life:2.6, smoke:true, grav:0.05, drag:1, grow:1.5, op:0.5 }); }

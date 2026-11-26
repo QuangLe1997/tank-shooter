@@ -2028,7 +2028,8 @@ export const TROOPER = {
 //   cap: the most a record counts (meetings, times he killed the player, escapes), his rank, the kill marks drawn beside his name, the traits he keeps.
 //   escape: when the duel would kill him he gets away instead with `chance` — once a general a campaign loop, never on the last stage, never on the `never`
 //     difficulty, never in a custom battle: he keeps hpLeft of his health, runs at × run for the field's edge behind him (of three bearings `fan` rad apart the
-//     one farthest from the player) under `smokes` canisters, a puff every `puff` s; he is gone at the edge, out of the frame after leaveMin s, or after leaveMax s;
+//     one farthest from the player) under `smokes` canisters, a puff every `puff` s; he is gone at the edge, out of the frame after leaveMin s, or after leaveMax s
+//     — and when a wall holds him up for `stuck` s he pops one more canister at his feet and is gone inside it `vanish` s later (the same at leaveMax);
 //     the stage is called won winDelay s later (he is still running); loot: he drops his guns and the medal as he goes, and xpK of a general's experience.
 //   rank: + perFled each escape (back to 0 when he falls). Per rank: health + hp, his fan's and grenades' cooldowns × cd, the rests between his bursts × rest,
 //     his group × spread (AWARE.fire's own per-man knobs), the fan's warning × tel (never under telMin s).
@@ -2046,7 +2047,7 @@ export const TROOPER = {
 //     {k} the times he killed him, {name} the general. gap: s of radio silence one of these lines waits for; hold: s it waits at most; maxLen with its tag.
 export const NEMESIS = { on:true, v:1, tick:0.25,
   cap:{ met:999, kills:999, fled:99, rank:3, marks:5, traits:3 },
-  escape:{ chance:0.4, never:'recruit', hpLeft:0.1, run:1.9, fan:0.6, smokes:2, puff:0.35, leaveMin:1.5, leaveMax:9, winDelay:4.2, loot:true, xpK:0.5 },
+  escape:{ chance:0.4, never:'recruit', hpLeft:0.1, run:1.9, fan:0.6, smokes:2, puff:0.35, leaveMin:1.5, leaveMax:9, stuck:0.7, vanish:0.9, winDelay:4.2, loot:true, xpK:0.5 },
   rank:{ perFled:1, hp:0.22, cd:0.9, rest:0.88, spread:0.9, tel:0.93, telMin:0.55 },
   how:{ splitR:12, blast:{ scar:'burn', adapt:'mobile' }, far:{ scar:'shoulder', adapt:'rush' }, close:{ scar:'gash', adapt:'wall' } },
   adapt:{ mobile:{ every:2.2, swing:[-4, 5], speed:1.15, spread:2.2, stagger:4 }, rush:{ keep:6, speed:1.2, smokeD:14, smokeCd:11, ahead:6 },
