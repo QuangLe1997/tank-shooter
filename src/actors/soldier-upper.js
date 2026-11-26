@@ -9,7 +9,7 @@
 //   · climbing on or off a ride he looks at what his left hand takes hold of (actors/soldier-mount.js);
 //   · Z368 running he holds himself up: a runner's lean, not the clip's crouch, and his eyes on the way ahead.
 import * as THREE from 'three';
-import { BODYFIX, SOLDIER_UPPER } from '../../config.js';
+import { BODYFIX, GRAPHFIT, SOLDIER_UPPER } from '../../config.js';
 import { CV, LEGKIT, S, turnBone } from '../hub.js';
 
 const V3 = () => new THREE.Vector3(), UP = new THREE.Vector3(0, 1, 0);
@@ -24,11 +24,15 @@ const spring = (x, v, to, k, z, dt) => { v += (-k * (x - to) - 2 * z * Math.sqrt
 //   The stance lean above is laid about his FEET's heading before the chest is turned to the aim: that turn (the aim clip stands him bladed ~60°) swung
 //   it round to his side, and the clip's own lean with it — stood aiming he hung 8–9° back or to his left by turns. kneel / speed widen what is allowed
 const _lf = V3(), _lr = V3(), _lh = V3(), _ln = V3();
+// GRAPH 6 how upright his trunk is, as a weight for the turns that read it in the level (the lean, the chest squared to the aim): 1 standing, 0 tipped past GRAPHFIT.upright[0]
+//   (the hips → neck rise over its length) — rolling over, those readings wrap through ±180° and turned the spine right round in one frame
+export function trunkUp(D){ if(!GRAPHFIT.on || !D.Hips || !D.Neck) return 1; const U = GRAPHFIT.upright; D.Hips.getWorldPosition(_lh); D.Neck.getWorldPosition(_ln).sub(_lh); const k = clamp((_ln.y / (_ln.length() || 1) - U[0]) / (U[1] - U[0]), 0, 1); return k * k * (3 - 2 * k); }
 export function trunkLean(R, D, yaw, dt, on, kneel, speed){ const K = BODYFIX.stance; if(!D.Hips || !D.Neck || !D.Spine || !D.Spine1 || !D.Spine2 || !dt) return;
   const w = R.lnW = (R.lnW || 0) + ((on ? 1 : 0) - (R.lnW || 0)) * Math.min(1, dt * K.rate); if(w < 0.01) return;
   const kn = R.lnK = (R.lnK || 0) + ((kneel ? 1 : 0) - (R.lnK || 0)) * Math.min(1, dt * K.rate), rn = clamp((speed - K.runV[0]) / (K.runV[1] - K.runV[0]), 0, 1) * (1 - kn);
   const lo = K.lean[0], hi = K.lean[1] + (K.kneel - K.lean[1]) * kn + (K.run - K.lean[1]) * rn; _lf.set(Math.sin(yaw), 0, Math.cos(yaw)); _lr.set(-Math.cos(yaw), 0, Math.sin(yaw));
-  for(let it = 0; it < K.iter; it++){ D.Hips.getWorldPosition(_lh); D.Neck.getWorldPosition(_ln).sub(_lh); const p = Math.atan2(_ln.dot(_lf), _ln.y), r = Math.atan2(_ln.dot(_lr), _ln.y), dp = (clamp(p, lo, hi) - p) * w * K.gain, dr = -r * K.roll * w * K.gain;
+  for(let it = 0; it < K.iter; it++){ D.Hips.getWorldPosition(_lh); D.Neck.getWorldPosition(_ln).sub(_lh); const U = GRAPHFIT.upright, up = GRAPHFIT.on ? clamp((_ln.y / (_ln.length() || 1) - U[0]) / (U[1] - U[0]), 0, 1) : 1, wu = w * up * up * (3 - 2 * up);   // GRAPH 6 none of it tipped over (a roll): past level the angles wrap through ±180°
+    const p = Math.atan2(_ln.dot(_lf), _ln.y), r = Math.atan2(_ln.dot(_lr), _ln.y), dp = (clamp(p, lo, hi) - p) * wu * K.gain, dr = -r * K.roll * wu * K.gain;
     if(Math.abs(dp) > 1e-4){ turnBone(D.Spine, _lr, -dp * 0.5); turnBone(D.Spine1, _lr, -dp * 0.35); turnBone(D.Spine2, _lr, -dp * 0.15); }   // (about his right: forward is −)
     if(Math.abs(dr) > 1e-4){ turnBone(D.Spine, _lf, dr * 0.5); turnBone(D.Spine1, _lf, dr * 0.35); turnBone(D.Spine2, _lf, dr * 0.15); } } }
 // every frame, after his legs (soldierLegs) and before the hold (holdReal)
@@ -64,7 +68,7 @@ export function soldierUpper(R, G, dt, P, mounted){ const D = R.pup && R.pup.D; 
   { const RN = K.run, spd = Math.hypot(pv ? pv.x : 0, pv ? pv.z : 0), want = onFoot && mode !== 'kneel' && !S.firing ? clamp((spd - RN.from) / RN.span, 0, 1) : 0;
     U.run = (U.run || 0) + (want - (U.run || 0)) * Math.min(1, dt * RN.rate);
     if(U.run > 0.01 && D.Hips && D.Head && D.HeadTop_End){ const lean = RN.lean[0] + (RN.lean[1] - RN.lean[0]) * clamp((spd - RN.v[0]) / (RN.v[1] - RN.v[0]), 0, 1);
-      D.Hips.getWorldPosition(_a); D.Neck.getWorldPosition(_c); _c.sub(_a).normalize(); const fix = (Math.atan2(_c.dot(FA), _c.y) - lean) * U.run;   // (how far past a runner's lean)
+      D.Hips.getWorldPosition(_a); D.Neck.getWorldPosition(_c); _c.sub(_a).normalize(); const fix = (Math.atan2(_c.dot(FA), _c.y) - lean) * U.run * trunkUp(D);   // (how far past a runner's lean · GRAPH 6 none of it tipped over: diving into the roll it wound up to ~65° and was dropped in one frame as the angle wrapped)
       if(fix > 0){ turnBone(D.Spine, RA, fix * 0.4); turnBone(D.Spine1, RA, fix * 0.35); turnBone(D.Spine2, RA, fix * 0.25); }   // (about his right: back is +)
       D.Head.getWorldPosition(_a); D.HeadTop_End.getWorldPosition(_c); _c.sub(_a).normalize(); const lift = (Math.atan2(_c.dot(FA), _c.y) - RN.tilt) * U.run;   // (how far his head hangs)
       if(lift > 0){ turnBone(D.Neck, RA, lift * RN.neck); turnBone(D.Head, RA, lift * (1 - RN.neck)); } } }

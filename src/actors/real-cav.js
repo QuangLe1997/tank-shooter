@@ -5,6 +5,7 @@ import { ANIMGRAPH, BODYFIX, BODYMEND, GUNFIT, GUNHOLD, HUMAN_SCALE, INFGUN, PUP
 import { bladeClip, bladeHold, bladePre, ANIMGRAPH_STAT, graphFeet, graphHipYaw, graphOwned, graphPose, XH, FIT, GUNKICK, GUNS, LEGKIT, PROFILE, S, curlHand, stirrupFeet, fitHold, sideProfile, underAt, drivePuppet, handRoll, limbTwist, trunkLean, heightAt, ik2, loadGLTF, asShipped, nearShape, makePuppet, rollHand, sfx, spawnPart, turnBone, airPitch, soldierLegs, soldierUpper, steadyHead, mountHand, seatUpright, climbArms, climbW, carryClear, eyePoint, reachFeel, triggerFinger, wristGive, gunEase, handsEase, reloadHands, reloadProps, reloadState, headLevel, gunRecoil, burstClimb, shotCycle, shotSeen } from '../hub.js';
 import { swimClip, swimPose } from '../hub.js';   // SWIM 1 (game/swim.js)
 import { horseSwimClip, horseSwimMix, horseSwimPose } from '../hub.js';   // HSWIM 1 (game/horse-swim.js)
+import { trunkUp } from '../hub.js';   // GRAPH 6 (actors/soldier-upper.js)
 
 const _v = new THREE.Vector3(), _a = new THREE.Vector3(), _b = new THREE.Vector3(), _d = new THREE.Vector3(), _up = new THREE.Vector3(), _x = new THREE.Vector3(), _y = new THREE.Vector3(), _z = new THREE.Vector3();
 const _q = new THREE.Quaternion(), _qp = new THREE.Quaternion(), _qd = new THREE.Quaternion(), _m = new THREE.Matrix4(), _mi = new THREE.Matrix4(), _s = new THREE.Vector3();
@@ -124,7 +125,7 @@ function holdReal(R, G, dt, P){ const met = R.arms._metric && R.arms._metric[R.a
   // Z356 SQUARE TO THE TARGET: the standing aim clip stands him bladed some 60° — the rifle then lay across his chest and the support arm reached right
   //   across it. On his feet (not lying, not sat) the chest is turned to face the aim, bladed only `square` (his right shoulder a little back)
   if(!R.sat && !prone && D.LeftArm && D.RightArm){ D.LeftArm.getWorldPosition(_pa); D.RightArm.getWorldPosition(_pd); _pd.sub(_pa).addScaledVector(_gu, -_pd.dot(_gu)); if(_pd.lengthSq() > 1e-6){ _pd.normalize();
-    _pk.crossVectors(_gu, _pd); const cy = Math.atan2(_pk.x, _pk.z), sq = H.square + (R.bx || 0), dq = Math.atan2(Math.sin(yaw - sq - cy), Math.cos(yaw - sq - cy)) * (1 - (R.rdy || 0) * 0.5);
+    _pk.crossVectors(_gu, _pd); const cy = Math.atan2(_pk.x, _pk.z), sq = H.square + (R.bx || 0), dq = Math.atan2(Math.sin(yaw - sq - cy), Math.cos(yaw - sq - cy)) * (1 - (R.rdy || 0) * 0.5) * trunkUp(D);   // (GRAPH 6 none of it tipped over: rolling, the shoulders' line turned past ±180° and flung the chest round in one frame)
     if(Math.abs(dq) > 1e-3){ turnBone(D.Spine, _gu, dq * 0.3); turnBone(D.Spine1, _gu, dq * 0.35); turnBone(D.Spine2, _gu, dq * 0.35); } } }
   else if((R.bx || 0) > 1e-3){ turnBone(D.Spine1, _gu, -R.bx * 0.5); turnBone(D.Spine2, _gu, -R.bx * 0.5); }   // Z365 sat (his chest turned on his hips) or lying (his body angled to the gun on the ground): the same turn
   if(foot) trunkLean(R, D, yaw, dt, !prone && !(P && P.move && P.move.roll >= 0), !!(p.cav && p.cav.stance === 'crouch'), Math.hypot(p.vel.x, p.vel.z));   // BODY 1 leaning into the gun, in the aim's own frame (actors/soldier-upper.js)

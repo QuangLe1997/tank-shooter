@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { REAL, REALTROOP, TROOPLOD } from '../../config.js';
+import { GRAPHFIT, REAL, REALTROOP, TROOPLOD } from '../../config.js';
 import { coopHostDeath, SHADOW_EXT, farGeo, MOBILE, S, SOLDIER, _R, _canvasTex, burst, camera, core, enemies, fitRealMan, floatText, heightAt, loadRealTroops, paintTroops, scene, sfx, spawnBullet, spawnPart, troopSkinDone, troopSkinFree, troopSkinMesh, troopSkinWrite } from '../hub.js';
    // support defenders (cap raised to fit the CORE GUARDS upgrade, +1..3)
 export let soldiers=[], soldierLvl=0;
@@ -175,13 +175,31 @@ export function updateTroopBatch(now){
 // a man is hit: the batch flashes him and he flinches
 export function soldierHit(g){ const u=g.userData; u.flashUntil=performance.now()/1000+0.12; u.flinch=1; }
 export function soldierReloading(g){ return (g.userData.reload||0)>0; }
+// GRAPH 6 THE ENEMY'S STRIDE ON THE GROUND (GRAPHFIT.enemy): each foot is put where it belongs in his own frame — through its stance on the ground going
+//   straight back under him at his pace, then an arc forward that lands at that pace again (a Hermite whose ends carry the stance's speed) — and the leg is
+//   laid to it by two-bone IK, the knee ahead (the old fixed 7.5 → 5.9 rad/m sine slid the standing boot at 0.9–2.2× his pace: measured on the real kit).
+//   Walking he vaults over the straight leg (the hips rise and fall); faster the hips ride level on a bent knee and both feet leave the ground between
+//   steps (duty). Units of his body (the legs live in u.body); u.ikDrop: how far his hips must come down for the standing foot to be on the ground
+const _st=[0, 0], _th=[0, 0], clamp=(v, a, b)=>v<a?a:v>b?b:v;
+function strideFit(u, dl, vl, lw, rx){ const E=GRAPHFIT.enemy, L=u.legLen||LEG0, g=clamp((vl-E.g[0])/E.g[1], 0, 1), duty=E.duty[0]+(E.duty[1]-E.duty[0])*g;
+  for(let i=0;i<2;i++){ const kp=u.legs[i].knee.position; _th[i]=Math.hypot(kp.y, kp.z); }
+  const Lr=(_th[0]+_th[1])/2+L.sh, R=Lr*E.reach, a=Math.max(0.005, Lr*Math.min(E.a[0]+(E.a[1]-E.a[0])*g, vl*E.aV)), h0=Math.sqrt(R*R-a*a), lift=(E.lift[0]+(E.lift[1]-E.lift[0])*g)*Math.min(1, vl/E.moveV);
+  u.walk += dl*Math.PI*duty/a; let zs=a; for(let i=0;i<2;i++){ const uu=_st[i]=((u.walk/(2*Math.PI)+i*0.5)%1+1)%1; if(uu<duty) zs=a-2*a*uu/duty; }
+  const gy=-((1-g)*Math.sqrt(R*R-zs*zs)+g*h0)+E.low[0]*lw, zf=E.low[1]*lw;   // (the ground under his hips: over the standing leg walking, level running · bent low: lower, feet a little ahead)
+  for(let i=0;i<2;i++){ const l=u.legs[i], uu=_st[i], th=_th[i], kp=l.knee.position; let z, y;
+    if(uu<duty){ z=a-2*a*uu/duty; y=gy; } else { const s=(uu-duty)/(1-duty), s2=s*s, s3=s2*s, m=-(1-duty)*2*a/duty; z=a*(-4*s3+6*s2-1)+m*(2*s3-3*s2+s); y=gy+lift*Math.sin(Math.PI*s); }
+    z+=zf; if(rx){ const c=Math.cos(rx), sn=Math.sin(rx), y1=y*c+z*sn; z=z*c-y*sn; y=y1; } let d=Math.hypot(z, y);   // (the body pitched forward bent low: the feet still laid on the level ground) d=Math.min(Math.max(d, Math.abs(th-L.sh)+1e-3), (th+L.sh)*0.9995);
+    const a0=Math.atan2(-kp.z, -kp.y); l.hip.rotation.x=Math.atan2(-z, -y)-Math.acos(clamp((th*th+d*d-L.sh*L.sh)/(2*th*d), -1, 1))-a0; l.knee.rotation.x=Math.PI-Math.acos(clamp((th*th+L.sh*L.sh-d*d)/(2*th*L.sh), -1, 1))+a0; }   // (a0: the knee's rest offset off the hip's plumb — the thigh turns by it, the shin does not)
+  u.ikDrop=Lr+gy; }
 // walk / run / crouch-walk / crawl cycles driven by ground covered; rifle at the ready while moving, shouldered when firing; a mag change every
 // 8–14 rounds (left hand to the pouch and back); flinch on a hit; the head scans when nobody is shooting
 export function animateSoldier(g, dist, dt, firing){
   const u=g.userData; if(!u.legs) return; dt=Math.max(dt,1e-3);
   const spd=dist/dt; u.spd=(u.spd||0)+(spd-(u.spd||0))*Math.min(1,dt*8); const run=Math.min(1, Math.max(0, (u.spd-2.4)/2.6));
-  u.walk += dist*(7.5-run*1.6); const amp=Math.min(REALTROOP.stride.amp[0]+run*REALTROOP.stride.amp[1], spd*0.15);   // Z344 a man's stride (thighs ±30° walking, ±40° running — the old ±50° split him into a lunge once his feet stayed on the ground)
-  for(const l of u.legs){ const ph=u.walk + (l.sx>0?Math.PI:0); l.hip.rotation.x = Math.sin(ph)*amp; l.knee.rotation.x = Math.max(0, -Math.cos(ph))*amp*(1.1+run*0.5); }
+  const E=GRAPHFIT.enemy, fit=GRAPHFIT.on && E.on;
+  if(fit){ const bsy=u.body?u.body.scale.y:1; const P=u.pose; strideFit(u, dist/bsy, u.spd/bsy, P?P.lw||0:0, P?P.rx*(1-Math.min(1, P.pw*4)):0); u.ik=true; }   // GRAPH 6 (below)
+  else { u.ik=false; u.walk += dist*(7.5-run*1.6); const amp=Math.min(REALTROOP.stride.amp[0]+run*REALTROOP.stride.amp[1], spd*0.15);   // Z344 a man's stride (thighs ±30° walking, ±40° running — the old ±50° split him into a lunge once his feet stayed on the ground)
+    for(const l of u.legs){ const ph=u.walk + (l.sx>0?Math.PI:0); l.hip.rotation.x = Math.sin(ph)*amp; l.knee.rotation.x = Math.max(0, -Math.cos(ph))*amp*(1.1+run*0.5); } }
   u.t=(u.t||0)+dt; u.up.position.y = u.base.upY + Math.sin(u.t*2.1)*0.006;   // Z344 the torso stays on the hips (it used to bob up off them, opening the waist): the stride's rise and fall is the whole man's, from his legs (poseSoldier)
   if(firing && !(u.reload>0)){ u.kick=1; u.aimT=2.2; u.shots=(u.shots||0)+1; if(u.shots>=u.magN){ u.shots=0; u.reload=1.7; u.magN=8+((Math.random()*7)|0); } }
   u.kick=Math.max(0,u.kick-dt*9); u.aimT=Math.max(0,(u.aimT||0)-dt); u.gun.position.z = u.base.gunZ - u.kick*0.06; u.gun.rotation.x = -u.kick*0.12;
@@ -235,12 +253,13 @@ export function poseSoldier(g, stance, dt){ const u=g.userData; if(!u.body) retu
   for(let i=0;i<L.length;i++){ const l=L[i], c=KN[i], q=_LEG.prone[i];
     l.hip.rotation.x = l.hip.rotation.x*w0 + c[0]*P.kw + q[0]*P.pw; l.knee.rotation.x = l.knee.rotation.x*w0 + c[1]*P.kw + q[1]*P.pw; l.hip.rotation.z = l.sx*0.14*P.pw;
     const mv=Math.min(1,(u.spd||0)/1.2), ph=(u.walk||0)+(l.sx>0?Math.PI:0);   // Z172 moving low: short crouched strides · a crawl when flat (knees drawn up in turn)
-    if(P.lw>0.02){ l.hip.rotation.x -= 0.32*P.lw; l.knee.rotation.x += 0.5*P.lw; }   // Z223 LOW: knees bent, hips back — the combat crouch-run
+    if(P.lw>0.02 && !u.ik){ l.hip.rotation.x -= 0.32*P.lw; l.knee.rotation.x += 0.5*P.lw; }   // Z223 LOW: knees bent, hips back — the combat crouch-run (GRAPH 6: laid in the stride itself)
     if(mv>0.05 && P.kw>0.3){ l.hip.rotation.x += Math.sin(ph)*0.32*mv*P.kw; l.knee.rotation.x += Math.max(0,-Math.cos(ph))*0.3*mv*P.kw; }
     if(mv>0.05 && P.pw>0.4){ l.hip.rotation.z += l.sx*Math.max(0,Math.sin(ph))*0.55*mv*P.pw; l.knee.rotation.x += Math.max(0,Math.sin(ph))*0.9*mv*P.pw; } }
   if(P.pw>0.4 && (u.spd||0)>0.1 && u.arms){ const mv=Math.min(1,u.spd/1.2); u.arms.rotation.z += Math.sin(u.walk||0)*0.22*mv; u.body.rotation.z = Math.sin(u.walk||0)*0.07*mv; } else if(u.body) u.body.rotation.z*=0.8;
   const Lg=u.legLen||LEG0, St=REALTROOP.stride, cap=St.drop+(St.low-St.drop)*P.lw+(1-St.drop)*P.kw;   // (striding, the back foot rolls onto its toes: the hips dip only a little)
-  u.body.position.y = P.y - Math.min(cap, Lg.th+Lg.sh-legReach(u))*u.body.scale.y*(1-P.pw); }   // Z344 the hips down onto his legs (a stride, the combat crouch, the kneel) — a foot or a knee on the ground
+  const drop=Math.min(cap, Lg.th+Lg.sh-legReach(u)), wk=u.ik ? Math.min(1, (P.kw+P.pw)*4) : 1;   // (GRAPH 6 on his feet: down by what the stride put under him — both feet may be off the ground running)
+  u.body.position.y = P.y - (u.ik ? (u.ikDrop||0)*(1-wk)+drop*wk : drop)*u.body.scale.y*(1-P.pw); }   // Z344 the hips down onto his legs (a stride, the combat crouch, the kneel) — a foot or a knee on the ground
 // Z113 a man brought back from the pool: rifle back in his hands, arms and legs reset
 export function reviveSoldierMesh(m){ const u=m.userData; if(!u.gun) return;
   if(u.gunHome && u.gun.parent!==u.gunHome){ u.gun.parent && u.gun.parent.remove(u.gun); u.gunHome.add(u.gun); u.gun.position.copy(u.gunPos); u.gun.rotation.set(0,0,0); u.gun.scale.setScalar(1); }

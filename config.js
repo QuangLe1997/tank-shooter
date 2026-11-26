@@ -3171,6 +3171,26 @@ export const ANIMGRAPH = { on:typeof location !== 'undefined' && !/[?&]noanimgra
   //   half-life `half`; accHalf smooths the acceleration; × aim while firing, × stop in the braking clip · stop.hipMin / hipSoft: the hips' floor pulling up (m) ·
   //   roll: the library's dive-roll played from t[0] to t[1] s over the game's own roll, cut in / out with half-life `half`
   leap:{ on:true, v:2.6, min:0.3 }, roll:{ on:true, clip:'air-sprint-roll-to-sprint', t:[0.36, 1.1], half:0.1 }, lean:{ on:true, k:0.018, kr:0.012, fwd:0.12, back:0.09, side:0.1, accHalf:0.06, half:0.12, turnV:1, omMax:4, aim:0.4, stop:0.3 } };
+// GRAPH 6 HIS FEET ON THE GROUND (actors/anim-graph.js, actors/soldier-upper.js, actors/soldiers.js; ?nofit in the address = GRAPH 5 exactly) ·
+//   reach: a leg the graph lays out (two-bone IK) straightens softly from soft × its length toward max × and never locks dead straight — a planted foot the
+//     leg can hold no further is carried along with it (no longer let go and caught again frame after frame: the knee snapping at toe-off) ·
+//   land: between v[0] and v[1] m/s (a run; the sprint's own slide measured worse than its snap) a foot that touches down is held loosely for t s — the hold eases onto where the clip stands it (time constant tau s): the clip's
+//     foot lands still travelling, and the gap a hard hold kept through the stance was flung back at toe-off ·
+//   release: let go at a run, the gap between the hold and the clip closes on a spring of half-life half s (ANIMGRAPH.feet.half otherwise) ·
+//   contact: the boot's lowest point, read off the skinned mesh (a hull of points on each foot / toe bone) — a planted foot is put ON the ground, any foot in
+//     the air (kneeling, lying, changing stance: every foot) never under it; on the move the hips come down when even the lower foot floats over
+//     flight[0] + flight[1] × (speed − flight[2]) m (a run's own flight left alone) and up when it would go in; hip: the most down / up (m) · half: the hips'
+//     spring (s) · max: the most one foot is moved (m) · foot: its spring (s) ·
+//   crawl: on his belly the clip plays at one steady rate (his speed ÷ its own) and his body rides the clip's own surge — ahead of / behind the man by what
+//     its root has covered beyond / short of him, at most max m, the drift bled off at leak /s (crawling, after) — so the knees and toes stay where they dig in ·
+//   upright: the trunk's lean into the gun (BODYFIX.stance) fades out as he tips over (the neck's rise over the hips as a share of the trunk: none under [0],
+//     all over [1]) — upside down in the roll it wrapped through ±180° and threw the spine round in one frame ·
+//   enemy: the batched infantry's feet placed on the ground and the legs laid to them by IK (actors/soldiers.js strideFit) — g: [from, over] his pace
+//     (body units /s) from a walk to a run · duty: the share of a stride a foot stands (walk, run: under ½ both feet leave the ground) · a: half the
+//     standing foot's travel as a share of his leg (walk, run), at most aV × pace · reach: the standing leg's longest · lift: the swinging foot's
+//     clearance (walk, run; full from moveV) · low: bent low, the hips down / the feet ahead (body units)
+export const GRAPHFIT = { on:typeof location === 'undefined' || !/[?&]nofit\b/.test(location.search), reach:{ soft:0.955, max:0.995, let:0.12 }, land:{ v:[3, 5.5], t:0.08, tau:0.025 }, release:{ half:0.05 }, contact:{ on:true, flight:[0.025, 0.006, 3], hip:[0.12, 0.06], half:0.025, max:0.1, foot:0.02 },
+  crawl:{ on:true, max:0.22, leak:[0.3, 2] }, upright:[0.2, 0.5], enemy:{ on:true, g:[1.3, 2.5], duty:[0.5, 0.32], a:[0.36, 0.5], aV:0.34, reach:0.995, lift:[0.06, 0.16], moveV:0.5, low:[0.1, 0.05] } };
 // HANG 1 WHAT HE WEARS ON HIS BACK HANGS (actors/hang.js — the slung rifle and the worn blade alike): a damped pendulum in the back's plane from the upper attachment.
 //   g: gravity · k: how much of the attachment's own acceleration throws it · len: its lower part's length that swings (share) · ks: the strap's pull back to the rest diagonal
 //   (1/s²: √ks ≈ 12 rad/s, a swing settles in about half a second) · z: damping ratio · max: the most it may swing either way (rad) · accMax / lp: the acceleration's cap (m/s²) and

@@ -2575,6 +2575,22 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   ok(G && G.toe >= 0 && G.toe <= 1 && lin(0.12, k) === 0 && toe(0.12, k) > 0.06 && Math.abs((toe(0.4501, k) - toe(0.4499, k)) / 0.0002 - k) < 0.01,
     'at contrast '+k+' a shadow at 0.12 came out '+lin(0.12, k)+', now '+toe(0.12, k).toFixed(3)+' (the pivot\'s slope kept)');
   ok(/toe:\{value:LOOK\.grade\.toe\}/.test(rr) && /cl=mix\(cl, 0\.45\*pow\(max\(c,vec3\(0\.0\)\)\/0\.45, vec3\(contrast\)\), toe\*\(1\.0-step\(0\.45,c\)\)\)/.test(rr), 'the grade shader applies the toe under the pivot'); }
+// GRAPH 6 his feet on the ground: soft reach, a running foot settling as it lands, the boots' lowest point on the ground, the crawl on its own surge, the roll's spine, the enemy's stride by IK
+{ const C = await import('./config.js'), fs = await import('node:fs'), G = C.GRAPHFIT, Ft = C.ANIMGRAPH.feet, F = C.CAV.foot, rd = f => fs.readFileSync(f, 'utf8'), ag = rd('src/actors/anim-graph.js'), up = rd('src/actors/soldier-upper.js'), rc = rd('src/actors/real-cav.js'), so = rd('src/actors/soldiers.js');
+  ok(G && G.on === true && G.reach.soft > 0.9 && G.reach.soft < G.reach.max && G.reach.soft < Ft.stretch && G.reach.max < 1 && G.reach.let > 0.05 && /let IKS = 0;/.test(ag) && /else if\(F\.on && IKS > 1e-4\)\{ tb\.getWorldPosition\(_b\); F\.lx = _b\.x; F\.lz = _b\.z; \}/.test(ag),
+    'GRAPHFIT: on unless ?nofit (on under Node); a leg the graph lays out straightens softly from '+G.reach.soft+' of its length to '+G.reach.max+' (never past the clip\'s own reach), a planted foot it can hold no further goes along with it');
+  ok(G.land.v[0] > F.fire && G.land.v[0] < F.run && G.land.v[1] > F.run && G.land.v[1] < F.sprint && G.land.t > 0.02 && G.land.t < 0.15 && G.land.tau > 0.005 && G.land.tau < G.land.t && G.release.half >= Ft.half && G.release.half < 0.2 && /F\.lt < GRAPHFIT\.land\.t/.test(ag),
+    'at '+G.land.v.join('–')+' m/s a foot that lands is held loosely for '+G.land.t+' s (it settles where the clip stands it, no 10–17 cm gap to fling back at toe-off); let go at a run its gap closes on a '+G.release.half+' s spring');
+  const K = G.contact; ok(K.on === true && K.flight[0] > 0 && K.flight[0] < 0.06 && K.flight[1] >= 0 && K.hip[0] > 0 && K.hip[0] <= 0.15 && K.hip[1] > 0 && K.hip[1] <= 0.1 && K.half > 0 && K.half < 0.1 && K.max > 0 && K.max <= 0.15 && K.foot > 0 && K.foot < 0.1
+    && /function soleHull\(R\)/.test(ag) && /F\.ay \+ F\.ly \+ F\.cy \+ gy/.test(ag) && /_v\.y -= A\.cp/.test(ag),
+    'the boots\' lowest point (a hull of the skinned feet) is put on the ground: a planted foot onto it, any other kept out of it; the hips come down for a lower foot floating over '+K.flight[0]+' m (+'+K.flight[1]+' per m/s over '+K.flight[2]+'), at most '+K.hip[0]+' m');
+  ok(G.crawl.on === true && G.crawl.max > 0.05 && G.crawl.max < 0.4 && G.crawl.leak[0] < G.crawl.leak[1] && /A\.cO = clamp\(A\.cO \+ rootAdv\(W, t0, t\) \* A\.K \* cw - A\.spd \* dt/.test(ag),
+    'crawling, the clip plays at one steady rate and his body rides its own surge (at most '+G.crawl.max+' m ahead / behind the man): the toes stay where they dig in');
+  ok(G.upright[0] >= 0 && G.upright[0] < G.upright[1] && G.upright[1] < 1 && /export function trunkUp\(D\)/.test(up) && (up.match(/trunkUp\(D\)/g) || []).length >= 2 && /\* trunkUp\(D\);/.test(rc),
+    'the turns that read his trunk in the level (the lean into the gun, running tall, the chest squared to the aim) fade out as he tips over: no spine flung round in the roll');
+  const E = G.enemy; ok(E.on === true && E.duty[0] === 0.5 && E.duty[1] > 0.2 && E.duty[1] < 0.5 && E.a[0] > 0.2 && E.a[1] > E.a[0] && E.a[1] < 0.6 && E.reach > 0.95 && E.reach < 1 && E.lift[0] > 0 && E.lift[1] >= E.lift[0] && E.aV > 0
+    && /function strideFit\(u, dl, vl, lw, rx\)/.test(so) && /u\.ik \? \(u\.ikDrop\|\|0\)/.test(so) && /if\(P\.lw>0\.02 && !u\.ik\)/.test(so),
+    'the enemy\'s feet are placed on the ground and his legs laid to them by IK: a foot stands for '+E.duty[0]+' → '+E.duty[1]+' of a stride (both off the ground between steps at a run), the swinging foot '+E.lift[0]+'–'+E.lift[1]+' clear'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
