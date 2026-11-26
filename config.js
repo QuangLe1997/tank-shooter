@@ -1729,14 +1729,14 @@ export const POSE_STUDIO = { ok:{ palm:4, stretch:0.995 }, settle:{ equip:0.6, s
 //   per unit, at most blade rad more: GUNHOLD.blade's own pull rule may still go beyond); hardProne = the reach lying down before the gun is drawn to the hand;
 //   cheek = the cheek weld: the head first brought near upright (head = bowed forward at most, tilted at most, bowed back at most −), then bowed / lifted
 //   within bow and tilted at most tilt for the sights (iter passes); the gun comes the rest of the way to the eye — the butt up to `up` (m: lower / higher
-//   than the pocket) and `in` toward his neck, at rate /s; the eye still `side` m left of the sights turns the chest side-on (bladeK rad/s per m); hipProne = lying down a hip-fired gun (minigun, flamer) goes to the shoulder;
+//   than the pocket; BODY 5 −0.11 / bow −0.3: lying down behind a tall scope — DMR, 12.7, SAW, rail — his eye stood 7–10 cm under the sight line) and `in` toward his neck, at rate /s; the eye still `side` m left of the sights turns the chest side-on (bladeK rad/s per m); hipProne = lying down a hip-fired gun (minigun, flamer) goes to the shoulder;
 //   carry = port arms at a sprint: the handguard no nearer the left shoulder than min of the left arm's length, the grip no further from the right
 //   shoulder than max of the right arm's
 export const GUNFEEL = {
   hold:{ grip:[0.034, 0.022], gripPole:[-0.36, 0.4, -0.12], wrist:[0.8, 0.8],
     trig:{ ahead:0.024, up:0.02, lo:0.09, hi:0.035, side:0.011, face:0.004, pad:[0.9, 0.35], safe:[0.032, 0.014, 0.018], bare:[0.03, 0.03] },
     reach:{ comfort:0.9, prone:0.95, dead:[0.012, 0.04], proK:10, protract:0.3, back:0.4, k:8, blade:0.5, hardProne:0.985 },
-    cheek:{ head:[0.28, 0.17, -0.08], bow:[-0.15, 0.3], tilt:0.2, iter:3, up:[-0.05, 0.07], in:[0, 0.06], rate:8, side:0.015, bladeK:8 }, hipProne:true, carry:{ min:0.65, max:0.84 },
+    cheek:{ head:[0.28, 0.17, -0.08], bow:[-0.3, 0.3], tilt:0.2, iter:3, up:[-0.11, 0.07], in:[0, 0.06], rate:8, side:0.015, bladeK:8 }, hipProne:true, carry:{ min:0.65, max:0.84 },
     ok:{ trig:3.5, wrist:60, eye:4, stretch:0.97 } },   // what the pose studio flags (dev/pose-studio.js measure): the fingertip off the trigger (cm), a wrist's bend (deg), the eye off the sight line (cm), an arm's stretch
   // GUN 2 THE RELOAD IN REAL STEPS (actors/gun-reload.js): family = which way each hand weapon (INFGUN.guns key) is loaded; steps = each family's steps as
   //   shares of that gun's own reload time (GUNS[id].reload — they add up to 1: a gun that ran dry reloads in exactly the time it always did); a step named
@@ -3131,4 +3131,5 @@ export const BODYFIX = {
 export const BODYMEND = {
   bleed:[{ limb:'UpLeg', end:'Leg', own:['UpLeg', 'Leg', 'Foot'], foreign:'other', t:[0.06, 0.25], tMax:1.0, r:0.45, face:0.25 }],
   shell:1500,
-  wrap:3.39 };
+  wrap:3.39,
+  swivelWrist:0.96 };

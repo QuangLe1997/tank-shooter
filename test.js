@@ -2390,6 +2390,10 @@ grp('GRAPH 5 the motion graph: on by default, lifted feet instead of dragged one
     'BODYMEND.bleed: a thigh\'s skin carrying the other leg\'s weight (an arm\'s carrying the spine\'s) is cleaned by which way it faces, eased in from the groin / shoulder, gear shells (< ' + M.shell + ' points) left alone, the liner pulled in again after');
   ok(M.wrap > Math.PI && M.wrap < Math.PI + 0.5 && M.wrap < C.BODYFIX.twist.wrap && /if\(Math\.abs\(tw\) > BODYMEND\.wrap\)/.test(pu) && /if\(Math\.abs\(r\) > BODYMEND\.wrap\)/.test(pu) && !/BT\.wrap|BODYFIX\.twist\.wrap/.test(pu),
     'the hand\'s roll on its forearm read on from the last frame only to ' + M.wrap + ' rad (a little past 180°): a roll that went round in a reload no longer leaves the elbow swung the wrong way');
+  ok(M.swivelWrist > 0.6 && M.swivelWrist <= C.GUNFEEL.hold.ok.wrist / 57.3 && /BODYMEND\.swivelWrist\)\{/.test(pu) && /if\(bend\(want\) > lim\)\{ let lo = 0, hi = want;/.test(pu) && /hd:arm && D\[s \+ 'HandMiddle1'\]/.test(pu),
+    'BODY 5 the elbow\'s swing is cut back until the wrist under the hand it turns bends no more than ' + M.swivelWrist + ' rad (or than it already did): the right hand on an AK / shotgun grip no longer bent 65–73°');
+  const CK = C.GUNFEEL.hold.cheek; ok(CK.up[0] <= -0.1 && CK.up[0] >= -0.15 && CK.bow[0] <= -0.25 && CK.bow[0] >= -0.4 && CK.up[1] > 0,
+    'BODY 5 lying behind a tall scope the gun may come ' + (-CK.up[0] * 100) + ' cm under the shoulder pocket and the head lift ' + (-CK.bow[0]) + ' rad: the eye on the sight line (was 7–10 cm under it)');
 }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
