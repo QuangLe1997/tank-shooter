@@ -2309,6 +2309,25 @@ grp('POSE 1 the puppet: the whole turn, the hinge from the fold, the twist share
     && /coopBladeY\(e\._bladeHit - 1\)/.test(rd('src/game/coop-puppets.js')) && /ambushGuestCut\(CO\.trust, e, bc, x, z, now, _q\.guestDown\)/.test(rd('src/game/coop-glue.js')) && !/h\.dmg, now, _q\.guestDown/.test(rd('src/game/coop-glue.js')) && /coopJudgeBlade\(TR, coopBladeFacts\(_q, now, code, _man, _mate, _claim\), _j\)/.test(am) && /e\._bladeHit = coopBladeCodeOf\(B\.kind, mv, A\.dmgK < 1\) \+ 1;/.test(bl)
     && /M\.bladeAt = M\.RC\.blade \? \(M\.bladeAt >= 0 \? M\.bladeAt : now\) : -1;/.test(rd('src/game/coop-remote.js')) && /function mateAct\(cv, L, K, dt\)/.test(bl) && /!M\.RC\.blade && now >= M\.fireAt/.test(rd('src/game/coop-remote.js')),
     'co-op: the guest\'s cut is a report of a man, a move and a place (weapon number '+N.w+', no damage); the host judges it on its own facts — '+N.perS+' cuts a second, the blade seen in his hands for the draw, the claim within '+N.posTol+' m of its own place for him, its own table\'s damage, the ambush its own decision; his cut shows as a swing on the mate\'s rig (no flash, no report)'); }
+// GRAPH 3 the motion graph: a running jump is a leap, the trunk leans into his acceleration, the stop keeps his hips up, the about-turn keeps up with the body,
+//   a step is lifted, the crawl is laid on the ground, the roll is the library's (actors/anim-graph.js)
+grp('GRAPH 3 the motion graph: leap, lean, stop hips, turn catch-up, lifted steps, crawl by the ground, library roll');
+{ const C = await import('./config.js'), fs = await import('node:fs'), G = C.ANIMGRAPH, F = C.CAV.foot, rd = f => fs.readFileSync(f, 'utf8'), J = JSON.parse(rd(C.ANIMLIB.path + C.ANIMLIB.index)), by = new Map(J.clips.map(c => [c.id, c])), ag = rd('src/actors/anim-graph.js'), sm = rd('src/game/soldier-moves.js');
+  ok(G.leap.on === true && G.leap.v > F.fire && G.leap.v < F.run && G.leap.min > 0.1 && G.leap.min < 0.6 && /A\.air === 4/.test(ag) && /touchdowns\(g\)/.test(ag),
+    'a jump off at a run ('+G.leap.v+' m/s and up) is the stride carried through the air, the next footfall at least '+G.leap.min+' of a stride on timed to the landing');
+  const L = G.lean; ok(L.on === true && L.k > 0 && L.kr > 0 && [L.fwd, L.back, L.side].every(x => x > 0 && x <= 0.2) && L.half > 0.03 && L.half < 0.4 && L.accHalf > 0 && L.aim >= 0 && L.aim <= 1 && L.stop >= 0 && L.stop <= 1,
+    'the trunk leans into his acceleration and into a bend: at most '+L.fwd+' rad forward, '+L.back+' back, '+L.side+' to the side, on a spring, less while he fires');
+  ok(G.stop.hipMin > 0.75 && G.stop.hipMin < 0.95 && G.stop.hipSoft > 0 && G.stop.hipSoft < 0.1 && /A\.hipLift/.test(ag),
+    'pulling up from a run his hips stay at least '+G.stop.hipMin+' m off the ground (the braking clip sank them ~0.3 m), his feet kept where they are');
+  ok(G.turn.early > 0 && G.turn.early < G.turn.at && G.turn.lag > 0.3 && G.turn.lag < 1.5 && G.turn.catchUp >= 1 && G.turn.catchUp <= 4 && /P0\.aim - P0\.facing/.test(ag) && /A\.hyX/.test(ag),
+    'a turn on the spot is chosen by where the aim is going, and its clip runs on (up to '+G.turn.catchUp+'×) to keep the hips within '+G.turn.lag+' rad of the chest');
+  const Ft = G.feet; ok(Ft.arc === true && Ft.vRelV > F.fire && Ft.vRelV < F.run && Ft.pull > 0.2 && Ft.pull < 0.8 && Ft.stepT[0] > 0.1 && Ft.stepT[2] >= Ft.stepT[0] && Ft.stepT[2] < 0.6 && Ft.liftMin > 0 && Ft.liftMin <= Ft.liftMax,
+    'below a run a planted foot is held until the clip lifts it or it is pulled '+Ft.pull+' m away — then it steps (up, over, down in '+Ft.stepT[0]+'–'+Ft.stepT[2]+' s), never dragged');
+  const cr = by.get(G.prone.crawl); ok(cr && cr.travels && G.prone.match === true && G.prone.band[0] > 0 && G.prone.band[0] < 1 && G.prone.band[1] > 1 && G.prone.rate[1] >= 2 && G.prone.blendT > 0 && /function rootAdv\(/.test(ag),
+    'the crawl clip ('+G.prone.crawl+') is played by the ground he covers (its own root travel), within '+G.prone.band.join('–')+' × its even pace; in and out of it eased over '+G.prone.blendT+' s');
+  const ro = by.get(G.roll.clip); ok(G.roll.on === true && ro && G.groups.includes(ro.g) && G.roll.t[0] >= 0 && G.roll.t[1] > G.roll.t[0] && G.roll.t[1] <= ro.dur && G.roll.half > 0
+    && /const R = graphRolls\(\) \? null : CV\.roll, J = CV\.jump, C = M\(\);/.test(sm) && /export function graphRolls\(\)/.test(ag),
+    'the combat roll is the library\'s '+G.roll.clip+' ('+G.roll.t.join('–')+' s of it over the game\'s own roll); the old turn-the-whole-body-over stands down while it plays'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

@@ -5,7 +5,7 @@
 //   standing behind higher — and lays the rifle on top of it to fire (combat/real-cav.js reads CV.cover for the rest).
 import * as THREE from 'three';
 import { CAV } from '../../config.js';
-import { CV, S, afxLand, blockTop, blocksNear, heightAt, inBlock, sfx, soleAt, spawnPart } from '../hub.js';
+import { CV, S, afxLand, blockTop, blocksNear, graphRolls, heightAt, inBlock, sfx, soleAt, spawnPart } from '../hub.js';
 
 const M = () => CAV.moves;
 const _near = [], _ax = new THREE.Vector3();
@@ -41,7 +41,7 @@ export function footMotion(p, dt){ const R = CV.roll, J = CV.jump;
   if(CV.rise > 0){ CV.rise -= dt; if(CV.rise <= 0 && CV.want === 'stand' && !CV.cover) CV.stance = 'stand'; else if(CV.rise > 0) CV.stance = 'crouch'; }
   if(CV.land > 0) CV.land -= dt; }
 // the body: lifted off the ground in a jump; turned over about the line across his roll (pivot at his tucked middle) in a roll
-export function footPose(G, p){ const R = CV.roll, J = CV.jump, C = M();
+export function footPose(G, p){ const R = graphRolls() ? null : CV.roll, J = CV.jump, C = M();   // (GRAPH 3 the motion graph's roll clip turns him over itself)
   if(!R && !J){ if(G.userData.mv){ G.userData.mv = false; G.position.set(0, 0, 0); G.quaternion.identity(); } return; }
   G.userData.mv = true; G.quaternion.identity(); G.position.set(0, 0, 0);
   if(J) G.position.y = Math.max(0, J.y);

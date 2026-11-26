@@ -53,7 +53,7 @@ const SH = { g:null, t:0, t1:0, rate:1, mask:M_ALL, hold:false, half:0.1, loop:f
 // what a probe reads (dev): frames it ran, its own cost (ms: the last frame, the mean, the worst), the state, the clips blended, the stride's play rate
 export const ANIMGRAPH_STAT = { frames:0, ms:0, msSum:0, msMax:0, st:'off', set:'', clips:0, rate:1, phase:0, kicks:0, locks:0, ready:false, failed:false, live:false, K:1, gaits:null };   // (K, gaits: his stride's scale and each gait's speed on the ground, m/s)
 const A = { ready:false, booting:false, cal:false, airOK:false, live:false, R:null, B:null, own:false, st:'off', set:'stand', legMode:null, kick:0, half:0.09, dtPrev:0, EN:0, PN:0, ms:0,
-  px:0, pz:0, has:false, spd:0, vl:0, vf:0, psi:0, K:1, as:1, ank0:0.166, toe0:0.046, ph:0, cyc:0, it:0, rate:1, dk:0, ud:0, hy:0, turn:null, tt:0, hy0:0, hyGo:0, wm:0, idleT:0, slow:true, stopG:null, stT:0, offT:9, landFoot:-1, landSnap:false, hipDrop:0, stillT:0, air:0, airT:0, kt:0, pt:0, ct:0, clock:0,
+  px:0, pz:0, has:false, spd:0, vl:0, vf:0, psi:0, K:1, as:1, ank0:0.166, toe0:0.046, ph:0, cyc:0, it:0, rate:1, dk:0, ud:0, hy:0, turn:null, tt:0, hy0:0, hyGo:0, wm:0, idleT:0, slow:true, stopG:null, stT:0, offT:9, landFoot:-1, landSnap:false, hipDrop:0, stillT:0, air:0, airT:0, kt:0, pt:0, ct:0, clock:0, leapLeft:0, leapStep:0, leapFoot:-1, af:0, al:0, pvf:0, pvl:0, hd:0, om:0, lp:0, lpv:0, lr:0, lrv:0, hipLift:0, hyX:0, cw:0, rollG:null, rollHy:0, rollT:0,
   feet:[newFoot(), newFoot()], legs:null, sync:new Map() };
 
 // ---- quaternions in flat arrays (scratch scalars: no objects) ----
@@ -95,7 +95,7 @@ function boot(){ if(A.booting) return; A.booting = true;
       for(const pre of D.gaits){ const row = C.dirs.map(d => clipOf(pre + d)); T.g.push(row); need.push(...row); } need.push(T.idle); }
     need.push(clipOf(C.kneel.idle), clipOf(C.prone.idle), clipOf(C.prone.crawl)); for(const k of Object.keys(C.trans)) if(Array.isArray(C.trans[k])) need.push(clipOf(C.trans[k][0]));
     if(need.some(g => !g)) throw new Error('a clip the graph names is not in the library');
-    A.airOK = !!(clipOf(C.air.up[0]) && clipOf(C.air.loop) && clipOf(C.air.down[0])); A.stopG = clipOf(C.stop.clip); A.ready = ANIMGRAPH_STAT.ready = true;
+    A.airOK = !!(clipOf(C.air.up[0]) && clipOf(C.air.loop) && clipOf(C.air.down[0])); A.stopG = clipOf(C.stop.clip); A.rollG = C.roll.on ? clipOf(C.roll.clip) : null; A.ready = ANIMGRAPH_STAT.ready = true;
   }).catch(e => { console.warn('[anim-graph] not started — the old legs stay:', e && e.message); ANIMGRAPH_STAT.failed = true; }); }
 function bind(R){ const Sb = R.pup.S, Db = R.pup.D; A.R = R; A.B = NB.map(n => Sb[n] || null); A.cal = false; if(A.B.some(b => !b)){ A.B = null; return false; }
   A.legs = ['Left', 'Right'].map(s => ['UpLeg', 'Leg', 'Foot', 'ToeBase'].map(n => Db[s + n] || null));   // the legs of the soldier that is seen (the foot lock works on him)
@@ -119,10 +119,15 @@ function measure(g, dx, dz, speed){ const M = 48, dtm = g.dur / M; let re1 = 0, 
 function nearest(g, I, flat){ let best = Infinity, bp = 0, lf = 0; for(let i = 0; i < 24; i++){ one(g, g.dur * i / 24); let d = 0; for(let c = 0; c < 3; c++){ if(flat && c === 1) continue; const a = FK[c] - I[c], b = FK[6 + c] - I[6 + c]; d += a * a + b * b; }   // (flat: over the ground only — a foot passing in the air above its place counts as there)
     if(d < best){ best = d; bp = i / 24; lf = FK[1] <= FK[7] ? 0 : 1; } } NEAR[0] = frac(bp - g.ph); NEAR[1] = lf; }   // (→ the phase, and which foot stands there)
 const NEAR = [0, 0];
+// GRAPH 3 where in the shared stride each foot comes down (its ankle reaching the ground): a running jump is timed onto one of these
+function touchdowns(g){ const M = 48; let pL = 1, pR = 1; g.td = [-1, -1];
+  for(let i = 0; i <= M * 2; i++){ one(g, g.dur * (i % M) / M); const hL = FK[1] - A.ank0, hR = FK[7] - A.ank0;
+    if(i > 0){ if(g.td[0] < 0 && hL < 0.03 && pL >= 0.03) g.td[0] = frac((i % M) / M - g.ph); if(g.td[1] < 0 && hR < 0.03 && pR >= 0.03) g.td[1] = frac((i % M) / M - g.ph); } pL = hL; pR = hR; }
+  if(g.td[0] < 0) g.td[0] = 0.02; if(g.td[1] < 0) g.td[1] = frac(g.td[0] + 0.5); }
 const IDLE = new Float32Array(12);
 function calibrate(){ if(A.cal || !A.ready) return; A.cal = true; one(SETS.stand.idle, 0); A.ank0 = (FK[1] + FK[7]) / 2; A.toe0 = (FK[4] + FK[10]) / 2;
   for(const k of Object.keys(SETS)){ const T = SETS[k]; T.v.length = 0; for(const row of T.g){ let s = 0; for(const g of row){ measure(g, g.dx, g.dz, true); s += g.sp; } T.v.push(s / row.length); }
-    IDLE.set(one(T.idle, 0)); for(const row of T.g) for(const g of row){ nearest(g, IDLE); g.ph0 = NEAR[0]; }
+    IDLE.set(one(T.idle, 0)); for(const row of T.g) for(const g of row){ nearest(g, IDLE); g.ph0 = NEAR[0]; touchdowns(g); }
     if(A.airOK){ IDLE.set(one(CLIPS.get(C.air.down[0]), C.air.down[2])); for(const row of T.g) for(const g of row){ nearest(g, IDLE, true); g.phL = NEAR[0]; g.phLf = NEAR[1]; } } }   // (and nearest the feet he lands a jump on)
   for(const t of SETS.stand.turn.concat(SETS.crouch.turn, SETS.stand.wide, SETS.crouch.wide)) if(t && t.yaw === undefined){ animRootAt(t.id, t.dur, _r3); t.yaw = _r3[2] || 1; }
   if(A.stopG){ animRootAt(A.stopG.id, A.stopG.dur, _r3); A.stopG.len = _r3[1]; } }   // (how far the stop clip still travels, in his own metres)
@@ -136,10 +141,17 @@ function planLoco(dt){ const T = SETS[A.set], K = A.K, s = Math.hypot(A.vl, A.vf
   if(s > 0.05){ const th = (Math.atan2(A.vl, A.vf) + TAU) % TAU, k = Math.min(7, Math.floor(th / Q45)), be = th - k * Q45, sb = Math.sin(be), sc = Math.sin(Q45 - be); A.dk = k; A.ud = sb + sc > 1e-6 ? sb / (sb + sc) : 0; }   // the two bearings either side, shared so the blend's own heading is his
   const k0 = A.dk, k1 = (k0 + 1) % 8, ud = A.ud; A.EN = 0; let turning = false;
   // stood still: his legs stay where they are planted while the body (the aim) turns over them, then step round with a turn clip once it is too far
-  if(a < 0.04 && !A.turn && Math.abs(A.hy) > C.turn.at){ const w = Math.abs(A.hy) > C.turn.wide && T.wide[A.hy < 0 ? 0 : 1], g = w || T.turn[A.hy < 0 ? 0 : 1]; if(g){ A.turn = g; A.tt = 0; A.hy0 = A.hy; A.hyGo = w ? A.hy : clamp(A.hy, -C.turn.max, C.turn.max);   // (far round: the about-turn clip takes it whole)
+  // GRAPH 3 judged on where the body is GOING (the aim he is turning to), not where it has got to: a quick swing round to 150° is an about-turn from its
+  //   first step, not a quarter turn that the rest of the swing then drags round on planted feet
+  const P0 = S.player, hyE = A.hy - (P0 && P0.aim !== undefined ? wrapA(P0.aim - P0.facing) : 0);
+  if(a < 0.04 && !A.turn && Math.abs(hyE) > C.turn.at && Math.abs(A.hy) > C.turn.early){ const w = Math.abs(hyE) > C.turn.wide && T.wide[hyE < 0 ? 0 : 1], g = w || T.turn[hyE < 0 ? 0 : 1]; if(g){ A.turn = g; A.tt = 0; A.hy0 = A.hy; A.hyX = 0; A.hyGo = w ? hyE : clamp(hyE, -C.turn.max, C.turn.max);   // (far round: the about-turn clip takes it whole)
       A.kick = Math.max(A.kick, C.inert.half); } }   // (a clip turns him no more than turn.max: the rest is the next one's)
-  if(A.turn){ const g = A.turn; A.tt += dt * C.turn.rate; animRootAt(g.id, Math.min(g.dur, A.tt), _r3); const done = clamp(_r3[2] / g.yaw, 0, 1); A.hy = A.hy0 - A.hyGo * done;
-    if(A.tt >= g.dur * C.turn.end || a > 0.3){ A.turn = null; A.kick = Math.max(A.kick, C.inert.half); } else { put(g, A.tt, C.turn.rate, 1, false); turning = true; } }
+  // GRAPH 3 the clip keeps up with the body: if the chest has swung round further than the hips can twist (turn.lag), the clip runs on (up to catchUp × its
+  //   pace) until the legs are back within it — a quick swing round is a quick pivot on the feet, never planted feet dragged round under him
+  if(A.turn){ const g = A.turn, t0 = A.tt, tm = Math.min(g.dur, t0 + dt * C.turn.rate * C.turn.catchUp); let t = Math.min(g.dur, t0 + dt * C.turn.rate), done = 0;
+    for(;;){ animRootAt(g.id, t, _r3); done = clamp(_r3[2] / g.yaw, 0, 1); if(Math.abs(A.hy0 + A.hyX - A.hyGo * done) <= C.turn.lag || t >= tm) break; t = Math.min(tm, t + 1 / 240); }
+    A.tt = t; A.hy = A.hy0 - A.hyGo * done + A.hyX;   // (+ what the body turned on since the clip began)
+    if(A.tt >= g.dur * C.turn.end || a > 0.3){ A.turn = null; A.kick = Math.max(A.kick, C.inert.half); } else { put(g, A.tt, (A.tt - t0) / dt, 1, false); turning = true; } }
   else if(a > 0.04) A.hy *= Math.exp(-dt * C.turn.settle);   // on the move the legs come round under him within a stride
   if(!turning){ A.it = (A.it + dt) % T.idle.dur; put(T.idle, A.it, 1, 1 - a, true);
     const w0 = a * (1 - u), w1 = a * u; put(T.g[j0][k0], 0, 0, w0 * (1 - ud), true); put(T.g[j0][k1], 0, 0, w0 * ud, true); if(j1 >= 0){ put(T.g[j1][k0], 0, 0, w1 * (1 - ud), true); put(T.g[j1][k1], 0, 0, w1 * ud, true); } }
@@ -154,11 +166,18 @@ function planLoco(dt){ const T = SETS[A.set], K = A.K, s = Math.hypot(A.vl, A.vf
     for(let i = 0; i < A.EN; i++) if(EC[i].moves && (m < 0 || EW[i] > EW[m])) m = i; if(m >= 0){ A.ph = EC[m].ph0; A.kick = Math.max(A.kick, C.inert.half); } } A.wm = wm; A.idleT = wm < 0.02 && !turning ? A.idleT + dt : 0;
   // the stride: one phase for every clip, run at his real speed over what the blend covers a second at its natural pace
   if(Dm > 0){ const D = Dm / Wm, Vb = Math.hypot(vx, vz) / Dm * K * (Wm / (W || 1)), r = Wm > 0.02 ? clamp(A.spd / Math.max(0.05, Vb), C.rate[0], C.rate[1]) : 0; A.rate = r || 1;
-    A.ph += r * dt / D; if(A.ph >= 1){ A.ph -= Math.floor(A.ph); A.cyc++; }
+    A.ph += A.leapStep > 0 ? A.leapStep : r * dt / D; if(A.ph >= 1){ A.ph -= Math.floor(A.ph); A.cyc++; }
     for(let i = 0; i < A.EN; i++){ const g = EC[i]; if(!g.moves) continue; ET[i] = frac(A.ph + g.ph) * g.dur; EB[i] = r * g.dur / D; } }
   else A.rate = 1; }
-function planProne(dt){ const s = Math.hypot(A.vl, A.vf), I = CLIPS.get(C.prone.idle), W = CLIPS.get(C.prone.crawl), cw = smooth(clamp(s / C.prone.crawlV, 0, 1)), r = clamp(A.spd / Math.max(0.05, W.sp * A.K), C.prone.rate[0], C.prone.rate[1]);
-  A.pt = (A.pt + dt) % I.dur; if(cw > 0.004) A.ct = (A.ct + dt * r) % W.dur; A.EN = 0; put(I, A.pt, 1, 1 - cw, true); put(W, A.ct, r, cw, true); A.rate = r; }
+// GRAPH 3 THE CRAWL LAID ON THE GROUND: a belly crawl does not move evenly (a reach that goes nowhere, then a pull that surges), the game moves him evenly —
+//   so the clip is played by the ground he covers, not by the clock: its own root travel is matched to his (within prone.rate × its pace), the reach
+//   hurried, the pull at the pace of the ground: elbows and knees stay where they dig in instead of skating through the slow half
+function rootAdv(g, t0, t1){ animRootAt(g.id, t0, _r3); const a = _r3[1]; if(t1 <= g.dur){ animRootAt(g.id, t1, _r3); return _r3[1] - a; } return g.len - a + rootAdv(g, 0, t1 - g.dur); }
+function planProne(dt){ const s = Math.hypot(A.vl, A.vf), I = CLIPS.get(C.prone.idle), W = CLIPS.get(C.prone.crawl), c1 = smooth(clamp(s / C.prone.crawlV, 0, 1)), cw = A.cw += (c1 - A.cw) * Math.min(1, dt / C.prone.blendT), r0 = A.spd / Math.max(0.05, W.sp * A.K); let r = clamp(r0, C.prone.rate[0], C.prone.rate[1]);
+  if(W.len === undefined){ animRootAt(W.id, W.dur, _r3); W.len = _r3[1] > 0.05 ? _r3[1] : 0; }
+  A.pt = (A.pt + dt) % I.dur; if(cw > 0.004){ const t0 = A.ct; let t = t0 + dt * r;
+    if(W.len && C.prone.match && r0 > C.prone.rate[0]){ const d = A.spd * dt / A.K, lo = t0 + dt * Math.max(C.prone.rate[0], r0 * C.prone.band[0]), hi = t0 + dt * Math.min(C.prone.rate[1], r0 * C.prone.band[1]); t = lo; while(t < hi && rootAdv(W, t0, t) < d) t = Math.min(hi, t + 1 / 240); r = (t - t0) / dt; }
+    A.ct = t % W.dur; } A.EN = 0; put(I, A.pt, 1, 1 - cw, true); put(W, A.ct, r, cw, true); A.rate = r; }
 function planAir(){ const U = C.air.up, Dn = C.air.down; A.EN = 0;
   if(A.air === 0) put(CLIPS.get(U[0]), A.tt, (U[2] - U[1]) / C.air.upT, 1, false); else if(A.air === 1) put(CLIPS.get(C.air.loop), A.tt, 1, 1, true); else put(CLIPS.get(Dn[0]), A.tt, A.air === 3 ? C.air.landRate : 1, 1, false); }
 // the sum of the plan, `back` seconds ago (0 = now) → ACC (normalised)
@@ -166,12 +185,23 @@ function evalPlan(back, m){ zero(m); for(let i = 0; i < A.EN; i++){ const g = EC
 // the target pose: what the game posed, then the graph's hips and legs over it, its spine by ANIMGRAPH.spine, a one-shot on top
 function target(out, back, old){ out.set(old);
   if(A.own && A.EN){ evalPlan(back, M_BODY); for(let i = 0; i < N; i++){ if(!M_BODY[i] || !(AW[i] > 0)) continue; const o = i * 4;
-      if(i >= 1 && i <= 3) THREE.Quaternion.slerpFlat(out, o, old, o, ACC, o, C.spine[i - 1]); else { out[o] = ACC[o]; out[o + 1] = ACC[o + 1]; out[o + 2] = ACC[o + 2]; out[o + 3] = ACC[o + 3]; } }
-    if(AW[N] > 0){ out[PO] = ACC[PO]; out[PO + 1] = ACC[PO + 1]; out[PO + 2] = ACC[PO + 2]; } }
+      if(i >= 1 && i <= 3) THREE.Quaternion.slerpFlat(out, o, old, o, ACC, o, A.st === 'roll' ? 1 : C.spine[i - 1]); else { out[o] = ACC[o]; out[o + 1] = ACC[o + 1]; out[o + 2] = ACC[o + 2]; out[o + 3] = ACC[o + 3]; } }
+    if(AW[N] > 0){ out[PO] = ACC[PO]; out[PO + 1] = ACC[PO + 1]; out[PO + 2] = ACC[PO + 2]; }
+    if(A.lp || A.lr){ _q0.fromArray(out, 0).premultiply(ARMQ).invert(); _a.set(1, 0, 0).applyQuaternion(_q0); _b.set(0, 0, 1).applyQuaternion(_q0);   // (his own across / ahead, in the hips' frame)
+      _q.setFromAxisAngle(_a, A.lp); _q1.setFromAxisAngle(_b, -A.lr); _q.multiply(_q1); _q1.fromArray(out, 4).premultiply(_q); _q1.toArray(out, 4); } }
   if(SH.g){ const m = SH.mask; zero(m); let t = SH.t - SH.rate * back; if(t < 0) t = SH.loop ? t + SH.g.dur : 0; accum(SH.g, t, 1, m);
     for(let i = 0; i < N; i++){ if(!m[i] || !(AW[i] > 0)) continue; const o = i * 4; out[o] = ACC[o]; out[o + 1] = ACC[o + 1]; out[o + 2] = ACC[o + 2]; out[o + 3] = ACC[o + 3]; }
     if(m[0] && AW[N] > 0){ out[PO] = ACC[PO]; out[PO + 1] = ACC[PO + 1]; out[PO + 2] = ACC[PO + 2]; } } }
 
+// GRAPH 3 WEIGHT: his trunk leans into what his legs are doing to him — forward as he drives off, back as he brakes on his own stride, into a bend
+//   (the pull round it: speed × how fast his way turns) — on a critically damped spring, so it swings in and settles, never snaps. Laid on the lowest
+//   spine bone (the hips and legs stay the clip's, the planted feet stay put), less while he fires, little in the braking clip (it leans by itself)
+function lean(dt, wx, wz, own){ const L = C.lean, k = 1 - Math.exp(-dt * 0.6931 / L.accHalf), af = (A.vf - A.pvf) / dt, al = (A.vl - A.pvl) / dt; A.pvf = A.vf; A.pvl = A.vl;
+  let om = 0; if(A.spd > L.turnV){ const hd = Math.atan2(wx, wz); om = wrapA(hd - A.hd) / dt; A.hd = hd; } else A.hd = Math.atan2(wx, wz);
+  const ok = L.on && own && (A.st === 'loco' || A.st === 'stop') && A.set === 'stand'; A.af += ((ok ? af : 0) - A.af) * k; A.al += ((ok ? al : 0) - A.al) * k; A.om += ((ok ? clamp(om, -L.omMax, L.omMax) : 0) - A.om) * k;
+  const g = !ok ? 0 : (A.st === 'stop' ? L.stop : 1) * (S.firing ? L.aim : 1), tp = clamp(L.k * A.af, -L.back, L.fwd) * g, tr = clamp(L.kr * (A.al + A.spd * A.om), -L.side, L.side) * g;
+  const y = 2 * 0.6931 / L.half, ey = Math.exp(-y * dt); let j = A.lpv + (A.lp - tp) * y; A.lp = tp + ey * (A.lp - tp + j * dt); A.lpv = ey * (A.lpv - j * y * dt);
+  j = A.lrv + (A.lr - tr) * y; A.lr = tr + ey * (A.lr - tr + j * dt); A.lrv = ey * (A.lrv - j * y * dt); if(Math.abs(A.lp) + Math.abs(A.lr) + Math.abs(A.lpv) + Math.abs(A.lrv) < 1e-5) A.lp = A.lr = A.lpv = A.lrv = 0; }
 // ---- which state: 0 stood (the blend space) · 1 crouched on the move (its crouch set) · 2 on a knee · 3 on his belly; a transition clip between ----
 const code = () => A.st === 'loco' ? (A.set === 'crouch' ? 1 : 0) : A.st === 'kneel' ? 2 : A.st === 'prone' ? 3 : -1;
 function settle(c, half){ A.st = c <= 1 ? 'loco' : c === 2 ? 'kneel' : 'prone'; if(c <= 1) A.set = c ? 'crouch' : 'stand'; A.turn = null; A.kick = Math.max(A.kick, half); }
@@ -185,6 +215,8 @@ function route(cur, want, still){ const I = C.inert; if(cur === want){ if(A.st !
   if(cur === 2 && want === 0 && still) return trans('kneelStand', 0, want);
   settle(want, I.stance); }
 function airStep(dt, inAir){ const J = CV.jump, U = C.air.up, Dn = C.air.down; A.airT += dt;
+  if(A.air === 4){ if(!inAir) return false; let tl = 0.5; if(J && !J.climb){ const g = CAV.moves.jump.g; tl = (J.vy + Math.sqrt(Math.max(0, J.vy * J.vy + 2 * g * Math.max(0, J.y)))) / g; }   // (the leap: what is left of the stride spread over what is left of the flight)
+    A.leapStep = A.leapLeft * Math.min(1, dt / Math.max(dt, tl)); A.leapLeft -= A.leapStep; return true; }
   if(inAir){ let tl = 9; if(J && !J.climb){ const g = CAV.moves.jump.g; tl = (J.vy + Math.sqrt(Math.max(0, J.vy * J.vy + 2 * g * Math.max(0, J.y)))) / g; }   // how long until he is down
     if(A.air === 3){ A.air = 0; A.airT = 0; A.kick = Math.max(A.kick, C.inert.half); }
     if(tl < Dn[2] - Dn[1]){ if(A.air !== 2){ A.air = 2; A.kick = Math.max(A.kick, C.inert.half); } A.tt = Dn[2] - tl; }   // the reach for the ground, timed to arrive with it
@@ -195,9 +227,20 @@ function airStep(dt, inAir){ const J = CV.jump, U = C.air.up, Dn = C.air.down; A
   if(A.air !== 3){ if(A.air !== 2) A.kick = Math.max(A.kick, C.inert.half); A.tt = Math.max(A.air === 2 ? A.tt : 0, Dn[2]); A.air = 3; }
   A.tt += dt * C.air.landRate; return A.tt < Dn[3]; }                                                  // stood: the give at the knees, then up
 function think(dt, P){ const MV = P.move, sm = Math.hypot(A.vl, A.vf), still = sm < C.kneel.stillV, inAir = !!(MV && MV.air); A.stillT = still ? A.stillT + dt : 0;
-  if(inAir && A.st !== 'air'){ A.st = 'air'; A.air = 0; A.airT = 0; A.turn = null; A.kick = Math.max(A.kick, C.inert.half); }
-  if(A.st === 'air'){ if(airStep(dt, inAir)){ planAir(); A.legMode = 'air'; return; } A.st = 'off';
-    if(A.spd > C.trans.cutV && A.spd < C.air.snapV) A.landSnap = true; }   // down on the move, at a walk's pace: into the stride where its feet are nearest the pair he lands on (planLoco), the standing one planted where
+  // GRAPH 3 THE ROLL IS THE LIBRARY'S: over the shoulder with the whole trunk (the clip's dive-and-roll, from where his hands go down to where he is up on
+  //   his feet again), laid on the game's own roll clock — the body is no longer a stiff tuck turned over as one piece; legs turned the way he rolls
+  if(MV && MV.roll >= 0 && A.rollG){ const RL = C.roll, t = RL.t[0] + (RL.t[1] - RL.t[0]) * MV.roll; if(A.st !== 'roll'){ A.st = 'roll'; A.turn = null; A.kick = Math.max(A.kick, RL.half); A.rollT = t; A.rollHy = CV.roll && S.player ? wrapA(CV.roll.a - S.player.facing) : 0; }
+    A.hy = A.rollHy; A.EN = 0; put(A.rollG, t, Math.max(0, t - A.rollT) / dt, 1, false); A.rollT = t; A.legMode = 'roll'; return; }
+  if(A.st === 'roll'){ A.st = 'off'; A.kick = Math.max(A.kick, C.roll.half); }
+  if(inAir && A.st !== 'air'){ const J = CV.jump; A.air = 0; A.airT = 0; A.turn = null;
+    // GRAPH 3 A RUNNING JUMP IS A LEAP: off at a run, the stride itself carries on through the air — slowed so that the next foot to come down (at least
+    //   leap.min of a stride on: the legs scissor) arrives exactly as he lands, and on from there without a cut — not the stood jump's tuck and a new stride
+    if(C.leap.on && A.st === 'loco' && A.set === 'stand' && A.spd > C.leap.v && J && !J.climb && A.EN){ let best = 9, foot = 0; let m = -1; for(let i = 0; i < A.EN; i++) if(EC[i].moves && (m < 0 || EW[i] > EW[m])) m = i;
+      if(m >= 0 && EC[m].td){ for(let s = 0; s < 2; s++){ let d = frac(EC[m].td[s] - A.ph); while(d < C.leap.min) d += 1; if(d < best){ best = d; foot = s; } } A.air = 4; A.leapLeft = best; A.leapFoot = foot; } }
+    A.st = 'air'; if(A.air !== 4) A.kick = Math.max(A.kick, C.inert.half); }
+  if(A.st === 'air'){ if(airStep(dt, inAir)){ if(A.air === 4){ planLoco(dt); A.leapStep = 0; } else planAir(); A.legMode = 'air'; return; }
+    if(A.air === 4){ A.st = 'loco'; A.landFoot = A.leapFoot; A.slow = false; A.leapStep = 0; A.air = 0; }
+    else { A.st = 'off'; if(A.spd > C.trans.cutV && A.spd < C.air.snapV) A.landSnap = true; } }   // down on the move, at a walk's pace: into the stride where its feet are nearest the pair he lands on (planLoco), the standing one planted where
   //   it came down, the other lifted off at once. (At a run this measured no better than going straight back into the stride — it wants a running-jump clip.)
   // PULLING UP FROM A RUN (the push let go — CV.moveT back to 0 — while he still runs ahead): the library's run-to-stop, a braking step. It is laid on the
   //   ground, not on the clock: the clip stands where the ground it still has to cover equals the ground HE still has to cover (v² / 2a at the game's braking)
@@ -233,7 +276,7 @@ export function graphPose(cv, R, G, dt, P, mounted, ok){
   // what was written over the game's pose last frame is taken back first: its mixer only writes a value that changed, and reads none
   for(let i = 0; i < N; i++) if(WROTE[i]){ const o = i * 4; B[i].quaternion.set(OLD[o], OLD[o + 1], OLD[o + 2], OLD[o + 3]); WROTE[i] = 0; } if(WROTE[N]){ B[0].position.set(OLD[PO], OLD[PO + 1], OLD[PO + 2]); WROTE[N] = 0; }
   if(!C.on){ const L = R.ownLegs; if(L){ L.w = 0; L.on = false; L.mode = null; L.tr = null; L.prev = null; } reset(); ST.st = 'off'; R.om.update(dt); return true; }   // switched off while it ran: handed back whole
-  const MV = P.move, own = !mounted && !P.dead && !P.trans && (!P.climb || P.climb === 'top') && !(MV && MV.roll >= 0) && !(MV && MV.air && !A.airOK);
+  const MV = P.move, own = !mounted && !P.dead && !P.trans && (!P.climb || P.climb === 'top') && !(MV && MV.roll >= 0 && !A.rollG) && !(MV && MV.air && !A.airOK);
   // his run clip (its shoulders are still his) keeps the graph's stride
   if(own && A.own && A.st === 'loco' && C.sync[ok] && R.OA && R.OA[ok] && Math.hypot(A.vl, A.vf) > 0.5){ const act = R.OA[ok]; let g = A.sync.get(ok);
     if(g === undefined){ g = mkClip(act.getClip(), null); if(g){ g.sp = 0; measure(g, 0, 1, false); } A.sync.set(ok, g || null); }
@@ -245,8 +288,10 @@ export function graphPose(cv, R, G, dt, P, mounted, ok){
   G.getWorldPosition(_v); G.getWorldQuaternion(_q); _a.set(0, 0, 1).applyQuaternion(_q); const psi = Math.atan2(_a.x, _a.z); let wx = 0, wz = 0;
   if(A.has){ wx = (_v.x - A.px) / dt; wz = (_v.z - A.pz) / dt; if(wx * wx + wz * wz > 400){ wx = wz = 0; A.feet[0].has = A.feet[1].has = false; A.feet[0].on = A.feet[1].on = false; } }   // (moved, not walking: a respawn)
   if(A.has && own && A.st === 'loco' && !A.turn && Math.hypot(A.vl, A.vf) < C.turn.moveV) A.hy = wrapA(A.hy - wrapA(psi - A.psi));   // stood still: the legs keep their heading as the body turns
+  else if(A.has && A.turn) A.hyX -= wrapA(psi - A.psi);
   A.px = _v.x; A.pz = _v.z; A.has = true; A.psi = psi; A.spd = Math.hypot(wx, wz); A.clock += dt;
   const pl = psi + A.hy, vf = wx * Math.sin(pl) + wz * Math.cos(pl), vl = wx * Math.cos(pl) - wz * Math.sin(pl), kv = 1 - Math.exp(-dt * 0.6931 / C.velHalf); A.vf += (vf - A.vf) * kv; A.vl += (vl - A.vl) * kv;
+  lean(dt, wx, wz, own);
   if(own !== A.own){ A.own = own; A.kick = Math.max(A.kick, C.inert.stance); if(!own){ A.st = 'off'; A.EN = 0; A.turn = null; const L = R.ownLegs; if(L){ L.w = 0; L.on = false; L.mode = null; L.tr = null; L.prev = null; } } }
   if(own){ think(dt, P); if(jumped()) A.kick = Math.max(A.kick, C.inert.half); } else { A.hy *= Math.exp(-dt * C.turn.settle); A.PN = 0; }
   if(SH.g){ SH.t += dt * SH.rate; if(SH.t >= SH.t1){ if(SH.loop) SH.t -= SH.t1; else if(SH.hold) SH.t = SH.t1; else { SH.g = null; A.kick = Math.max(A.kick, SH.half); } } }
@@ -294,23 +339,34 @@ export function graphFeet(cv, R, G, dt, P){ if(cv !== CV || !A.live || !A.own ||
     // down from a jump at a run: the foot the stride stands on is planted where it came down; the other is already on its way — lifted off at once, not dragged
     if(A.landFoot >= 0 && can && F.has){ if(A.landFoot === s){ if(!F.on && h < Fc.hOff){ F.on = true; F.rest = false; F.lx = F.px + F.ox; F.lz = F.pz + F.oz; } } else { F.on = false; F.fly = Fc.flyT; } if(s) A.landFoot = -1; }
     if(F.fly > 0){ F.fly -= dt; if(h > Fc.hOff) F.fly = 0; }
-    if(F.on){ if(!can || h > Fc.hOff || (sp > Fc.slowV && va > Fc.vOff[0] + Fc.vOff[1] * sp && va > F.va)){ F.on = false; const k = va > Fc.peel ? Fc.peel / va : 1; F.ovx = -(_b.x - F.px) / dt * k; F.ovz = -(_b.z - F.pz) / dt * k; } }   // let go: it leaves the ground from rest, then catches the clip up
-    else if(can && F.has && !F.rest && !(F.fly > 0) && h < Fc.hOn && (sp < Fc.slowV || va < Fc.vOn[0] + Fc.vOn[1] * sp || (sp > Fc.landV && va < Fc.vLand[0] + Fc.vLand[1] * sp && va < F.va - Fc.brake * dt && h < F.h + 0.002))){ F.on = true; const rx = F.px - _b.x, rz = F.pz - _b.z, rl = Math.hypot(rx, rz), rk = rl > Fc.retro ? Fc.retro / rl : 1; F.lx = _b.x + F.ox + rx * rk; F.lz = _b.z + F.oz + rz * rk;   // down: held where it was SHOWN a frame ago (no further back than `retro`) — it does not move on the frame it lands either
+    // GRAPH 3 below a run (a walk, a change of direction, setting off) a planted foot is not let go just because the blend carries its pose off fast — that
+    //   dragged it along the ground: it stays put until the clip lifts it, or, pulled more than feet.pull from where the clip wants it, it STEPS there (below)
+    if(F.on && can && sp > Fc.slowV && sp < Fc.vRelV && h <= Fc.hOff && Math.hypot(F.ox, F.oz) > Fc.pull && !A.feet[1 - s].rest){ F.on = false; F.rest = true; F.st = -1; F.o0 = Math.hypot(F.ox, F.oz); F.ovx = F.ovz = 0; }
+    if(F.on){ if(!can || h > Fc.hOff || (sp > Fc.vRelV && va > Fc.vOff[0] + Fc.vOff[1] * sp && va > F.va)){ F.on = false; const k = va > Fc.peel ? Fc.peel / va : 1; F.ovx = -(_b.x - F.px) / dt * k; F.ovz = -(_b.z - F.pz) / dt * k; } }   // let go: it leaves the ground from rest, then catches the clip up
+    else if(can && F.has && !F.rest && !(F.fly > 0) && h < Fc.hOn && (sp < Fc.slowV || (Fc.walkLock && sp < Fc.vRelV && h <= F.h + 0.001) || va < Fc.vOn[0] + Fc.vOn[1] * sp || (sp > Fc.landV && va < Fc.vLand[0] + Fc.vLand[1] * sp && va < F.va - Fc.brake * dt && h < F.h + 0.002))){ F.on = true; const rx = F.px - _b.x, rz = F.pz - _b.z, rl = Math.hypot(rx, rz), rk = rl > Fc.retro ? Fc.retro / rl : 1; F.lx = _b.x + F.ox + rx * rk; F.lz = _b.z + F.oz + rz * rk;   // down: held where it was SHOWN a frame ago (no further back than `retro`) — it does not move on the frame it lands either
       if(sp > Fc.stepV && A.clock - F.last > Fc.stepGap){ F.last = A.clock; afxFoot(S.player, F.lx, F.lz, sp); } }
     // stood still a while on feet left a stride apart — or gone onto a knee / changing stance, where the clip's own footing matters at once: one at a
     //   time, the further one steps (lifted) to where the clip stands it
-    if(F.on && (A.st === 'loco' ? A.idleT > Fc.restT && !A.turn : A.st !== 'stop' && sp < Fc.slowV)){ const O = A.feet[1 - s], d2 = F.ox * F.ox + F.oz * F.oz; if(d2 > Fc.rest * Fc.rest && !O.rest && d2 >= O.ox * O.ox + O.oz * O.oz){ F.on = false; F.rest = true; F.o0 = Math.sqrt(d2); F.ovx = F.ovz = 0; } }
+    if(F.on && (A.st === 'loco' ? A.idleT > Fc.restT && !A.turn : A.st !== 'stop' && sp < Fc.slowV)){ const O = A.feet[1 - s], d2 = F.ox * F.ox + F.oz * F.oz; if(d2 > Fc.rest * Fc.rest && !O.rest && d2 >= O.ox * O.ox + O.oz * O.oz){ F.on = false; F.rest = true; F.st = -1; F.o0 = Math.sqrt(d2); F.ovx = F.ovz = 0; } }
     if(F.on){ F.ox = F.lx - _b.x; F.oz = F.lz - _b.z; locks++; }
+    // GRAPH 3 A STEP IS A STEP: up, over, down — the foot leaves the ground before it travels and is down before it stops (a timed arc of feet.stepT ×
+    //   its length), never a glide along the ground that only lifts in the middle
+    else if(F.rest && F.st !== undefined && Fc.arc){ if(F.st < 0){ F.st = 0; F.rx = F.ox; F.rz = F.oz; F.o0 = Math.max(F.o0 || 0, Math.hypot(F.ox, F.oz)); } F.st += dt; const T = clamp(Fc.stepT[0] + Fc.stepT[1] * F.o0, Fc.stepT[0], Fc.stepT[2]), u = Math.min(1, F.st / T), k = 1 - smooth(clamp((u - 0.2) / 0.65, 0, 1));
+      F.ox = F.rx * k; F.oz = F.rz * k; F.ovx = F.ovz = 0; if(u >= 1){ F.rest = false; F.ox = F.oz = 0; } }
     else if(F.ox || F.oz){ const y = F.rest ? y1 : y0, ey = F.rest ? ey1 : ey0, jx = F.ovx + F.ox * y, jz = F.ovz + F.oz * y;   // (a deliberate step takes its time)
       F.ox = ey * (F.ox + jx * dt); F.ovx = ey * (F.ovx - jx * y * dt); F.oz = ey * (F.oz + jz * dt); F.ovz = ey * (F.ovz - jz * y * dt); if(F.ox * F.ox + F.oz * F.oz < 1e-8) F.ox = F.oz = F.ovx = F.ovz = 0; }
-    let lift = 0; if(F.rest){ const o = Math.hypot(F.ox, F.oz), u = F.o0 > 1e-4 ? 1 - o / F.o0 : 1; if(o < Fc.rest * 0.12 || sp > Fc.slowV * 2) F.rest = false; else lift = Math.min(Fc.liftMax, Fc.lift * F.o0) * 4 * u * (1 - u); } if(F.fly > 0) lift = Fc.liftMax; F.ly += (lift - F.ly) * Math.min(1, dt * 30);
+    let lift = 0; if(F.rest && !Fc.arc){ const o = Math.hypot(F.ox, F.oz), u = F.o0 > 1e-4 ? 1 - o / F.o0 : 1; if(o < Fc.rest * 0.12 || sp > Fc.slowV * 2) F.rest = false; else lift = Math.min(Fc.liftMax, Fc.lift * F.o0) * 4 * u * (1 - u); } else if(F.rest){ if(sp > Fc.vRelV){ F.rest = false; } else { const T = clamp(Fc.stepT[0] + Fc.stepT[1] * F.o0, Fc.stepT[0], Fc.stepT[2]), u = Math.min(1, Math.max(0, F.st) / T); lift = Math.max(Fc.liftMin, Math.min(Fc.liftMax, Fc.lift * F.o0)) * Math.sin(Math.PI * u); } } if(F.fly > 0) lift = Fc.liftMax; F.ly += (lift - F.ly) * Math.min(1, dt * 30);
     F.px = _b.x; F.pz = _b.z; F.has = true; F.h = h; F.va = va; F.ax = _a.x; F.ay = _a.y; F.az = _a.z; F.fl = Math.hypot(_b.x - _a.x, _b.z - _a.z); }
   // SLOPE 1 THE GROUND UNDER EACH FOOT (as the old legs had it — actors/soldier-legs.js; its numbers kept: GUNFEEL.feet.slope, SOLDIER_LEGS.maxDrop): a
   //   foot stands on the ground under IT, not on the level through his middle — up onto a rise at once (it must clear it), down into a dip only as it
   //   comes down; his hips ride the mean of the two (so crossing a step he rises through it, not at its edge) and come down further, at most maxDrop,
   //   when the lower leg would run out; a planted foot lies along the slope under it
   const SL = C.slope, GS = GUNFEEL.feet.slope, onG = SL.on && can && A.st !== 'air'; let dH = 0;
-  if(SL.on){ const base = soleAt(A.px, A.pz), dmax = SL.vmax * dt; let any = A.hipDrop !== 0;   // (kept in WORLD heights, so the level through his middle jumping at a kerb moves nothing that is seen)
+  if(SL.on){ const base = soleAt(A.px, A.pz), dmax = SL.vmax * dt, HF = C.stop.hipMin; let any = A.hipDrop !== 0;
+    // GRAPH 3 pulling up he brakes on a long step, but his hips stay up over it (the clip sinks them ~0.3 m: it read as a fall): lifted to no lower than
+    //   stop.hipMin above the ground, smoothly (a soft floor `hipSoft` wide), the feet kept where they are — the knees straighten, nothing else moves
+    { const hip = A.legs[0][0] && A.legs[0][0].parent; let want = 0; if(hip && HF > 0 && A.st === 'stop'){ hip.getWorldPosition(_v); const hh = _v.y - base, w = C.stop.hipSoft; want = hh >= HF + w ? 0 : hh <= HF - w ? HF - hh : (HF + w - hh) * (HF + w - hh) / (4 * w); }
+      A.hipLift += (want - A.hipLift) * Math.min(1, dt * (want > A.hipLift ? 30 : 8)); if(A.hipLift < 1e-4 && !want) A.hipLift = 0; if(A.hipLift) any = true; }   // (kept in WORLD heights, so the level through his middle jumping at a kerb moves nothing that is seen)
     for(let s = 0; s < 2; s++){ const F = A.feet[s], x = F.px + F.ox, z = F.pz + F.oz; let g = onG ? soleAt(x, z) : base; if(g < base) g = base + (g - base) * (1 - clamp(F.h / SL.fade, 0, 1)); g = clamp(g, base - SL.max, base + SL.max);
       if(!F.gok){ F.gok = true; F.wy = g; } F.wy += clamp(g - F.wy, -dmax, dmax); F.gy = F.wy - base; if(Math.abs(F.gy) < 1e-4) F.gy = 0; else any = true;
       // the slope along the foot, read again only when the planted foot is somewhere new
@@ -321,16 +377,17 @@ export function graphFeet(cv, R, G, dt, P){ if(cv !== CV || !A.live || !A.own ||
       for(let s = 0; s < 2; s++){ const F = A.feet[s], up = A.legs[s][0]; if(!F.on || !up) continue; up.getWorldPosition(_h); const hd = Math.hypot(F.ax + F.ox - _h.x, F.az + F.oz - _h.z), rr = A.legLen * Fc.stretch;   // low enough for a standing leg to reach
         if(hd < rr) drop = Math.max(drop, _h.y + hy - (F.ay + F.gy - F.fl * Math.sin(F.gs) + Math.sqrt(rr * rr - hd * hd))); }
       drop = Math.min(drop, SOLDIER_LEGS.maxDrop); A.hipDrop += (drop - A.hipDrop) * Math.min(1, dt * SL.rate * (drop > A.hipDrop ? 3 : 1));   // (down at once for a leg that runs out, back up at ease)
-      if(A.hipDrop < 1e-4 && !drop) A.hipDrop = 0; dH = hy - A.hipDrop;
+      if(A.hipDrop < 1e-4 && !drop) A.hipDrop = 0; dH = hy - A.hipDrop + A.hipLift;
       if(dH && hip){ hip.getWorldPosition(_v); _v.y += dH; hip.parent.worldToLocal(_v); hip.position.copy(_v); hip.updateMatrixWorld(true); } } }
   for(let s = 0; s < 2; s++){ const F = A.feet[s], L4 = A.legs[s], up = L4[0], lg = L4[1], ft = L4[2], tb = L4[3]; if(!up || !lg || !ft || !tb) continue;
     const gy = F.gy - F.fl * Math.sin(F.gs);   // (the ball on the ground under it: laid along the slope, the ankle sits that much lower / higher)
-    if(F.ox || F.oz || F.ly > 1e-4 || Math.abs(gy - dH) > 1e-4){ if(!legIK(up, lg, ft, F.ax + F.ox, F.ay + F.ly + gy, F.az + F.oz) && F.on && (F.ox * F.ox + F.oz * F.oz > 1e-4)){ F.on = false; F.ovx = F.ovz = 0; tb.getWorldPosition(_b); F.ox = _b.x - F.px; F.oz = _b.z - F.pz; if(sp < Fc.slowV){ F.rest = true; F.o0 = Math.hypot(F.ox, F.oz); } } }   // (past his reach: let go, from where the leg got to — going slowly, as a lifted step)
+    if(F.ox || F.oz || F.ly > 1e-4 || Math.abs(gy - dH) > 1e-4){ if(!legIK(up, lg, ft, F.ax + F.ox, F.ay + F.ly + gy, F.az + F.oz) && F.on && (F.ox * F.ox + F.oz * F.oz > 1e-4) && !(sp < Fc.vRelV && A.feet[1 - s].rest)){ F.on = false; F.ovx = F.ovz = 0; tb.getWorldPosition(_b); F.ox = _b.x - F.px; F.oz = _b.z - F.pz; if(sp < Fc.vRelV){ F.rest = true; F.st = -1; F.o0 = Math.hypot(F.ox, F.oz); } } }   // (past his reach: let go, from where the leg got to — going slowly, as a lifted step)
     if(F.gs){ ft.getWorldPosition(_a); tb.getWorldPosition(_b); _b.sub(_a); _b.y = 0; if(_b.lengthSq() > 1e-8){ _b.normalize(); rotW(ft, _q.setFromAxisAngle(_n.set(-_b.z, 0, _b.x), F.gs)); } } }   // (about the line across the foot: toes up the slope)
   ST.locks = locks; A.ms += performance.now() - t0; ST.frames++; ST.ms = A.ms; ST.msSum += A.ms; if(A.ms > ST.msMax) ST.msMax = A.ms; return true; }
 // the planted hips' turn against the body (the operator is turned by it, the chest's twist takes it back), and whether the graph has his legs
 export function graphHipYaw(cv, hy){ return cv === CV && A.live && A.own ? A.hy : hy; }
 export function graphOwned(cv){ return cv === CV && A.live && A.own; }
+export function graphRolls(){ return A.live && A.own && A.st === 'roll'; }   // (game/soldier-moves.js: the clip rolls him — the body is not also turned over as one piece)
 export const graphState = () => A;   // (dev: a probe reads the phase, the feet, the planted turn)
 
 // ---- one-shots for the steps to come: a library clip over the body (or its upper / lower half), cut in and out by the same inertialization ----
