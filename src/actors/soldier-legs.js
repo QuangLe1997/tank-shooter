@@ -17,7 +17,7 @@
 //     knees on landing;
 //   · behind cover: kneeling or crouched behind it at exactly the height that lays the rifle on its top.
 import * as THREE from 'three';
-import { CAV, SOLDIER_LEGS } from '../../config.js';
+import { CAV, GUNFEEL, SOLDIER_LEGS } from '../../config.js';
 import { CV, climbBody, climbPh, climbing, ik2, mountOwn, mountPose, soleAt } from '../hub.js';
 const heightAt = soleAt;   // Z451 up on what he climbed his soles go down on its top (game/soldier-climb.js); on the ground it is the ground
 
@@ -75,6 +75,10 @@ export function soldierLegs(R, G, dt, P, mounted){ const D = R.pup && R.pup.D; i
   if(s > A.turnV){ if(L.br > 0 && Math.abs(rel) > Math.PI / 2 + A.hyst) L.br = -1; else if(L.br < 0 && Math.abs(rel) < Math.PI / 2 + A.hyst * 0.3) L.br = 1; } else if(!moving) L.br = 1;   // (straight to the side is walked hips-open, forward)
   const thT = s > A.turnV ? (L.br > 0 ? clamp(rel, -M.turn, M.turn) : clamp(wrapA(rel - Math.PI), -M.turnBack, M.turnBack)) * Math.min(1, s / A.turnFull) : 0;
   L.th += clamp(thT - L.th, -A.turnRate * dt, A.turnRate * dt);
+  // GUN 4 TURNING ON THE SPOT IS DONE WITH STEPS: stood still his pelvis stays with his feet (it turned with his chest at once, over feet that had not
+  //   moved: the knees wrung round) — the chest goes to the aim, the hips follow only as each foot steps round (the foot on the side he turns to first)
+  { const FT = GUNFEEL.feet; let ts = 0; if(!(s > A.turnV) && L.on){ const a0 = L.feet[0].yaw + A.toeOut, a1 = L.feet[1].yaw - A.toeOut; ts = clamp(wrapA(Math.atan2(Math.sin(a0) + Math.sin(a1), Math.cos(a0) + Math.cos(a1)) - psi) * FT.hipsK, -FT.hips, FT.hips); }
+    L.ts = (L.ts || 0) + clamp(ts - (L.ts || 0), -A.turnRate * dt, A.turnRate * dt); }
   const hy = psi + L.th; F2.set(Math.sin(hy), 0, Math.cos(hy)); R2.set(-Math.cos(hy), 0, Math.sin(hy));
   // ---- the steps ----
   const back = L.br < 0 && moving, c = clamp(M.cad[0] + s * M.cad[1], M.cad[0], M.cad[2]) * (back ? A.backCad : 1), Tsw = M.swing / c;
@@ -95,15 +99,20 @@ export function soldierLegs(R, G, dt, P, mounted){ const D = R.pup && R.pup.D; i
       const lat = (_d.x - o.p.x) * R2.x * sd + (_d.z - o.p.z) * R2.z * sd, ahead = (_d.x - o.p.x) * F2.x + (_d.z - o.p.z) * F2.z;
       if(lat < M.gap && Math.abs(ahead) < A.crossF) _d.addScaledVector(R2, sd * (M.gap - lat));
       step(f, _d, hy + sd * A.toeOut, Tsw, M.lift * (0.7 + 0.3 * Math.min(1, s / 1.5)), lat < M.gap ? Math.sign(ahead || 1) : 0); L.last = L.t; L.lastFoot = best; }
-    else if(!moving && L.t - L.last > A.idleGap){ for(const [, sd] of SIDES){ const i = sd < 0 ? 0 : 1, f = L.feet[i], want = hy + sd * A.toeOut; home(sd, _g.x, _g.z, _d, true);
-        if(_d.distanceTo(_e.copy(f.p).setY(0)) > M.idle || Math.abs(wrapA(f.yaw - want)) > A.yawStep){ step(f, _d, want, A.idleT, M.lift * 0.6); L.last = L.t; L.lastFoot = i; break; } } } }
+    else if(!moving && L.t - L.last > A.idleGap){ const lead = wrapA(hy - A.toeOut - L.feet[0].yaw) > 0 ? 0 : 1;   // (GUN 4 turning left the left foot goes first, right the right)
+      for(let q = 0; q < 2; q++){ const i = q ? 1 - lead : lead, sd = i ? 1 : -1, f = L.feet[i], want = hy + sd * A.toeOut; home(sd, _g.x, _g.z, _d, true);
+        if(_d.distanceTo(_e.copy(f.p).setY(0)) > M.idle || Math.abs(wrapA(f.yaw - want)) > GUNFEEL.feet.turnStep){ step(f, _d, want, A.idleT, M.lift * 0.6); L.last = L.t; L.lastFoot = i; break; } } } }
   // the swing: the foot up and over, heel-and-toe by which way it goes
   for(const f of L.feet){ const w = f.sw; let phT = 0;
     if(w){ w.t = Math.min(1, w.t + dt / w.dur); const e = smooth(w.t); f.p.lerpVectors(w.from, w.to, e); if(w.cross) f.p.addScaledVector(F2, w.cross * A.crossArc * Math.sin(Math.PI * w.t)); f.yaw = w.y0 + wrapA(w.y1 - w.y0) * e; f.lift = Math.sin(Math.PI * w.t) * w.h;
       phT = w.dir > 0.3 ? (w.t < 0.35 ? 0.45 * (1 - w.t / 0.35) : w.t > 0.65 ? -0.28 * (w.t - 0.65) / 0.35 : 0) : w.dir < -0.3 ? (w.t < 0.35 ? -0.2 * (1 - w.t / 0.35) : w.t > 0.6 ? 0.38 * (w.t - 0.6) / 0.4 : 0) : 0;
       if(w.t >= 1){ f.sw = null; f.lift = 0; } }
     else { f.lift = 0; if(moving && !back){ const behind = -((f.p.x - _g.x) * L.v.x + (f.p.z - _g.z) * L.v.z) / Math.max(0.1, s); phT = clamp((behind - 0.12) / 0.25, 0, 1) * 0.45; } }   // the trailing heel peels up
-    f.ph += (phT - f.ph) * Math.min(1, dt * 16); f.y = heightAt(f.p.x, f.p.z); }
+    f.ph += (phT - f.ph) * Math.min(1, dt * 16); f.y = heightAt(f.p.x, f.p.z);
+    // GUN 4 THE FOOT LIES ON THE SLOPE: the ground's rise from under the heel to under the toes along the foot (read again only when the foot has moved)
+    { const SL = GUNFEEL.feet.slope; if(f.gx !== f.p.x || f.gz !== f.p.z || f.gw !== f.yaw){ f.gx = f.p.x; f.gz = f.p.z; f.gw = f.yaw; const c0 = Math.sin(f.yaw), c1 = Math.cos(f.yaw);
+        f.gT = clamp(Math.atan2(heightAt(f.p.x + c0 * SL.ahead, f.p.z + c1 * SL.ahead) - heightAt(f.p.x - c0 * SL.back, f.p.z - c1 * SL.back), SL.ahead + SL.back), -SL.max, SL.max) * SL.k; }
+      f.gs = (f.gs || 0) + ((f.gT || 0) - (f.gs || 0)) * Math.min(1, dt * SL.rate); } }
   // ---- the pelvis: down at each footfall, up over the standing foot, swayed over it; low enough for both legs to reach ----
   const sw = L.feet.find(f => f.sw), k = sw ? sw.sw.t : 0, sdS = sw ? (sw === L.feet[0] ? -1 : 1) : 0;
   const gY = (L.feet[0].y + L.feet[1].y) / 2; let hipY = gY + ankleH + len.leg * M.hipK - M.dip * Math.min(1, s / 1.4) + (sw ? M.bob * (Math.sin(Math.PI * k) - 0.5) : 0);
@@ -116,7 +125,7 @@ export function soldierLegs(R, G, dt, P, mounted){ const D = R.pup && R.pup.D; i
   if(MV && MV.cover != null && L.mode === 'stand' && !moving) hipY = clamp(MV.cover + A.coverRest - A.pocket, hipY - A.coverDrop, hipY);   // Z341 behind higher cover: down at the knees until the rifle lies on its top
   _c.y = hipY;
   // the pelvis turned (and swung a touch with the stride, rolled over the swinging side), its hip joints' middle onto the spot; the spine takes the turn back
-  const gyaw = L.th + (sw ? sdS * A.gaitYaw * Math.sin(Math.PI * k) : 0), h = D.Hips;
+  const gyaw = L.th + (L.ts || 0) + (sw ? sdS * A.gaitYaw * Math.sin(Math.PI * k) : 0), h = D.Hips;
   turn(h, UP, gyaw); if(sw) turn(h, F2, -sdS * A.roll * Math.sin(Math.PI * k));
   wp(D.RightUpLeg, _a); wp(D.LeftUpLeg, _b); _a.add(_b).multiplyScalar(0.5); wp(h, _b); _b.add(_c).sub(_a); h.parent.worldToLocal(_b); h.position.copy(_b); h.updateMatrixWorld(true);
   turn(D.Spine, UP, -gyaw * 0.45); turn(D.Spine1, UP, -gyaw * 0.33); turn(D.Spine2, UP, -gyaw * 0.22);
@@ -125,7 +134,7 @@ export function soldierLegs(R, G, dt, P, mounted){ const D = R.pup && R.pup.D; i
   for(const [L1, sd] of SIDES){ const i = sd < 0 ? 0 : 1, f = L.feet[i]; FF.set(Math.sin(f.yaw), 0, Math.cos(f.yaw));
     _d.copy(ank[i]).addScaledVector(FF, 0.7).addScaledVector(UP, 0.45).addScaledVector(R2, sd * 0.06);
     ik2(D[L1 + 'UpLeg'], D[L1 + 'Leg'], D[L1 + 'Foot'], ank[i], _d);
-    const sl = slope - f.ph; aim(D[L1 + 'Foot'], D[L1 + 'ToeBase'], _e.copy(FF).multiplyScalar(Math.cos(sl)).addScaledVector(UP, Math.sin(sl)));
+    const sl = slope - f.ph + (f.gs || 0) * (1 - Math.min(1, (f.lift || 0) / GUNFEEL.feet.slope.clear)); aim(D[L1 + 'Foot'], D[L1 + 'ToeBase'], _e.copy(FF).multiplyScalar(Math.cos(sl)).addScaledVector(UP, Math.sin(sl)));
     if(f.ph > 0.05 && D[L1 + 'Toe_End']) aim(D[L1 + 'ToeBase'], D[L1 + 'Toe_End'], _e.copy(FF).multiplyScalar(Math.cos(A.toeFlat)).addScaledVector(UP, Math.sin(A.toeFlat))); }   // (heel up: the toes stay on the ground)
   finish(D, L, dt); }
 // the end of every frame: a change of position eased from the last pose; the whole eased against the clip's own legs; this pose kept for the next change

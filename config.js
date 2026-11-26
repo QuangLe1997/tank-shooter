@@ -1395,6 +1395,11 @@ export const GUNFEEL = {
     eject:{ none:['rpg', 'energy', 'rail', 'flamer', 'gl', 'saw'], ahead:0.1, up:0.012, side:0.03, back:0.6, v:[1.6, 1.4, 2, 1.5], link:['lmg', 'minigun'] },
     hit:{ ms:120, killMs:260, killK:1.35, gap:0.07, size:28, col:['#ffffff', '#ff5a4a'] } },
   cycle:{ sniper:{ hand:'R', at:0.14, dur:0.5, eject:0.42, snd:'boltRack' }, shotgun:{ hand:'L', at:0.14, dur:0.5, eject:0.4, snd:'boltRack' } },
+  // GUN 4 HIS FEET (actors/soldier-legs.js): turnStep = stood still a foot steps round once it is this far (rad) off where he faces (SOLDIER_LEGS.yawStep
+  //   0.55 before: he wound up 31 deg before a foot moved); hips = the most his pelvis stays behind his chest with his feet (rad), hipsK = how much of the
+  //   feet's lag it keeps; slope = a foot's pitch follows the ground under it: k of the rise from `back` m behind the ankle to `ahead` m ahead of it, at
+  //   most max rad, eased at rate /s, none while the foot is lifted more than clear m
+  feet:{ turnStep:0.4, hips:0.4, hipsK:0.7, slope:{ k:0.85, max:0.4, ahead:0.14, back:0.06, rate:12, clear:0.04 } },
 };
 // Z343 HIS UPPER BODY IN TIME WITH HIS LEGS (actors/soldier-upper.js): the chest's speed and acceleration smoothed (/s), the acceleration capped (m/s²),
 //   a jump of more than `reset` m starts it afresh; the lean into a change of pace (rad per m/s² ahead / to the side, at most leanMax, on a spring of
