@@ -4,7 +4,7 @@
 //   p.buffUntil: the drones' keys are added to its icon table). Built on first use; nothing here allocates per frame.
 import * as THREE from 'three';
 import { DRONEWAR } from '../../config.js';
-import { ARENA, BUFF_COL, BUFF_ICON, DW, RECON, S, camera, enemies, heightAt, holoRing, radarCanvas, scene } from '../hub.js';
+import { ARENA, BUFF_COL, BUFF_ICON, DW, MOBILE, RECON, S, camera, enemies, heightAt, holoRing, radarCanvas, scene } from '../hub.js';
 
 const D = DRONEWAR, UP = new THREE.Vector3(0, 1, 0), _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(), _v = new THREE.Vector3();
 const H = { marks:null, ring:null, chips:false };
@@ -12,7 +12,7 @@ const H = { marks:null, ring:null, chips:false };
 function marksMesh(){ const g = new THREE.OctahedronGeometry(0.2, 0); g.scale(1, 1.5, 1);
   const m = new THREE.MeshBasicMaterial({ color:new THREE.Color(0xff2a1e).multiplyScalar(1.7), transparent:true, opacity:0.92, depthTest:false, depthWrite:false, fog:false });
   const im = new THREE.InstancedMesh(g, m, D.recon.markMax); im.count = 0; im.frustumCulled = false; im.renderOrder = 30; im.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(im); return (H.marks = im); }
-function ringMesh(){ const r = holoRing(1, { kind:'friend', core:0.002, halo:0.007, ticks:72, tickLen:0.014, sweep:0.22, gain:5, dark:0.08, depthTest:false, order:5, seg:120 }); r.visible = false; scene.add(r); return (H.ring = r); }
+function ringMesh(){ const r = holoRing(1, { kind:'friend', core:0.0012, halo:0.004, ticks:72, tickLen:0.012, sweep:0.22, gain:3.2, dark:0.06, depthTest:false, order:5, seg:120 }); r.visible = false; scene.add(r); return (H.ring = r); }
 // the buff bar's chips for what he is flying (their icons and colours join loot/powerups.js's tables once)
 export function droneChip(key, until){ const p = S.player; if(!p || !p.buffUntil) return; if(!H.chips){ H.chips = true; BUFF_ICON.recon = 'drone'; BUFF_ICON.fpv = 'drone'; BUFF_COL.recon = '#3ee8ff'; BUFF_COL.fpv = '#ffb84a'; } p.buffUntil[key] = until; }
 // every frame in play: the diamonds over the marked, the ring under the recon drone
@@ -35,3 +35,19 @@ export function drawDroneRadar(c){ if(!DW.on) return; const now = performance.no
     if(d.foe){ c.strokeStyle = '#ff4ad0'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(x - 3, y - 3); c.lineTo(x + 3, y + 3); c.moveTo(x + 3, y - 3); c.lineTo(x - 3, y + 3); c.stroke(); }
     else { c.fillStyle = '#3ee8ff'; c.beginPath(); c.arc(x, y, 2.2, 0, 6.2832); c.fill();
       if(d.kind === 'recon'){ c.strokeStyle = 'rgba(62,232,255,0.55)'; c.lineWidth = 1; c.beginPath(); c.arc(x, y, D.recon.r * sc, 0, 6.2832); c.stroke(); } } } }
+
+// ---- DRONE 2 the FPV feed: a frame over the view from the drone's nose (css/drone-war.css) — scan lines, the battery, speed and height, the link's bars, the
+//   stick's dot round the middle ring; body.fpv hides the soldier's own pointer and crosshair meanwhile ----
+const FV = { el:null, t:null, spd:null, alt:null, sig:null, dot:null, at:0, sx:9, sy:9 };
+function fpvBuild(){ const el = document.createElement('div'); el.id = 'fpvHud'; el.className = 'hidden';
+  el.innerHTML = '<i class="fv-scan"></i><i class="fv-noise"></i><div class="fv-tl"><b>FPV</b><span class="fv-rec">● REC</span></div><div class="fv-tr">TÍN HIỆU <b class="fv-sig">▮▮▮▮</b></div>'
+    + '<div class="fv-bl">TỐC ĐỘ <b class="fv-spd">0</b> km/h · CAO <b class="fv-alt">0</b> m</div><div class="fv-br">PIN <b class="fv-t">0.0</b> s</div><i class="fv-c"></i><i class="fv-dot"></i>'
+    + '<div class="fv-hint">' + (MOBILE ? 'CẦN LÁI: ĐIỀU KHIỂN · BẮN / KỸ NĂNG: CHO NỔ' : 'CHUỘT hoặc WASD: LÁI · CHÚI XUỐNG ĐỂ TĂNG TỐC · CHUỘT TRÁI / E: CHO NỔ') + '</div>';
+  document.body.appendChild(el); FV.el = el; FV.t = el.querySelector('.fv-t'); FV.spd = el.querySelector('.fv-spd'); FV.alt = el.querySelector('.fv-alt'); FV.sig = el.querySelector('.fv-sig'); FV.dot = el.querySelector('.fv-dot'); return el; }
+export function fpvHud(on){ if(typeof document === 'undefined') return; const el = FV.el || (on ? fpvBuild() : null); document.body.classList.toggle('fpv', !!on); if(el) el.classList.toggle('hidden', !on); FV.at = 0; FV.sx = FV.sy = 9; }
+// every frame of the flight: the stick's dot (only when it moved), and ten times a second the numbers — F: the flight (combat/drone-skills.js FPV)
+export function fpvHudTick(now, F, left, v, alt){ const el = FV.el; if(!el) return;
+  if(Math.abs(F.sx - FV.sx) > 0.01 || Math.abs(F.sy - FV.sy) > 0.01){ FV.sx = F.sx; FV.sy = F.sy; FV.dot.style.transform = 'translate(' + Math.round(F.sx * 90) + 'px,' + Math.round(-F.sy * 90) + 'px)'; }
+  if(now < FV.at) return; FV.at = now + 0.1; const n = Math.max(0, Math.min(4, Math.ceil(F.sig * 4)));
+  FV.t.textContent = Math.max(0, left).toFixed(1); FV.spd.textContent = Math.round(v * 3.6); FV.alt.textContent = Math.max(0, Math.round(alt)); FV.sig.textContent = '▮▮▮▮'.slice(0, n) + '▯▯▯▯'.slice(0, 4 - n);
+  el.style.setProperty('--fvn', (0.05 + (1 - F.sig) * 0.5 + (left < 2 ? 0.12 : 0)).toFixed(2)); el.classList.toggle('low', left < 3 || F.sig < 0.4); }

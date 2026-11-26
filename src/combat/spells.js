@@ -2,7 +2,7 @@
 //   weapon shares — AoE damage, a shell bursting on its spot, enemy ground strikes (no-tanks: the tank's equipment — smoke, APS, mines — is gone)
 import * as THREE from 'three';
 import { EQUIP, LETHAL, REAL } from '../../config.js';
-import { TROOPER_SPELLS, COVER_HP, MOBILE, S, armorOf, bigExplode, blastAllies, blocks, burst, cityBlast, concuss, core, damageBlock, damageCore, damageEnemy, damagePlayer, decalScorch, deformCrater, enemies, envDmg, fenceBlast, fortIntactCross, heightAt, ringPulse, sfx, siegeMul, spawnPart, structMul, suppress, tunnelBlast, typeMul, updateSpellHUD, blastTrees, sandBlastProof } from '../hub.js';
+import { TROOPER_SPELLS, COVER_HP, MOBILE, S, fpvDetonate, fpvFlying, armorOf, bigExplode, blastAllies, blocks, burst, cityBlast, concuss, core, damageBlock, damageCore, damageEnemy, damagePlayer, decalScorch, deformCrater, enemies, envDmg, fenceBlast, fortIntactCross, heightAt, ringPulse, sfx, siegeMul, spawnPart, structMul, suppress, tunnelBlast, typeMul, updateSpellHUD, blastTrees, sandBlastProof } from '../hub.js';
 
 export function inSmoke(now){ const p=S.player; return !!(p && now<(p.smokeUntil||0) && Math.hypot(p.pos.x-p.smokeX, p.pos.z-p.smokeZ) < EQUIP.smoke.radius); }
 export function updateEquip(dt, now){
@@ -19,7 +19,8 @@ export function spellNow(){ const L=spellList(); return L[S.spell] || L[0]; }
 //   a grenade the jammer — and its cast may return false (nothing to launch, the sky full): then nothing is spent
 export function spellReady(sp, p){ return sp.own ? (p.ownCd && p.ownCd[sp.id]) || 0 : p.spellCdUntil; }
 export function spellHold(id, until){ const p=S.player; if(p) (p.ownCd || (p.ownCd={}))[id]=until; }
-function castSpell(sp){ const p=S.player, now=performance.now()/1000; if(!p || !sp || now < spellReady(sp, p)) return false;
+function castSpell(sp){ const p=S.player, now=performance.now()/1000; if(fpvFlying()){ fpvDetonate(); return false; }   // DRONE 2 any skill key while the FPV drone flies sets it off
+  if(!p || !sp || now < spellReady(sp, p)) return false;
   if(sp.own){ if(sp.cast(now)===false) return false; spellHold(sp.id, Math.max(spellReady(sp, p), now + sp.cd * p.spellCdMul)); }
   else { p.spellCdUntil = now + sp.cd * p.spellCdMul; sp.cast(now); }
   sfx('spell'); updateSpellHUD(); return true; }

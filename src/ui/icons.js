@@ -64,6 +64,7 @@ export const GLYPH={
   compress:'<path d="M10 4v6H4M14 4v6h6M10 20v-6H4M14 20v-6h6"/>',
   alert:'<path d="M12 3 1.8 20.5h20.4L12 3Z"/><path d="M12 9.5v4.8"/><path d="M12 17.4v.7"/>',
   drone:'<circle cx="12" cy="12" r="2.6"/><circle cx="5.5" cy="6.5" r="2"/><circle cx="18.5" cy="6.5" r="2"/><path d="M7 8l3 2.4M17 8l-3 2.4M12 14.6V18M9.5 18.4h5"/>',
+  fpv:'<circle cx="5.5" cy="6" r="2.2"/><circle cx="18.5" cy="6" r="2.2"/><path d="M7.2 7.6l2.6 2.2M16.8 7.6l-2.6 2.2"/><rect x="9.8" y="9.4" width="4.4" height="3.6" rx="1"/><path d="M12 13v5.2M9.6 18.2 12 22l2.4-3.8Z"/>',   // DRONE 2 a quadcopter with its charge
   smoke:'<circle cx="8" cy="14" r="4"/><circle cx="14.5" cy="11" r="5"/><circle cx="17" cy="16.5" r="3.4"/>',
   aps:'<path d="M12 3 5 5.8v5.2c0 4.5 3 7.6 7 9 4-1.4 7-4.5 7-9V5.8L12 3Z"/><path d="M8.5 12h7M12 8.5v7"/>',
   team:'<circle cx="8" cy="7" r="2.4"/><circle cx="16" cy="7" r="2.4"/><path d="M3.5 19v-3.4c0-2.2 2-3.8 4.5-3.8s4.5 1.6 4.5 3.8V19M11.5 19v-3.4c0-2.2 2-3.8 4.5-3.8s4.5 1.6 4.5 3.8V19"/>',

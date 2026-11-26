@@ -55,7 +55,7 @@ function unlist(d){ const i = DW.list.indexOf(d); if(i >= 0) DW.list.splice(i, 1
 export function droneFree(d){ if(!d || !d.g) return; unlist(d); d.g.visible = false; POOL[d.kind].push(d.g); d.g = null; }
 function wreckEnd(i){ const w = DW.wrecks[i]; DW.wrecks.splice(i, 1); w.g.visible = false; w.g.rotation.set(0, 0, 0); POOL[w.kind].push(w.g); }
 // shot out of the air: a burst where it was, and the wreck goes down
-export function droneKill(d){ if(!d || d.dead || !d.g) return; unlist(d); DW.n.downed++; const g = d.g; d.g = null; g.userData.disc.visible = false; _p.x = d.x; _p.z = d.z;
+export function droneKill(d){ if(!d || d.dead || !d.g) return; unlist(d); DW.n.downed++; const g = d.g; d.g = null; g.visible = true; g.userData.disc.visible = false; _p.x = d.x; _p.z = d.z;
   spawnPart(d.x, d.y, d.z, 0, 0, 0, { tex:'flash', color:0xfff2d0, size:2.4, life:0.07, grav:0, drag:0 });
   burst(_p, 0xffb050, 8, 7, { y:d.y, life:0.3, size:0.5, grav:-8, drag:3 }); burst(_p, 0x2a2420, 3, 2.4, { y:d.y, life:0.8, size:1.4, smoke:true, grav:-0.4, drag:2, op:0.45 }); sfx('explode', _p, 0.4);
   if(DW.wrecks.length >= D.wrecks) wreckEnd(0);
@@ -96,6 +96,10 @@ export function droneBuzz(d, now, B, k2){ if(muted || now < d.bzAt) return; d.bz
   if(_pan){ const m = camera.matrixWorld.elements, L = Math.hypot(dx, dz) || 1; _pan.pan.value = Math.max(-0.9, Math.min(0.9, (dx * m[0] + dz * m[2]) / L)); }
   const f = (B.hz[0] + (B.hz[1] - B.hz[0]) * k * k) * (k2 || 1) * (0.985 + Math.random() * 0.03), v = B.vol[0] + (B.vol[1] - B.vol[0]) * k;
   tone(f, B.every * 2.1, { type:'sawtooth', vol:v, slideTo:f * 1.04, bus }); tone(f * 2.02, B.every * 1.7, { type:'square', vol:v * 0.3, bus }); }
+// DRONE 2 his own FPV drone as he hears it through the goggles: the same chunks, straight down the middle (f Hz, v loud)
+let _own = null, _octx = null;
+export function droneWhine(f, v){ if(muted) return; const a = audio(); if(!a) return; if(_octx !== a){ _octx = a; try{ _own = a.createGain(); _own.connect(master || a.destination); } catch(e){ _own = null; } } if(!_own) return;
+  const j = 0.985 + Math.random() * 0.03; tone(f * j, 0.2, { type:'sawtooth', vol:v, slideTo:f * j * 1.03, bus:_own }); tone(f * j * 2.02, 0.16, { type:'square', vol:v * 0.3, bus:_own }); }
 // a radio line of the drone war (DRONEWAR.say, its own clock; never on top of a line that has just gone up unless it must be heard)
 export function droneSay(key, must){ const Y = D.say, L = Y[key], now = performance.now() / 1000; if(!L || !must && (now - DW.sayAt < Y.gap || now - (radio.at || -9) < 2.5)) return false;
   DW.sayAt = now; radio(typeof L === 'string' ? L : L[(Math.random() * L.length) | 0]); return true; }

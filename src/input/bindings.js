@@ -2,7 +2,7 @@
 //   camera, music, pause, key sheet) has up to 2 keys + 1 pad button, all rebindable from the key sheet (PROFILE.binds).
 //   Also the shared MENU NAVIGATION (focus ring) for keyboard (arrows / Tab / Enter / Esc) and pad (D-pad / A / B / LB-RB / right stick).
 import { ACTIONS } from '../../config.js';
-import { soldierFire, reloadNow, PROFILE, S, assaultFort, castSpellId, callParadrop, camReset, cavStance, closeKeys, crewPress, crewRelease, cycleGun, cycleSpell, cycleSquadOrder, floatText, keysOpen, musterAll, openKeys, padCfg, playerRange, rotStep, saveProfile, setCamAuto, sfx, toggleMusic, togglePause, tryDash, trySpell, yawReset, zoomPing, zoomReset, zoomStep, soldierRoll, soldierClimb } from '../hub.js';
+import { soldierFire, reloadNow, PROFILE, S, assaultFort, castSpellId, fpvKey, callParadrop, camReset, cavStance, closeKeys, crewPress, crewRelease, cycleGun, cycleSpell, cycleSquadOrder, floatText, keysOpen, musterAll, openKeys, padCfg, playerRange, rotStep, saveProfile, setCamAuto, sfx, toggleMusic, togglePause, tryDash, trySpell, yawReset, zoomPing, zoomReset, zoomStep, soldierRoll, soldierClimb } from '../hub.js';
 
 // ---- the table: ACTIONS (config) = [id, label, group, defaultKeys[], defaultPadButton|null, hold?] ----
 export const BIND = { cap:null, map:null };
@@ -26,12 +26,12 @@ export const PAD_NAMES=['A','B','X','Y','LB','RB','LT','RT','⧉ View','☰ Menu
 // ---- run an action (phase 'down' / 'up'); the same entry point for keys and pad buttons ----
 const _tap={};
 function dbl(id){ const t=performance.now(), d=t-(_tap[id]||0)<380; _tap[id]=d?0:t; return d; }   // second tap within 0.38 s = double tap
-export function runAction(id, phase, repeat){ if(phase==='up'){ if(id==='crew') crewRelease(); if(id==='fire') S.firing=false; return; } if(repeat && id!=='zoomOut' && id!=='zoomIn') return;
+export function runAction(id, phase, repeat){ if(phase==='up'){ if(id==='crew') crewRelease(); if(id==='fire') S.firing=false; return; } if(repeat && id!=='zoomOut' && id!=='zoomIn') return; if(fpvKey(id)) return;   // DRONE 2 flying the FPV drone: FIRE / a skill key sets it off, the soldier's other actions wait
   const now=performance.now()/1000;
   switch(id){
     case 'fire': if(S.mode==='playing'){ S.firing=true; soldierFire(now, playerRange()); } break;
     case 'dash': tryDash(); break;  case 'roll': soldierRoll(); break;  case 'climb': soldierClimb(); break;   /* Z451 */  case 'skill': trySpell(); break;  case 'skillNext': cycleSpell(1); break;
-    case 'droneRecon': castSpellId('reconDrone'); break;   // DRONE 1 the drones' own keys (combat/drone-skills.js)
+    case 'droneRecon': castSpellId('reconDrone'); break; case 'droneFpv': castSpellId('fpvDrone'); break;   // DRONE 1 the drones' own keys (combat/drone-skills.js)
     case 'crew': crewPress(); break; case 'autoFire': { const b=document.getElementById('autoBtn'); if(b) b.click(); } break;
     case 'gunPrev': cycleGun(-1); break; case 'gunNext': cycleGun(1); break; case 'reload': reloadNow(); break;   // GUN 2 R: reload now (combat/guns.js)
     case 'muster': musterAll(); break; case 'sqOrder': cycleSquadOrder(); break; case 'assault': assaultFort(); break; case 'para': callParadrop(); break;

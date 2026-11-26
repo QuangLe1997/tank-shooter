@@ -2,7 +2,7 @@
 //   you aim (a small blast, not a shell's), a smoke grenade tossed a few metres ahead (the same screen that blinds laser designators, thrown by hand instead
 //   of fired from turret dischargers), a field dressing (health back, no base repair) — and the radio: an airstrike, a fireteam brought up.
 import { CAV, DRONEWAR, EQUIP } from '../../config.js';
-import { S, airstrike, callFireteam, dropBeam, enemies, fireMortar, floatText, reconLaunch, ringPulse, sfx, spawnPart, updateHUD } from '../hub.js';
+import { MOBILE, S, airstrike, callFireteam, dropBeam, enemies, fireMortar, floatText, fpvCast, fpvStock, reconLaunch, ringPulse, sfx, spawnPart, updateHUD } from '../hub.js';
 
 const T = () => CAV.soldier;
 export const TROOPER_SPELLS = [
@@ -13,7 +13,8 @@ export const TROOPER_SPELLS = [
   { id:'fireteam',  name:'FIRETEAM',  vi:'GỌI TỔ BỘ BINH', svg:'team',      cd:24, cast(now){ callFireteam(now); } },
   // DRONE 1 the drone war's skills (combat/drone-skills.js): own = a clock of their own (combat/spells.js spellReady), cast returns false when nothing was spent
   { id:'reconDrone', name:'RECON DRONE', vi:'DRONE TRINH SÁT', svg:'drone', own:true, get cd(){ return DRONEWAR.recon.cd; }, cast(now){ return reconLaunch(now); } },
-].filter(s => !s.own || DRONEWAR.on);   // (?nodrones: off the list)
+  { id:'fpvDrone', name:'FPV STRIKE', get vi(){ return 'FPV CẢM TỬ ×' + fpvStock(); }, svg:'fpv', own:true, desk:!DRONEWAR.fpv.mobile, get cd(){ return DRONEWAR.fpv.lock; }, cast(now){ return fpvCast(now); } },   // DRONE 2 a stock a stage, not a cooldown
+].filter(s => (!s.own || DRONEWAR.on) && !(s.desk && MOBILE));   // (?nodrones: off the list · desk: not on phones)
 // lobbed by hand to the aim point (the mortar's arc, a grenade's size and blast)
 function grenade(now){ const G = T().grenade, k = S.player.nadeK || 1; fireMortar(now, { small:true, aoeR:G.r * Math.sqrt(k), bossDmg:G.dmg * k * 0.4 }, G.dmg * k); sfx('whoosh'); floatText('NÉM LỰU ĐẠN!', '#ffcf5a', S.player.pos, 15); }   // (Z350 LÍNH NÉM LỰU: nadeK)
 // a smoke grenade a few metres ahead of him

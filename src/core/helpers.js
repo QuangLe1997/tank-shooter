@@ -1,10 +1,10 @@
 // core/helpers.js — shared helpers: control scheme + tank input → move direction, main HUD refresh, world-space HP bars
 import * as THREE from 'three';
-import { MOBILE, PAD, PROFILE, S, STICK_R, _camUP, core, heldAction, move, worldToScreen } from '../hub.js';
+import { MOBILE, PAD, PROFILE, S, STICK_R, _camUP, core, fpvFlying, heldAction, move, worldToScreen } from '../hub.js';
 
 // ----------------------------- HELPERS -----------------------------
 export function getMoveDir(){
-  const d = new THREE.Vector3();
+  const d = new THREE.Vector3(); if(fpvFlying()) return d;   // DRONE 2 he flies the FPV drone: the stick is the drone's, the soldier stands (combat/drone-skills.js)
   if(PAD.active && (PAD.lx || PAD.ly)){ d.set(PAD.lx, 0, PAD.ly); if(d.lengthSq()>1) d.normalize(); if(S.camYaw) d.applyAxisAngle(_camUP, S.camYaw); return d; }   // Z117 left stick (analogue: half-tilt = half power)
   if(MOBILE){
     if(move.id!==null){ d.set(move.x, 0, move.y); if(d.length()>STICK_R) d.setLength(STICK_R); d.divideScalar(STICK_R);
@@ -23,7 +23,7 @@ export function getMoveDir(){
 //                       'screen': push the direction you want to go on screen; he turns to it (joystick default). (A saved 'tank' is 'turn'.)
 export function controlScheme(){ const c=PROFILE.ctrl; return c==='turn'||c==='tank' ? 'turn' : 'screen'; }   // Z107: SCREEN-relative is the default on every device
 export function turnInput(){                                    // → { thr: -1..1 (forward +), turn: -1..1 (driver's LEFT +) }
-  let thr=0, turn=0;
+  let thr=0, turn=0; if(fpvFlying()) return { thr, turn };   // DRONE 2
   if(PAD.active && (PAD.lx || PAD.ly)) return { thr:-PAD.ly, turn:-PAD.lx };   // Z117 left stick: up = throttle, sideways = turn
   if(MOBILE){ if(move.id!==null){ const L=Math.max(STICK_R*0.15, Math.hypot(move.x,move.y)); thr=Math.max(-1,Math.min(1,-move.y/STICK_R)); turn=Math.max(-1,Math.min(1,-move.x/STICK_R)); if(Math.abs(thr)<0.12) thr=0; if(Math.abs(turn)<0.12) turn=0; } }
   else { if(heldAction('up')) thr+=1; if(heldAction('down')) thr-=1;

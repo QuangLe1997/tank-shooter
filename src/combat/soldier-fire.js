@@ -7,7 +7,7 @@
 //   M79), a flame (the thrower), an arc that jumps to the next man (the energy rifle). Not the tank's: never in its shop, never kept in its arsenal.
 import * as THREE from 'three';
 import { RIDER_TURN, TROOPER, XHAIR, REAL } from '../../config.js';
-import { GUNS, MOBILE, PAD, PROFILE, S, boreNow, burstRound, burstSpread, camKick, shotCase, aimTarget, cMod, fireFlame, gunFlash, gunLight, fireMortar, floatText, magCap, playerRange, rifleFX, ringPulse, sfx, spawnBullet, spawnPart, startReload, updateGunHUD, airShot, CV, fireLine, climbPerch } from '../hub.js';
+import { GUNS, MOBILE, PAD, PROFILE, S, fpvFire, boreNow, burstRound, burstSpread, camKick, shotCase, aimTarget, cMod, fireFlame, gunFlash, gunLight, fireMortar, floatText, magCap, playerRange, rifleFX, ringPulse, sfx, spawnBullet, spawnPart, startReload, updateGunHUD, airShot, CV, fireLine, climbPerch } from '../hub.js';
 
 const _v = new THREE.Vector3();
 // Z359 the rifle he may carry in from the start (CHUẨN BỊ TRẬN · TRANG BỊ, and Z411 KHO SÚNG in soldier mode) · Z411 every hand weapon of his, by tier — it listed
@@ -26,7 +26,8 @@ export function trooperGive(id){ const p = S.player, g = GUNS[id]; if(!p || !g) 
     floatText(g.name + (up ? ' ★' + st : ' — ĐẦY ĐẠN'), up ? '#ffd24a' : '#9be04a', p.pos, up ? 20 : 16); if(up){ ringPulse(p.pos, 0xffd24a, 2.4); sfx('levelup'); } }
   else { p.guns.push({ id, ammo:magCap(g), rU:0, rD:0 }); floatText(g.name + ' — NHẶT ĐƯỢC (' + p.guns.length + ')', '#ffd24a', p.pos, 20); }
   updateGunHUD(); }
-export function soldierFire(now, range){ const p = S.player; if(!p || !p.guns.length) return; const inst = p.guns[p.gunIdx], g = GUNS[inst.id];
+export function soldierFire(now, range){ const p = S.player; if(!p || !p.guns.length) return; if(fpvFire()) return;   // DRONE 2 no shot while he flies the FPV drone: the trigger sets it off (combat/drone-skills.js)
+  const inst = p.guns[p.gunIdx], g = GUNS[inst.id];
   if(!g || inst.rU) return; if(!p.infiniteAmmo && inst.ammo <= 0){ startReload(now, inst); return; } if(now < p.fireAt) return;
   const R = CV.mounted && (CV.real || CV.G && CV.G.userData); if(R && (R.sat || R.bed) && R.gunYaw != null){ const off = R.gunYaw - p.aimSmoothed; if(Math.abs(Math.atan2(Math.sin(off), Math.cos(off))) > RIDER_TURN.fire) return; }   // Z340 turning round in the saddle: the trigger waits for the bore to come onto the aim (Z388 on the fallback rig too: actors/general.js · Z389 and stepping round in a bed)
   p.muzzle.getWorldPosition(_v); const L = g.special ? null : fireLine(_v.x, _v.y, _v.z), RF = !CV.mounted && CV.real;   // (Z451 up on a wall the muzzle is up there: the rounds leave it, past what he stands on — ignore)   // Z376 the round from the muzzle straight to the crosshair (combat/crosshair.js)
