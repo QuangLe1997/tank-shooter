@@ -111,7 +111,7 @@ function holdReal(R, G, dt, P){ const met = R.arms._metric && R.arms._metric[R.a
   const rc = R.rc || (R.rc = { z:0, zv:0, a:0, av:0, y:0, yv:0, r:0, rv:0, last:0 }), KK = GUNKICK[R.armK] || g;
   if(p && p.fireAt > rc.last + 1e-4){ if(rc.last){ const j = H.k * 0.12, sh = KK.shake; rc.zv += KK.kick[0] * j; rc.av += KK.kick[1] * j; if(sh){ rc.yv += (Math.random() * 2 - 1) * sh[0] * j; rc.rv += (Math.random() * 2 - 1) * sh[1] * j; } rc.shot = true; } rc.last = p.fireAt; }
   const c = 2 * Math.sqrt(H.k) * H.damp; for(const [x, v] of [['z', 'zv'], ['a', 'av'], ['y', 'yv'], ['r', 'rv']]){ rc[v] += (-H.k * rc[x] - c * rc[v]) * dt; rc[x] += rc[v] * dt; }
-  const foot = !!(p && p.cav && !p.cav.mounted && !p.cav.trans), FH = GUNFEEL.hold;   // GUN 1 on his feet: the hold held to his own joints (actors/gun-hands.js); mounted it is as it was
+  const foot = !!(p && p.cav && !p.cav.mounted && !p.cav.trans), wrists = foot || !!(BODYMEND.rideWrist && p && p.cav && !p.cav.trans), FH = GUNFEEL.hold;   // GUN 1 on his feet: the hold held to his own joints (actors/gun-hands.js); mounted it is as it was
   const prone = !!(p && p.cav && !p.cav.mounted && p.cav.stance === 'prone'), reachL = prone ? (foot ? FH.reach.hardProne : H.reachProne ?? H.reach) : H.reach, hip = g.hold === 'hip' && !(foot && prone && FH.hipProne);   // (GUN 1 lying down a hip-fired gun goes to the shoulder: at the hip it stood 20 cm over him, his right arm folded to a quarter)   // (Z326 lying flat he cannot lean back to an aircraft · Z416 lying, the support arm goes out straighter: the elbow is on the ground)
   // the body frame: up, and his facing turned by the aim twist
   G.getWorldQuaternion(_gq); _gu.set(0, 1, 0).applyQuaternion(_gq);
@@ -186,7 +186,7 @@ function holdReal(R, G, dt, P){ const met = R.arms._metric && R.arms._metric[R.a
   //   carried on from the forearm with the fingers hanging under the gun; then the palm itself onto its spot (twice: the hand's own length taken up)
   const cup = palmP && D.LeftHandMiddle1 ? _pk.copy(_gz).multiplyScalar(-H.cup[0]).addScaledVector(_gy, H.cup[1]).addScaledVector(_gx, -H.cup[2]).normalize().clone() : null;
   let moved = false;
-  const cupL = () => (foot ? wristGive(D, 'Left', cup, FH.wrist[1], _wg) : cup);   // GUN 1 the support hand gives toward its forearm: no wrist bent past a man's (actors/gun-hands.js)
+  const cupL = () => (wrists ? wristGive(D, 'Left', cup, FH.wrist[1], _wg) : cup);   // GUN 1 the support hand gives toward its forearm: no wrist bent past a man's (actors/gun-hands.js)
   if(palmP) for(let it = 0; it < (foot ? 3 : 2); it++){ if(cup){ LEGKIT.aim(D.LeftHand, D.LeftHandMiddle1, cupL()); rollHand(D, 'Left', _gx); } wl.add(_pd.subVectors(palmP, palmOf(D, 'Left', _pa)));
     const reach = armLen(D, 'Left') * reachL, shL = D.LeftArm.getWorldPosition(new THREE.Vector3()), d = shL.distanceTo(wl);   // (Z348 still out of reach with the palm on its spot: the gun comes back to the hand — no arm locked straight)
     if(d > reach){ const dv = shL.sub(wl).setLength(d - reach); R.pull += d - reach; for(const v of [wr, wl, grip, fore, palmP]) v.add(dv); _gp.add(dv); _gm.compose(_gp, _gq, _pk.set(1, 1, 1)); _gm.premultiply(_mi); _gm.decompose(met.position, met.quaternion, met.scale); met.updateMatrixWorld(true); moved = true; }
@@ -201,13 +201,13 @@ function holdReal(R, G, dt, P){ const met = R.arms._metric && R.arms._metric[R.a
   if(moved){ ik2(D.RightArm, D.RightForeArm, D.RightHand, wr, poleR); rollHand(D, 'Right', _gt.copy(_gy).negate()); }   // (the firing hand follows the gun)
   if(rk < 0 && !bolt && D.RightHandMiddle1 && H.gripR){ const gp = grip.clone().addScaledVector(_gz, -H.gripR[3]).addScaledVector(_gy, H.gripR[4]), ax0 = _gx.clone().multiplyScalar(-H.gripR[0]).addScaledVector(_gz, H.gripR[1]).addScaledVector(_gy, -H.gripR[2]).normalize();
     if(foot && g.rows) gp.addScaledVector(_gx, FH.grip[0]).addScaledVector(_gy, FH.grip[1]);   // GUN 1 the palm on the pistol grip itself, high under the receiver (a fitted gun's grip point is its front edge, low: the hand closed on air ahead of it)
-    const axR = () => (foot ? wristGive(D, 'Right', ax0, FH.wrist[0], _wg) : ax0);
+    const axR = () => (wrists ? wristGive(D, 'Right', ax0, FH.wrist[0], _wg) : ax0);
     for(let it = 0; it < (foot ? 3 : 2); it++){ LEGKIT.aim(D.RightHand, D.RightHandMiddle1, axR()); rollHand(D, 'Right', _gt.copy(_gy).negate()); wr.add(_pd.subVectors(gp, palmOf(D, 'Right', _pa))); ik2(D.RightArm, D.RightForeArm, D.RightHand, wr, poleR); }
     LEGKIT.aim(D.RightHand, D.RightHandMiddle1, axR()); rollHand(D, 'Right', _gt.copy(_gy).negate()); }
   if(cup){ LEGKIT.aim(D.LeftHand, D.LeftHandMiddle1, cupL()); rollHand(D, 'Left', _gx); lc = H.cup[3]; }
   curlHand(D, 'Right', 0.85, grip, 0, 0.35); curlHand(D, 'Left', lc, rk >= 0 ? wl.clone().addScaledVector(_gy, -0.05) : palmP ? palmP.clone().addScaledVector(_gz, -H.wrap[0]).addScaledVector(_gy, 0.05) : fore.clone().addScaledVector(_gy, 0.02));   // (Z345 the fingers curl up round the handguard · Z348 toward its middle, tight)
   if(foot) handsEase(R, D, dt, poleL, poleR);   // GUN 2 nor a hand
-  if(foot) triggerFinger(D, FR, g, len, rk < 0 && !tuck && !bolt ? (1 - (R.rdy || 0)) * (1 - (R.spr || 0)) : 0);   // GUN 1 the index finger on the trigger when he aims, straight along the frame when he runs, carries, reloads (actors/gun-hands.js)
+  if(wrists) triggerFinger(D, FR, g, len, rk < 0 && !tuck && !bolt ? (1 - (R.rdy || 0)) * (1 - (R.spr || 0)) : 0);   // GUN 1 the index finger on the trigger when he aims, straight along the frame when he runs, carries, reloads (actors/gun-hands.js)
   // Z356 CHEEK TO THE STOCK: the right eye brought down behind the sight — the neck bowed over the stock, the head tilted onto it. Upright, his eyes stood
   //   some 25 cm over the gun: a man looking over his sights, not through them, the gun at his chest (kneeling it read as held too low)
   const weld = rk < 0 && !g.hold && !tuck ? (1 - (R.rdy || 0)) * (1 - low) : 0;   // (only aiming: running at the ready or reloading he keeps his head up)
