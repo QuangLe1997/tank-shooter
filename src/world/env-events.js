@@ -36,7 +36,7 @@ function updateFall(dt, now){ const F=ENVEV.fall; if(!F) return; F.t+=dt; const 
   if(!F.done){ F.done=true; m.visible=false; for(let i=blocks.length-1;i>=0;i--) if(blocks[i].land===m) blocks.splice(i,1);
     for(let k=0;k<5;k++) spawnDebris({ x:x+(Math.random()-0.5)*10, z:z+(Math.random()-0.5)*10 }, 1.4, 0x8a8680);
     burst({ x, z }, 0xb0aca4, 10, 9, { y:1.5, life:2.2, size:3.2, smoke:true, grav:-0.2, drag:1.2, up:2, op:0.5 }); aoeDamage(x, z, 12, 60, false, now, 'HE', false);
-    const p=S.player; if(p && Math.hypot(p.pos.x-x,p.pos.z-z)<12) damagePlayer(20, now); sfx('bigexplode'); floatText('MỞ ĐƯỜNG MỚI', '#9be04a', { x, y:4, z }, 16); }
+    const p=S.player; if(p && Math.hypot(p.pos.x-x,p.pos.z-z)<12) damagePlayer(20, now, p.pos.x-x, p.pos.z-z, 'blast'); sfx('bigexplode'); floatText('MỞ ĐƯỜNG MỚI', '#9be04a', { x, y:4, z }, 16); }
   if(F.t>6) ENVEV.fall=null; }
 // ---- elsewhere: the weather turns for half a minute ----
 const SURGE={ DESERT:['sand','BÃO CÁT ẬP TỚI!','SCH: Bão cát — tầm nhìn giảm, bám sát đồng đội!'], TUNDRA:['snow','BÃO TUYẾT!','SCH: Bão tuyết kéo tới — giữ đội hình!'], MEADOW:['rain','GIÔNG BÃO!','SCH: Mưa giông — sét có thể đánh trúng!'],

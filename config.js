@@ -1009,6 +1009,25 @@ export const AUDIOFX = { on:true, unit:1.3, c:343, seed:20261126, variants:3, pa
       kill:['Hạ một tên!', 'Trúng rồi!', 'Bớt một đứa!', 'Gục rồi, tên tiếp theo!'],
       flank_left:['Chúng vòng bên trái!', 'Bên trái! Bên trái có địch!'], flank_right:['Chúng vòng bên phải!', 'Bên phải! Bên phải có địch!'], flank_rear:['Sau lưng! Chúng vòng ra sau!', 'Địch phía sau, quay lại!'] } },
   surface:{ paved:'rock', bridge:'wood', biome:{ DESERT:'sand', RUINS:'dirt', ARCTIC:'snow', FOUNDRY:'metal', CITADEL:'rock', MEADOW:'grass', CITY:'rock', SAVANNA:'grass', VOLCANO:'rock', QUARRY:'rock', _:'dirt' } } };
+// HIT 1 A MAN IS HIT, NOT A HULL — what HE hears and shows when he is struck (audio/body-hit.js, fx/soldier-fx.js, game/player-damage.js). No metal, no fire on him.
+//   heavy = damage from which a round is a heavy hit (louder, a short ringing, the world muffled a moment) · plate = his plate carrier: a round arriving lo..hi m over
+//   his feet ticks the plate with pIn, anywhere else pOut · snd = levels (thud the flesh / kevlar thwack, tick the plate, grunt his breath knocked out, gruntGap s apart;
+//   blast his body thumped by a blast, debris the grit raining on him; gasp the sharp breath in fire, fireGap s apart; fall a landing gone wrong; ring the ringing ear,
+//   ringHz, ringT s; muffle / muffleB = the whole mix low-passed to lp Hz for hold s, back in back s — a heavy round / a blast that hurt him; the sound layer only)
+//   blood = on his body: mist puffs, drops thrown along the shot, y = the hit's height band (m) when it is not known, pool = splat radius on the ground at full / no
+//   health, feet = how many stains land round his feet per hit (at most), within feetR m, every feetGap s at most; dark = colour at full → no health ·
+//   horse / bike = the share of the hits on him that also strike the horse (it bleeds) / the motorbike (a spark, a tick of steel) · heat = fire on him: the screen's
+//   warm edge op, its fade /s; smoulder sparks on his clothes for spark s after he first stands in it (n a tenth of a second), never again until he has been out reK s
+//   vig = the red edge: a hit's flash and its fade /s, the standing edge from low (health share) up to its top · low = under this share of his health: heart (beat
+//   period s at low → near nothing), breath s apart, their levels
+export const BODYHIT = { heavy:22, plate:{ lo:0.95, hi:1.55, pIn:0.5, pOut:0.3 },
+  snd:{ thud:0.62, tick:0.3, grunt:0.4, gruntGap:0.42, heavyK:1.45, blast:0.75, debris:0.35, gasp:0.32, fireGap:0.75, fall:0.6, ring:0.03, ringHz:[3500, 4300], ringT:[0.45, 1.0],
+    muffle:{ lp:1100, hold:0.22, back:0.45 }, muffleB:{ lp:650, hold:0.5, back:0.9 } },
+  blood:{ mist:5, drops:7, y:[0.95, 1.5], pool:[0.2, 0.36], feet:2, feetR:0.85, feetGap:0.35, dark:[0x8a1410, 0x3a0605] },
+  horse:{ share:0.35 }, bike:{ share:0.3 },
+  heat:{ op:0.6, fade:1.6, spark:0.8, n:2, reK:1.5 },
+  vig:{ hit:1, fade:5.5, low:0.5, top:0.55 },
+  low:{ below:0.3, beat:[0.62, 0.95], breath:2.6, beatG:0.5, breathG:0.22 } };
 // SPACE — how much of the arena the fence encloses (custom battles); the campaign always fights on the full field
 export const SPACE = { small:{ vi:'HẸP', k:0.72, tx:'đánh giáp lá cà' }, mid:{ vi:'VỪA', k:0.86, tx:'cân bằng' }, wide:{ vi:'RỘNG', k:1, tx:'cơ động, bắn xa' } };
 // Z107 HULL FRONT MARKER — at speed the hull's heading is hard to read from above: a glowing chevron on the ground just ahead of the nose

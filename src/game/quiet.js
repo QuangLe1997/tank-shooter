@@ -51,7 +51,7 @@ export function quietKnife(){ const p = S.player, now = NOW(), K = Q.knife; if(!
   const e = knifeTarget(p); if(!e || !enemies.includes(e) || !clearTo(p, e)){ sfx('whoosh', p.pos, 0.3); return false; }
   const dx = e.pos.x - p.pos.x, dz = e.pos.z - p.pos.z, d = Math.hypot(dx, dz) || 1; p.vel.x += dx / d * K.lunge; p.vel.z += dz / d * K.lunge; CV.cover = null;   // the lunge
   if(silent(e, p)){ QUIET.stats.knife++; e._knife = true; floatText(SAY.knifeDown, '#9be04a', over(e, 2.3), 17); sfx('thud', e.pos, 0.35); e.hp = 0; killEnemy(e); }   // (his pouch is his: loot/soldier-arms.js armsDrop → ammoPouch, always for a man the knife took)
-  else { QUIET.stats.stabs++; e._hx = dx / d; e._hz = dz / d; floatText(SAY.knifeHit, '#ffd86a', over(e, 2.3), 14); sfx('hit', e.pos, 0.5); damageEnemy(e, K.dmg); }
+  else { QUIET.stats.stabs++; e._hx = dx / d; e._hz = dz / d; floatText(SAY.knifeHit, '#ffd86a', over(e, 2.3), 14); sfx('flesh', e.pos, 0.5); damageEnemy(e, K.dmg); }
   return true; }
 // actors/crew.js: the mount key while a takedown is on offer is the knife (phones: no new button to lay out). true: the key is spent
 export function knifeContext(){ if(!QUIET.can || !(QUIET.can.hp > 0)) return false; quietKnife(); return true; }

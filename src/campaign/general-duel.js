@@ -69,7 +69,7 @@ function nades(e){ const N = C().nade, p = S.player, m = muzzle(e), dmg = N.dmg 
 function tickZones(dt, t){ for(let i = G.zones.length - 1; i >= 0; i--){ const s = G.zones[i]; s.t -= dt; tickArtLock(s.zone, 1 - Math.max(0, s.t) / s.T, null, t, dt);
   if(s.t > 0) continue; disposeArtZone(s.zone); G.zones.splice(i, 1);
   bigExplode({ x:s.x, z:s.z }, 0xffb060, 0.55); sfx('boom', { x:s.x, z:s.z }, 0.7); blastAllies(s.x, s.z, s.R, s.dmg);
-  const p = S.player; if(!p) continue; const dx = p.pos.x - s.x, dz = p.pos.z - s.z, d = Math.hypot(dx, dz); if(d < s.R) damagePlayer(s.dmg * (1 - 0.6 * d / s.R), t, dx || 0.01, dz); } }
+  const p = S.player; if(!p) continue; const dx = p.pos.x - s.x, dz = p.pos.z - s.z, d = Math.hypot(dx, dz); if(d < s.R) damagePlayer(s.dmg * (1 - 0.6 * d / s.R), t, dx || 0.01, dz, 'blast'); } }
 // he is down: his guards break and run (no longer in reach, no longer firing), slow motion, then the stage is won.
 //   NEMESIS 1 fled: he got away instead — his guards go with him, the duel holds the field (no wave, the finale's phase) for NEMESIS.escape.winDelay s while he
 //   runs, and the stage is won all the same

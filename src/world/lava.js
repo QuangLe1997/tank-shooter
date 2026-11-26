@@ -26,6 +26,6 @@ export function updateLava(dt, now){ if(!LAVA.pools.length) return;
   if(now>LAVA.at){ LAVA.at=now+(MOBILE?0.22:0.09); const q=LAVA.pools[(Math.random()*LAVA.pools.length)|0], a=Math.random()*6.283, d=Math.random()*q.r*0.8;   // embers and bubbles
     spawnPart(q.x+Math.cos(a)*d, q.y+0.3, q.z+Math.sin(a)*d, (Math.random()-0.5)*1.5, 2+Math.random()*3, (Math.random()-0.5)*1.5, { color:Math.random()<0.5?0xff7a1a:0xffc24a, size:0.35+Math.random()*0.4, life:0.9, grav:3, drag:0.6 });
     if(Math.random()<0.25) spawnPart(q.x+Math.cos(a)*d, q.y+0.5, q.z+Math.sin(a)*d, 0.3, 1.2, 0, { color:0x3a2a24, size:2.5, life:2.2, smoke:true, grav:-0.4, drag:0.6, grow:1.8, op:0.35 }); }
-  const p=S.player; if(p && inLava(p.pos.x, p.pos.z, -0.5)){ damagePlayer(LAVA.dps.player*dt, now); if(Math.random()<0.4) spawnPart(p.pos.x, 0.8, p.pos.z, (Math.random()-0.5)*3, 2.5, (Math.random()-0.5)*3, { color:0xff6a1a, size:0.8, life:0.4, grav:1, drag:1 });
+  const p=S.player; if(p && inLava(p.pos.x, p.pos.z, -0.5)){ damagePlayer(LAVA.dps.player*dt, now, 0, 0, 'fire');   // HIT 1 the heat, a brief smoulder (fx/soldier-fx.js) — no longer a stream of flame off him
     if(now>LAVA.warnAt){ LAVA.warnAt=now+3; floatText('DUNG NHAM! RA KHỎI ĐÂY', '#ff7a2a', p.pos, 16); } }
   for(const e of enemies){ if(e.def.air || e.def.inf) continue; if(inLava(e.pos.x, e.pos.z, -0.5)) damageEnemy(e, LAVA.dps.enemy*dt); } }

@@ -55,6 +55,6 @@ export function detonate(b){
 // enemy AoE that hits the PLAYER + CORE (mortar shells, helicopter bombs)
 export function enemyGroundStrike(x,z,r,dmg,now){
   bigExplode({x,z}, 0xff7a3d, r/3); blastAllies(x,z,r,dmg);
-  const p=S.player; if(now>=p.invincibleUntil && (p.pos.x-x)**2+(p.pos.z-z)**2 < r*r) damagePlayer(dmg, now);
+  const p=S.player; if(now>=p.invincibleUntil && (p.pos.x-x)**2+(p.pos.z-z)**2 < r*r) damagePlayer(dmg, now, p.pos.x-x, p.pos.z-z, 'blast');   // HIT 1 a blast, not a round
   if(core && (core.pos.x-x)**2+(core.pos.z-z)**2 < r*r) damageCore(dmg*0.7);
 }

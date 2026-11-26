@@ -62,7 +62,7 @@ function kamiBlast(d, now){ const B = E.kami.blast, p = S.player, gy = heightAt(
   else { _pos.x = d.x; _pos.y = d.y; _pos.z = d.z; spawnPart(d.x, d.y, d.z, 0, 0, 0, { tex:'flash', color:0xfff2d0, size:4, life:0.09, grav:0, drag:0 }); burst(_pos, 0xffb050, 12, 9, { y:d.y, life:0.4, size:0.7, grav:-6, drag:2.5 }); sfx('explode', _pos, 0.9); }
   blastAllies(d.x, d.z, B.r, B.dmg);
   if(dd < B.r){ let k = 1 - (1 - B.edge) * dd / B.r; if(!lineClear(d.x, d.y + 0.3, d.z, p.pos.x, py, p.pos.z)) k *= 0.3;   // (a wall between him and it takes most of it)
-    damagePlayer(B.dmg * k, now, p.pos.x - d.x, p.pos.z - d.z); RAID.n.hits++; } else RAID.n.misses++;
+    damagePlayer(B.dmg * k, now, p.pos.x - d.x, p.pos.z - d.z, 'blast'); RAID.n.hits++; } else RAID.n.misses++;
   RAID.n.minWarn = Math.min(RAID.n.minWarn, now - d.t0); droneFree(d); }
 function kamiFly(d, dt, now){ const K = E.kami, p = S.player, py = heightAt(p.pos.x, p.pos.z) + 1.2 + (p.lift || 0); look(d, now, 0.15); const lost = now - d.seenAt > K.lost;
   if(d.st === 'dive'){ const px = d.x, pyy = d.y, pz = d.z, live = d.sees && !d.blind; d.dvT += dt; if(d.dvT > 6){ kamiBlast(d, now); return; }   // (a dive that found nothing: it goes off where it is)

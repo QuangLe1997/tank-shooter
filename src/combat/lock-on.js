@@ -2,7 +2,7 @@
 //   (no-tanks: the tank's lock-on missile gun — its seeker, reticles, smart mini-missiles, homing — is gone; the file keeps its name)
 import * as THREE from 'three';
 import { LETHAL, SQUAD, FORT, TREEFALL, AIRAIM, LINE, GUNFX, GUNFEEL } from '../../config.js';
-import { hitConfirm, wrapAngle, ARC_G, ARENA, BVIS, DW, droneShot, FT, GLOW, MOBILE, S, UGRID, UNDER, _hot, addTrail, armorOf, ballisticInit, ballisticStep, ballisticTrailK, bloodSpurt, bulletFalloff, bulletPool, bullets, core, damageAlly, damageBlock, damageCore, damageEnemy, damagePlayer, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, fortIntactCross, fortWallCross, groundHit, heightAt, impactFX, lightning, nearMiss, orientShell, ringPulse, rocketExhaust, shellStretch, shellTrail, shootGuard, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, sweepPoint, tunnelBlast, typeMul, unitsNear, vaporWake, shotTree, trafficShot, dodgeShot, stealthShot, lineHit, inShape, dressRound, sandProof, bulletImpact, hitMat, climbPerch, tracerHit, fireFxOn, CO, coopBulletMate } from '../hub.js';
+import { hitConfirm, sfx, wrapAngle, ARC_G, ARENA, BVIS, DW, droneShot, FT, GLOW, MOBILE, S, UGRID, UNDER, _hot, addTrail, armorOf, ballisticInit, ballisticStep, ballisticTrailK, bloodSpurt, bulletFalloff, bulletPool, bullets, core, damageAlly, damageBlock, damageCore, damageEnemy, damagePlayer, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, fortIntactCross, fortWallCross, groundHit, heightAt, impactFX, lightning, nearMiss, orientShell, ringPulse, rocketExhaust, shellStretch, shellTrail, shootGuard, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, sweepPoint, tunnelBlast, typeMul, unitsNear, vaporWake, shotTree, trafficShot, dodgeShot, stealthShot, lineHit, inShape, dressRound, sandProof, bulletImpact, hitMat, climbPerch, tracerHit, fireFxOn, CO, coopBulletMate } from '../hub.js';
 
 // Z238 how high a block stands (world y of its top), measured once from its mesh and again after it has been damaged
 const _tb=new THREE.Box3();
@@ -134,21 +134,21 @@ export function updateBullets(dt, now){
             for(const e2 of enemies.slice()){ if(e2===e||hits<=0) continue; const cx=e2.pos.x-e.pos.x, cz=e2.pos.z-e.pos.z;
               if(cx*cx+cz*cz < b.chainR*b.chainR && !fortIntactCross(e.pos.x, e.pos.z, e2.pos.x, e2.pos.z)){ e2._fx='shock'; _ca.set(e.pos.x, heightAt(e.pos.x,e.pos.z)+1.3, e.pos.z); _cb.set(e2.pos.x, heightAt(e2.pos.x,e2.pos.z)+1.3, e2.pos.z); lightning(_ca, _cb, 0x7fc0ff, 0.18, 0.26); damageEnemy(e2, b.dmg*0.6); ringPulse(e2.pos, 0x7fd0ff, 1.3);
                 spawnPart(e2.pos.x,1.4,e2.pos.z,(Math.random()-0.5)*6,4,(Math.random()-0.5)*6,{color:0x9fe0ff,size:0.9,life:0.2,grav:0,drag:6}); hits--; } } }
-          impactFX(b.mesh.position, b.fx, Math.min(3.2, 1 + b.dmg/26)); hit=true;   // per-gun impact spray (spark/blast/pierce/shock)
+          if(e.def.inf && b.fx!=='blast' && b.fx!=='shock') sfx('flesh', e.pos, 0.6+Math.min(0.8, b.dmg/40)); else impactFX(b.mesh.position, b.fx, Math.min(3.2, 1 + b.dmg/26)); hit=true;   // per-gun impact spray (spark/blast/pierce/shock) — HIT 1 a round into a MAN: the flesh thwack and his blood (above), not the armour's ring, sparks and glowing shards
           if(b.pierce>0){ b.pierce--; } else break; } }
     } else if(b.owner!=='p'){ // enemy bullet — Z237 only an ENEMY round can hit him
       const p=S.player;
       sweepPoint(b._hx, b._hz, b.x, b.z, p.pos.x, p.pos.z, _sw); const dpx=p.pos.x-_sw.x, dpz=p.pos.z-_sw.z;   // Z228b swept
-      if(!b.dodged && !(wb && pastFace(b, p.pos.x, p.pos.z)) && dpx*dpx+dpz*dpz < (b.r+p.radius*2.2)**2 && Math.hypot(_sw.x-p.pos.x, _sw.z-p.pos.z) < p.radius+b.r && lineH(b, _wy, p) && !(dodgeShot(p) && (b.dodged=true))){ const _was=now>=p.invincibleUntil; damagePlayer(b.dmg, now, b.vx, b.vz);   // Z377 a roll (or a hard run) makes it miss: it flies on past him
+      if(!b.dodged && !(wb && pastFace(b, p.pos.x, p.pos.z)) && dpx*dpx+dpz*dpz < (b.r+p.radius*2.2)**2 && Math.hypot(_sw.x-p.pos.x, _sw.z-p.pos.z) < p.radius+b.r && lineH(b, _wy, p) && !(dodgeShot(p) && (b.dodged=true))){ const _was=now>=p.invincibleUntil; damagePlayer(b.dmg, now, b.vx, b.vz, b.aoe>0 ? 'blast' : 'shot', _wy-heightAt(p.pos.x,p.pos.z)-(p.lift||0));   /* HIT 1 a shell that bursts on him is a blast; a round: how high it struck (his plate carrier) */   // Z377 a roll (or a hard run) makes it miss: it flies on past him
         if(_was){ const _bl=Math.hypot(b.vx,b.vz)||1, _imp=Math.min(11,2.8+b.dmg*0.12); p.kbx+=(b.vx/_bl)*_imp; p.kbz+=(b.vz/_bl)*_imp; }   // shoved clearly back along the shot — feel the hit
         else if(now < p.shieldUntil){ p.shieldHit=now; ringPulse({x:b.x,z:b.z}, 0x9ff0ff, 1.5);   // shield absorbs the shot → flash + ripple at the impact point
           spawnPart(b.x,1.3,b.z,(Math.random()-0.5)*5,3,(Math.random()-0.5)*5,{color:0xbff2ff,size:0.7,life:0.22,grav:0,drag:5}); }
         hit=true; }
       if(!hit && CO.ai && coopBulletMate(b, _wy)) hit=true;   // COOP 5 on a co-op host the guest's soldier is struck like the host's own (the damage is sent to him)
       if(!hit) for(const s of FT){ const dx=s.pos.x-b.x, dz=s.pos.z-b.z; if(dx*dx+dz*dz<9) suppress(s, dt*1.4); }   // Z173 our men get pinned too
-      if(!hit) for(const s of FT){ const dx=s.pos.x-b.x, dz=s.pos.z-b.z, hr=s.g.userData.stance==='prone'?SQUAD.proneHitR:SQUAD.standHitR; if(dx*dx+dz*dz < (b.r+hr)**2 && lineH(b, _wy, s, true)){ bloodSpurt(s.pos.x, s.pos.z, b.vx, b.vz, b.inf?0.7:1.6); damageAlly(s, (b.inf||!LETHAL.heavyKills) ? b.dmg : 999); hit=true; break; } }   // Z89 fireteam can be hit · Z104 a tank shell kills outright   // Z105 a man lying flat is a much smaller target
+      if(!hit) for(const s of FT){ const dx=s.pos.x-b.x, dz=s.pos.z-b.z, hr=s.g.userData.stance==='prone'?SQUAD.proneHitR:SQUAD.standHitR; if(dx*dx+dz*dz < (b.r+hr)**2 && lineH(b, _wy, s, true)){ bloodSpurt(s.pos.x, s.pos.z, b.vx, b.vz, b.inf?0.7:1.6); sfx('flesh', s.pos, 0.6); damageAlly(s, (b.inf||!LETHAL.heavyKills) ? b.dmg : 999); hit=true; break; } }   // Z89 fireteam can be hit · Z104 a tank shell kills outright   // Z105 a man lying flat is a much smaller target
       if(!hit) for(const s of soldiers){ const dx=s.pos.x-b.x, dz=s.pos.z-b.z;     // soldiers body-block incoming fire (and take the hit)
-        if(dx*dx+dz*dz < (b.r+1.15)**2){ damageSoldier(s, b.dmg); ringPulse(b.mesh.position,0xff8a4a,1.0); hit=true; break; } }
+        if(dx*dx+dz*dz < (b.r+1.15)**2){ damageSoldier(s, b.dmg); bloodSpurt(s.pos.x, s.pos.z, b.vx, b.vz, 0.8); sfx('flesh', s.pos, 0.6); hit=true; break; } }   // HIT 1 one of ours bleeds (was an orange flash ring)
       if(!hit && core){ const dcx=core.pos.x-b.x, dcz=core.pos.z-b.z;
         if(dcx*dcx+dcz*dcz < (b.r+core.r)**2){ damageCore(b.dmg); ringPulse(b.mesh.position,0xe0603a,2); hit=true; } }
     }

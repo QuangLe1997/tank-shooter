@@ -1,7 +1,7 @@
 // actors/damage.js — DAMAGE AND DEATH of an enemy unit: hits (the general's hit cap), the kill (score, coins, loot, the soldier's experience), the fall
 import * as THREE from 'three';
 import { BALANCE, LOOT } from '../../config.js';
-import { S, WAVE, addScore, bigExplode, bumpCombo, diffRewardMul, dropBeam, dropPowerup, enemies, enemyPool, floatText, freeEnemyBar, gunshipDown, hitFlash, infantryDown, loopRewardMul, updateHUD, voiceKill, soldierKill, awareHit, awareDeath, dirKill, storyCue, nemSlip, afxBark, coopGuestHit, coopHostDeath } from '../hub.js';
+import { S, WAVE, addScore, bigExplode, ringPulse, bumpCombo, diffRewardMul, dropBeam, dropPowerup, enemies, enemyPool, floatText, freeEnemyBar, gunshipDown, hitFlash, infantryDown, loopRewardMul, updateHUD, voiceKill, soldierKill, awareHit, awareDeath, dirKill, storyCue, nemSlip, afxBark, coopGuestHit, coopHostDeath } from '../hub.js';
 
 export function damageEnemy(e, dmg){
   if(e.puppet && coopGuestHit(e, dmg)) return;   // COOP 6 on a co-op guest the enemy is the host's: the hit is reported, the host takes the health off
@@ -25,7 +25,7 @@ export function killEnemy(e){
   const mult = (e.elite?BALANCE.elite.scoreMul:1) * loopRewardMul() * diffRewardMul();
   addScore(Math.round(e.def.score*mult), new THREE.Vector3(e.pos.x,1.6,e.pos.z));
   const p=S.player; if(p.lifesteal>0 && p.hp<p.maxHp){ p.hp=Math.min(p.maxHp, p.hp+p.lifesteal); updateHUD(); }
-  if(e.elite){ bigExplode(e.pos, 0xffd24a, 2.0); floatText('HẠ TINH NHUỆ', '#ffd24a', new THREE.Vector3(e.pos.x,2.4,e.pos.z), 22); }
+  if(e.elite){ if(!e.def.inf) bigExplode(e.pos, 0xffd24a, 2.0); else ringPulse(e.pos, 0xffd24a, 2.4); floatText('HẠ TINH NHUỆ', '#ffd24a', new THREE.Vector3(e.pos.x,2.4,e.pos.z), 22); }
   if(e.loot || WAVE.treasure) dropPowerup(e.pos, e.elite||e.def.hp>=LOOT.source.epicHp ? 2 : e.def.hp>=LOOT.source.rareHp ? 1 : 0);   // Z93 loot quality follows how hard it was to kill   // beacon-marked tanks (and every kill in a TREASURE wave) yield loot
   // recycle mesh + HP bar
   const fx=e.mesh.getObjectByName('eliteFX'); if(fx){ e.mesh.remove(fx); if(fx.material) fx.material.dispose(); }

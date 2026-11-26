@@ -149,7 +149,7 @@ export function fuelBlast(x, z, D, now){ const gy=heightAt(x,z), pos={x,z}, R=D.
   for(let k=0;k<(MOBILE?5:10)*(big?1.6:1);k++){ const a=Math.random()*6.283, sp=3+Math.random()*7*(big?1.6:1); spawnPart(x, gy+1, z, Math.cos(a)*sp, 4+Math.random()*6, Math.sin(a)*sp, {tex:'fire', color:0xffd080, color2:0xff3a08, size:big?1.6:0.9, life:0.8+Math.random()*0.4, grav:-12, drag:0.6, grow:0.7}); }   // burning fuel thrown out
   if(big) for(let k=0;k<(MOBILE?8:16);k++) spawnPart(x+_R(-2,2), gy+2+Math.random()*3, z+_R(-2,2), _R(-2,2), 12+Math.random()*12, _R(-2,2), { tex:'fire', color:0xfff0c0, color2:0xb8260a, size:3+Math.random()*2, life:1.0+Math.random()*0.5, grav:5, drag:1.3, grow:2.4 });   // a fire column
   aoeDamage(x, z, R, D.dmg, false, now); blastAllies(x, z, R, D.dmg*0.6);
-  const p=S.player; if(p){ const d=Math.hypot(p.pos.x-x, p.pos.z-z); if(d<R){ damagePlayer(Math.round(D.dmg*(1-(1-D.edge)*d/R)*0.6), now, p.pos.x-x, p.pos.z-z); } } }
+  const p=S.player; if(p){ const d=Math.hypot(p.pos.x-x, p.pos.z-z); if(d<R){ damagePlayer(Math.round(D.dmg*(1-(1-D.edge)*d/R)*0.6), now, p.pos.x-x, p.pos.z-z, 'blast'); } } }
 // Z414 the fuel round a blast goes next, a beat later: drums go up, a big tank / tanker takes spread × its max hp (a whole farm burns through in a few blasts)
 const _isFuel=o=>o.kind==='fueldrum' || o.kind==='drums' || (o.supply && (o.kind==='fueltank' || o.kind==='tanker'));
 export function fuelChain(src, D){ const sp=D.spread ?? FUEL_TANK.drumSpread;
@@ -218,7 +218,7 @@ export function destroyCover(b){
     for(let k=0;k<14;k++){ const a=Math.random()*6.283, sp=4+Math.random()*9; spawnPart(b.x, heightAt(b.x,b.z)+1.4, b.z, Math.cos(a)*sp, 5+Math.random()*7, Math.sin(a)*sp, {tex:'fire', color:0xffd080, color2:0xff3a08, size:1.2, life:0.9+Math.random()*0.5, grav:-12, drag:0.6, grow:0.8}); }   // flaming fuel blobs arc out
     aoeDamage(b.x, b.z, R, 60, false, now);
     for(const e of enemies){ const d=Math.hypot(e.pos.x-b.x, e.pos.z-b.z); if(d<R+e.r && !e.def.air){ if(!e.burn) e.burn={lvl:0,until:0}; e.burn.lvl=Math.min(BALANCE.flame.lvlMax, e.burn.lvl+2.5*(1-d/(R+e.r))+1); e.burn.until=now+BALANCE.flame.duration; } }   // tanks behind the drums catch fire
-    const p=S.player; if(p){ const d=Math.hypot(p.pos.x-b.x, p.pos.z-b.z); if(d<R){ damagePlayer(Math.round(30*(1-d/R))+6, now, p.pos.x-b.x, p.pos.z-b.z); } }
+    const p=S.player; if(p){ const d=Math.hypot(p.pos.x-b.x, p.pos.z-b.z); if(d<R){ damagePlayer(Math.round(30*(1-d/R))+6, now, p.pos.x-b.x, p.pos.z-b.z, 'blast'); } }
     fuelChain(b, { chain:R*0.95, delay:[0.18, 0.44] });   // chain reaction through the fuel dump (Z402 and the loose drums · Z414 the big fuel takes a share)
     deformCrater(b.x, b.z, 2.4, 0.5);
     for(let k=0;k<4;k++) spawnDebris(pos, 0.9, 0x6a2a1a);

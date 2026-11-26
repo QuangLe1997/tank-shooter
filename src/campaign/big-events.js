@@ -25,7 +25,7 @@ function say(key, must){ if(storyCue(key, null, must)) return; const L = STORY.l
 function tell(banner, key){ showBanner(banner, '#ff5a3a'); sfx('alarm'); say(key, true); }
 // a blast that takes no side: the enemy's men and the cover round them (combat/spells.js aoeDamage), our men (blastAllies), and him — never the base's core
 function blast(x, z, R, dmg, now){ const p = S.player, n0 = enemies.length; aoeDamage(x, z, R, dmg, false, now, 'HE', false); blastAllies(x, z, R, dmg); BIGEV.stats.kills += n0 - enemies.length;
-  if(now >= (p.invincibleUntil || 0)){ const k = infBlastK(Math.hypot(p.pos.x - x, p.pos.z - z), R); if(k > 0){ BIGEV.stats.hits++; damagePlayer(dmg * C.playerK * k, now, p.pos.x - x, p.pos.z - z); } } }
+  if(now >= (p.invincibleUntil || 0)){ const k = infBlastK(Math.hypot(p.pos.x - x, p.pos.z - z), R); if(k > 0){ BIGEV.stats.hits++; damagePlayer(dmg * C.playerK * k, now, p.pos.x - x, p.pos.z - z, 'blast'); } } }
 function shake(x, z, k, far){ const d = Math.hypot(S.player.pos.x - x, S.player.pos.z - z); if(d < far) S.shake = Math.min(4, S.shake + k * (1 - d / far)); }
 // an explosion's look and sound (fx/explosions.js bigExplode: scorch, crater, fireball, dust, the report) — its shake by how far from him it is, not flat
 function boom(q, col, sc, k, far){ const s0 = S.shake; bigExplode(q, col, sc); S.shake = s0; shake(q.x, q.z, k, far); }
@@ -128,7 +128,7 @@ function inFire(x, z){ for(let i = 0; i < CELL.length; i++){ const c = CELL[i]; 
 function cellsBurn(now){ const F = C.fire, p = S.player, d = F.dps * F.tick; let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9;
   for(let i = 0; i < CELL.length; i++){ const c = CELL[i]; if(!c.on || !c.hot) continue; if(c.x - c.r < x0) x0 = c.x - c.r; if(c.x + c.r > x1) x1 = c.x + c.r; if(c.z - c.r < z0) z0 = c.z - c.r; if(c.z + c.r > z1) z1 = c.z + c.r; }
   if(x0 > x1) return;
-  if(p.pos.x > x0 && p.pos.x < x1 && p.pos.z > z0 && p.pos.z < z1 && now >= (p.invincibleUntil || 0) && inFire(p.pos.x, p.pos.z)){ BIGEV.stats.hits++; damagePlayer(d * C.playerK, now); if(now > _sayAt){ _sayAt = now + 2; floatText('ĐANG CHÁY — RA KHỎI LỬA!', '#ff9a3a', p.pos, 15); } }
+  if(p.pos.x > x0 && p.pos.x < x1 && p.pos.z > z0 && p.pos.z < z1 && now >= (p.invincibleUntil || 0) && inFire(p.pos.x, p.pos.z)){ BIGEV.stats.hits++; damagePlayer(d * C.playerK, now, 0, 0, 'fire'); if(now > _sayAt){ _sayAt = now + 2; floatText('ĐANG CHÁY — RA KHỎI LỬA!', '#ff9a3a', p.pos, 15); } }
   for(let i = enemies.length - 1; i >= 0; i--){ const e = enemies[i]; if(!e.def.inf || e.general || e.pos.x < x0 || e.pos.x > x1 || e.pos.z < z0 || e.pos.z > z1 || !inFire(e.pos.x, e.pos.z)) continue; damageEnemy(e, d * F.enemyK); }
   for(let i = FT.length - 1; i >= 0; i--){ const a = FT[i]; if(a.pos.x > x0 && a.pos.x < x1 && a.pos.z > z0 && a.pos.z < z1 && inFire(a.pos.x, a.pos.z)) damageAlly(a, d); } }
 // the fire's smoke shuts sight lines (game/stealth.js VEILS): a few banks laid over the burning cells, moved once a second

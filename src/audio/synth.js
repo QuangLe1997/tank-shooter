@@ -1,6 +1,6 @@
 // audio/synth.js — AUDIO (Web Audio synth)
 import * as THREE from 'three';
-import { PROFILE, S, VIEW, afxBus, afxOn, afxSend, afxSfx, worldToScreen } from '../hub.js';
+import { PROFILE, S, VIEW, afxBus, afxOn, afxSend, afxSfx, bodyHitSound, bodyThwackBuf, worldToScreen } from '../hub.js';
 
 // ----------------------------- AUDIO (Web Audio synth) -----------------------------
 export let actx=null, master=null, musicBus=null, musicSrc=null, songBuf=null, muted=false;
@@ -154,6 +154,7 @@ export const SND = {   // Z151 re-levelled by measurement (K-weighted momentary 
   bigboom: { r:()=>rExplosion(1.45), g:0.90, gap:0.09, big:1 },
   hitM:    { r:()=>rImpactMetal(false), g:0.22, gap:0.06 },
   hitH:    { r:()=>rImpactMetal(true), g:0.32, gap:0.07 },
+  flesh:   { r:()=>bodyThwackBuf(SR(), Math.random), g:0.3, gap:0.03 },   // HIT 1 a round into a man (an enemy, one of ours): the dull thwack of audio/body-hit.js — never the armour plate
   ricochet:{ r:rRicochet, g:0.2, gap:0.2 },
   clang:   { r:rCollision, g:0.32, gap:0.18 },
   thud:    { r:rThud, g:0.85, gap:0.08 },
@@ -229,6 +230,7 @@ export function sfx(name, pos, vol){
     case 'bigexplode': return play('bigboom', pos, vol);
     case 'hit': return play(Math.random()<0.12?'ricochet':'hitM', pos, vol);
     case 'hitHeavy': return play('hitH', pos, vol);
+    case 'flesh': return play('flesh', pos, vol);   // HIT 1
     case 'ricochet': return play('ricochet', pos, vol);
     case 'clang': return play('clang', pos, vol);
     case 'thud': return play('thud', pos, vol);
@@ -240,7 +242,7 @@ export function sfx(name, pos, vol){
   switch(name){
     case 'shoot_railgun': if(SAMPLES.railgun){ play('railgun', pos, vol); break; }tone(1600,0.2,{type:'triangle',vol:0.07,slideTo:220}); noise(0.05,{vol:0.18,type:'bp',hp:1800,lp:6000,attack:0.001}); tone(90,0.3,{type:'sine',vol:0.3,slideTo:35}); noise(0.25,{vol:0.12,type:'bp',hp:300,lp:1500,delay:0.02}); break;
     case 'shoot_tesla': if(SAMPLES.tesla){ play('tesla', pos, vol); break; } noise(0.12,{vol:0.12,type:'bp',hp:900,lp:4200,dist:true}); tone(120,0.15,{type:'sawtooth',vol:0.08,slideTo:60}); break;
-    case 'hurt':    play('hitH', null, 1.1); noise(0.18,{vol:0.2,type:'lp',lp:1400,dist:true}); break;   // our own hull is struck: heavy plate + thump
+    case 'hurt':    bodyHitSound('shot', 10, false); break;   // HIT 1 he is struck: a body hit (audio/body-hit.js) — it was the tank's hull plate ringing
     case 'corehit': tone(150,0.14,{type:'triangle',vol:0.16,slideTo:70}); break;
     case 'wave':    [523,659,784].forEach((f,i)=>tone(f,0.2,{type:'triangle',vol:0.14,delay:i*0.07})); break;
     case 'dash': if(SAMPLES.dash){ play('dash', pos, vol); break; } noise(0.3,{vol:0.2,type:'lp',lp:900,sweepTo:2400,brown:true}); tone(60,0.3,{type:'sawtooth',vol:0.08,slideTo:110}); break;   // engine surge

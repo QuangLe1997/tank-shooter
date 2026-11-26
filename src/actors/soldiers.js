@@ -138,7 +138,7 @@ export function makeSoldierMesh(opts){
   g.addEventListener('added', ()=>TROOP_BATCH.roots.add(g)); g.addEventListener('removed', ()=>TROOP_BATCH.roots.delete(g));
   return g;
 }
-const _tbWhite=new THREE.Color(1,1,1), _tbHit=new THREE.Color(2.4,1.05,0.8), _tbBk={}, _tbFr=new THREE.Frustum(), _tbPM=new THREE.Matrix4(), _tbSp=new THREE.Sphere();
+const _tbWhite=new THREE.Color(1,1,1), _tbHit=new THREE.Color(1.12,0.62,0.58), _tbBk={}, _tbFr=new THREE.Frustum(), _tbPM=new THREE.Matrix4(), _tbSp=new THREE.Sphere();   // HIT 1 a man struck darkens red a moment (was an orange glow ×2.4: a hull's hot flash)
 let _tbPx=0, _tbPz=0, _tbFar2=Infinity, _tbSh2=Infinity;
 function tbIM(key, kind, sh, need, far){ const id=key+'_'+kind+'_'+(sh?1:0)+(far?'f':''); let m=TROOP_BATCH.im[id];
   if(m && m.instanceMatrix.count>=need) return m;

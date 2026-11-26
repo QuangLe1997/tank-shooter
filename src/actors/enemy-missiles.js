@@ -30,7 +30,7 @@ export function blowMissile(i, how){
   const r=EMIS[i], now=performance.now()/1000, gy=heightAt(r.x,r.z);
   if(how==='shot'){ bigExplode({x:r.x,z:r.z}, 0xffd27a, 0.7); floatText('ĐÃ ĐÁNH CHẶN', '#9fe8ff', {x:r.x,y:gy+2.6,z:r.z}, 15); addScore(40, new THREE.Vector3(r.x,2,r.z)); }
   else { bigExplode({x:r.x,z:r.z}, 0xff8a3a, r.aoe/3); decalScorch(r.x, r.z, r.aoe*0.6, 0.8);
-    if(how!=='direct'){ const p=S.player, dd=Math.hypot(p.pos.x-r.x, p.pos.z-r.z); if(dd<r.aoe+p.radius) damagePlayer(r.dmg*0.55*(1-dd/(r.aoe+p.radius)*0.6), now, p.pos.x-r.x, p.pos.z-r.z); }
+    if(how!=='direct'){ const p=S.player, dd=Math.hypot(p.pos.x-r.x, p.pos.z-r.z); if(dd<r.aoe+p.radius) damagePlayer(r.dmg*0.55*(1-dd/(r.aoe+p.radius)*0.6), now, p.pos.x-r.x, p.pos.z-r.z, 'blast'); }
     for(const s of soldiers.slice()) if(Math.hypot(s.pos.x-r.x,s.pos.z-r.z)<r.aoe) damageSoldier(s, r.dmg*0.6);
     blastAllies(r.x, r.z, r.aoe, r.dmg*0.6); }
   if(r.wire){ dropBeam(r.wire); r.wire=null; }
@@ -52,7 +52,7 @@ export function updateEnemyMissiles(dt, now){
     if(r.wire){ r.wire.visible=true; const s0=r.src; if(s0&&enemies.includes(s0)){ const L=r.wire.geometry.attributes.position; L.setXYZ(0,s0.pos.x,heightAt(s0.pos.x,s0.pos.z)+1.9,s0.pos.z); L.setXYZ(1,r.x,r.y,r.z); L.needsUpdate=true; } else r.wire.visible=false; }
     let gone=null;
     for(let j=bullets.length-1;j>=0;j--){ const b=bullets[j]; if(b.owner!=='p') continue; if((b.x-r.x)**2+(b.z-r.z)**2 < (b.r+0.85)**2){ if(b.pierce>0) b.pierce--; else recycleBullet(j); gone='shot'; break; } }   // SHOOT IT DOWN
-    if(!gone && Math.hypot(r.x-p.pos.x, r.z-p.pos.z) < p.radius+0.3 && r.y < gy+3.2){ damagePlayer(r.dmg, now, sx, sz); gone='direct'; }
+    if(!gone && Math.hypot(r.x-p.pos.x, r.z-p.pos.z) < p.radius+0.3 && r.y < gy+3.2){ damagePlayer(r.dmg, now, sx, sz, 'blast'); gone='direct'; }
     if(!gone) for(const bl of blocksNear(r.x, r.z, 0.3, _mbk)){ if(inBlock(bl, r.x, r.z, 0.3)){ if(bl.kind!=='obj' && !bl.supply) damageBlock(bl, r.dmg*1.2); wallMark(bl, r.x, r.y, r.z, -Math.sin(r.ang), -Math.cos(r.ang), 2.0, true); gone='hit'; break; } }
     if(!gone && core && Math.hypot(core.pos.x-r.x, core.pos.z-r.z) < core.r){ damageCore(r.dmg*0.8); gone='hit'; }
     if(!gone && (r.y<=gy+0.2 || r.life<=0 || (!UNDER.on && (Math.abs(r.x)>ARENA || Math.abs(r.z)>ARENA)))) gone='ground';

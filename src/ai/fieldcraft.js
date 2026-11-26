@@ -60,7 +60,7 @@ function nadeBoom(g, now){ const N=FC.nade, x=g.x1, z=g.z1, y=heightAt(x,z);
   sfx('explode', { x, z }, 0.55); const p=S.player; if(p && Math.hypot(p.pos.x-x, p.pos.z-z)<16) S.shake=Math.min(3, S.shake+0.25);
   if(g.side==='e'){ blastAllies(x, z, N.R, N.dmgE*(1+(S.stage-1)*0.06));
     if(g.you && CO.ai) coopBlastMate(x, z, N.R, g.dmg, 0.4);   /* COOP 5 on a co-op host the guest's soldier is caught in it like the host's */
-    if(g.you && p){ const dx=p.pos.x-x, dz=p.pos.z-z, dd=Math.hypot(dx, dz); if(dd<N.R) damagePlayer(g.dmg*(1-0.6*dd/N.R), now, dx||0.01, dz); } }   // DIR 2 a grenade thrown to flush the player (ai/tiers.js): it hurts him too
+    if(g.you && p){ const dx=p.pos.x-x, dz=p.pos.z-z, dd=Math.hypot(dx, dz); if(dd<N.R) damagePlayer(g.dmg*(1-0.6*dd/N.R), now, dx||0.01, dz, 'blast'); } }   // DIR 2 a grenade thrown to flush the player (ai/tiers.js): it hurts him too
   else for(const e of enemies.slice()){ if(!e.def.inf || e.dead) continue; const k=infBlastK(Math.hypot(e.pos.x-x, e.pos.z-z), N.R); if(k<=0) continue;
     e._blast={ x, z }; e._hitK=1+1.2*k; e._fx='blast'; damageEnemy(e, k>=1 ? e.hp+1 : N.dmgA*k*(1+(S.stage-1)*0.08)); } }
 function updateNades(dt, now){

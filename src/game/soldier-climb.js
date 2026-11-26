@@ -127,7 +127,7 @@ export function climbAfter(p, dt, now){ const K = CV.climb; if(!K) { p.lift = 0;
     const r = deckAt(p.pos.x, p.pos.z, K.fy + 0.3), floor = r === 1 ? _dy : heightAt(p.pos.x, p.pos.z);
     if(K.fy <= floor){ const dh = K.h0 - floor; CV.jump = null; CV.land = C.fall.land * (dh > C.fall.far ? 1 + C.fall.long / C.fall.land : 1); sfx('thud', p.pos, Math.min(1, 0.35 + dh * 0.06));
       for(let n = 0; n < 4; n++) spawnPart(p.pos.x, floor + 0.05, p.pos.z, (Math.random() - 0.5) * 1.6, 0.4, (Math.random() - 0.5) * 1.6, { color:0xb8a888, size:0.45, life:0.6, smoke:true, grav:-0.5, drag:2, op:0.32 });
-      if(dh > C.fall.hurt){ damagePlayer(Math.min(C.fall.max, (dh - C.fall.hurt) * C.fall.perM), now, 0, 0); S.shake = Math.min(3, (S.shake || 0) + 0.6); }
+      if(dh > C.fall.hurt){ damagePlayer(Math.min(C.fall.max, (dh - C.fall.hurt) * C.fall.perM), now, 0, 0, 'fall'); S.shake = Math.min(3, (S.shake || 0) + 0.6); }
       if(r === 1){ K.ph = 'top'; K.fy = floor; K.bl = _dbl; K.t = 0; K.onT = 1; K.last.copy(p.pos); K.edgeT = 0; K.push = 0; } else { CV.climb = null; p.lift = 0; return; } } }
   p.lift = Math.max(0, K.fy - heightAt(p.pos.x, p.pos.z)); }
 // a block he is standing over (the world's push leaves it, and the ones under his soles, alone: game/cavalry.js collide)

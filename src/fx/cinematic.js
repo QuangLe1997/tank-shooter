@@ -2,7 +2,7 @@
 //   light it orange and flicker), hot sparks + armour shards off the side of OUR tank that was hit, a red marker at the screen edge pointing at
 //   whoever hit you, and a tank that smokes grey when hurt and burns black when it is nearly gone.
 import * as THREE from 'three';
-import { MOBILE, S, gradePass, heightAt, scene, spawnPart } from '../hub.js';
+import { MOBILE, S, gradePass, heightAt, scene, updateBodyHit } from '../hub.js';
 
 export const CINE = { domes:[], lights:[], hitDir:[], dmgT:0, sparkT:0 };
 const _domeGeo=new THREE.SphereGeometry(1, 32, 14, 0, Math.PI*2, 0, Math.PI/2);
@@ -27,7 +27,7 @@ export function groundGlowMesh(col, op){ const m=new THREE.Mesh(_glowGeo, new TH
 function lightSlot(){ let L=CINE.lights.find(q=>!q.busy); if(!L){ if(CINE.lights.length>=(MOBILE?4:8)) return null; const m=groundGlowMesh(0xff8a3a, 0); m.visible=false; scene.add(m); L={ m, busy:false }; CINE.lights.push(L); } return L; }
 export function blastLight(x, z, power, life){ const L=lightSlot(); if(!L) return; L.busy=true; L.t=life||0.5; L.t0=L.t; L.p=Math.min(1, (power||60)/110); L.follow=null; L.m.material.color.setHex(0xffb060); L.m.scale.setScalar(6+(power||60)*0.09); L.m.position.set(x, heightAt(x,z)+0.25, z); L.m.visible=true; }
 export function fireLight(wreck, life){ const L=lightSlot(); if(!L) return; L.busy=true; L.t=life; L.t0=life; L.p=0.26; L.follow=wreck; L.m.material.color.setHex(0xff8a3a); L.m.scale.setScalar(6*(wreck.ms||1));   /* Z312 softer, less red: firelight, not a glowing plate */ L.m.visible=true; }
-// our tank was hit: sparks and shards fly off the struck side + a red marker at the screen edge points at the shooter
+// he was hit: a red marker at the screen edge points back at the shooter (its strength by the blow)
 export function hitMarker(sx, sz, dmg){ let wrap=document.getElementById('hitDir'); if(!wrap){ wrap=document.createElement('div'); wrap.id='hitDir'; document.body.appendChild(wrap); }
   const yaw=S.camYaw||0, a=Math.atan2(sx, -sz)+yaw, el=document.createElement('i'); el.style.setProperty('--a', a+'rad'); el.style.setProperty('--k', Math.min(1, 0.45+dmg/40).toFixed(2)); wrap.appendChild(el);
   setTimeout(()=>el.remove(), 1100); while(wrap.children.length>5) wrap.firstChild.remove(); }
@@ -37,10 +37,4 @@ export function updateCinematic(dt, now){
     if(L.follow){ const w=L.follow; L.m.position.set(w.x, heightAt(w.x,w.z)+0.25, w.z); const k=Math.min(1, L.t/L.t0*1.4); L.m.material.opacity=L.p*k*(0.75+0.2*Math.sin(now*17+w.x)+0.1*Math.random()); }
     else { const k=L.t/L.t0; L.m.material.opacity=0.85*L.p*k*k; } }
   if(gradePass && gradePass.uniforms.flash && gradePass.uniforms.flash.value>0) gradePass.uniforms.flash.value=Math.max(0, gradePass.uniforms.flash.value-dt*1.6);
-  // damage state: a hurt tank smokes grey; nearly gone it burns and pours black smoke
-  const p=S.player; if(!p || !p.mesh || !p.mesh.visible || S.mode!=='playing') return; const f=p.hp/p.maxHp; if(f>=0.5) return;
-  CINE.dmgT-=dt; if(CINE.dmgT>0) return; CINE.dmgT=(MOBILE?0.12:0.06)*(f<0.25?0.7:1.3);
-  const bx=p.pos.x-Math.sin(p.facing||0)*p.radius*0.55, bz=p.pos.z-Math.cos(p.facing||0)*p.radius*0.55, by=heightAt(p.pos.x,p.pos.z)+1.9;   // engine deck at the back
-  spawnPart(bx+(Math.random()-0.5)*0.8, by, bz+(Math.random()-0.5)*0.8, 0.5+(Math.random()-0.5)*0.6, 2.2+Math.random()*1.4, 0.3+(Math.random()-0.5)*0.6, { color:f<0.25?0x14110e:0x6a645c, size:0.9+Math.random()*0.6, life:1.8, smoke:true, grav:0.3, drag:0.9, grow:2, op:f<0.25?0.6:0.42 });
-  if(f<0.25 && Math.random()<0.7) spawnPart(bx+(Math.random()-0.5)*0.7, by-0.2, bz+(Math.random()-0.5)*0.7, (Math.random()-0.5)*0.6, 2.4+Math.random()*1.6, (Math.random()-0.5)*0.6, { tex:'fire', color:0xffe0a0, color2:0xff3a0a, size:0.8+Math.random()*0.6, life:0.45, grav:1.5, drag:1.6, grow:0.6 });
-  if(f<0.25 && Math.random()<0.08) spawnPart(bx, by, bz, (Math.random()-0.5)*6, 5+Math.random()*4, (Math.random()-0.5)*6, { color:0xffd27a, size:0.2, life:0.5, grav:-18, drag:0.6 }); }   // sparks from the burning deck
+  updateBodyHit(dt, now); }   // HIT 1 he is a man: low on health his edge goes red and his heart and breath are heard (fx/soldier-fx.js) — the tank's smoking, then burning engine deck is gone

@@ -1,24 +1,25 @@
 // game/player-damage.js — PLAYER DAMAGE / DEATH
 import * as THREE from 'three';
-import { CAV, RIDE_ACT } from '../../config.js';
-import { bladeGuardK, modeOver, reportRun, soldierHitFX, BEST, CV, S, clampField, heightAt, burst, camera, cavDeathStart, cavDeathUpdate, cavRespawn, enemies, floatText, haptic, padHit, recordRun, ringPulse, saveProfile, sayVoice, sfx, show, updateHUD, rideHit, driverBack, driverDone, driverSurrender, dirDeath, nemDeathLine, nemPlayerDied, coopDie, coopGameOver, coopHurtMate } from '../hub.js';
+import { BODYHIT, CAV, RIDE_ACT } from '../../config.js';
+import { bladeGuardK, bodyHitSound, modeOver, reportRun, soldierHitFX, BEST, CV, S, clampField, heightAt, camera, cavDeathStart, cavDeathUpdate, cavRespawn, enemies, floatText, haptic, padHit, recordRun, ringPulse, saveProfile, sayVoice, sfx, show, updateHUD, rideHit, driverBack, driverDone, driverSurrender, dirDeath, nemDeathLine, nemPlayerDied, coopDie, coopGameOver, coopHurtMate } from '../hub.js';
 
 // ----------------------------- PLAYER DAMAGE / DEATH -----------------------------
-export function damagePlayer(dmg, now, dx, dz){ if(S.player && S.player.mate){ coopHurtMate(dmg, dx, dz); return; }   // COOP 5 on a co-op host, inside the update of a man who regards the guest: the damage is the guest's
-  if((now||performance.now()/1000)>=(S.player&&S.player.invincibleUntil||0)){ const P=S.player, f=P?P.facing:0, L=Math.hypot(dx||0,dz||0)||1; padHit(dmg, dx||dz ? -Math.sign(((dx||0)*Math.cos(f)-(dz||0)*Math.sin(f))/L) : 0); }   // Z118 shake hardest on the side it came from   // Z117 a hit kicks the heavy motor    // dx/dz = direction the shot travelled (for the hit-spot burn); optional
+// kind = what struck him: 'shot' (a round, the default) | 'blast' | 'fire' | 'fall'; hy = how high over his feet a round arrived (m, optional: the plate carrier's tick)
+export function damagePlayer(dmg, now, dx, dz, kind, hy){ if(S.player && S.player.mate){ coopHurtMate(dmg, dx, dz); return; }   // COOP 5 on a co-op host, inside the update of a man who regards the guest: the damage is the guest's
+  kind = kind || 'shot'; const fire = kind === 'fire';   // HIT 1 (fire comes in small ticks every frame: no flinch, no rumble, no blood for those — the heat on the screen, a breath)
+  if(!fire && (now||performance.now()/1000)>=(S.player&&S.player.invincibleUntil||0)){ const P=S.player, f=P?P.facing:0, L=Math.hypot(dx||0,dz||0)||1; padHit(dmg, dx||dz ? -Math.sign(((dx||0)*Math.cos(f)-(dz||0)*Math.sin(f))/L) : 0); }   // Z118 shake hardest on the side it came from   // Z117 a hit kicks the heavy motor    // dx/dz = direction the shot travelled; optional
   const p=S.player; if(now < p.invincibleUntil) return;
   dmg *= (1 - (p.armor||0));                 // ARMOR upgrade soaks a fraction of incoming damage
   dmg *= p.defK||1;                          // Z245 plate armour, and lying flat / kneeling makes a smaller target
   dmg *= bladeGuardK(dx, dz);                // BLADE 2 the blade held across him takes the edge off what comes at his front
-  p.hp -= dmg; if(p.cav && p.bike) rideHit(dmg, dx, dz);   // Z296 the driver ducks — a heavy hit may bring the bike down
+  p.hp -= dmg; if(p.cav && p.bike && !fire) rideHit(dmg, dx, dz);   // Z296 the driver ducks — a heavy hit may bring the bike down
   if(p.hp > 0 && p.hp < p.maxHp*0.3 && p.hp+dmg >= p.maxHp*0.3) sayVoice('lowhp');
-  // HIT REACTION — every hit is FELT: a flinch + shake scaled by the blow + red splash
-  p.hitT = Math.max(p.hitT||0, 0.26);
-  S.shake = Math.min(2.8, S.shake + Math.min(1.3, 0.34 + dmg*0.028)); haptic(Math.min(60, 20+dmg*1.5));
-  sfx('hurt');
-  burst(p.pos, 0xff5040, 8, 9, {life:0.28, size:1.0, up:3, drag:5}); ringPulse(p.pos, 0xff4632, 1.6);
-  soldierHitFX(p, dx, dz, dmg);   // he bleeds, and a red marker pointing at the shooter
-  const v=document.getElementById('vignette'); v.style.opacity='1'; setTimeout(()=>v.style.opacity='0', 170);
+  // HIT REACTION — every hit is FELT: a flinch + shake scaled by the blow; HIT 1 what he hears and shows is a man's body struck — never a hull's ring, never fire on him
+  if(fire) S.shake = Math.min(1.2, S.shake + 0.02);
+  else { p.hitT = Math.max(p.hitT||0, 0.26); S.shake = Math.min(2.8, S.shake + Math.min(1.3, 0.34 + dmg*0.028)); haptic(Math.min(60, 20+dmg*1.5)); }
+  const P = BODYHIT.plate, plate = kind === 'shot' && Math.random() < (hy != null && hy >= P.lo && hy <= P.hi ? P.pIn : P.pOut);   // the round met his plate carrier (by its height)
+  bodyHitSound(kind, dmg, plate);   // the thwack (+ the plate's tick), his grunt; heavy: the ear rings (audio/body-hit.js) — it was the hurt sound: the tank's hull plate ringing
+  soldierHitFX(p, dx, dz, dmg, kind, hy, now);   // he bleeds (fire: the screen goes hot, a smoulder) and a red marker pointing at the shooter; the red edge (fx/soldier-fx.js)
   updateHUD();
   if(p.hp<=0) playerDie(now);
 }

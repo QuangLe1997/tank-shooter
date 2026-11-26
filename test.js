@@ -2343,6 +2343,19 @@ grp('GRAPH 3 the motion graph: leap, lean, stop hips, turn catch-up, lifted step
   const D=B.sever.diag; ok(B.kinds.dadao.moves.special.sever==='diag' && D.neck>0 && D.neck<1 && D.side>0 && D.side<1 && D.depth>0 && D.depth<1 && /clippingPlanes = \[pl\]/.test(bl) && /renderer\.localClippingEnabled = true/.test(bl) && /&& !u\.clipDraw\)/.test(rd('src/actors/soldiers.js')) && /if\(s\.dg\) diagDraw\(s\);/.test(bl),
     'the dadao\'s leaping cut parts a man from one shoulder to the other hip: the frozen body drawn twice outside the troop batch, each half clipped by the cut\'s own plane, a red face in the plane');
 }
+// HIT 1 a man is hit, not a hull: his own hit is a body's thwack (+ the plate's tick, a grunt), never the tank's hull plate; no smoke or fire on him at low health;
+//   fire on him is heat + a brief smoulder, no blood; a round into a man (theirs or ours) is the flesh thwack, not the armour's ring and sparks (audio/body-hit.js, fx/soldier-fx.js)
+grp('HIT 1 a man is hit, not a hull: flesh, blood, heat — no metal, no fire on him');
+{ const C = await import('./config.js'), fs = await import('node:fs'), B = C.BODYHIT, rd = f => fs.readFileSync(f, 'utf8'), pd = rd('src/game/player-damage.js'), sy = rd('src/audio/synth.js'), ci = rd('src/fx/cinematic.js'), sf = rd('src/fx/soldier-fx.js'), lo = rd('src/combat/lock-on.js'), M = await import('./src/audio/body-math.js');
+  ok(B && B.heavy > 5 && B.plate.lo < B.plate.hi && B.plate.pIn >= 0.3 && B.plate.pIn <= 0.5 && B.plate.pOut >= 0.2 && B.plate.pOut <= B.plate.pIn && B.snd.gruntGap > 0.1 && B.snd.fireGap > 0.2 && B.heat.spark > 0 && B.heat.spark < 1 && B.low.below > 0 && B.low.below < 0.6 && B.low.beat[0] < B.low.beat[1],
+    'BODYHIT: heavy from '+B.heavy+' dmg, the plate ticks '+(B.plate.pOut*100)+'–'+(B.plate.pIn*100)+' % by the height, smoulder under a second ('+B.heat.spark+' s), heart under '+(B.low.below*100)+' % health');
+  ok(!/sfx\('hurt'\)/.test(pd) && /bodyHitSound\(kind, dmg, plate\)/.test(pd) && !/burst\(p\.pos, 0xff5040/.test(pd) && /case 'hurt':\s+bodyHitSound\(/.test(sy) && !/case 'hurt':\s+play\('hitH'/.test(sy), 'his own hit plays the body (audio/body-hit.js) — not the hull plate (hitH), no orange spark burst at his feet');
+  ok(!/a hurt tank smokes grey|sparks from the burning deck/.test(ci) && /updateBodyHit\(dt, now\)/.test(ci) && /if\(kind === 'fire'\)\{ bodyHeat\(now\); return; \}/.test(sf), 'low on health he neither smokes nor burns; fire on him is heat and a brief smoulder, no blood');
+  ok(/e\.def\.inf && b\.fx!=='blast' && b\.fx!=='shock'\) sfx\('flesh'/.test(lo) && /flesh:\s+\{ r:\(\)=>bodyThwackBuf/.test(sy), 'a round into a man is the flesh thwack (not the armour\'s ring and glowing shards)');
+  const sr = 8000, rnd = (() => { let s = 7; return () => (s = (s * 16807) % 2147483647) / 2147483647; })(), th = M.bodyThwackBuf(sr, rnd), pl = M.bodyPlateBuf(sr, rnd), pk = x => x.reduce((m, v) => Math.max(m, Math.abs(v)), 0);
+  const tail = (x, t) => pk(x.subarray(Math.round(t * sr)));   // what is left after t s: a body hit dies fast, a steel plate would ring on
+  ok(th.length < sr * 0.25 && pk(th) > 0.5 && pk(th) <= 0.86 && tail(th, 0.12) < 0.12 && pl.length < sr * 0.1 && tail(pl, 0.08) < 0.05 && [th, pl].every(x => x.every(Number.isFinite)),
+    'the thwack ('+(th.length / sr).toFixed(2)+' s) and the plate\'s tick ('+(pl.length / sr).toFixed(2)+' s) are short and dead — nothing rings on'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
@@ -2565,7 +2578,7 @@ grp('GRAPH 3 the motion graph: leap, lean, stop hips, turn catch-up, lifted step
   for(const n of ['VOLCANO','QUARRY']) for(const [f,s] of src) if(!s.includes(n)) miss.push(n+' @ '+f);
   ok(!miss.length, 'every per-battlefield table knows VOLCANO / QUARRY'+(miss.length?' — missing: '+miss.join(', '):''));
   const lv=fs.readFileSync('src/world/lava.js','utf8'), fl=fs.readFileSync('src/game/flow.js','utf8'), lp=fs.readFileSync('src/game/loop.js','utf8');
-  ok(/export function buildLava\(\)/.test(lv) && /BIOME\.name!=='VOLCANO'/.test(lv) && /damagePlayer\(LAVA\.dps\.player\*dt, now\)/.test(lv) && /buildObjective\(\); (?:modeSeed\(\d+\); )?buildLava\(\);/.test(fl) && /updateLava\(gdt, now\)/.test(lp), 'caldera lava pools are placed clear of forts, glow, and burn tanks that drive in'); }
+  ok(/export function buildLava\(\)/.test(lv) && /BIOME\.name!=='VOLCANO'/.test(lv) && /damagePlayer\(LAVA\.dps\.player\*dt, now(?:, 0, 0, 'fire')?\)/.test(lv) && /buildObjective\(\); (?:modeSeed\(\d+\); )?buildLava\(\);/.test(fl) && /updateLava\(gdt, now\)/.test(lp), 'caldera lava pools are placed clear of forts, glow, and burn tanks that drive in'); }
 
 // Z188 strike & lock visuals: a readable artillery zone (disc, hazard band, closing chevrons, countdown arc, label, shell shadow), flame tongues + smoke ribbons, a "BỊ KHOÁ" warning, a KHOÁ label on our locks
 { const fs=await import('node:fs'); const a=fs.readFileSync('src/campaign/artillery.js','utf8'), m=fs.readFileSync('src/actors/enemy-missiles.js','utf8'), l=fs.readFileSync('src/combat/lock-on.js','utf8'), sy=fs.readFileSync('src/audio/synth.js','utf8'), lp=fs.readFileSync('src/game/loop.js','utf8');
