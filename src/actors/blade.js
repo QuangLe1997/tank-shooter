@@ -20,7 +20,7 @@
 //   soldier-fire (bladeFire), flame.js selectGun / cycleGun (bladeSelect / bladeCycle), spells trySpell (bladeSpecial), player-damage (bladeGuardK), bindings ('blade').
 //   Nothing allocates per frame.
 import * as THREE from 'three';
-import { AMBUSH, BLADE, CAV, LOGISTICS, REALCAV } from '../../config.js';
+import { AMBUSH, BLADE, BLADEMEND, CAV, LOGISTICS, REALCAV } from '../../config.js';
 import { limbTwist, SOLDIER_KIT, TROOP_BATCH, renderer, troopSkinDone, troopSkinMesh, troopSkinWrite, AMBST, MATE, coopBladeCodeOf, ambushClang, ambushMateK, ambushSaySeen, ambushTouch, suspectEnemy, decalBlood, enemyPool, getEnemyMesh, layOut, reviveSoldierMesh, hangState, hangStep, CV, MOBILE, PROFILE, RDRAG, S, animClip, animInfo, animRootAt, bloodSpurt, blocksNear, climbing, curlHand, damageBlock, damageEnemy, enemies, floatText, fpvFlying, heightAt, heldAction, ik2, lineClear, loadAnimGroup, loadGLTF, saveProfile, scene, selectGun, sfx, spawnPart, updateGunHUD } from '../hub.js';
 
 const V3 = () => new THREE.Vector3(), Q4 = () => new THREE.Quaternion(), M4 = () => new THREE.Matrix4(), clamp = (v, a, b) => Math.max(a, Math.min(b, v)), smooth = k => { k = clamp(k, 0, 1); return k * k * (3 - 2 * k); }, wrapA = a => Math.atan2(Math.sin(a), Math.cos(a)), D2R = Math.PI / 180;
@@ -115,13 +115,18 @@ export function skinHang(R, piv, q, o, ax, z0, z1, yo, rad, arms){ let moved = 0
 // where it hangs now (the world): → op, oq. It lies ON his back (it turns only in the back's plane) and HANGS from the frog (actors/hang.js): the lower end leans to stay hanging
 //   as he leans, nudges with his steps, swings on after a stop; crouched it rides up and leans over, lying prone it lies level along his spine; its lower end never nearer the ground
 //   than W.clear (it rides up through the frog)
-function worn(R, L, D, dt, P, ks, op, oq){ const K = L.K, W = K.worn; L.m.visible = true; D.Spine2.getWorldPosition(_H0); D.Spine1.getWorldPosition(_t); _u.subVectors(_H0, _t).normalize(); D.RightShoulder.getWorldPosition(_r); D.LeftShoulder.getWorldPosition(_t); _r.sub(_t); _r.addScaledVector(_u, -_r.dot(_u)).normalize(); _bk.crossVectors(_r, _u);
-  _H0.addScaledVector(_r, W.at[0] * ks).addScaledVector(_u, W.at[1] * ks).addScaledVector(_bk, W.at[2] * ks);   // (the frog, from the joint along the frame's own turned axes as CARRY lays the rifle — never through the bone's matrix: the seen soldier's chain carries a mirror, and a point put through it lands over the other shoulder)
+function worn(R, L, D, dt, P, ks, op, oq){ const K = L.K, W = K.worn, BW = BLADEMEND.worn, kk = K.two ? 0 : 1; L.m.visible = true; D.Spine2.getWorldPosition(_H0); D.Spine1.getWorldPosition(_t); _u.subVectors(_H0, _t).normalize();
   const st = P && !P.trans && !P.dead ? P.stance : 'stand'; L.lw += ((st === 'crouch' ? 1 : 0) - L.lw) * Math.min(1, dt * 6); L.pw += ((st === 'prone' ? 1 : 0) - L.pw) * Math.min(1, dt * 5);
+  // BLADE 15 PRESSED TO HIS BACK AS HE BENDS (BLADEMEND.worn): the back's up is the chord of his whole back (BW.from — the hips — → Neck), not its Spine1 → Spine2 stretch alone — hunched over
+  //   a kneel the long shaft lay up past a back that curled away from it; lying prone, the line of his body down to his knees (it lies along him, over his legs)
+  if(BW.on){ D.Neck.getWorldPosition(_t2).sub(D[BW.from].getWorldPosition(_a)).normalize(); _u.lerp(_t2, BW.chord).normalize();
+    if(L.pw > 1e-3){ D.LeftLeg.getWorldPosition(_a); D.RightLeg.getWorldPosition(_b); _a.add(_b).multiplyScalar(0.5); D.Neck.getWorldPosition(_t2).sub(_a).normalize(); _u.lerp(_t2, L.pw * BW.line * smooth((_t2.dot(_u) - 0.75) / 0.2)).normalize(); } }   // (only while that line lies near his back's: getting up, his knees come under him)
+  D.RightShoulder.getWorldPosition(_r); D.LeftShoulder.getWorldPosition(_t); _r.sub(_t); _r.addScaledVector(_u, -_r.dot(_u)).normalize(); _bk.crossVectors(_r, _u);
+  _H0.addScaledVector(_r, W.at[0] * ks).addScaledVector(_u, W.at[1] * ks).addScaledVector(_bk, W.at[2] * ks);   // (the frog, from the joint along the frame's own turned axes as CARRY lays the rifle — never through the bone's matrix: the seen soldier's chain carries a mirror, and a point put through it lands over the other shoulder)
   _bk.crossVectors(_r, _u);   // (BLADE 10 lying prone too it lies in his back's own plane — pressed to it, not levelled off it)
-  const a0 = ((W.tilt + (W.low[1] - W.tilt) * L.lw) * (1 - L.pw) + W.prone * L.pw) * D2R, lowZ = W.tip < 0 ? K.tip : K.butt, len = Math.abs(lowZ - W.zAt) * ks, o = hangStep(L.hg, dt, a0, _H0, _r, _u, len), a = a0 + o; L.swing = o;
+  const WL = BW.on ? BW.low[kk] : W.low, a0 = ((W.tilt + (WL[1] - W.tilt) * L.lw) * (1 - L.pw) + W.prone * L.pw) * D2R, lowZ = W.tip < 0 ? K.tip : K.butt, len = Math.abs(lowZ - W.zAt) * ks, o = hangStep(L.hg, dt, a0, _H0, _r, _u, len) * (BW.on ? BW.sway[kk] : 1), a = a0 + o; L.swing = o;
   _wz.copy(_u).multiplyScalar(Math.cos(a)).addScaledVector(_r, Math.sin(a)); _z.copy(_wz).multiplyScalar(W.tip); _x.copy(_bk).multiplyScalar(W.flat); _y.crossVectors(_z, _x); oq.setFromRotationMatrix(_mat.makeBasis(_x, _y, _z));
-  op.copy(_H0).addScaledVector(_z, -W.zAt * ks).addScaledVector(_wz, W.low[0] * L.lw * ks);
+  op.copy(_H0).addScaledVector(_z, -W.zAt * ks).addScaledVector(_wz, WL[0] * L.lw * ks); if(BW.on) op.addScaledVector(_wz, -BW.slide[kk] * L.pw * ks);   // (BLADE 15 lying prone it slides down his back: the butt by his shoulders, not a metre past his head)
   _t.copy(op).addScaledVector(_z, lowZ * ks); const need = heightAt(_t.x, _t.z) + W.clear * ks - _t.y, want = need > 0 && _wz.y > 0.12 ? Math.min(W.shiftMax * ks, need / _wz.y) : 0; L.gs += (want - L.gs) * Math.min(1, dt * 12); op.addScaledVector(_wz, L.gs);
   // his hips and legs under it: where they come through the back's plane (a stride, a knee) the lower end is turned out about the frog to lie ON them, not in them
   { const n = capsules(D, ks, _bk), M = BLADE.body.margin * ks; for(let it = 0; it < 2 && n > 4; it++){ let best = 0, lev = 0; _s1.copy(op).addScaledVector(_z, W.zAt * ks); _s2.copy(op).addScaledVector(_z, lowZ * ks);
@@ -129,9 +134,16 @@ function worn(R, L, D, dt, P, ks, op, oq){ const K = L.K, W = K.worn; L.m.visibl
       if(best <= 0 || lev < 0.15) break; _t.copy(_s2).sub(_s1).normalize().multiplyScalar(lev).addScaledVector(_pn, best).normalize(); _q2.setFromUnitVectors(_c.copy(_s2).sub(_s1).normalize(), _t); oq.premultiply(_q2); _z.set(0, 0, 1).applyQuaternion(oq); op.copy(_s1).addScaledVector(_z, -W.zAt * ks); } }
   // BLADE 10 …and out of his real kit and arms (skinHang: the pack, the pouches, a swinging arm — it turns out about the frog, a nudge, not a jump)
   if(BLADE.skin.on && skinOf(R)){ if(L.w <= 0) R.pup.dst.updateMatrixWorld(true); _fg.copy(op).addScaledVector(_z, W.zAt * ks); D.Spine1.getWorldPosition(_t2);   // (his joints as they stand THIS frame)
-    L.skin = skinSlab(R, L.sb || (L.sb = slabsOf(L.m, 2, 0)), op, oq, ks, _fg, _t2, true); _z.set(0, 0, 1).applyQuaternion(oq); }
+    _sk0.copy(oq); _sk1.copy(_fg); _sk2.copy(op); L.skin = skinSlab(R, L.sb || (L.sb = slabsOf(L.m, 2, 0)), op, oq, ks, _fg, _t2, true);
+    // BLADE 15 …taken at once, given back slowly (BLADEMEND.worn.release /s): an arm swinging through it knocks it out, it does not flicker in and out with every frame
+    if(BW.on){ const LQ = L.skq || (L.skq = Q4()), LP = L.skp || (L.skp = V3()); _skB.setFromRotationMatrix(_mat.makeBasis(_r, _u, _bk)); _sk3.copy(_skB).invert();   // (kept in the back's own frame: he turns, lies down, it goes with him)
+      _skd.copy(oq).multiply(_sk4.copy(_sk0).invert()).premultiply(_sk3).multiply(_skB); _skv.subVectors(_fg, _sk1).applyQuaternion(_sk3);
+      const k = Math.abs(_skd.w) <= Math.abs(LQ.w) + 1e-6 ? 1 : Math.min(1, dt * BW.release); LQ.slerp(_skd, k); LP.lerp(_skv, _skv.lengthSq() >= LP.lengthSq() ? 1 : Math.min(1, dt * BW.release));
+      _skd.copy(_skB).multiply(LQ).multiply(_sk3); _skv.copy(LP).applyQuaternion(_skB); oq.copy(_skd).multiply(_sk0); op.copy(_sk2).sub(_sk1).applyQuaternion(_skd).add(_sk1).add(_skv); }
+    _z.set(0, 0, 1).applyQuaternion(oq); }
   L.down = -_z.y; }
-const _fg = V3(), _t2 = V3(), _ZA = new THREE.Vector3(0, 0, 1);
+const _sk0 = Q4(), _sk3 = Q4(), _sk4 = Q4(), _skB = Q4(), _skd = Q4(), _sk1 = V3(), _sk2 = V3(), _skv = V3();
+const _fg = V3(), _t2 = V3(), _ZA = new THREE.Vector3(0, 0, 1), _gp = V3(), _gq = Q4(), _gsv = V3(), _ga = V3(), _gb = V3();
 function wornPlace(R, L, G, op, oq, ks){ if(L.m.parent !== G) G.add(L.m); L.seated = true; _mat.compose(op, oq, _one.setScalar(ks)); _mi.copy(G.matrixWorld).invert(); _mat.premultiply(_mi); _mat.decompose(L.m.position, L.m.quaternion, L.m.scale); L.m.updateMatrixWorld(true); }
 
 // ---- BEFORE THE MIXER: which clips, how much (real-cav poseRealCav). true: the rifle's own clips fade out ----
@@ -187,27 +199,51 @@ function pushOut(o, z, y, K, ks, n, k){ if(k <= 0) return; const M = BLADE.body.
   for(let it = 0; it < 3; it++){ let best = 0; for(let g = 0; g < 2; g++){ _s1.copy(o).addScaledVector(z, (g ? K.root : K.butt) * ks); _s2.copy(o).addScaledVector(z, (g ? K.tip : K.root) * ks); if(g){ _s1.addScaledVector(y, yc); _s2.addScaledVector(y, yc); } const rw = g ? rb : K.r * ks;
       for(let i = 0; i < n; i++){ const c = CAP[i], d = Math.sqrt(segSeg(_s1, _s2, c.a, c.b, _c1, _c2)), need = (c.r + rw + M) * k - d; if(need > best && d > 1e-4){ best = need; _pn.subVectors(_c1, _c2).divideScalar(d); } } }
     if(best <= 0) return; o.addScaledVector(_pn, best); } }
-// a fist put on the weapon: turned round the handle, then the wrist put where that fist's palm lies on the point, the fist kept as it was turned — exact while the arm reaches.
-//   → _res: what is left (the point − where the fist came to)
-// BLADE 14 THE GRIP'S OWN TURN: the turn (→ _tq, world) that lays a fist's knuckle line along ±z and its palm toward pn; → _pm2 the wrist → knuckles it is given.
-//   Of the two ways round, the knuckles go on the way his forearm reaches (shoulder → the point), so the wrist stays near straight
-const _pk2 = V3(), _pm2 = V3(), _pn2 = V3(), _pc1 = V3(), _pc2 = V3(), _pc3 = V3(), _pB = M4(), _pqa = Q4();
-function palmQ(D, s, z, pn, tgt){ const R1 = s === 'Right'; _pn2.copy(pn).addScaledVector(z, -pn.dot(z)).normalize();
-  _pc1.copy(_k).normalize(); _pc3.copy(_n).addScaledVector(_pc1, -_n.dot(_pc1)).normalize(); if(R1) _pc2.crossVectors(_pc1, _pc3); else _pc2.crossVectors(_pc3, _pc1);   // (now: the knuckle line, the palm, the third made square to them)
+// BLADE 14 THE GRIP'S OWN TURN: the fist's knuckle line laid along ±z, its palm toward pn (the weapon's own frame: the grip never changes through a cut).
+// BLADE 15 THE STRAIGHTEST WRIST (BLADEMEND.wrist): of the ways that fist can close on the handle — knuckles up it or down it (g), turned round it off the palm's way by a
+//   roll (the palm rule eased, at most roll°, and only for a wrist bent past lim°) — the one whose forearm, the elbow where that fist puts it (straight on from the knuckles)
+//   and the handle on the diagonal the forearm gives (BLADE.palm.diag), leaves the wrist straightest. Worked out on paper (the arm's own two lengths, no bone moved), the way
+//   round kept unless the other is hyst° better, the roll eased at a wrist's pace (rate rad/s). → _tq (the turn to give the fist, world), _fM / _fN (its wrist → knuckles and
+//   palm once turned), the bend (rad)
+const _pk2 = V3(), _pn2 = V3(), _pc1 = V3(), _pc2 = V3(), _pc3 = V3(), _pB = M4(), _pqa = Q4(), _fM = V3(), _fN = V3(), _fK = V3(), _fS = V3(), _fW = V3(), _fE = V3(), _fP = V3(), _fd = V3(), _fx = V3();
+const FW = new WeakMap(), _fwQ = Q4(), _fq3 = Q4(), _fq4 = Q4(); let _fwDt = 0, _fwOff = true, _fwN = 0;
+// the elbow ik2 would give: shoulder S, wrist W, pole P, the arm's lengths → _fE
+function elbowAt(S, W, P, lu, lf){ _fx.subVectors(W, S); const d = clamp(_fx.length(), Math.abs(lu - lf) + 1e-3, lu + lf - 1e-3), x = (lu * lu - lf * lf + d * d) / (2 * d), h = Math.sqrt(Math.max(0, lu * lu - x * x)); _fx.normalize();
+  _fE.subVectors(P, S); _fE.addScaledVector(_fx, -_fE.dot(_fx)); if(_fE.lengthSq() < 1e-8) _fE.set(0, -1, 0); _fE.normalize(); return _fE.multiplyScalar(h).addScaledVector(_fx, x).add(S); }
+// one way round (g), one roll (phi rad), the handle's diagonal across the palm (th0 rad; NaN: the one the forearm gives, within ±dg): the fist's frame → _fM, _fK, _fN,
+//   the diagonal → _fTh, its forearm's bend (rad) · a1 / a2: the palm's handle point off the wrist along the knuckles / out of the palm
+let _fTh = 0;
+function fistTry(R1, S, z, pn, g, phi, th0, tgt, a1, a2, lu, lf, dg, under){ _fN.copy(pn).applyAxisAngle(z, phi); _fK.copy(z).multiplyScalar(g); if(R1) _fM.crossVectors(_fK, _fN); else _fM.crossVectors(_fN, _fK);
+  const free = th0 !== th0; let th = free ? 0 : th0, bend = 0; for(let it = 0; it < 3; it++){ const c = Math.cos(th), s = Math.sin(th); _pc1.crossVectors(_fN, _fM); _pc2.copy(_fM).multiplyScalar(c).addScaledVector(_pc1, s);   // (the knuckles turned th about the palm: the diagonal)
+    _fW.copy(tgt).addScaledVector(_pc2, -a1).addScaledVector(_fN, -a2); _fP.copy(_fW).addScaledVector(_pc2, -lf).addScaledVector(_fN, -under); elbowAt(S, _fW, _fP, lu, lf); _fd.subVectors(_fW, _fE).normalize();
+    bend = Math.acos(clamp(_fd.dot(_pc2), -1, 1)); if(it === 2 || !free) break; _pc3.copy(_fd).addScaledVector(_fN, -_fd.dot(_fN)); if(_pc3.lengthSq() < 1e-8) break; th = clamp(Math.atan2(_pc3.crossVectors(_fM, _pc3).dot(_fN), _fM.dot(_fd)), -dg, dg); }
+  _fTh = th; _pc3.crossVectors(_fN, _fK); _fM.copy(_pc2); _fK.multiplyScalar(Math.cos(th)).addScaledVector(_pc3, Math.sin(th)); return bend; }
+function fistPick(D, s, z, pn, tgt, K, ks){ const R1 = s === 'Right', W = BLADEMEND.wrist, h = D[s + 'Hand'];
+  _pc1.copy(_k).normalize(); _pc3.copy(_n).addScaledVector(_pc1, -_n.dot(_pc1)).normalize(); if(R1) _pc2.crossVectors(_pc1, _pc3); else _pc2.crossVectors(_pc3, _pc1);   // (the fist as it is: the knuckle line, the palm, the third made square to them)
   _pqa.setFromRotationMatrix(R1 ? _pB.makeBasis(_pc2, _pc1, _pc3) : _pB.makeBasis(_pc1, _pc2, _pc3)).invert();   // (the right fist's own axes are mirrored: its frame is taken m, k, n)
-  // of the two ways round: the one whose forearm (laid along the knuckles' way back from the point) leaves the elbow where his upper arm reaches
-  D[s + 'Arm'].getWorldPosition(_a); D[s + 'ForeArm'].getWorldPosition(_c); D[s + 'Hand'].getWorldPosition(_d); const lu = _a.distanceTo(_c), lf = _c.distanceTo(_d); let sg = 1, be = 1e9;
-  for(let g = 1; g >= -1; g -= 2){ _pk2.copy(z).multiplyScalar(g); if(R1) _b.crossVectors(_pk2, _pn2); else _b.crossVectors(_pn2, _pk2); _c.copy(tgt).addScaledVector(_b, -lf); const e = Math.abs(_c.distanceTo(_a) - lu); if(e < be){ be = e; sg = g; _pm2.copy(_b); } }
-  _pk2.copy(z).multiplyScalar(sg); _tq.setFromRotationMatrix(R1 ? _pB.makeBasis(_pm2, _pk2, _pn2) : _pB.makeBasis(_pk2, _pm2, _pn2)).multiply(_pqa); return _tq; }
-//   BLADE 14 pn (unit, across the handle): the way his palm must face — the fist turned whole so its knuckle line lies on the handle and its palm faces pn, his elbow
-//   bent toward where that forearm lies (no candy-wrapped wrist)
+  _pn2.copy(pn).addScaledVector(z, -pn.dot(z)).normalize(); D[s + 'Arm'].getWorldPosition(_fS); D[s + 'ForeArm'].getWorldPosition(_c); h.getWorldPosition(_d); const lu = _fS.distanceTo(_c), lf = _c.distanceTo(_d);
+  D[s + 'HandMiddle1'].getWorldPosition(_b); const a1 = _b.distanceTo(_d) * BLADE.hand.palm, a2 = (BLADE.hand.out + K.r) * ks, dg = BLADE.palm.diag[R1 ? 1 : 0] * D2R, under = BLADE.palm.under * ks;
+  let st = FW.get(D); if(!st){ st = { gRight:0, gLeft:0, rRight:0, rLeft:0, qRight:Q4(), qLeft:Q4(), pRight:Q4(), pLeft:Q4(), nRight:-1, nLeft:-1, oRight:false, oLeft:false }; FW.set(D, st); } if(_fwOff) st['o' + s] = false;
+  if(!W.on){ let g = 1, be = 1e9; for(let gg = 1; gg >= -1; gg -= 2){ _fK.copy(z).multiplyScalar(gg); if(R1) _fM.crossVectors(_fK, _pn2); else _fM.crossVectors(_pn2, _fK); const e = Math.abs(_c.copy(tgt).addScaledVector(_fM, -lf).distanceTo(_fS) - lu); if(e < be){ be = e; g = gg; } }   // (BLADE 14 as it was: the way round whose straight elbow his upper arm reaches)
+    const bend = fistTry(R1, _fS, z, _pn2, g, 0, NaN, tgt, a1, a2, lu, lf, dg, under); _tq.setFromRotationMatrix(R1 ? _pB.makeBasis(_fM, _fK, _fN) : _pB.makeBasis(_fK, _fM, _fN)).multiply(_pqa); return bend; }
+  const pg = W.grip[R1 ? 1 : 0], rm = W.roll[K.two ? 0 : 1] * D2R, lim = W.lim * D2R; let g0 = st['g' + s] || pg, r = st['r' + s], best = 1e9, bp = 0, bg = g0;
+  for(let g = 1; g >= -1; g -= 2) for(let i = -W.n; i <= W.n; i++){ const phi = rm * i / W.n, b = fistTry(R1, _fS, z, _pn2, g, phi, NaN, tgt, a1, a2, lu, lf, dg, under);
+    const c = b + Math.max(0, b - lim) * 2 + W.kRoll * Math.abs(phi) + (g === g0 ? 0.25 * Math.abs(phi - r) : W.hyst * D2R) + (g === pg ? 0 : W.pref * D2R); if(c < best){ best = c; bp = phi; bg = g; } }
+  st['g' + s] = bg; st['r' + s] = bp; let bend = fistTry(R1, _fS, z, _pn2, bg, bp, NaN, tgt, a1, a2, lu, lf, dg, under);
+  // the fist turns toward that grip at a wrist's pace (rate rad/s) in the weapon's own frame — a change of grip is a quick regrip, never a pop
+  _pB.makeBasis(R1 ? _fM : _fK, R1 ? _fK : _fM, _fN); _fq3.setFromRotationMatrix(_pB); _fq4.copy(_fwQ).invert().multiply(_fq3); const q = st['q' + s];
+  if(st['n' + s] !== _fwN){ st['n' + s] = _fwN; st['p' + s].copy(q); } else q.copy(st['p' + s]);   // (a second fist put on in the same frame starts from where the frame began)
+  if(!st['o' + s] || !(_fwDt > 0) || _fwDt > 0.2 || W.rate <= 0){ q.copy(_fq4); st['o' + s] = true; } else q.rotateTowards(_fq4, W.rate * _fwDt);
+  _fq3.copy(_fwQ).multiply(q); _tq.copy(_fq3).multiply(_pqa); if(q.angleTo(_fq4) > 1e-3){ _fM.set(R1 ? 1 : 0, R1 ? 0 : 1, 0).applyQuaternion(_fq3); _fd.subVectors(_d, _c).normalize(); bend = Math.acos(clamp(_fM.dot(_fd), -1, 1)); }
+  return bend; }
+// a fist put on the weapon: turned round the handle, then the wrist put where that fist's palm lies on the point, the fist kept as it was turned — exact while the arm reaches.
+//   pn (unit, across the handle): the way his palm must face (BLADE 14) — the fist turned whole by fistPick, his elbow put straight on from its knuckles. → _res: what is
+//   left (the point − where the fist came to)
 function fistTo(D, s, K, ks, tgt, z, w, pole, pn){ const h = D[s + 'Hand'], f = D[s + 'ForeArm']; fist(D, s, _p);
-  if(pn){ palmQ(D, s, z, pn, tgt); h.getWorldQuaternion(_fq2); _fq2.premultiply(_tq.slerp(_tw.identity(), 1 - w)); setWorldQ(h, _fq2); } else turnTo(h, _k, _b.copy(z).multiplyScalar(_k.dot(z) >= 0 ? 1 : -1), w); h.getWorldQuaternion(_fq2);
-  grip(D, s, K, ks, _p); h.getWorldPosition(_a); _t.copy(tgt).sub(_p).multiplyScalar(w).add(_a); if(pole) _pl.copy(pole); else if(pn){ f.getWorldPosition(_pl); h.getWorldPosition(_c); _pl.copy(_t).addScaledVector(_pm2, -_pl.distanceTo(_c)).addScaledVector(_pn2, -BLADE.palm.under * bodyK()); } else f.getWorldPosition(_pl); ik2(D[s + 'Arm'], f, h, _t, _pl); setWorldQ(h, _fq2);
-  if(pn && w > 0.5){ // …then the handle lies across his palm on the diagonal his forearm gives (a real grip: up to palm.diag° off the knuckle line), turned about the palm's own normal
-    f.getWorldPosition(_a); h.getWorldPosition(_b); _d.subVectors(_b, _a).addScaledVector(_pn2, -_b.subVectors(_b, _a).dot(_pn2)); if(_d.lengthSq() > 1e-8){ _d.normalize();
-      const dg = BLADE.palm.diag[s === 'Right' ? 1 : 0] * D2R, th = clamp(Math.atan2(_c.crossVectors(_pm2, _d).dot(_pn2), _pm2.dot(_d)), -dg, dg) * w; _fq2.premultiply(_tq.setFromAxisAngle(_pn2, th)); setWorldQ(h, _fq2);
-      grip(D, s, K, ks, _p); h.getWorldPosition(_a); _t.copy(tgt).sub(_p).add(_a); ik2(D[s + 'Arm'], f, h, _t, _pl); setWorldQ(h, _fq2); } }
+  if(pn){ fistPick(D, s, z, pn, tgt, K, ks); h.getWorldQuaternion(_fq2); _fq2.premultiply(_tq.slerp(_tw.identity(), 1 - w)); setWorldQ(h, _fq2); } else turnTo(h, _k, _b.copy(z).multiplyScalar(_k.dot(z) >= 0 ? 1 : -1), w); h.getWorldQuaternion(_fq2);
+  grip(D, s, K, ks, _p); h.getWorldPosition(_a); _t.copy(tgt).sub(_p).multiplyScalar(w).add(_a);
+  if(pole) _pl.copy(pole); else if(pn){ f.getWorldPosition(_pl); h.getWorldPosition(_c); _pl.copy(_t).addScaledVector(_m, -_pl.distanceTo(_c)).addScaledVector(_n, -BLADE.palm.under * bodyK()); } else f.getWorldPosition(_pl);   // (_m, _n: the fist as grip() just read it, turned)
+  ik2(D[s + 'Arm'], f, h, _t, _pl); setWorldQ(h, _fq2);
   grip(D, s, K, ks, _p); return _res.copy(tgt).sub(_p); }
 const _f = V3(), _rt = V3(), _hc = V3(), _As = V3(), _Bs = V3(), _Am = V3(), _Bm = V3(), _H0 = V3(), _H2 = V3(), _via = V3(), _wz = V3();
 
@@ -215,7 +251,7 @@ const _f = V3(), _rt = V3(), _hc = V3(), _As = V3(), _Bs = V3(), _Am = V3(), _Bm
 //   right fist at a point of his body's frame [his right, up from the hips, ahead] (his metres), the weapon's line rising toward his front at elev°, turned yaw° to his left:
 //   the guandao in a polearm carry (the right fist at the butt's third by his hip — K.hold.rear —, the left along it at his chest), the dadao in a forward guard; walk → run →
 //   sprint by his pace (BLADE.front.run m/s), → the block by gk. → _HP (the right fist), _HT (the line, unit, toward the blade)
-const _HP = V3(), _HT = V3(), _pX = V3(), _pRv = V3(), _pLv = V3();
+const _HP = V3(), _HT = V3(), _pX = V3(), _pRv = V3(), _pLv = V3(), _hd = V3(), _pn3 = V3();
 const HW = [0, 0, 0, 0];   // the weights of stand, run, sprint, block
 function hmix(Hd, i, j){ const a = Hd.stand[i], b = Hd.run[i], c = Hd.sprint[i], d = Hd.block[i]; return j < 0 ? a * HW[0] + b * HW[1] + c * HW[2] + d * HW[3] : a[j] * HW[0] + b[j] * HW[1] + c[j] * HW[2] + d[j] * HW[3]; }
 function holdLine(K, v, gk, ks){ const Hd = K.hold, rk = smooth((v - BLADE.front.run[0]) / 0.8), sk = smooth((v - BLADE.front.run[1]) / 0.8); HW[0] = (1 - rk) * (1 - sk) * (1 - gk); HW[1] = rk * (1 - sk) * (1 - gk); HW[2] = sk * (1 - gk); HW[3] = gk;
@@ -229,7 +265,7 @@ function holdLine(K, v, gk, ks){ const Hd = K.hold, rk = smooth((v - BLADE.front
 //   cut's extension they slide toward the butt (the move's sl: the lead hand slips down the shaft to the rear one) and the blade runs out to its full reach.
 //   BOTH: the edge lies down / as his fist has it at rest and is rolled to lead the cut; the weapon is pushed bodily out of his trunk, pack, head and legs (pushOut) before the hands go
 //   on; DRAW / SHEATH: the right hand goes to it where it hangs, then carries it round the OUTSIDE of his shoulder (BLADE.path.via) to the hold — never through him.
-export function bladeHold(cv, R, G, dt, P){ const L = R.bl; if(!L || !L.m) return; const D = R.pup.D, K = L.K, ks = bodyK();
+export function bladeHold(cv, R, G, dt, P){ const L = R.bl; if(!L || !L.m) return; const D = R.pup.D, K = L.K, ks = bodyK(); _fwDt = dt;
   if(L.w <= 0){ worn(R, L, D, dt, P, ks, _wp, _wq); wornPlace(R, L, G, _wp, _wq, ks); L.tpOk = L.tp2Ok = false; return; }
   const bw = L.bw, H = BLADE.hand, mine = cv === CV, B0 = BLADEST, PT = BLADE.path;
   // the rifle CARRY has just slung lies on the back the RIFLE's layers gave him: kept as it lies against the Spine1 bone, so it is on his back still once the blade's pose is laid over
@@ -237,6 +273,11 @@ export function bladeHold(cv, R, G, dt, P){ const L = R.bl; if(!L || !L.m) retur
   { const B = L.bones, s = L.snap; if(bw >= 0.999) for(let i = 0; i < B.length; i++) B[i].quaternion.fromArray(s, i * 4); else for(let i = 0; i < B.length; i++) B[i].quaternion.slerp(_q.fromArray(s, i * 4), bw);
     if(D.Hips) D.Hips.position.lerp(L.hips, bw); R.pup.dst.updateMatrixWorld(true); }
   if(gun && sb && gun.parent){ _mat.copy(sb.matrixWorld).multiply(_mrel); _mi.copy(gun.parent.matrixWorld).invert(); _mat.premultiply(_mi); _mat.decompose(gun.position, gun.quaternion, gun.scale); gun.updateMatrixWorld(true); if(R.cy.st){ if(R.cy.st[0]) R.cy.st[0].visible = false; if(R.cy.st[1]) R.cy.st[1].visible = false; } }   // (its sling's ribbon was drawn for the other pose: not shown with the blade out)
+  // BLADE 15 …and out of his skin (BLADEMEND.rifle): the blade's stance turns his hips under it (it lay 4–9 cm into his left hip) — by its real shape (slabsOf), its muzzle end
+  //   turned out about the sling's upper end (the end nearer his shoulders), his arms left out (they hold the blade)
+  if(gun && sb && gun.parent && BLADEMEND.rifle.on && BLADE.skin.on && skinOf(R)){ const Sb = slabsOf(gun, 0, 2); gun.matrixWorld.decompose(_gp, _gq, _gsv); _ga.set(Sb.hi, 0, 0).applyMatrix4(gun.matrixWorld); _gb.set(Sb.lo, 0, 0).applyMatrix4(gun.matrixWorld);
+    D.Spine2.getWorldPosition(_t2); if(_gb.distanceTo(_t2) < _ga.distanceTo(_t2)) _ga.copy(_gb); sb.getWorldPosition(_t2); L.rifle = skinSlab(R, Sb, _gp, _gq, _gsv.x, _ga, _t2, false); if(L.rifle > 0) skinSlab(R, Sb, _gp, _gq, _gsv.x, _ga, _t2, false);   // (a second pass: a knee thrown up in a leap)
+    if(L.rifle > 0){ _mat.compose(_gp, _gq, _gsv); _mi.copy(gun.parent.matrixWorld).invert(); _mat.premultiply(_mi); _mat.decompose(gun.position, gun.quaternion, gun.scale); gun.updateMatrixWorld(true); } } else L.rifle = 0;
   G.getWorldQuaternion(_q); _f.set(0, 0, 1).applyQuaternion(_q); _f.y = 0; _f.normalize(); if(R.blYaw) _f.applyAxisAngle(UP, R.blYaw); _rt.set(-_f.z, 0, _f.x); D.Hips.getWorldPosition(_hc);   // (his body's own front: a spinning cut has turned it)
   // WHERE THIS KIND HOLDS IT → the grip's place _hp, its line _hz, the edge at rest _hy, each hand's point along it (L.zR, L.zL)
   grip(D, 'Right', K, ks, _hp); _hz.copy(_k); _hy.copy(_m);
@@ -277,12 +318,14 @@ export function bladeHold(cv, R, G, dt, P){ const L = R.bl; if(!L || !L.m) retur
   //   toward the edge, canted toward each other
   const PM = BLADE.palm, pon = PM.on && L.w >= PM.from; let pR = null, pL = null; if(pon){ _pX.crossVectors(_y, _z).normalize();
     if(K.two){ pR = _pRv.copy(_y); pL = _pLv.copy(_y).negate(); } else { pR = _pRv.copy(_y).addScaledVector(_pX, -PM.cant).normalize(); pL = _pLv.copy(_y).addScaledVector(_pX, PM.cant).normalize(); } }
-  _tip.copy(_op).addScaledVector(_z, zh * ks); fistTo(D, 'Right', K, ks, _tip, _z, hw, pole, pR); if(pk > 0 && _res.lengthSq() > 4e-6) _op.sub(_res); L.eR = pk > 0 ? 0 : _res.length(); L.eL = 0;   // (his hand stays on it before all else)
+  _fwQ.copy(_oq); _fwOff = !(L.w >= 1); _fwN++; _tip.copy(_op).addScaledVector(_z, zh * ks); fistTo(D, 'Right', K, ks, _tip, _z, hw, pole, pR); if(pk > 0 && _res.lengthSq() > 4e-6) _op.sub(_res); L.eR = pk > 0 ? 0 : _res.length(); L.eL = 0;   // (his hand stays on it before all else)
   const ho = smooth((L.w - 0.6) / 0.4);
   if(ho > 0.001 && D.LeftHand && D.LeftArm && D.LeftForeArm){ _mid.copy(_op).addScaledVector(_z, L.zL * ks); fistTo(D, 'Left', K, ks, _mid, _z, ho, null, pL);
     if(ho > 0.99 && _res.lengthSq() > 4e-6){ // short of it: his hand takes the handle where it can (within its stretch); what is still left, the weapon comes to (the right wrist moved, its fist kept)
       const lo = K.two ? (L.lead ? zh + K.spread[1] : K.butt + 0.05) : K.off[0], hi = K.two ? (L.lead ? K.root - 0.03 : zh - K.spread[1]) : K.off[1], z2 = clamp(L.zL - _res.dot(_z) / ks, lo, hi); if(Math.abs(z2 - L.zL) > 1e-3){ L.zL = z2; _mid.copy(_op).addScaledVector(_z, z2 * ks); fistTo(D, 'Left', K, ks, _mid, _z, 1, null, pL); }
-      if(_res.lengthSq() > 4e-6){ _d.copy(_res); D.RightHand.getWorldPosition(_a); D.RightHand.getWorldQuaternion(_fq2); _t.copy(_a).sub(_d); D.RightForeArm.getWorldPosition(_pl); ik2(D.RightArm, D.RightForeArm, D.RightHand, _t, _pl); setWorldQ(D.RightHand, _fq2); D.RightHand.getWorldPosition(_b).sub(_a); _op.add(_b); _mid.add(_b); _res.set(0, 0, 0); } } L.eL = _res.length(); }
+      if(_res.lengthSq() > 4e-6){ _hd.copy(_res); if(pon){ fist(D, 'Right', _p); _pl.copy(_m); _pn3.copy(_n); } D.RightHand.getWorldPosition(_a); D.RightHand.getWorldQuaternion(_fq2); _t.copy(_a).sub(_hd);
+        if(pon){ const lf = D.RightForeArm.getWorldPosition(_c).distanceTo(_a); _pl.multiplyScalar(-lf).add(_t).addScaledVector(_pn3, -PM.under * ks); } else D.RightForeArm.getWorldPosition(_pl);   // BLADE 15 the elbow put where this fist's forearm lies (straight wrist) — not left where it was: a folded arm then bent the rear wrist back 140–175°
+        ik2(D.RightArm, D.RightForeArm, D.RightHand, _t, _pl); setWorldQ(D.RightHand, _fq2); D.RightHand.getWorldPosition(_b).sub(_a); _op.add(_b); _mid.add(_b); _res.set(0, 0, 0); } } L.eL = _res.length(); }
   if(hw > 0.5){ _tip.copy(_op).addScaledVector(_z, zh * ks); curlHand(D, 'Right', H.curl * hw, _tip); if(ho > 0.3) curlHand(D, 'Left', H.curl * ho, _mid); }
   if(pon) limbTwist(R.pup);   // (BLADE 14 the forearm's roll spread along its twist joints: no wrapped wrist)
   // laid under the rig group (his own size in the world)

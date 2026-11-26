@@ -3181,6 +3181,14 @@ export const BLADE = { on:!(typeof location !== 'undefined' && /[?&]noblade\b/.t
         special:{ id:'jump', sever:'diag', clip:'blade-gs-jump-attack', rate:1.5, from:0.4, to:2.0, win:[[1.0, 1.48]], arc:[174, 404], reach:1.6, y:[-1.6, 1.8], dmg:125, push:4.5, daze:1.2, st:28, cd:7, next:1.6, move:0, root:true },
         counter:{ id:'riposte', clip:'blade-misc-stable-sword-outward-slash', rate:1.7, from:0.55, to:1.5, win:[[0.85, 1.0]], arc:[-72, 32], y:[-0.6, 1.4], dmg:58, push:3, daze:0.6, st:12, next:1.05, move:0.5, lunge:0.4 },
         flourish:{ id:'pose', clip:'blade-misc-stable-sword-inward-slash', rate:1.5, from:0.7, to:2.0, win:[], move:0.3 } } } } };
+// BLADE 15 THE BLADE'S MENDS (actors/blade.js). wrist: each fist on the handle is picked for the straightest wrist (blade.js fistPick) — knuckles up
+//   or down the handle, turned round it off the palm's way by at most roll° (n steps a side; only past lim° of bend does it pay: kRoll per rad of roll), the other way round
+//   taken only when hyst° better (pref° for the other than grip's [left, right] way), the roll [guandao, dadao] and the turn of the fist eased at rate rad/s in the weapon's frame;
+//   on false: BLADE 14's pick (the way round whose straight elbow the upper arm reaches) · rifle: the slung rifle (blade in hand) kept out of his skin (actors/blade.js,
+//   by its real shape, turned out about the sling's upper end) · worn: the worn blade lies in the plane of his whole back — 'up' the chord from the `from` joint to the neck (× chord;
+//   prone, × line toward the neck → knees line), lying prone it slides slide[kind] m down his back ([guandao, dadao]); crouched low[kind] = [ride up m, tilt°] (instead of
+//   BLADE's own low); its swing × sway[kind]; what his skin pushes it out by is taken at once and given back at release /s (kept in the back's frame)
+export const BLADEMEND = { wrist:{ on:true, grip:[-1, -1], pref:15, hyst:30, lim:60, roll:[55, 90], n:4, kRoll:1, rate:40 }, rifle:{ on:true }, worn:{ on:true, from:'Hips', chord:1, line:1, slide:[0.6, 0], low:[[0.05, 58], [0, 36]], sway:[1, 0.5], release:5 } };
 // AMBUSH 1 THE BLADE DOES NOT GIVE HIM AWAY — HIT AND RUN FROM COVER (game/ambush.js; the blade's own numbers stay in BLADE.quiet). Noise and sight are two rules:
 //   noise: a swing, a cut and a silent kill make NO sound an enemy acts on. What does carry only makes men SUSPICIOUS (they turn and come to look), never alerted:
 //     steel really striking cover (BLADE.quiet.clangR m — and only when the blade's arc truly meets the block: touch = how many bearings × radii of the arc are tried),
