@@ -1845,6 +1845,23 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/alertEnemy\(o, now, 'see', p\.pos\.x/.test(qt) && /showBanner\(SAY\.alarm, '#ff5a3a'\); floatText\(SAY\.alarm, '#ff5a3a', p\.pos, 20\);/.test(qt) && /\{d\}/.test(L.say.dropTip) && /\{b\}/.test(L.say.dropTip) && /floatText\(fmt\(L\.say\.dropTip, o\)\.toUpperCase\(\)/.test(lg),
     'the alarm is only ever his own doing (seen, heard, a takedown witnessed), and it and the parachute are said over his head as well as on the shared banner / the busy radio');
   ok(L.pouch.maxD >= 25 && L.pouch.maxD <= 70 && /\(e\.pos\.x - p\.pos\.x\) \*\* 2 \+ \(e\.pos\.z - p\.pos\.z\) \*\* 2 > P\.maxD \* P\.maxD\) return;/.test(lg), 'a pouch only from a man who falls where he can get to it'); }
+// FIRE 1 the fire / smoke particle layer (config FIREFX; fx/fire-fx.js)
+{ const C = await import('./config.js'), fs = await import('node:fs'), rd = f => fs.readFileSync(f, 'utf8'), F = C.FIREFX, ff = rd('src/fx/fire-fx.js'), inc = (a, lo) => a.length === 2 && a[0] >= (lo ?? 0) && a[1] >= a[0];
+  ok(F.max >= 1500 && F.max <= 4000 && F.maxMobile >= 400 && F.maxMobile < F.max * 0.5 && F.tierMobile > 0 && F.tierMobile < 1 && inc(F.thin, 0.3) && F.thin[1] <= 1 && F.thin[1] > F.thin[0] && F.lights >= 2 && F.lights <= 6 && F.atlas.grid === 4 && F.atlas.cellMobile < F.atlas.cell
+    && /STR = 32, NL = F\.lights/.test(ff) && /FX\.dropped\+\+; return -1;/.test(ff) && /if\(K\.prio < 2\)/.test(ff),
+    'fire fx budget: a hard cap of live + scheduled particles (a phone under half a desktop\'s, and a share of every count), the cheap kinds thinned out before it fills, the heart of an effect never');
+  ok(Object.entries(F.ramps).every(([k, st]) => st.length >= 3 && st[0][0] === 0 && st[st.length - 1][0] === 1 && st.every((q, i) => q.length === 4 && q[2] >= 0 && q[2] <= 1 && q[3] >= 0 && q[3] <= 1 && (!i || q[0] > st[i - 1][0])) && st[st.length - 1][2] === 0),
+    'fire fx ramps: every colour ramp starts at 0, ends at 1 with its stops in order, opacity and glow share within 0–1, and ends at nothing (a particle fades out, it never pops)');
+  ok(['heat', 'fuel', 'jet'].every(k => { const st = F.ramps[k]; return st[0][3] >= 0.8 && st[st.length - 1][3] === 0 && st.every((q, i) => !i || q[3] <= st[i - 1][3]); }) && ['blast', 'black', 'grey', 'trail', 'wisp', 'dust', 'dirt', 'smoke'].every(k => F.ramps[k].every(q => q[3] === 0))
+    && F.ramps.heat.find(q => q[3] <= 0.15)[0] <= 0.5 && F.ramps.fuel.find(q => q[3] <= 0.15)[0] > F.ramps.heat.find(q => q[3] <= 0.15)[0],
+    'fire fx temperature: a fireball starts as flame and cools monotonically into smoke that only takes light (smoke never glows); a HEAT burst is smoke by half its life, burning fuel stays alight longer');
+  ok(Object.entries(F.kinds).every(([k, q]) => F.ramps[q.ramp] && q.cells[0] >= 0 && q.cells[0] + q.cells[1] <= F.atlas.grid * F.atlas.grid && q.cells[1] >= 1 && (q.layer === 0 || q.layer === 1) && q.s.length === 2 && q.s[0] > 0 && q.s[1] > 0 && (q.prio ?? 1) >= 0 && (q.prio ?? 1) <= 2
+      && (q.layer === 1 || F.ramps[q.ramp].every(st => st[3] === 0)))
+    && ['column', 'black', 'grey', 'trail', 'wisp', 'dust', 'ring'].every(k => F.kinds[k].thin >= 0.5 && F.kinds[k].s[1] > F.kinds[k].s[0] && F.kinds[k].wind > 0),
+    'fire fx kinds: each names a ramp and cells that exist; nothing in the smoke layer glows; smoke and dust swell, thin as they swell and lean on the wind');
+  ok(F.light.night > 0 && F.light.night < 1 && F.hot.night > F.hot.day && F.light.glowDay < 1 && F.soft > 0.2 && /export function fxShim\(/.test(ff) && /if\(\(o\.smoke \|\| o\.tex==='fire'\) && fxShim\(x,y,z,vx,vy,vz,o\)\) return;/.test(rd('src/fx/particles.js')) && /oldfx/.test(ff)
+    && /updateFireFX\(dt\)/.test(rd('src/game/loop.js')) && /clearFireFX\(\)/.test(rd('src/game/flow.js')),
+    'fire fx wiring: smoke is dimmer and flame brighter at night; the old smoke / fire puffs are drawn by the new layer, ?oldfx keeps the old look, a stage change clears what was scheduled'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

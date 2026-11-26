@@ -1,6 +1,6 @@
 // fx/particles.js — PARTICLES (juice)
 import * as THREE from 'three';
-import { MOBILE, PL_FIRE, PL_FLASH, heightAt, scene, trails } from '../hub.js';
+import { MOBILE, PL_FIRE, PL_FLASH, fxShim, heightAt, scene, trails } from '../hub.js';
 
 // ----------------------------- PARTICLES (juice) -----------------------------
 export function glowTex(){
@@ -48,6 +48,7 @@ export const PPOOL=[];                                                          
 export function spawnPart(x,y,z,vx,vy,vz,o={}){
   if(parts.length >= PART_MAX*1.7*PERF.parts) return;                                  // hard budget (oldest keep living; new spawns drop) — shrinks when the device struggles
   if(PERF.parts<1 && !o.keep && (o.smoke||o.tex==='flash') && Math.random()>PERF.parts) return;   // (Z192 keep: the caller thins itself, e.g. a missile's ribbon spaces its puffs out)  // under load: thin out the cheap-to-lose layers first
+  if((o.smoke || o.tex==='fire') && fxShim(x,y,z,vx,vy,vz,o)) return;   // FIRE 1 smoke and fire puffs are drawn by the fire / smoke layer (fx/fire-fx.js: shaped, lit, flown on the GPU); ?oldfx: here as before
   const P=PPOOL.pop()||{ col:new THREE.Color(), _c0:new THREE.Color(), _c1:new THREE.Color() };
   P.x=x; P.y=y; P.z=z; P.vx=vx; P.vy=vy; P.vz=vz; P.life=P.max=o.life||0.6; P.size=o.size||1; P.grow=o.grow||0;
   P.grav=o.grav??-9; P.drag=o.drag??2.5; P.smoke=!!o.smoke; P.tex=o.tex||null; P.op=o.op??1; P.rot=(o.smoke||o.tex)?Math.random()*6.283:0; P.spin=o.smoke?(Math.random()-0.5)*0.8:0;

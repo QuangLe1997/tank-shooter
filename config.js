@@ -2133,6 +2133,64 @@ export const SMOKE_TRAIL = { points:64, cap:36, capMobile:14, step:1.0, stepMobi
   kinds:{ shell:{ w0:0.16, grow:0.5, life:2.8, op:0.68, col:0xdedcd6 }, heavy:{ w0:0.22, grow:0.66, life:3.4, op:0.76, col:0xd6d3cc },
     rail:{ w0:0.08, grow:0.26, life:3.4, op:0.68, col:0xeeeaff }, enemy:{ w0:0.16, grow:0.5, life:2.4, op:0.64, col:0x948f87 },
     frost:{ w0:0.2, grow:0.55, life:1.8, op:0.45, col:0xe6f8ff } } };
+// FIRE 1–4 REAL FIRE, SMOKE AND BLASTS (fx/fire-fx.js the particle layer · fx/blasts.js the staged effects; ?oldfx = the old look):
+//   max / maxMobile = the hard budget of live + scheduled particles (one instanced buffer, two draw calls: smoke under, flame over) · thin = the load
+//   (share of the budget) from which the cheap kinds start to be dropped … at which all of them are · tierMobile = a phone's share of every count ·
+//   atlas = the procedural sprite sheet (grid × grid cells of cell px: puffs, wisps, flame tongues, a flash, a dot, a clod) · soft = a puff fades into
+//   the ground over this many m · wind = × the weather's wind, capped m/s · light = how a puff takes the sun (× its intensity), how far round it wraps,
+//   the sky's share, × both at night (the game's night is exposed up: white smoke must not shine), a fire's light on smoke, × the blasts' glow on the ground by day · hot = flame brightness by day / night (above 1 it blooms) · shim = the old spawnPart smoke / fire drawn here.
+//   ramps: colour over life, each stop [t 0–1, colour, opacity, glow share (1 = flame, 0 = smoke that only takes light)] — the temperature ramp.
+//   kinds: ramp · cells [first, count] of the sheet · layer 0 smoke / 1 flame · drag, dragY /s · grav m/s² (+ rises) · s [start, end] × the size given ·
+//   grow = how early it reaches its full size · thin = it fades by thinning as it swells (opacity ∝ size^−thin) · cool = its rim is this much further
+//   along the ramp than its heart · sit = held this share of its size above the ground · turb m · wind share · hot × · stretch along its flight ·
+//   spin rad/s · up = kept upright (a flame) · prio 0 dropped first under load … 2 never.
+export const FIREFX = { on:true, max:2600, maxMobile:900, thin:[0.6, 0.92], tierMobile:0.5, atlas:{ grid:4, cell:128, cellMobile:64 }, soft:0.6, lights:4,
+  wind:{ k:1, max:3.2 }, light:{ sun:0.3, wrap:0.3, amb:0.42, night:0.5, fire:0.35, glowDay:0.45 }, hot:{ day:1.15, night:1.5 }, shim:{ smoke:true, fire:true, op:1.25 },
+  ramps:{
+    flash:[[0, 0xffffff, 1, 1], [0.4, 0xfff0c0, 1, 1], [1, 0xffa840, 0, 1]],
+    heat:[[0, 0xfff6d8, 1, 1], [0.07, 0xffd060, 1, 0.9], [0.16, 0xff8a1e, 1, 0.8], [0.26, 0xe0500c, 0.95, 0.5], [0.36, 0x7a2408, 0.92, 0.2], [0.48, 0x241812, 0.9, 0.03], [0.7, 0x241a14, 0.75, 0], [1, 0x4a443e, 0, 0]],   // a HEAT burst: white-yellow → orange → deep red → black-brown smoke by a third of its life
+    fuel:[[0, 0xfff2c0, 1, 0.9], [0.12, 0xffb030, 1, 0.75], [0.35, 0xff7a14, 1, 0.62], [0.55, 0xd0480c, 0.95, 0.45], [0.7, 0x6a2008, 0.92, 0.18], [0.82, 0x1a120c, 0.85, 0.03], [0.92, 0x14100c, 0.7, 0], [1, 0x1c1814, 0, 0]],   // burning fuel: it stays alight, rolls, soots over
+    flame:[[0, 0xfff4cc, 0.9, 1], [0.25, 0xffc040, 1, 1], [0.55, 0xff7a14, 0.9, 1], [0.8, 0xc02c08, 0.6, 0.9], [1, 0x400c04, 0, 0.6]],
+    jet:[[0, 0xfffbe0, 0.9, 0.9], [0.15, 0xffd65a, 1, 0.7], [0.45, 0xff9320, 1, 0.6], [0.68, 0xe25a0c, 0.95, 0.42], [0.84, 0x55180a, 0.8, 0.1], [1, 0x14100d, 0, 0]],
+    motor:[[0, 0xffffff, 1, 1], [0.5, 0xfff0a8, 1, 1], [1, 0xffa030, 0, 1]], spark:[[0, 0xfff8dc, 1, 1], [0.4, 0xffc050, 1, 1], [1, 0xd03a08, 0, 1]], ember:[[0, 0xffc860, 1, 1], [0.5, 0xff7018, 1, 1], [1, 0x7a1604, 0, 1]],
+    solid:[[0, 0xffffff, 1, 0], [0.8, 0xffffff, 1, 0], [1, 0xffffff, 0, 0]], dirt:[[0, 0xffffff, 0.95, 0], [0.6, 0xffffff, 0.85, 0], [1, 0xffffff, 0, 0]], dust:[[0, 0xffffff, 0, 0], [0.08, 0xffffff, 1, 0], [0.45, 0xffffff, 0.75, 0], [1, 0xffffff, 0, 0]],
+    blast:[[0, 0x1c1612, 0, 0], [0.07, 0x1c1612, 1, 0], [0.35, 0x38302a, 0.92, 0], [0.7, 0x6a635b, 0.7, 0], [1, 0x8f8981, 0, 0]],   // an explosive's smoke: black-brown, greying as it cools
+    black:[[0, 0x0c0a08, 0, 0], [0.06, 0x0c0a08, 1, 0], [0.5, 0x191512, 0.95, 0], [0.8, 0x2e2a27, 0.7, 0], [1, 0x45413d, 0, 0]],        // fuel / rubber: black and thick
+    grey:[[0, 0x5a5248, 0, 0], [0.07, 0x5a5248, 1, 0], [0.4, 0x7d766c, 0.85, 0], [1, 0xa9a39a, 0, 0]],                                    // high explosive with nothing burning: grey-brown
+    trail:[[0, 0xf4f1ea, 0, 0], [0.03, 0xf4f1ea, 1, 0], [0.3, 0xe2ded6, 0.9, 0], [1, 0xc9c6bf, 0, 0]], wisp:[[0, 0xd8d5ce, 0, 0], [0.15, 0xd8d5ce, 1, 0], [0.6, 0xcfccc5, 0.7, 0], [1, 0xc4c1ba, 0, 0]],
+    smoke:[[0, 0xffffff, 0.15, 0], [0.14, 0xffffff, 1, 0], [0.38, 0xffffff, 1, 0], [1, 0xffffff, 0, 0]] },
+  kinds:{
+    flash:{ ramp:'flash', cells:[13, 1], layer:1, s:[0.6, 1.25], grow:0.5, hot:1.7, prio:2 }, glow:{ ramp:'flash', cells:[14, 1], layer:1, s:[0.8, 1.3], hot:0.8, op:0.7, prio:2 },
+    heat:{ ramp:'heat', cells:[0, 7], layer:1, drag:3.4, dragY:2.4, grav:3, s:[0.45, 1], grow:2.6, thin:0.4, cool:0.42, sit:0.3, turb:0.35, wind:0.5, hot:1.2, spin:0.9, prio:2 },
+    fuel:{ ramp:'fuel', cells:[0, 7], layer:1, drag:1.8, dragY:1.1, grav:3.2, s:[0.4, 1], grow:2, thin:0.35, cool:0.5, sit:0.3, turb:0.8, wind:0.6, hot:0.85, spin:1.2, prio:2 },
+    lick:{ ramp:'flame', cells:[9, 4], layer:1, drag:1.2, dragY:0.6, grav:2, s:[0.75, 1.15], grow:1.2, cool:0.35, sit:0.42, turb:0.2, wind:0.5, up:1, prio:1 },
+    jet:{ ramp:'jet', cells:[0, 7], layer:1, drag:1.7, dragY:0, grav:2.5, s:[0.22, 1], grow:1.6, thin:0.3, cool:0.4, sit:0.2, turb:0.45, wind:0.2, hot:0.8, stretch:0.035, prio:2 },
+    motor:{ ramp:'motor', cells:[14, 1], layer:1, drag:5, dragY:5, s:[1, 0.5], hot:2.2, stretch:0.05, prio:2 },
+    spark:{ ramp:'spark', cells:[14, 1], layer:1, drag:1.4, dragY:1.4, grav:-14, s:[1, 0.55], hot:2, stretch:0.07, prio:1 },
+    frag:{ ramp:'ember', cells:[14, 1], layer:1, drag:0.35, dragY:0.35, grav:-15, s:[1, 0.6], hot:1.8, stretch:0.03, prio:1 },
+    ember:{ ramp:'ember', cells:[14, 1], layer:1, drag:0.8, dragY:0.8, grav:0.9, s:[1, 0.5], hot:1.5, turb:0.9, wind:1, prio:0 },
+    clod:{ ramp:'solid', cells:[15, 1], layer:0, drag:0.5, dragY:0.5, grav:-19, s:[1, 1], stretch:0.02, prio:0 },
+    dirt:{ ramp:'dirt', cells:[0, 7], layer:0, drag:1, dragY:0.9, grav:-10, s:[0.5, 1], grow:1.6, thin:0.55, sit:0.3, turb:0.2, wind:0.4, op:0.95, spin:0.8, prio:2 },
+    ring:{ ramp:'dust', cells:[0, 9], layer:0, drag:3, dragY:2, grav:0.2, s:[0.4, 1], grow:1.8, thin:0.8, sit:0.34, turb:0.3, wind:0.6, op:0.6, spin:0.5, prio:1 },
+    dust:{ ramp:'dust', cells:[0, 9], layer:0, drag:1.6, dragY:1.2, grav:0.15, s:[0.45, 1], grow:1.5, thin:0.9, sit:0.36, turb:0.5, wind:1, op:0.5, spin:0.5, prio:1 },
+    column:{ ramp:'blast', cells:[0, 7], layer:0, drag:0.7, dragY:0.45, grav:0.5, s:[0.35, 1], grow:1.5, thin:0.85, sit:0.35, turb:0.7, wind:1, op:0.85, spin:0.6, prio:1 },
+    black:{ ramp:'black', cells:[0, 7], layer:0, drag:0.7, dragY:0.45, grav:0.6, s:[0.35, 1], grow:1.5, thin:0.7, sit:0.35, turb:0.8, wind:1, op:0.92, spin:0.6, prio:1 },
+    grey:{ ramp:'grey', cells:[0, 7], layer:0, drag:0.8, dragY:0.5, grav:0.35, s:[0.4, 1], grow:1.5, thin:0.9, sit:0.35, turb:0.6, wind:1, op:0.7, spin:0.5, prio:1 },
+    wisp:{ ramp:'wisp', cells:[0, 9], layer:0, drag:1, dragY:0.6, grav:0.25, s:[0.4, 1], grow:1.2, thin:1.1, sit:0.3, turb:0.5, wind:1, op:0.35, spin:0.4, prio:0 },
+    trail:{ ramp:'trail', cells:[0, 7], layer:0, drag:0.9, dragY:0.9, grav:0.12, s:[0.32, 1], grow:1.3, thin:1, sit:0.3, turb:0.22, wind:1, op:0.66, spin:0.4, prio:1 },
+    back:{ ramp:'trail', cells:[0, 9], layer:0, drag:4.6, dragY:3, grav:0.5, s:[0.25, 1], grow:2.2, thin:1, sit:0.3, turb:0.4, wind:0.8, op:0.6, spin:0.6, prio:2 },
+    shimSmoke:{ ramp:'smoke', cells:[0, 7], layer:0, s:[1, 1], grow:1, thin:0.3, sit:0.42, turb:0.2, wind:0.4, spin:0.4, prio:1 },
+    shimFire:{ ramp:'flame', cells:[0, 7], layer:1, s:[1, 1], grow:1, cool:0.35, sit:0.42, spin:0.6, prio:1 } },
+  // the staged effects (times in s from the burst; born [from, to] = when the particles of a stage appear; counts are a desktop's, at charge scale 1)
+  heat:{ flash:0.07, ball:{ n:9, life:[0.5, 0.8], size:2.7 }, ring:{ n:16, sp:[9, 14], life:[0.9, 1.4] }, sparks:{ n:18, sp:[12, 28], life:[0.25, 0.5] }, frags:{ n:5, sp:[5, 11], up:[6, 11], life:1.3, puffs:7 },
+    dirt:{ n:6, clods:10 }, column:{ n:14, born:[0.1, 2.2], rise:[2.4, 4.2], life:[3.5, 5.5], size:4.2 }, wisps:{ n:8, born:[2.2, 10], life:[2.5, 3.6] }, embers:{ n:8, born:[0.3, 4.5] }, light:[3.2, 16, 0.4], shake:0.7 },   // the B41's shaped charge
+  he:{ flash:0.06, core:{ n:3, life:[0.28, 0.4], size:1.6 }, dirt:{ n:10, up:[8, 15], life:[1.2, 1.8] }, clods:14, ring:{ n:14, sp:[8, 13], life:[0.9, 1.4] }, hang:{ n:6, born:[0.1, 0.5], life:[3, 5] }, smoke:{ n:6, born:[0.1, 1.2], life:[2.6, 4.2] },
+    sparks:8, wisps:{ n:5, born:[2, 7], life:[2.4, 3.4] }, light:[2.2, 12, 0.25], shake:0.7 },   // a grenade, a mortar shell, a bomb: earth first
+  fuel:{ flash:0.09, ball:{ n:12, life:[1, 1.6], size:3 }, stem:{ n:6, born:[0.08, 0.45] }, smoke:{ n:10, born:[0.45, 2.6], life:[4, 7], size:5.5 }, patches:[2, 4], embers:10, light:[4, 22, 1.3], shake:0.5 },   // fuel going up: the rolling fireball, the black mushroom
+  patch:{ lick:4, smoke:1.2, ember:0.8, life:[6, 10], max:8, gap:2.2, light:[0.9, 6] },   // burning ground: flame licks / smoke puffs / embers a second, how long, how many at once, how far apart
+  rpg:{ back:{ n:12, sp:[9, 22], cone:0.28, life:[0.9, 1.6], size:2.3 }, dust:6, ign:0.11, step:0.3, stepMobile:0.7, helix:[0.07, 1.9, 0.5], trail:{ life:[3, 4.5], size:1.1 } },   // the launch's back-blast · the sustainer lights ign s out · a puff every step m on a corkscrew [radius m, rad / m, opening m/s]
+  jet:{ n:4, life:[0.36, 0.6], spread:0.2, size:[1.4, 2.2], smoke:0.5, ember:0.25, patchEvery:0.3, light:[1.6, 13] },   // the flamethrower, per trigger tick
+  feel:{ near:22, flash:0.16, flashMax:0.3, instant:12, sound:343, shakeMax:3 } };   // shake and the exposure kick fall off with distance (÷ (1 + (d / near)²)); past instant m the shake arrives with the blast wave
 // Z230 GUN STATS — one model of what a gun really does in a fight (combat/gunstats.js), used by the arsenal, the shop and the power rating:
 //   engage = typical fighting distance (fraction of reach, capped) · W = target width (tank / man) · rho = enemies per m² around an impact
 //   (a loose battle line) · hitsCap = most targets one trigger pull is credited with · ref = the targets time-to-kill is quoted against
