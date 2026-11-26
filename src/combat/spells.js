@@ -51,7 +51,7 @@ function smallBurst(b){ const y=heightAt(b.x,b.z)+Math.max(0.5, Math.min(2.5, b.
 export function detonate(b){
   aoeDamage(b.x,b.z,b.aoe,b.aoeDmg||b.dmg,false,performance.now()/1000,b.type,true,siegeMul());
   if(b.aoe<2){ smallBurst(b); return; }   // Z232 an autocannon HE-I round (or HE ammo on a light gun): a quick bright pop, not a shell's fireball + screen shake
-  bigExplode({x:b.x,z:b.z}, 0xffae5c, b.aoe/3.2); if(b.fx==='blast') deformCrater(b.x,b.z,0.9+b.aoe*0.25,0.28); }   // cannon/missile HE rounds scoop a shallow crater
+  bigExplode({x:b.x,y:b.mesh.position.y,z:b.z}, 0xffae5c, b.aoe/3.2, b.mesh.userData.rk ? 'heat' : 'he'); if(b.fx==='blast') deformCrater(b.x,b.z,0.9+b.aoe*0.25,0.28); }   // cannon/missile HE rounds scoop a shallow crater
 // enemy AoE that hits the PLAYER + CORE (mortar shells, helicopter bombs)
 export function enemyGroundStrike(x,z,r,dmg,now){
   bigExplode({x,z}, 0xff7a3d, r/3); blastAllies(x,z,r,dmg);

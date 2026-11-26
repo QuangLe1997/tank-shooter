@@ -1,9 +1,13 @@
 // fx/explosions.js — COMBAT FX / EXPLOSIONS (juiced in P4)
 import { BLAST_DEATH } from '../../config.js';
-import { BIOME, MOBILE, S, blastLight, bulletImpact, burst, decalCrater, decalDirt, decalScorch, dustSkirt, fireball, gradePass, haptic, heightAt, muzzleLight, ringPulse, scareBirds, sfx, shockDome, spawnDebris, spawnPart, wetAt } from '../hub.js';
+import { BIOME, MOBILE, S, fireFxOn, heBlast, heatBlast, smokeRoll, blastLight, bulletImpact, burst, decalCrater, decalDirt, decalScorch, dustSkirt, fireball, gradePass, haptic, heightAt, muzzleLight, ringPulse, scareBirds, sfx, shockDome, spawnDebris, spawnPart, wetAt } from '../hub.js';
 
 // ----------------------------- COMBAT FX / EXPLOSIONS (juiced in P4) -----------------------------
-export function bigExplode(pos, color, scale=1.5){ scareBirds(pos.x, pos.z);   // Z235 the swallows scatter from the blast
+// FIRE 2/3 kind: 'he' (the default — a grenade, a shell, a bomb, a thing blown up: earth and grey-brown dust first, a brief flash) or 'heat' (a B41's shaped
+//   charge: the compact fireball gone to black smoke, sparks, fragments) — fx/blasts.js; pos.y well above the ground = an air burst. ?oldfx: the look below
+export function bigExplode(pos, color, scale=1.5, kind){ scareBirds(pos.x, pos.z);   // Z235 the swallows scatter from the blast
+  if(fireFxOn()){ (kind==='heat' ? heatBlast : heBlast)(pos.x, pos.y, pos.z, scale); if(color!=null) burst(pos, color, Math.floor(3*scale), 9*scale, {y:(pos.y??heightAt(pos.x,pos.z)+1), life:0.3, size:0.5*scale, up:3});   // (a few sparks in the caller's own colour)
+    sfx(scale>=2 ? 'bigexplode' : 'explode', pos); return; }
  
   decalScorch(pos.x, pos.z, 1.6+scale*1.5, 0.85); if(scale>=1.2) decalCrater(pos.x, pos.z, 0.6+scale*0.6, 0.8);   // blast leaves its mark on the ground
   fireball(pos, scale*0.6);   // (Z312 no flat coloured ring)
@@ -77,6 +81,7 @@ export function vehicleExplode(pos, color, scale=1.5, pal=null, ms=null, fx='fir
 // Z312 a blast's smoke: not a few quick puffs but a dark, lumpy cloud boiling up out of it, rolling outward as it climbs, greying and thinning as it
 //   drifts off with the wind over several seconds (sM: the killing round's smoke share)
 export function rollSmoke(pos, scale, sM, lk=1){ if(!(sM > 0.05)) return; const gy=heightAt(pos.x,pos.z), n=Math.round((MOBILE?6:12)*Math.min(2, scale)*sM);
+  if(fireFxOn()){ smokeRoll('black', pos.x, gy+0.6, pos.z, scale, n, [0.1, 1.6], [1.6, 3.4], [(3+1.5*lk), (4.5+2.5)*Math.max(0.6, lk)], 3.6, gy, Math.min(1, 0.6+0.3*sM)); return; }   // FIRE 3
   for(let i=0;i<n;i++){ const a=Math.random()*6.283, r=Math.random()*0.8*scale, up=1.4+Math.random()*2.6, dark=i<n*0.6;
     spawnPart(pos.x+Math.cos(a)*r, gy+0.6+Math.random()*scale, pos.z+Math.sin(a)*r, Math.cos(a)*(0.6+Math.random()*1.6)+0.5, up, Math.sin(a)*(0.6+Math.random()*1.6)+0.3,
       { color:dark ? 0x17130f : 0x4a4540, size:(1.4+Math.random()*1.2)*scale, life:((MOBILE?3:4.5)+Math.random()*2.5)*lk, smoke:true, grav:0.18, drag:0.7, grow:2.4*Math.sqrt(scale), op:dark ? 0.62 : 0.4, keep:true }); } }

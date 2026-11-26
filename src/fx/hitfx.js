@@ -1,7 +1,7 @@
 // fx/hitfx.js — Z192 REAL ROUNDS & REAL HITS: a shell flies as a hot streak pointed along its path (not a glowing ball), a missile lays a
 //   long lingering smoke ribbon behind a flickering motor flame, an enemy gun barks with flash + smoke at the real muzzle
 //   (no-tanks: the hits on armour, the rocking hull and the smoking engine deck are gone)
-import { BIOME, MOBILE, PART_MAX, PERF, S, afxIncoming, afxOn, heightAt, parts, sfx, smokeKind, smokeRibbon, spawnPart } from '../hub.js';
+import { BIOME, MOBILE, PART_MAX, PERF, S, afxIncoming, afxOn, dirtSpout, earthCol, fireFxOn, fxTier, fxp, heightAt, parts, rocketFlight, sfx, smokeKind, smokeRibbon, spawnPart } from '../hub.js';
 
 // point the pooled round along its velocity (yaw + the pitch of its real climb / fall this frame); the core is stretched at spawn
 export function orientShell(b, y, dt){ const m=b.mesh, sp=Math.hypot(b.vx,b.vz)||1, vy=(dt>0 && b._py!=null) ? (y-b._py)/dt : 0; b._py=y;
@@ -12,6 +12,7 @@ export function shellStretch(sp){ return Math.max(1.3, Math.min(4.2, (sp||60)/24
 // a rocket motor: a flickering flame at the nozzle + a dense smoke ribbon laid down along the path, gap-free however fast it flies
 export function rocketExhaust(b, x, y, z){ const bk=Math.hypot(b.vx,b.vz)||1, ux=b.vx/bk, uz=b.vz/bk, nx=x-ux*0.75, nz=z-uz*0.75, th=Math.max(0.4, PERF.parts), step=(MOBILE?1.3:0.7)/th;
   if(b.smart){ smartExhaust(b, x, y, z, ux, uz, th); return; }   // under load: fewer, fatter puffs — never a broken ribbon
+  if(fireFxOn()){ rocketFlight(b, x, y, z); return; }   // FIRE 2 the sustainer lights a few metres out: a hard flame point, a thin corkscrew of grey-white smoke that hangs and drifts (fx/blasts.js)
   if(b._tx==null){ b._tx=nx; b._ty=y; b._tz=nz; }
   const dx=nx-b._tx, dy=y-b._ty, dz=nz-b._tz, L=Math.hypot(dx,dy,dz);
   if(L>=step){ const n=Math.min(14, Math.floor(L/step));
@@ -56,6 +57,7 @@ export function nearMiss(b, P){ if(b._nm || !P) return; const dx=b.x-P.pos.x, dz
   S.shake=Math.min(3, (S.shake||0)+(b.dmg>=18?0.55:0.18)); }
 // Z210 a shell that hits the dirt throws up a GEYSER: a dark column of soil and clods standing up out of the ground, falling back as dust
 export function dirtGeyser(x, z, k){ const gy=heightAt(x,z), dc=BIOME.ground;
+  if(fireFxOn()){ dirtSpout(x, z, k, fxTier(7), fxTier(10), [7, 13], [1, 1.5], gy); fxp('dust', x, gy+0.5, z, 0, 0.6, 0, 3*k, 2.4, 0.15, earthCol().dust, 1, gy); return; }   // FIRE 3 soil-coloured, shaped, falling back
   for(let i=0;i<(MOBILE?4:8);i++) spawnPart(x+(Math.random()-0.5)*0.6, gy+0.3, z+(Math.random()-0.5)*0.6, (Math.random()-0.5)*2.2*k, 7+Math.random()*7*k, (Math.random()-0.5)*2.2*k,
     { color:i%2?0x4a3a2a:dc, size:(0.7+Math.random()*0.5)*k, life:0.9+Math.random()*0.5, smoke:true, grav:-9, drag:1.2, grow:1.3, op:0.7, keep:true });
   for(let i=0;i<(MOBILE?5:10);i++){ const a=Math.random()*6.283, sp=2+Math.random()*4*k; spawnPart(x, gy+0.4, z, Math.cos(a)*sp, 6+Math.random()*8*k, Math.sin(a)*sp, { color:0x3e3024, size:0.14+Math.random()*0.14*k, life:1.1, grav:-20, drag:0.5 }); }
