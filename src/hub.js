@@ -187,6 +187,7 @@ export * from './game/soldier-rank.js';   // Z350 soldier mode: experience, rank
 export * from './actors/squad-mates.js';   // Z351 soldier mode: his own squad — a machine-gunner, a medic, more with rank
 export * from './loot/soldier-arms.js';   // Z352 soldier mode: the enemy's weapons on the ground, gun stars, medals, ammo crates, supply drops
 export * from './loot/gift-crate.js';   // Z369 the rank's gift crate: down under a parachute, floating, opened
+export * from './loot/loot-real.js';   // LOOT 1 the pick-ups wear downloaded models at real size, one InstancedMesh a model; their icons are renders of them
 export * from './campaign/general-duel.js';   // Z353 soldier mode: the general jumps out of his burning machine and fights on foot
 export * from './campaign/nemesis.js';   // NEMESIS 1–3 the general remembers: he can get away, comes back with a rank, a scar and a lesson, and says so
 export * from './actors/hands.js';   // Z296 fingers that close round what they hold

@@ -2,8 +2,8 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { LOOT, HUMAN_SCALE, INFGUN } from '../../config.js';
-import { CO, coopLootDropped, coopLootKeeps, coopLootMay, coopLootTouch, SOLDIER, addScore, soldierLoot, BIOME, GUNS, S, __set_soldierLvl, burst, clampField, core, damageEnemy, deploySoldiers, enemies, equippedGun, floatText, gunPicEl, gunTierTx, heightAt, iconEl, ringPulse, scene, setIcon, sfx, soldierLvl, soldiers, droneCrate, tip, updateHUD, blPulse, holoArc, holoRing, trooperGunPick, trooperGive, loadGLTF, svgGlyphTex, asShipped, nearShape, hudChips } from '../hub.js';
+import { LOOT, HUMAN_SCALE, INFGUN, LOOT_REAL } from '../../config.js';
+import { CO, coopLootDropped, coopLootKeeps, coopLootMay, coopLootTouch, SOLDIER, addScore, soldierLoot, BIOME, GUNS, S, __set_soldierLvl, burst, clampField, core, damageEnemy, deploySoldiers, enemies, equippedGun, floatText, gunPicEl, gunTierTx, heightAt, ringPulse, scene, setIcon, sfx, soldierLvl, soldiers, droneCrate, tip, updateHUD, blPulse, holoArc, holoRing, trooperGunPick, trooperGive, loadGLTF, asShipped, nearShape, hudChips, lootKey, lootIconKey, lootIconEl, lootIconTex, lootSlot, lootUnslot, lootInstSync, setLootIcon } from '../hub.js';
 
 // ===== POWER-UPS (drops) =====
 // Power-ups: TIMED buffs (longer now), PERMANENT buffs (∞ until death), instant, gun drops.
@@ -48,7 +48,7 @@ export function lootToast(def, note){
   const el=document.getElementById('lootToast'); if(!el) return; const col='#'+def.color.toString(16).padStart(6,'0'), tier=def.tier||0;
   el.style.setProperty('--lc', col); el.className='lt-'+tier;
   const gid = def.cat==='gun' && S.player && S.player._gotGun;   // Z150 a gun drop names the gun and shows its photo
-  el.querySelector('.lt-ic').replaceChildren(gid ? gunPicEl(gid,'gp-loot') : iconEl(def.svg||'star')); el.classList.toggle('lt-gun', !!gid);
+  el.querySelector('.lt-ic').replaceChildren(gid ? gunPicEl(gid,'gp-loot') : lootIconEl(lootIconKey(def), def.svg||'star')); el.classList.toggle('lt-gun', !!gid);   // (LOOT 1 a render of the item's own model)
   el.querySelector('.lt-nm').textContent=gid ? GUNS[gid].name : (def.vi||def.label||def.id); el.querySelector('.lt-ds').textContent=gid ? ('SÚNG MỚI · '+gunTierTx(gid)) : (def.ds||''); el.querySelector('.lt-nt').textContent=note||'';
   el.querySelector('.lt-tr').textContent=['THƯỜNG','HIẾM','QUÝ'][tier];
   void el.offsetWidth; el.classList.add('on'); clearTimeout(_ltT); _ltT=setTimeout(()=>el.classList.remove('on'), 2600);
@@ -87,6 +87,7 @@ function medal(g){ const gold=lootMat('gold',0xd8a838), add=(geo,mat,x,y,z)=>{ c
   add(new THREE.CylinderGeometry(0.22,0.22,0.035,28), gold, 0, 0.02, 0.12); const st=new THREE.Shape(); for(let i=0;i<10;i++){ const r=i%2?0.07:0.17, a=-Math.PI/2+i*Math.PI/5; st[i?'lineTo':'moveTo'](Math.cos(a)*r, Math.sin(a)*r); }
   const s=add(new THREE.ExtrudeGeometry(st,{ depth:0.025, bevelEnabled:false }), gold, 0, 0.04, 0.12); s.rotation.x=-Math.PI/2; g.scale.setScalar(1.15); }
 export function lootModel(def){ const G=lootGeos(), g=new THREE.Group(), cat=def.cat||'tech', add=(geo,mat)=>{ const m=new THREE.Mesh(geo,mat); m.castShadow=true; g.add(m); return m; };
+  const lk=!(def.gun && INFGUN.map[def.gun]) && lootKey(def); if(lk){ lootSlot(g, lk); return g; }   // LOOT 1 the downloaded model at its real size, drawn with its kind's InstancedMesh (loot/loot-real.js)
   if(cat==='med'){ add(G.case, lootMat('medOlive',0x56603a)); add(G.patch, lootMat('white',0xe8e6de)); add(G.cross, lootMat('red',0xc8202a)); }   // (Z370 an olive aid bag, a white patch with the red cross)
   else if(def.gun && INFGUN.map[def.gun]) realGun(g, def.gun);   // Z370 an enemy's weapon: the gun itself, lying on its side
   else if(def.id==='medal') medal(g);
@@ -109,7 +110,7 @@ export function dropPowerup(pos, tier, forced){
   tier=tier|0; const def=forced||pickLoot(tier), t=def.tier||0;   // Z104 forced = re-drop a carried item (rally point)
   const g=new THREE.Group(); scene.add(g); const model=lootModel(def); g.add(model);
   const beam=new THREE.Mesh(lootGeos().beam, _LM['beam'+t]||(_LM['beam'+t]=new THREE.MeshBasicMaterial({ color:RAR[t], transparent:true, opacity:0.0, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide }))); g.add(beam); beam.visible=false;
-  const icon=new THREE.Sprite(new THREE.SpriteMaterial({map:svgGlyphTex(def.svg||'star'),transparent:true,depthWrite:false})); icon.scale.set(0.5,0.5,1); icon.position.y=1.15;   // (Z370 a small plain glyph, low over it)
+  const icon=new THREE.Sprite(new THREE.SpriteMaterial({map:lootIconTex(lootIconKey(def), def.svg||'star'),transparent:true,depthWrite:false})); icon.scale.set(0.5,0.5,1); icon.position.y=1.15;   // (Z370 a small plain glyph, low over it)
    icon.visible=false; g.add(icon);
   const ring=holoRing(0.78, { kind:'loot', col:RAR[t], gain:0.9+t*0.25 });   // (Z370 smaller and fainter)
    ring.position.y=0.08; ring.visible=false; g.add(ring);   // Z318 a glowing rarity ring whose lit arc is the time left
@@ -122,7 +123,7 @@ export function dropPowerup(pos, tier, forced){
 }
 // Z104 a soldier picks an item up to carry it home → { def, tier } (null if someone was faster)
 export function takePickup(u){ const i=pickups.indexOf(u); if(i<0) return null; disposePickup(u); pickups.splice(i,1); return { def:u.def, tier:u.tier }; }
-export function disposePickup(u){ scene.remove(u.g); u.icon.material.dispose(); u.ring.material.dispose(); u.ring.geometry.dispose(); }
+export function disposePickup(u){ lootUnslot(u.g); scene.remove(u.g); u.icon.material.dispose(); u.ring.material.dispose(); u.ring.geometry.dispose(); }
 export function updatePickups(dt, now){
   const p=S.player;
   for(let i=pickups.length-1;i>=0;i--){
@@ -145,6 +146,7 @@ export function updatePickups(dt, now){
       sfx('powerup'); ringPulse(p.pos,u.def.color,3); burst(p.pos, RAR[u.tier], 10, 6, {y:1.6, life:0.5, size:0.45, grav:-4, drag:2, up:4}); disposePickup(u); pickups.splice(i,1); continue; }
     if(age>life && !u.stash && !(CO.live && coopLootKeeps(u))){ disposePickup(u); pickups.splice(i,1); }
   }
+  lootInstSync();   // LOOT 1 every drop's place into its model's InstancedMesh
 }
 export function clearPickups(){ for(const u of pickups) disposePickup(u); pickups.length=0; }
 export const BUFF_ICON={ rapid:'bolt', power:'burst', infammo:'infinity', ammoup:'mag', range:'target' };
@@ -157,7 +159,7 @@ export function updateBuffHUD(now){                                             
   hudChips(items);   // SUPPLY 2 the load he carries, once it slows him (game/logistics.js)
   const key=items.map(i=>i.join(':')).join('|'); if(key===_buffKey) return; _buffKey=key; bar.replaceChildren();
   for(const [k,txt,lv] of items){ const c=document.createElement('div'); c.className='buffchip'; if(BUFF_COL[k]) c.style.setProperty('--bc', BUFF_COL[k]);
-    const ic=document.createElement('span'); ic.className='bic'; setIcon(ic, BUFF_ICON[k]);
+    const ic=document.createElement('span'); ic.className='bic'; if(LOOT_REAL.buff[k]) setLootIcon(ic, LOOT_REAL.on && LOOT_REAL.buff[k], BUFF_ICON[k]); else setIcon(ic, BUFF_ICON[k]);   // LOOT 1 a running buff shows the item it came from
     const t=document.createElement('span'); t.className='t'; t.textContent = txt + (lv?' '+lv:'');
     c.append(ic,t); bar.appendChild(c); }
 }

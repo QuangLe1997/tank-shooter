@@ -7,8 +7,8 @@
 //     crate stays a moment, then sinks away. Cleared with the battle.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { GIFTBOX as GIFT } from '../../config.js';
-import { CO, coopCrateTouch, S, burst, heightAt, ringPulse, scene, sfx } from '../hub.js';
+import { GIFTBOX as GIFT, LOOT_REAL } from '../../config.js';
+import { CO, coopCrateTouch, S, burst, heightAt, lootGLTF, lootModelInto, ringPulse, scene, sfx } from '../hub.js';
 
 export const GIFTS = [];
 let K = null;
@@ -40,22 +40,32 @@ function crate(){ const k = kit(), [w, h, d] = GIFT.size, box = new THREE.Group(
   for(const x of [-w * 0.28, w * 0.28]){ add(straps, k.strapA, k.mStrap, x, h / 2, 0); add(straps, k.buckle, k.mMetal, x, h * 0.55, d / 2 + 0.012); }
   add(straps, k.strapT, k.mStrap, 0, h + 0.006, 0); box.add(straps);
   for(const sd of [1, -1]){ const r = add(box, k.handle, k.mRope, sd * (w / 2 + 0.01), bh * 0.6, 0); r.rotation.set(Math.PI, sd * Math.PI / 2, 0); }
-  return { box, hinge, straps }; }
+  realCrate(box, hinge, straps); return { box, hinge, straps }; }
+// LOOT 1 the crate is the downloaded olive military crate (loot/loot-real.js): its body in the box, its lid on the hinge along the lid's back edge; the drawn one
+//   stays only if the model cannot load
+const SZ = () => LOOT_REAL.on ? LOOT_REAL.gift.size : GIFT.size;
+function realCrate(box, hinge, straps){ lootGLTF('crate').then(gl => { if(!gl) return; const m = gl.scene.clone(true), body = m.getObjectByName('body'), lid = m.getObjectByName('lid'); if(!body || !lid) return;
+  for(const c of box.children) if(c !== hinge) c.visible = false; for(const c of hinge.children) c.visible = false; straps.visible = false; straps.userData.real = true;
+  for(const o of [body, lid]){ o.castShadow = true; o.receiveShadow = true; } lid.geometry.computeBoundingBox(); const lb = lid.geometry.boundingBox;
+  hinge.position.set(0, lb.min.y, lb.min.z); lid.position.set(0, -lb.min.y, -lb.min.z); box.add(body); hinge.add(lid); }); }
 // the cargo parachute: an olive canopy and its rigging down to the crate's top
 function chute(){ const k = kit(), g = new THREE.Group(), R = GIFT.drop.canopy, L = GIFT.drop.lines, mat = new THREE.MeshStandardMaterial({ map:k.tGores, side:THREE.DoubleSide, roughness:0.9, transparent:true });
   const c = add(g, k.canopy, mat, 0, L, 0); c.scale.set(R, R * 0.5, R); const pts = [], top = GIFT.size[1];
   for(let i = 0; i < 8; i++){ const a = i * Math.PI / 4; pts.push(Math.cos(a) * R * 0.97, L + R * 0.06, Math.sin(a) * R * 0.97, 0, top, 0); }
   const lg = new THREE.BufferGeometry(); lg.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
-  const lines = new THREE.LineSegments(lg, new THREE.LineBasicMaterial({ color:0x2a2820, transparent:true })); g.add(lines); return { g, canopy:c, lines }; }
+  const lines = new THREE.LineSegments(lg, new THREE.LineBasicMaterial({ color:0x2a2820, transparent:true })); g.add(lines); const ch = { g, canopy:c, lines, real:null, realMat:null };
+  if(LOOT_REAL.on) lootModelInto(g, 'chute', q => (ch.realMat = q.clone(), ch.realMat.transparent = true, ch.realMat.side = THREE.DoubleSide, ch.realMat)).then(m => { if(!m) return; m.position.y = SZ()[1]; c.visible = lines.visible = false; ch.real = m; });   // LOOT 1 the downloaded army parachute, its lines down to the crate's top
+  return ch; }
 
 // the HQ drops one over `at` ({x, z}); onOpen() when he reaches it
 export function spawnGift(at, onOpen){ const k = kit(), D = GIFT.drop, gy = heightAt(at.x, at.z), root = new THREE.Group(), { box, hinge, straps } = crate(), ch = chute();
   root.position.set(at.x, gy + D.h, at.z); root.rotation.y = Math.random() * 6.283; root.add(box); root.add(ch.g); scene.add(root);
   const ring = new THREE.Mesh(k.ring, new THREE.MeshBasicMaterial({ color:0xd8d0a0, transparent:true, opacity:0, depthWrite:false })); ring.rotation.x = -Math.PI / 2; ring.scale.setScalar(GIFT.ring); ring.position.set(at.x, gy + 0.03, at.z); scene.add(ring);
-  const can = add(scene, k.can, k.mCan, at.x + GIFT.smoke.off, gy + 0.04, at.z + GIFT.smoke.off * 0.4); can.rotation.z = 1.4; can.visible = false;
+  const can = LOOT_REAL.on ? new THREE.Group() : add(scene, k.can, k.mCan, at.x + GIFT.smoke.off, gy + 0.04, at.z + GIFT.smoke.off * 0.4); can.rotation.z = 1.4; can.visible = false;
+  if(LOOT_REAL.on){ can.position.set(at.x + GIFT.smoke.off, gy + LOOT_REAL.gift.smokeY, at.z + GIFT.smoke.off * 0.4); can.rotation.z = Math.PI / 2; scene.add(can); lootModelInto(can, 'smoke').then(m => { if(m) m.position.y = -0.0725; }); }   // LOOT 1 the M18 smoke grenade lying on its side
   const u = { x:at.x, z:at.z, gy, root, box, hinge, straps, ch, ring, can, st:'fall', t:0, puff:0, onOpen }; GIFTS.push(u); return u; }
 
-function disposeGift(u){ scene.remove(u.root); scene.remove(u.ring); scene.remove(u.can); u.ring.material.dispose(); u.ch.canopy.material.dispose(); u.ch.lines.material.dispose(); u.ch.lines.geometry.dispose(); }
+function disposeGift(u){ scene.remove(u.root); scene.remove(u.ring); scene.remove(u.can); u.ring.material.dispose(); u.ch.canopy.material.dispose(); if(u.ch.realMat) u.ch.realMat.dispose(); u.ch.lines.material.dispose(); u.ch.lines.geometry.dispose(); }
 export function clearGifts(){ for(const u of GIFTS) disposeGift(u); GIFTS.length = 0; }
 
 const ease = t => t * t * (3 - 2 * t);
@@ -67,13 +77,13 @@ export function updateGifts(dt, now){ if(!GIFTS.length) return; const G = GIFT, 
         burst({ x:u.x, z:u.z }, 0xcbb994, 7, 3, { y:u.gy + 0.15, life:1.0, size:1.0, smoke:true, grav:-0.2, drag:2, up:0.8, op:0.5 }); }
       continue; }
     const c = u.ch, k = Math.min(1, (u.st === 'wait' ? u.t : 99) / G.chute);
-    if(c.g.visible){ c.canopy.scale.y = D.canopy * 0.5 * (1 - 0.9 * ease(k)); c.g.position.set(1.3 * ease(k), -D.lines * 0.95 * ease(k), 0.4 * ease(k)); c.g.rotation.z = -1.25 * ease(k);
-      const fade = u.st === 'wait' ? Math.max(0, 1 - Math.max(0, u.t - G.chuteStay) / 1.5) : c.canopy.material.opacity * (1 - Math.min(1, dt * 3)); c.canopy.material.opacity = fade; c.lines.material.opacity = fade; if(fade <= 0.01) c.g.visible = false; }
+    if(c.g.visible){ c.canopy.scale.y = D.canopy * 0.5 * (1 - 0.9 * ease(k)); const e = ease(k); if(c.real){ c.real.scale.y = 1 - 0.88 * e; c.g.position.set(1.7 * e, -SZ()[1] * e, 0.5 * e); c.g.rotation.z = -0.12 * e; } else { c.g.position.set(1.3 * e, -D.lines * 0.95 * e, 0.4 * e); c.g.rotation.z = -1.25 * e; }   // (LOOT 1 the real canopy collapses onto its lines and lies spread beside the crate)
+      const fade = u.st === 'wait' ? Math.max(0, 1 - Math.max(0, u.t - G.chuteStay) / 1.5) : c.canopy.material.opacity * (1 - Math.min(1, dt * 3)); c.canopy.material.opacity = fade; c.lines.material.opacity = fade; if(c.realMat) c.realMat.opacity = fade; if(fade <= 0.01) c.g.visible = false; }
     if(u.st === 'wait'){ u.ring.material.opacity = 0.26 + 0.08 * Math.sin(now * 2);
       if((u.puff -= dt) <= 0){ u.puff = G.smoke.every; burst({ x:u.can.position.x, z:u.can.position.z }, G.smoke.col, 2, 0.6, { y:u.gy + 0.25, life:G.smoke.life, size:G.smoke.size, smoke:true, grav:-1.1, drag:0.8, up:1.6, op:0.55 }); }
       if(u.forceOpen || p && (p.pos.x - u.x) ** 2 + (p.pos.z - u.z) ** 2 < G.reach * G.reach && !(u.cid && CO.live && coopCrateTouch(u, now))) openGift(u); continue; }   // COOP 9 the shared crate: the host opens it for whoever reached it (forceOpen), the guest asks
-    u.ring.material.opacity *= 1 - Math.min(1, dt * 4); const o = Math.min(1, u.t / 0.35); u.hinge.rotation.x = -1.9 * ease(o); u.straps.visible = u.t < 0.08;
-    if(u.t > G.open){ const s = Math.min(1, (u.t - G.open) / 0.8); r.position.y = u.gy - s * GIFT.size[1] * 1.1; u.can.position.y = u.gy + 0.04 - s * 0.2; if(s >= 1){ disposeGift(u); GIFTS.splice(i, 1); } } } }
+    u.ring.material.opacity *= 1 - Math.min(1, dt * 4); const o = Math.min(1, u.t / 0.35); u.hinge.rotation.x = (LOOT_REAL.on ? LOOT_REAL.gift.openRot : -1.9) * ease(o); u.straps.visible = u.t < 0.08 && !u.straps.userData.real;
+    if(u.t > G.open){ const s = Math.min(1, (u.t - G.open) / 0.8); r.position.y = u.gy - s * SZ()[1] * 1.1; u.can.position.y = u.gy + 0.04 - s * 0.2; if(s >= 1){ disposeGift(u); GIFTS.splice(i, 1); } } } }
 function openGift(u){ u.st = 'open'; u.t = 0; const at = { x:u.x, z:u.z }; sfx('click'); sfx('powerup'); ringPulse(at, 0xd8d0a0, 2.2);
-  burst(at, 0xcbb994, 6, 1.5, { y:u.gy + GIFT.size[1], life:0.7, size:0.6, smoke:true, grav:-0.4, drag:2, up:1.2, op:0.45 });
+  burst(at, 0xcbb994, 6, 1.5, { y:u.gy + SZ()[1], life:0.7, size:0.6, smoke:true, grav:-0.4, drag:2, up:1.2, op:0.45 });
   if(u.onOpen) u.onOpen(); }

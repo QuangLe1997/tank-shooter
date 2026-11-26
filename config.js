@@ -2346,6 +2346,23 @@ export const FIREFX = { on:true, max:2600, maxMobile:900, thin:[0.6, 0.92], tier
 //   puff every s, each living life s at size, its colour); he opens it within reach m, and open s later it sinks away
 export const GIFTBOX = { size:[0.56, 0.38, 0.42], reach:1.6, chute:1.4, chuteStay:6, ring:1.1, open:2.0,
   smoke:{ off:0.7, every:0.22, life:3.2, size:1.6, col:0x7fb069 }, drop:{ h:22, v:3.6, sway:0.12, swayF:1.7, canopy:1.15, lines:1.6 } };
+// LOOT 1 LOOT_REAL = the real models a pick-up wears (loot/loot-real.js; packed by tools/loot-pack.mjs into dir, each standing on y = 0 at its real size
+//   in metres): ground = by the drop's id (pouch: an enemy's pouch), else byCat = by its category; icon = the picture a drop shows where it differs from its
+//   model (its toast, its glyph over it); buff = the HUD chip of a running buff; skill = the soldier's skill button; gift = the rank's / the HQ's air-dropped
+//   crate (its lid opens on its hinge: openRot rad), the parachute over it and the smoke marker beside it (smokeY: the can's radius as it lies);
+//   relic = the stone altar and the floating crystal (crystalY its base, glow the crystal's own glow, ×wake as the relic wakes); inst = one InstancedMesh a
+//   model for every drop wearing it (cap each); icons = 128 px renders of the same models (transparent WebP in iconDir). ?nolootreal: the drawn ones (before /
+//   after) · ?nolootinst: one mesh a drop
+export const LOOT_REAL = { on:!(typeof location !== 'undefined' && /[?&]nolootreal\b/.test(location.search)), inst:!(typeof location !== 'undefined' && /[?&]nolootinst\b/.test(location.search)), cap:32,
+  dir:'assets/models/real/loot/', iconDir:'assets/models/real/loot/icon/',
+  keys:['ammo', 'medkit', 'toolbox', 'vest', 'nadecrate', 'radio', 'drone', 'binoculars', 'riflebox', 'medal', 'grenade', 'smoke', 'round', 'rounds', 'crate', 'chute', 'altar', 'crystal'],
+  ground:{ heal:'medkit', repair:'toolbox', shield:'vest', bomb:'nadecrate', freeze:'radio', drone:'drone', range:'binoculars', gun:'riflebox', medal:'medal', ammobox:'ammo', pouch:'ammo' },
+  byCat:{ ammo:'ammo', med:'medkit', tool:'toolbox', tech:'radio', bomb:'nadecrate', gun:'riflebox', gem:'medal', armor:'vest' },
+  icon:{ power:'round', inf:'rounds' },
+  buff:{ rapid:'ammo', power:'round', infammo:'rounds', ammoup:'ammo', range:'binoculars' },
+  skill:{ grenade:'grenade', smokeHand:'smoke', medkit:'medkit', reconDrone:'drone' },
+  gift:{ size:[0.82, 0.3, 0.54], openRot:-1.9, smokeY:0.032 },
+  relic:{ crystalY:2.15, glow:0.9, wake:2.2 } };
 export const TROOPER = {
   xp:{ kill:{ rifle:10, rpg:16, _inf:12, scout:28, carrier:40, mortar:34, heliTroop:45, _air:45, _veh:55, grunt:80, heavy:120, boss:260, general:420 }, eliteK:2 },
   step:[200, 110, 10],

@@ -1067,7 +1067,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 // Z370 the loot made real and simple: a dropped weapon is the gun itself, an olive aid bag, a medal; no light beam, no spinning; a small plain glyph
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'), pw=R('src/loot/powerups.js');
   ok(/else if\(def\.gun && INFGUN\.map\[def\.gun\]\) realGun\(g, def\.gun\)/.test(pw) && /function realGun\(g, id\)/.test(pw) && /id:'wpn_' \+ id, gun:id/.test(R('src/loot/soldier-arms.js')) && /else if\(def\.id==='medal'\) medal\(g\)/.test(pw) && /lootMat\('medOlive'/.test(pw), 'an enemy weapon lies on the ground as itself; an olive aid bag with its red cross; a medal, not a glowing gem');
-  ok(/svgGlyphTex\(def\.svg\|\|'star'\)/.test(pw) && /export function svgGlyphTex/.test(R('src/ui/icons.js')) && /u\.icon\.visible=u\.ring\.visible=true;/.test(pw) && !/u\.model\.rotation\.y \+= dt\*0\.9/.test(pw), 'no light beam, it lies where it fell, a small plain glyph over it'); }
+  ok(/lootIconTex\(lootIconKey\(def\), def\.svg\|\|'star'\)/.test(pw) && /svgGlyphTex\(svg \|\| 'star'\)/.test(R('src/loot/loot-real.js')) && /export function svgGlyphTex/.test(R('src/ui/icons.js')) && /u\.icon\.visible=u\.ring\.visible=true;/.test(pw) && !/u\.model\.rotation\.y \+= dt\*0\.9/.test(pw), 'no light beam, it lies where it fell, a small plain glyph over it'); }
 
 // Z371 the war horse's stirrups and the rider's feet in them: his shins and boots out of the horse's barrel (the riding clips had them inside it), heels down, the gallop's stand-up brought down to the irons
 { const fs=await import('node:fs'); const C=await import('./config.js'), st=fs.readFileSync('src/actors/soldier-stirrups.js','utf8'), rc=fs.readFileSync('src/actors/real-cav.js','utf8'), T=C.STIRRUP;
@@ -2440,6 +2440,19 @@ grp('GRAPH 5 the motion graph: on by default, lifted feet instead of dragged one
     && /export function swimStep\(p, dt, now\)/.test(sw) && /CV\.stance = 'swim';/.test(sw) && /quietKnife\(\)/.test(sw) && /HAND = \{ grenade:1, smokeHand:1, medkit:1 \}/.test(sw) && /game\/swim\.js/.test(rd('src/hub.js')),
     'one module has the water (game/swim.js); every other file calls it in one line — his pace and height, his clips and arms, the rifle on his back, the trigger as the knife, no throwing, the pools, the stealth, the enemy kept out of the deep');
 }
+// LOOT 1 the loot wears downloaded models: every key has its packed file (one material, real size) and a licence line; drops, the gift crate, the relic and the icons use them
+{ const fs=await import('node:fs'), { LOOT_REAL:L }=await import('./config.js'), lr=fs.readFileSync('src/loot/loot-real.js','utf8'), pw=fs.readFileSync('src/loot/powerups.js','utf8'), gc=fs.readFileSync('src/loot/gift-crate.js','utf8'), rl=fs.readFileSync('src/loot/relic.js','utf8'), src=fs.readFileSync(L.dir+'SOURCES.txt','utf8'), lic=fs.readFileSync('assets/LICENSES.csv','utf8');
+  const glb=k=>{ const b=fs.readFileSync(L.dir+k+'.glb'), j=JSON.parse(b.subarray(20, 20+b.readUInt32LE(12)).toString()); return j; };
+  ok(L.on===true && L.inst===true && L.cap>=16 && L.keys.length>=15 && L.keys.every(k=>fs.existsSync(L.dir+k+'.glb') && fs.statSync(L.dir+k+'.glb').size<700e3 && new RegExp('\\b'+k+'\\.glb').test(src) && lic.includes('"real/loot/'+k+'"')),
+    'every loot model ('+L.keys.length+') is packed under '+L.dir+', under 700 KB, named in its SOURCES.txt and in the licence table');
+  ok(L.keys.every(k=>{ const j=glb(k), a=j.accessors[j.meshes[0].primitives[0].attributes.POSITION]; return j.materials.length===1 && j.meshes.every(m=>m.primitives.every(p=>p.material===0)) && j.images.every(i=>i.mimeType==='image/jpeg') && a.min[1]>-1e-3 && Math.max(...a.max.map((v,i)=>v-a.min[i]))<5; }),
+    'each is one material with JPEG maps, standing on y = 0, at a real size (nothing over 5 m)');
+  const all=[...Object.values(L.ground), ...Object.values(L.byCat), ...Object.values(L.icon), ...Object.values(L.buff), ...Object.values(L.skill)]; ok(all.every(k=>L.keys.includes(k)) && glb('crate').nodes.map(n=>n.name).join()==='body,lid' && L.gift.size.length===3 && L.gift.openRot<0,
+    'every item, buff and skill points at a packed model; the crate keeps its lid apart to swing it open');
+  const ic=Object.keys(L.ground).length && [...new Set([...Object.values(L.ground), ...Object.values(L.icon), ...Object.values(L.buff), ...Object.values(L.skill)])]; ok(ic.every(k=>fs.existsSync(L.iconDir+k+'.webp') && fs.statSync(L.iconDir+k+'.webp').size<30e3),
+    'each item\'s icon ('+ic.length+') is a small WebP render of its model');
+  ok(/lootSlot\(g, lk\); return g;/.test(pw) && /lootUnslot\(u\.g\)/.test(pw) && /lootInstSync\(\);/.test(pw) && /new THREE\.InstancedMesh\(/.test(lr) && /realCrate\(box, hinge, straps\)/.test(gc) && /lootModelInto\(g, 'chute'/.test(gc) && /lootModelInto\(g, 'altar'\)/.test(rl) && /lootPreload\(\)/.test(rl),
+    'drops are slots in one InstancedMesh a model; the crate, its chute and smoke, the altar and the crystal are the models (the drawn ones kept as the fallback)'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

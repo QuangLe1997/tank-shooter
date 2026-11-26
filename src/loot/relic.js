@@ -3,7 +3,8 @@
 //   the enemy sends a strike team to stop you — that's the challenge. Woken, the battle freezes and you pick ONE of three big powers
 //   that last until the end of the stage: +1 life, ×2 damage, hard acceleration, ×2 range, ×2 magazine, super reload, steel armour.
 import * as THREE from 'three';
-import { ARENA, FORTS, GUNS, MOBILE, S, burst, floatText, heightAt, hide, iconEl, inField, magCap, radio, ringPulse, scene, sfx, show, showBanner, spawnEnemy, spawnPart, updateGunHUD, updateHUD, blPulse, holoArc, holoRing } from '../hub.js';
+import { LOOT_REAL } from '../../config.js';
+import { lootModelInto, lootPreload, ARENA, FORTS, GUNS, MOBILE, S, burst, floatText, heightAt, hide, iconEl, inField, magCap, radio, ringPulse, scene, sfx, show, showBanner, spawnEnemy, spawnPart, updateGunHUD, updateHUD, blPulse, holoArc, holoRing } from '../hub.js';
 
 export const RELIC = { g:null, x:0, z:0, prog:0, alerted:false, live:false, undo:[], hold:5, r:6, t:0, parts:null };
 export const BOONS = [
@@ -32,22 +33,29 @@ function build(){ const M=mats(), g=new THREE.Group();
   const step=new THREE.Mesh(new THREE.CylinderGeometry(1.5,1.8,0.45,6), M.stone); step.position.y=0.92; step.castShadow=true; g.add(step);
   const trim=new THREE.Mesh(new THREE.TorusGeometry(2.2,0.07,6,6), M.gold); trim.rotation.x=Math.PI/2; trim.position.y=0.72; g.add(trim);
   for(let i=0;i<6;i++){ const a=i/6*Math.PI*2+Math.PI/6, ob=new THREE.Mesh(new THREE.ConeGeometry(0.16,1.6,4), M.gold); ob.position.set(Math.cos(a)*1.95,1.45,Math.sin(a)*1.95); ob.castShadow=true; g.add(ob); }   // little gilded obelisks round the plinth
-  const cr=new THREE.Mesh(new THREE.OctahedronGeometry(0.85,0), M.crystal); cr.scale.set(1,1.55,1); cr.position.y=3.0; g.add(cr);
+  const cr=new THREE.Group(), oct=new THREE.Mesh(new THREE.OctahedronGeometry(0.85,0), M.crystal); oct.scale.set(1,1.55,1); cr.add(oct); cr.position.y=3.0; g.add(cr);
   const r1=new THREE.Mesh(new THREE.TorusGeometry(1.35,0.035,6,40), M.rune), r2=new THREE.Mesh(new THREE.TorusGeometry(1.7,0.03,6,40), M.rune);
   r1.position.y=r2.position.y=3.0; g.add(r1, r2);
   const beam=new THREE.Mesh(new THREE.CylinderGeometry(0.75,0.75,46,16,1,true), M.beam); beam.position.y=23; beam.renderOrder=6; g.add(beam);
   const ring=holoRing(RELIC.r-0.1, { kind:'ally', col:'loot', ticks:64, tickLen:0.4, spin:0.02, gain:2.2 }); ring.position.y=0.08; g.add(ring);   // Z318 battle-light gold; its lit arc fills as the relic wakes
   const fill=new THREE.Mesh(new THREE.CircleGeometry(RELIC.r-0.22, 64), M.fill); fill.rotation.x=-Math.PI/2; fill.position.y=0.06; g.add(fill);
-  g.userData={ cr, r1, r2, beam, ring, fill }; return g; }
+  g.userData={ cr, crM:M.crystal, cy:3.0, glow:0, r1, r2, beam, ring, fill }; realRelic(g, [base, step, trim, ...g.children.filter(o=>o.geometry && o.geometry.type==='ConeGeometry')], oct); return g; }
+// LOOT 1 the plinth is a downloaded stone altar and the crystal a downloaded stone that glows its own colours (loot/loot-real.js); the light column, the rune rings
+//   and the ring on the ground stay. The drawn plinth and crystal stay only if the models cannot load.
+function realRelic(g, plinth, oct){ if(!LOOT_REAL.on) return; const ud=g.userData, L=LOOT_REAL.relic;
+  lootModelInto(g, 'altar').then(m=>{ if(m) for(const o of plinth) o.visible=false; });
+  lootModelInto(ud.cr, 'crystal', q=>{ const c=q.clone(); c.emissiveMap=c.map; c.emissive=new THREE.Color(0xffffff); c.emissiveIntensity=L.glow; return c; }).then(m=>{ if(!m) return; oct.visible=false; let mesh=null; m.traverse(o=>{ if(o.isMesh) mesh=o; });
+    const h=new THREE.Box3().setFromObject(m).getSize(new THREE.Vector3()).y; m.position.y=-h/2; ud.crM=mesh.material; ud.cy=L.crystalY+h/2; ud.glow=L.glow; }); }
 // a spot in open ground, well clear of you, the forts and the field edge
 function spot(){ const p=S.player; for(let i=0;i<80;i++){ const a=Math.random()*Math.PI*2, d=ARENA*(0.18+Math.random()*0.5), x=Math.cos(a)*d, z=Math.sin(a)*d;
     if(!inField(x, z, 14)) continue; if(p && Math.hypot(x-p.pos.x, z-p.pos.z) < 45) continue;
     if(FORTS.some(f=>Math.hypot(x-f.x, z-f.z) < f.R+18)) continue; return [x, z]; }
   return [0, -ARENA*0.25]; }
-export function spawnRelic(){ removeRelic(); const [x,z]=spot(); const g=build(); g.position.set(x, heightAt(x,z), z); scene.add(g);
+export function spawnRelic(){ removeRelic(); lootPreload();   // (LOOT 1 the battle asks for every loot model now: ready before the first drop)
+  const [x,z]=spot(); const g=build(); g.position.set(x, heightAt(x,z), z); scene.add(g);
   Object.assign(RELIC, { g, x, z, prog:0, alerted:false, live:true, t:0 });
   setTimeout(()=>{ if(RELIC.live && S.mode==='playing') radio('SCH: Phát hiện THÁNH TÍCH CỔ — cột sáng vàng trên bản đồ. Đứng trong vòng sáng để đánh thức nó!'); }, 4500); }
-export function removeRelic(){ if(RELIC.g){ scene.remove(RELIC.g); RELIC.g.traverse(o=>{ if(o.geometry) o.geometry.dispose(); }); } RELIC.g=null; RELIC.live=false; relicBar(-1); }
+export function removeRelic(){ if(RELIC.g){ scene.remove(RELIC.g); RELIC.g.traverse(o=>{ if(o.geometry && !o.userData.lootShared) o.geometry.dispose(); else if(o.isMesh && o.material.emissiveMap) o.material.dispose(); }); } RELIC.g=null; RELIC.live=false; relicBar(-1); }
 // stage over / new run: the powers fade with the stage
 export function clearRelicBoons(){ const p=S.player; for(const u of RELIC.undo) try{ u(p); }catch(e){} RELIC.undo.length=0; document.body.classList.remove('relic-on'); }
 export function clearRelic(){ clearRelicBoons(); removeRelic(); }
@@ -60,9 +68,9 @@ function challenge(){ const n=2+Math.min(3, Math.floor((S.stage||1)/2)), types=[
     try{ const e=spawnEnemy(types[i%types.length], x, z); if(e){ e.relicGuard=true; } }catch(err){} }
   showBanner('THÁNH TÍCH ĐANG THỨC GIẤC — ĐỊCH KÉO TỚI PHÁ!', '#ffd27a'); radio('SCH: Địch phát hiện ta ở thánh tích — giữ vị trí, đừng rời vòng sáng!'); sfx('alarm'); }
 export function updateRelic(dt, now){ if(!RELIC.live || !RELIC.g) return; const p=S.player, ud=RELIC.g.userData; RELIC.t+=dt; const t=RELIC.t;
-  ud.cr.rotation.y+=dt*1.2; ud.cr.position.y=3.0+Math.sin(t*1.8)*0.18; ud.r1.rotation.set(Math.PI/2+Math.sin(t*0.9)*0.5, t*0.8, 0); ud.r2.rotation.set(Math.PI/2+Math.cos(t*0.7)*0.6, -t*0.6, 0);
+  ud.cr.rotation.y+=dt*1.2; ud.cr.position.y=ud.cy+Math.sin(t*1.8)*0.18; ud.r1.rotation.set(Math.PI/2+Math.sin(t*0.9)*0.5, t*0.8, 0); ud.r2.rotation.set(Math.PI/2+Math.cos(t*0.7)*0.6, -t*0.6, 0);
   ud.ring.material.opacity=blPulse(t, 'idle', 0.6); ud.beam.material.opacity=0.65+0.25*Math.sin(t*2.2)+RELIC.prog*0.4; ud.crystalK=1;
-  ud.cr.material.emissiveIntensity=2.2+RELIC.prog*3+Math.sin(t*4)*0.4;
+  ud.crM.emissiveIntensity = ud.glow ? ud.glow*(1+RELIC.prog*LOOT_REAL.relic.wake)+Math.sin(t*4)*0.08 : 2.2+RELIC.prog*3+Math.sin(t*4)*0.4;   // (LOOT 1 the real stone glows softer, brighter as it wakes)
   if(Math.random() < (MOBILE?0.25:0.5)){ const a=Math.random()*6.283, r=0.5+Math.random()*1.4; spawnPart(RELIC.x+Math.cos(a)*r, RELIC.g.position.y+1.2+Math.random()*2.5, RELIC.z+Math.sin(a)*r, 0, 1.2+Math.random(), 0, { color:Math.random()<0.5?0xffe2a0:0xffb43c, size:0.22, life:1.2, grav:0.6, drag:1 }); }   // motes rising round the crystal
   if(!p || S.mode!=='playing') return;
   const inside = Math.hypot(p.pos.x-RELIC.x, p.pos.z-RELIC.z) < RELIC.r;

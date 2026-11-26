@@ -1,6 +1,6 @@
 // ui/briefing.js — STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin; XK-UI its back button: to the battle setup (a fresh launch from it) or home (asks mid-run)
-import { CONTRACTS, DMG_TYPE, OBJECTIVES, OBJ_REWARD } from '../../config.js';
-import { bladeChip, modeBrief, bigEventsReset, sideMissionsReset, directorReset, opTitle, placeLine, capVi, askConfirm, quitToMenu, openBattleSetup, BS, BIOME, GUNS, PROFILE, S, WAVE, biomeVi, bossForStage, camera, coachFirstRun, conditionsText, escapeHtml, floatText, gunPicEl, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, renderer, resetEnvEvents, resetSurprises, saveProfile, sayVoice, scene, setFocus, setIcon, sfx, show, spawnRelic, storyBrief, storyReset, tapEl, voiceStage, spellNow, briefTeam, nemBrief, droneWarReset, ammoHud, coopActive, coopGate } from '../hub.js';
+import { CONTRACTS, DMG_TYPE, LOOT_REAL, OBJECTIVES, OBJ_REWARD } from '../../config.js';
+import { setLootIcon, bladeChip, modeBrief, bigEventsReset, sideMissionsReset, directorReset, opTitle, placeLine, capVi, askConfirm, quitToMenu, openBattleSetup, BS, BIOME, GUNS, PROFILE, S, WAVE, biomeVi, bossForStage, camera, coachFirstRun, conditionsText, escapeHtml, floatText, gunPicEl, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, renderer, resetEnvEvents, resetSurprises, saveProfile, sayVoice, scene, setFocus, setIcon, sfx, show, spawnRelic, storyBrief, storyReset, tapEl, voiceStage, spellNow, briefTeam, nemBrief, droneWarReset, ammoHud, coopActive, coopGate } from '../hub.js';
 
 // ----- STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin -----
 export let _brCtx = null;   // what chooseContract should do on confirm: {first?} (stage1) or {stage,biomeName,accentHex} (stage 2+)
@@ -120,8 +120,8 @@ export function updateGunStatus(now){
 export const updateWeaponHUD = updateGunHUD;   // back-compat alias for older call sites
 export function updateSpellHUD(){
   const sp=spellNow();
-  setIcon(document.querySelector('#ab-spell .ic'), sp.svg);
-  setIcon(document.querySelector('#mSpell .ic'), sp.svg);
+  const lk=LOOT_REAL.on && LOOT_REAL.skill[sp.id];   // LOOT 1 a skill that is an item (grenade, smoke, medkit, drone) shows a render of its model
+  for(const q of ['#ab-spell .ic', '#mSpell .ic']){ const el=document.querySelector(q); if(lk) setLootIcon(el, lk, sp.svg); else if(el){ el._lk=null; setIcon(el, sp.svg); } }
   const mt=document.querySelector('#mSpell .mbtag'); if(mt) mt.textContent=sp.vi||sp.name;           // Z84: always show WHICH skill is armed
   const an=document.getElementById('ab-spell-nm'); if(an) an.textContent='Q ‹ '+(sp.vi||sp.name)+' ›';
 }

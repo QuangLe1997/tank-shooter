@@ -1,0 +1,25 @@
+XUNG KÍCH — assets/models/real/loot: what a soldier picks up, the air-dropped crate and its parachute, the relic (LOOT 1)
+
+Packed by tools/loot-pack.mjs: one material (colour · normal · roughness-metal JPEG ≤ 1K), standing on y = 0, centred, +Y up, at its real size in metres.
+A Sketchfab model was fetched through Objaverse (huggingface.co/datasets/allenai/objaverse); its author must be credited (the game's credits + this file).
+Downloads kept in ~/Downloads/3dnew/loot/<id>/. icon/<id>.webp = a 128 px render of the same packed model (transparent, three r169, neutral light).
+
+- crate.glb = "Old Military Crate" — Poly Haven https://polyhaven.com/a/old_military_crate, CC0. Kept: crate "a" only (body + its lid as a second mesh, so the lid swings open).
+- ammo.glb = "Ammo Box" — Poly Haven https://polyhaven.com/a/ammo_box, CC0. Its own triangles and 1K maps (re-encoded 512).
+- toolbox.glb = "Metal Toolbox" — Poly Haven https://polyhaven.com/a/metal_toolbox, CC0. 14,228 → 2,999 triangles, maps baked anew.
+- radio.glb = "Vintage Radio Transceiver" — Poly Haven https://polyhaven.com/a/vintage_radio_transceiver, CC0. Without its antenna, cable, microphone and morse key; 15,502 → 3,989 triangles, maps baked anew.
+- binoculars.glb = "Binoculars" — Poly Haven https://polyhaven.com/a/binoculars, CC0. Without the strap; 16,196 → 2,499 triangles, maps baked anew.
+- riflebox.glb = "Rifle Box (Low Poly)" by Berk Gedik (berkgedik) — Sketchfab https://sketchfab.com/3d-models/aaa6d521741944359a6b5a6b67a0bee7, CC BY 4.0. Scaled to 1.18 m long.
+- chute.glb = "Army Parachute" by amaraklov — Sketchfab https://sketchfab.com/3d-models/af52e08feebc4d94a244692212ac25bb, CC BY 4.0. 17,790 → 5,000 triangles, maps baked anew, 3.4 m tall (canopy 2.3 m across).
+- medkit.glb = "Tactical FIRST AID KIT" by Ruslan Koschey (ruskoschey) — Sketchfab https://sketchfab.com/3d-models/011c33c121284bc88bb765a85511dae1, CC BY 4.0. Scaled to 24 cm.
+- grenade.glb = "Low-Poly F1 Hand Grenade" by TastyTony — Sketchfab https://sketchfab.com/3d-models/dc4f4797dea64bcb9e6bc609a8fbfbaf, CC BY 4.0. Its four colours laid on one sheet, 11.7 cm tall.
+- nadecrate.glb = "Military style grenade crate" by Sousinho (sousinho) — Sketchfab https://sketchfab.com/3d-models/702157b863c24bc68591a5e989540c7d, CC BY 4.0. Scaled to 56 cm.
+- smoke.glb = "M18 Smoke Grenade" by Vanillatography (vanillatography) — Sketchfab https://sketchfab.com/3d-models/46343925ad0e47cf927e66da7953c372, CC BY 4.0. One of its three grenades, 14.5 cm tall.
+- vest.glb = "Combat Vest" by csheffield — Sketchfab https://sketchfab.com/3d-models/ce92c014efd140deb6e918b3c59bf539, CC BY 4.0. 13,682 → 5,000 triangles, maps baked anew, 52 cm tall.
+- drone.glb = "Quadrocopter 2" by yanix — Sketchfab https://sketchfab.com/3d-models/6885c5f1a68148e1b2b3a4f69b8b3d70, CC BY 4.0. Scaled to 36 cm across.
+- round.glb, rounds.glb = "Assorted cartridges" by kirikom9000 — Sketchfab https://sketchfab.com/3d-models/5bbe41ff8c7942899a24a6c8b33590ba, CC BY 4.0. round: its .50 cartridge alone (13.8 cm); rounds: four rifle cartridges side by side.
+- medal.glb = "Medal of the Polish Legions 1914–1915–1916" by Virtual Museums of Małopolska (WirtualneMuzeaMalopolski) — Sketchfab https://sketchfab.com/3d-models/60d7351bce1e4204a5dff35873a86ac4, CC0 (credited all the same). 500,000 → 3,000 triangles, maps baked anew, 4.2 cm, lying flat.
+- altar.glb = "Stone Altar" by TheoClarke — Sketchfab https://sketchfab.com/3d-models/3d4f2edb18e4424cabb41b60aa160cb5, CC BY 4.0. Scaled to 4.4 m long.
+- crystal.glb = "Magic Stone" by Zambur — Sketchfab https://sketchfab.com/3d-models/0c03bd90e6d44cfb95d942376f27797b, CC BY 4.0. Its glow map taken as its colour, 1.7 m tall.
+
+Rebuild: node tools/loot-pack.mjs --src ~/Downloads/3dnew/loot --deps <dir with meshoptimizer, three, three-mesh-bvh, xatlasjs, sharp>

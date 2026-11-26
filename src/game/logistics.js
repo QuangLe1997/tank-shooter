@@ -13,8 +13,8 @@
 //   minimap (radarLogi). And it WEIGHS: guns and rounds over a comfortable load take a little off his sprint and make the combat roll come back later (p.loadK, read by
 //   game/cavalry.js and game/soldier-moves.js) — a chip shows how much; firing it off lightens him.
 import * as THREE from 'three';
-import { LOGISTICS } from '../../config.js';
-import { CO, coopCrateOpened, coopHostCrate, coopNeedAmmo, BUFF_COL, BUFF_ICON, CV, DEPOTS, FORTS, FT, GIFTS, GUNS, PROFILE, QUIET, RALLY_PT, S, ammoKind, blocksNear, clampFieldXZ, core, dirSupply, dropPowerup, enemies, floatText, heightAt, holoRing, inBlock, inField, magCap, radio, scene, sfx, spawnGift, startReload, suspectEnemy, updateGunHUD } from '../hub.js';
+import { LOGISTICS, LOOT_REAL } from '../../config.js';
+import { lootModelInto, CO, coopCrateOpened, coopHostCrate, coopNeedAmmo, BUFF_COL, BUFF_ICON, CV, DEPOTS, FORTS, FT, GIFTS, GUNS, PROFILE, QUIET, RALLY_PT, S, ammoKind, blocksNear, clampFieldXZ, core, dirSupply, dropPowerup, enemies, floatText, heightAt, holoRing, inBlock, inField, magCap, radio, scene, sfx, spawnGift, startReload, suspectEnemy, updateGunHUD } from '../hub.js';
 
 const L = LOGISTICS, NOW = () => performance.now() / 1000, R2 = a => a[0] + Math.random() * (a[1] - a[0]);
 const fmt = (s, o) => s.replace(/\{(\w)\}/g, (m, k) => o[k] ?? '');
@@ -96,7 +96,12 @@ function depotMesh(x, z){ _geo = _geo || new THREE.BoxGeometry(1, 1, 1); _mat = 
   const g = new THREE.Group(), box = (w, h, d, ox, oy, oz, ry) => { const b = new THREE.Mesh(_geo, _mat[0]); b.scale.set(w, h, d); b.position.set(ox, oy + h / 2, oz); b.rotation.y = ry; b.castShadow = b.receiveShadow = true; g.add(b);
     const s = new THREE.Mesh(_geo, _mat[1]); s.scale.set(w * 0.14, h + 0.012, d + 0.014); s.position.copy(b.position); s.rotation.y = ry; g.add(s); };   // (a crate and the webbing strap round it)
   box(0.95, 0.4, 0.5, 0, 0, 0, 0.12); box(0.95, 0.4, 0.5, 0.06, 0.4, 0.02, -0.07); box(0.7, 0.34, 0.44, 1.05, 0, 0.2, 0.7); box(0.5, 0.26, 0.34, -0.85, 0, -0.25, -0.4);
-  const ring = holoRing(L.depot.r, { kind:'ally' }); ring.position.y = 0.07; g.add(ring); g.userData.ring = ring; g.position.set(x, heightAt(x, z), z); scene.add(g); return g; }
+  const ring = holoRing(L.depot.r, { kind:'ally' }); ring.position.y = 0.07; g.add(ring); g.userData.ring = ring; g.position.set(x, heightAt(x, z), z); scene.add(g); realDepot(g, ring); return g; }
+// LOOT 1 the point's stock is the downloaded loot (loot/loot-real.js): two olive crates stacked, three ammo cans, a crate of grenades; the drawn boxes
+//   stay only if the crate cannot load
+function realDepot(g, ring){ if(!LOOT_REAL.on) return; const drawn = g.children.filter(o => o !== ring), put = (k, x, y, z, ry) => lootModelInto(g, k).then(m => { if(m){ m.position.set(x, y, z); m.rotation.y = ry; } return m; });
+  put('crate', 0, 0, 0, 0.12).then(m => { if(m) for(const o of drawn) o.visible = false; }); put('crate', 0.05, LOOT_REAL.gift.size[1], 0.02, -0.07);
+  for(let i = 0; i < 3; i++) put('ammo', 0.95 + i * 0.1, 0, 0.32, 0.08 * i); put('nadecrate', -0.95, 0, -0.32, -0.4); }
 function dropBase(){ const b = LOGI.base; if(!b) return; scene.remove(b.g); const r = b.g.userData.ring; r.material.dispose(); r.geometry.dispose(); LOGI.base = null; }
 // the base's point follows the field: built beside the rally point (else the core) the stage has, rebuilt when the field is
 function baseAt(){ const rally = !!RALLY_PT.g, src = RALLY_PT.g || (core && core.mesh) || null, b = LOGI.base; if(b && b.src === src) return; dropBase(); if(!src) return;

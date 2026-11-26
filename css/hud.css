@@ -133,3 +133,7 @@ body.cam-drag, body.cam-drag *{cursor:grabbing !important;}   /* Z239 middle-but
 .upcard.call .pw{color:#b8e07a;}
 .upcard.rare{border-color:rgba(255,216,106,.85)!important;box-shadow:0 0 16px rgba(255,216,106,.3) inset;}
 .upcard.rare .pw{color:#ffd86a;}
+/* LOOT 1 an item's icon is a render of its 3D model (loot/loot-real.js): it fills its slot like the line glyph did, a soft shadow to lift it off the HUD */
+.licon{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.7));pointer-events:none;user-select:none;}
+#lootToast .lt-ic:has(.licon){padding:2px;}
+.buffchip .bic:has(.licon){width:18px;height:18px;margin:-2px 0;}
