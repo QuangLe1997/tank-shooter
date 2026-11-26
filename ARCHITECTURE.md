@@ -53,7 +53,7 @@ tools/
 test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 ```
 
-### 2.1 Danh mục module (248 module theo thứ tự hub · 24.103 dòng)
+### 2.1 Danh mục module (248 module theo thứ tự hub · 24.114 dòng)
 
 <!-- MODULES:BEGIN (npm run modmap) -->
 | # | Module | Dòng | Nội dung |
@@ -67,10 +67,10 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 6 | `src/data/enemies.js` | 33 | ENEMY_DEFS registry: hp, speed, score, scale, weapon and role per enemy type |
 | 7 | `src/data/bosses.js` | 17 | THE GENERALS: the commander who holds each stage's citadel and meets the soldier on foot (campaign/general-d… |
 | | **net/** — Co-op 2 người: giao thức, đường truyền, phiên — thuần, chạy được bằng node | | |
-| 8 | `src/net/protocol.js` | 204 | COOP 2 THE WIRE FORMAT of two-player co-op: message kinds, version, quantisers, the frame a snapshot is buil… |
+| 8 | `src/net/protocol.js` | 208 | COOP 2 THE WIRE FORMAT of two-player co-op: message kinds, version, quantisers, the frame a snapshot is buil… |
 | 9 | `src/net/interp.js` | 61 | COOP 2 THE RECEIVING SIDE'S SNAPSHOT BUFFER: keeps the last few snapshots, draws the world a little in the p… |
 | 10 | `src/net/transport.js` | 61 | COOP 2 THE LINE between the two players: the transport interface the game talks to (never to a socket direct… |
-| 11 | `src/net/coop.js` | 130 | COOP 2 THE CO-OP SESSION: idle → connecting → lobby → ready → playing → ended, who is host, the seed and bat… |
+| 11 | `src/net/coop.js` | 137 | COOP 2 THE CO-OP SESSION: idle → connecting → lobby → ready → playing → ended, who is host, the seed and bat… |
 | | **core/** — Hằng số runtime, trạng thái, hồ sơ, tiện ích | | |
 | 12 | `src/core/config.js` | 29 | runtime constants derived from config + device: arena size, MOBILE, the aircraft's draw scale, player range,… |
 | 15 | `src/core/state.js` | 21 | S — the single runtime game state (mode, stage, wave, score, player, spell, recall …) |

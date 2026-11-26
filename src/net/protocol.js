@@ -18,7 +18,7 @@ import { COOP } from '../../config.js';
 const Q = COOP.quant, LIM = COOP.limits, TAU = Math.PI * 2, HEAD = Q.head, AIM = Q.aim;
 export const NET_PROTO = COOP.proto;
 export const NET_MSG = { SNAP:1, INPUT:2, PING:3, PONG:4 };
-export const NET_CTL = ['hello', 'settings', 'ready', 'start', 'end'];
+export const NET_CTL = ['hello', 'settings', 'ready', 'start', 'end', 'field'];
 export const NET_EV = { SHOT:1, HIT:2, DEATH:3, EXPLOSION:4, GRENADE:5, RADIO:6, MARK:7, CUE:8 };
 export const NET_PFLAG = { FIRING:1, RELOADING:2, MOUNTED:4, DOWNED:8, AIMING:16, SPRINT:32, AIRBORNE:64, DEAD:128 };
 export const NET_STANCE = { STAND:0, CROUCH:1, PRONE:2, CLIMB:3, HORSE:4, PILLION:5 };
@@ -46,6 +46,10 @@ export function netUPitch(q){ return q / 32767 * (Math.PI / 2); }
 const u16c = v => { v = Math.round(v); return v > 65535 ? 65535 : v > 0 ? v : 0; };
 // a is newer than b on a 16-bit counter that wraps
 export function netSeqNewer(a, b){ return a !== b && ((a - b) & 0xffff) < 0x8000; }
+// a running fingerprint (FNV-1a over 32-bit ints): h = NET_HASH0, then h = netHashStep(h, value) for every number that must match on both pages —
+// the built battlefield (heights on a grid, cover, forts, towers): the same seed must have given both the same land before a snapshot means anything
+export const NET_HASH0 = 2166136261;
+export function netHashStep(h, v){ return Math.imul((h ^ (v | 0)) >>> 0, 16777619) >>> 0; }
 // the net layer's own dice (0–1). NEVER Math.random here: with ?seed= that is the battlefield's generator, and both pages must draw the very same numbers from it
 let _rs = 0;
 export function netRand(){ if(!_rs) _rs = ((Date.now() ^ (performance.now() * 1000)) >>> 0) || 1; _rs ^= _rs << 13; _rs >>>= 0; _rs ^= _rs >>> 17; _rs ^= _rs << 5; _rs >>>= 0; return _rs / 4294967296; }

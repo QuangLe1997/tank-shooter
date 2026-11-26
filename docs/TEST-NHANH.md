@@ -10,6 +10,8 @@ Phải kết thúc bằng `✓ verify: all checks passed`. Nó kiểm cú pháp 
 
 Đổi một con số trong `config.js`, sửa chữ, sửa tài liệu: **dừng ở bậc 1**.
 
+Đụng tầng mạng co-op (`src/net/*`, `tools/lan-room.mjs`, object `COOP`): thêm `npm run coop-test` (~3 giây, Node thuần, tự mở và đóng một server trên 127.0.0.1) — xem `docs/COOP.md`.
+
 ## Bậc 2 — thay đổi nhìn thấy được hoặc chạm vào lối chơi (~20–40 giây, cần GPU)
 ```bash
 node tools/ts.mjs DESERT 5 --seed 7
