@@ -92,6 +92,7 @@ export * from './actors/vehicles.js';
 export * from './actors/helis.js';
 export * from './fx/realwar.js';
 export * from './campaign/surprises.js';
+export * from './campaign/story.js';   // STORY 1 the campaign's story: the cast's names filled into every text, the operation of a stage, the squad's named men
 export * from './campaign/director.js';   // DIR 1 the battle's director: pressure round the player → build-up, peak, release; waves, surprises and the finale released by state
 export * from './campaign/entries.js';   // AI 2 how an enemy soldier comes onto the field: over the edge out of the frame, up out of a hatch — never out of thin air
 export * from './world/tunnels.js';

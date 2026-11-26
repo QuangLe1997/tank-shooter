@@ -445,32 +445,32 @@ export const ROSTER = {
 // high-value OBJECTIVE. While the objective stands it buffs the enemy (mods); destroying it pays a bounty + 1 diamond.
 //   script = { wave: event }   events: ambush (squads drop in close) · column (an infantry column from one edge) · airraid
 // ============================================================================
-export const OPERATIONS = [
+export const OPERATIONS = [   // STORY 1 one story across the five (texts name the cast by key — STORY below; campaign/story.js storyOp fills them)
   { title:'CHIẾN DỊCH BÃO CÁT', code:'SANDSTORM', obj:'depot', script:{ 2:'ambush', 4:'column' },
-    story:'Rạng sáng, Liên minh Hắc Thiết vượt biên dưới màn bão cát. Tiền đồn Sao Đỏ chỉ còn một Lõi năng lượng — và tổ xung kích của anh.',
-    brief:'Bộ binh địch đang tập kết sau đồi cát. Giữ Lõi, đốt kho nhiên liệu đang tiếp sức cho trực thăng và viện binh của chúng.',
-    radio:{ 1:'Phát hiện địch phía trước — bộ binh trong đồi cát!', 2:'Chúng đang băng qua bãi trống. Bắn chặn!', 3:'Trinh sát báo: chúng có một chỉ huy tên "Bò Thép".', 4:'Một đoàn bộ binh trên đường phía đông!', 5:'Đợt cuối trước khi Bò Thép ra mặt. Giữ vững!' },
-    win:'Kho nhiên liệu cháy rồi — trực thăng của chúng sắp nằm đất!' },
+    story:'Rạng sáng, {foe} vượt biên dưới màn bão cát; tiền đồn {us} chỉ còn một {core} và tổ {squad} của anh. Giữa tiếng gió, {cmd} nhận ra điều lạ: địch không nã pháo vào {core} — chúng đang tìm cách tới thật gần nó.',
+    brief:'Giữ {core} bằng mọi giá và đốt kho nhiên liệu đang tiếp sức cho trực thăng, viện binh của địch. Rồi tìm {boss} mà hạ.',
+    radio:{ 1:'{cmd} gọi {squad}: bộ binh địch sau đồi cát. Giữ {core}, bắn chắc tay.', 2:'Phục kích! Chúng trồi lên từ cát, sát ngay {core}!', 3:'Chúng không đặt bộc phá. Chúng muốn lấy {core} nguyên vẹn — chặn lại!', 4:'Một đoàn bộ binh đang kéo vào từ một hướng — bắn chặn đầu!', 5:'Đợt cuối trước khi {boss} ra mặt. Giữ vững!' },
+    win:'Kho nhiên liệu cháy rồi — hết xăng, chúng khỏi chở {core} đi đâu!' },
   { title:'CHIẾN DỊCH THÀNH PHỐ ĐỔ NÁT', code:'BROKEN CITY', obj:'radio', script:{ 2:'ambush', 4:'column' },
-    story:'Bò Thép gục ngã, nhưng từ thành phố đổ nát phía bắc, một trạm tiếp sóng vẫn liên tục gọi viện binh Hắc Thiết đổ về.',
-    brief:'Đống đổ nát che một trạm tiếp sóng gọi viện binh không ngừng. Bịt miệng nó, rồi dọn sạch các con phố.',
-    radio:{ 1:'Có chuyển động trong đống gạch vụn.', 2:'Phục kích! Chúng trồi lên sát bên!', 3:'Bắt được sóng địch: chỉ huy CUỒNG PHONG đang dẫn cận vệ tới.', 4:'Tổ RPG trong hẻm — coi chừng rocket!', 5:'Trạm tiếp sóng vẫn phát? Hạ nó ngay!' },
-    win:'Trạm tiếp sóng đã sập — viện binh của chúng im bặt.' },
+    story:'{cmd} không ngồi chờ lần cướp thứ hai: tổ {squad} mang theo {core}, bám đường rút của {foe} vào thành phố đổ nát. Giữa đống gạch, một trạm tiếp sóng vẫn đều đặn phát đi vị trí của ta, và {boss} đang đọc từng dòng. {scout} đi trước dò đường, như mọi lần.',
+    brief:'Bịt miệng trạm tiếp sóng đang gọi viện binh, dọn sạch các con phố và giữ {core} sống.',
+    radio:{ 1:'Có chuyển động trong đống gạch vụn. Đi chậm, soát từng ô cửa.', 2:'Phục kích! Chúng nằm chờ đúng lối ta vào!', 3:'Bắt được sóng địch: {boss} đang dẫn cận vệ tới.', 4:'Một đoàn bộ binh, có tổ B41 trong hẻm — coi chừng rocket!', 5:'Đợt cuối! Trạm tiếp sóng còn phát thì hạ nó ngay!' },
+    win:'Trạm tiếp sóng đã sập — kẻ đưa tin cho chúng phải tìm đường khác.' },
   { title:'CHIẾN DỊCH IM LẶNG TRẮNG', code:'WHITE SILENCE', obj:'radar', script:{ 3:'airraid', 5:'column' },
-    story:'Tín hiệu cuối của CUỒNG PHONG dẫn về vùng băng giá: một trạm radar đang dẫn đường cho trực thăng tấn công. KHỔNG LỒ, tướng gác băng của Hắc Thiết, đang chờ ở đó.',
-    brief:'Trạm radar trên băng đang dẫn trực thăng vào đội hình ta. Phá nó để giành lại bầu trời.',
-    radio:{ 1:'Tầm nhìn kém. Tập trung cao độ.', 2:'Băng nứt khắp nơi — đừng để bị dồn vào góc.', 3:'Tiếng cánh quạt — trực thăng vũ trang!', 4:'Lính dù đang thả xuống sườn băng!', 5:'Cả một đoàn bộ binh vượt băng!' },
-    win:'Radar thành sắt vụn. Hết trực thăng trên đầu ta.' },
+    story:'Tín hiệu cuối của {g2} dẫn lên vùng băng, nơi {boss} gác một trạm radar dẫn đường cho trực thăng. Tổ {squad} xuất phát lúc ba giờ sáng, không báo ai ngoài sở chỉ huy — vậy mà trên băng, địch đã nằm chờ sẵn. Có người đang bán từng bước chân của ta.',
+    brief:'Phá trạm radar để giành lại bầu trời và giữ {core} qua bão tuyết. Coi chừng trực thăng và lính dù.',
+    radio:{ 1:'Tầm nhìn kém. Bám sát nhau, bắn theo ánh lửa đầu nòng.', 2:'Băng nứt khắp nơi — đừng để bị dồn vào góc.', 3:'Tiếng cánh quạt — trực thăng vũ trang!', 4:'Lính dù đang thả xuống sườn băng!', 5:'Đợt cuối: cả một đoàn bộ binh vượt băng. Chặn chúng trước {core}!' },
+    win:'Radar thành sắt vụn. Bầu trời lại là của ta.' },
   { title:'CHIẾN DỊCH LÒ LỬA THÉP', code:'IRON FURNACE', obj:'battery', script:{ 2:'column', 4:'airraid' },
-    story:'Giữa đống đổ nát nơi KHỔNG LỒ ngã xuống, ta tìm thấy bản đồ: Hắc Thiết đóng quân ngay trong khu lò luyện, có pháo binh yểm trợ — và TỬ THẦN, sát thủ của chúng.',
-    brief:'Một trận địa pháo trong khu lò đúc đang yểm trợ cho bộ binh địch. Luôn di chuyển, và đánh sập những khẩu pháo đó.',
-    radio:{ 1:'Pháo địch đang yểm trợ — di chuyển liên tục!', 2:'Bộ binh tràn ra từ các xưởng lò!', 3:'TỬ THẦN rất khó lường. Đừng đứng yên một chỗ.', 4:'Không kích! Tìm chỗ nấp!', 5:'Xạ thủ trên sườn đồi — nấp sau gạch đá!' },
-    win:'Trận địa pháo đã câm. Pháo kích ngừng rồi.' },
+    story:'Bản đồ trong áo {g3} chỉ về khu lò luyện: trận địa pháo của {boss}, kẻ chưa bao giờ cần bắn phát thứ hai. Giữa tiếng búa máy, một làn sóng yếu ớt gọi tên tổ {squad} — kèm tiếng huýt sáo mà cả tổ đều nhận ra.',
+    brief:'Đánh sập trận địa pháo đang yểm trợ bộ binh địch. Luôn di chuyển, giữ {core}, đừng đứng yên cho chúng ngắm.',
+    radio:{ 1:'Pháo địch đang yểm trợ — di chuyển liên tục!', 2:'Cả một đoàn bộ binh tràn ra từ các xưởng lò!', 3:'{boss} rất khó lường. Đừng đứng yên một chỗ.', 4:'Không kích! Tìm chỗ nấp!', 5:'Đợt cuối! Xạ thủ trên sườn đồi — nấp sau gạch đá mà tiến!' },
+    win:'Trận địa pháo đã câm. Hết pháo che, chúng chỉ còn lò lửa sau lưng.' },
   { title:'CHIẾN DỊCH THÀNH LUỸ CUỐI', code:'LAST CITADEL', obj:'command', script:{ 1:'ambush', 3:'airraid', 5:'column' },
-    story:'Hầm chỉ huy của Hắc Thiết nằm sau thành luỹ cuối cùng. BẠO CHÚA — kẻ khơi mào cuộc chiến — đang chờ. Kết thúc hắn, và chiến tranh kết thúc hôm nay.',
-    brief:'Đây là hầm chỉ huy của chúng. Mọi thứ còn lại của Hắc Thiết dồn cả về đây. Phá nó, chiến tranh sẽ kết thúc.',
-    radio:{ 1:'Chúng đã chờ sẵn — phục kích!', 2:'Giữ Lõi. Bằng mọi giá.', 3:'Toàn bộ trực thăng của chúng đã cất cánh!', 4:'Tổ xung kích, cả nước đang dõi theo các anh.', 5:'Đợt cuối cùng của chúng. Chính là lúc này.' },
-    win:'Hầm chỉ huy sập rồi — phòng tuyến địch đang tan vỡ!' },
+    story:'Thành Luỹ Cuối sống nhờ một {core} sắp tắt; {boss} — thầy cũ của {cmd}, người vẽ nên {core} đầu tiên — cần {core} của ta để thắp lại nó. {intel} ngồi lại bàn máy, gửi cho địch bức điện cuối: một toạ độ sai. Khi cận vệ của {boss} lao về hướng đó, tổ {squad} có đúng một cơ hội.',
+    brief:'Phá hầm chỉ huy, hạ {boss}, và đừng để {core} rơi vào tay hắn. Chiến tranh kết thúc ở đây.',
+    radio:{ 1:'Phục kích! Chúng vẫn còn người nằm chờ!', 2:'Giữ {core}. Bằng mọi giá. Hắn chỉ cần đúng thứ đó.', 3:'Không kích! Toàn bộ máy bay của chúng đã cất cánh!', 4:'{squad}, cả {us} đang nghe các anh trên sóng này.', 5:'Đợt cuối của chúng. Chính là lúc này.' },
+    win:'Hầm chỉ huy sập rồi — phòng tuyến {foe} đang tan vỡ!' },
 ];
 export const OBJECTIVES = {
   depot:  { name:'FUEL DEPOT', vi:'KHO NHIÊN LIỆU', effectVi:'Trực thăng & viện binh tới nhanh hơn 15%', hp:260, r:6.2, effect:'Reinforcements arrive 15% faster', mods:{ cadenceMul:0.85 } },
@@ -480,6 +480,147 @@ export const OBJECTIVES = {
   command:{ name:'COMMAND BUNKER', vi:'HẦM CHỈ HUY', effectVi:'Địch gây thêm 15% sát thương',    hp:440, r:6.6, effect:'Enemies deal 15% more damage',          mods:{ enemyDmgMul:1.15 } },
 };
 export const OBJ_REWARD = { score:1500 };
+// ============================================================================
+// THE CAMPAIGN'S STORY (STORY 1–3, campaign/story.js) — one story across the five operations, a named cast, and a radio that follows the fight.
+//   NAMES ARE WRITTEN ONCE: every text (here and in OPERATIONS) names people by key — {cmd} {squad} {mg} {medic} {at} {scout} {intel} {us} {foe} {core}
+//     → cast[key].name · {boss} = this stage's general, {g1}…{g5} = the five original generals (data/bosses.js) · {name} = the squad-mate a cue is about.
+//   cast: tag = the net shown in the radio's header ("<TAG>: text") · field: a mate who stands on the field with the player — the squad's first man of
+//     that role carries the name (actors/squad-mates.js), and his lines are said only while he is on his feet · trait: how he talks.
+//   THE ARC — act I (stage 1) a holding action: the enemy is not after ground, it wants our Core intact, and somebody drew them our vault · act II
+//     (stages 2–3) the pursuit: the scout goes missing after a "cleared" alley, the enemy knows our hour of departure, the squad suspects the scout ·
+//     act III (stage 4) the reversal: the scout is alive and names the leak — the intelligence officer whose every message ends "xác nhận", whose family
+//     the enemy holds; the commander turns the leak round · (stage 5) the last citadel: the leak's last false message opens the way and costs him his life.
+//   generals: a one-line dossier by general id (the briefing) · heir: the dossier of a man who carries an original's name on an NG+ loop.
+//   stages[i]: act (index into acts) · prev: the briefing's "previously" · loop: the framing on NG+ loops (it replaces prev and the story paragraph) ·
+//     epi: the two lines over the rewards when the stage is won (loopEpi on NG+ loops) · beats: the plot on the radio by wave ('who|text', first time
+//     through only, never in a custom battle) — each waits its turn: beat.first s after the wave begins, beat.next s apart, dropped after beat.hold s.
+//   lines[event]: p = priority — 4 said at once (it replaces a line the game says at that instant) · 3 must be heard: queued until the radio has been
+//     quiet gapMust s (given up after hold s) · 2 a danger call: said if the radio has been quiet gapDanger s, else dropped · 1 flavour: quiet gap s,
+//     else dropped · cd: s between two of that event · max: a stage · first: only the first time through the campaign · q: queue it (not before q s).
+//     t: the variants ('who|text'; none = the commander), one picked at random among the voices on the net, never the same twice running. An event
+//     with a sub-key (a general's id, a named mate's role) uses lines[event_sub] when there is one.
+//   gap / gapDanger / gapMust: s of radio silence a line needs · queueMax: lines waiting at most · tick: s between two looks at the player's state ·
+//     hp: nearly dead under low, back on his feet over back · mate: wounded under hurt, mended over ok · streak: n enemies down inside t s within r m ·
+//     maxLen: a radio line's longest (the teleprinter box; test.js) · noVoice: the voice key that keeps a line text-only (audio/voice.js speaks none).
+// ============================================================================
+export const STORY = { on:true, gap:12, gapDanger:5, gapMust:4.6, hold:40, queueMax:6, tick:0.5, maxLen:90, noVoice:'text',
+  beat:{ first:9, next:14, hold:80 }, hp:{ low:0.3, back:0.6 }, mate:{ hurt:0.35, ok:0.6 }, streak:{ n:5, t:8, r:60 },
+  cast:{
+    cmd:   { name:'Đại Bàng', tag:'SCH', role:'chỉ huy', trait:'không bao giờ cao giọng; học trò cũ của vị tướng cuối cùng' },
+    squad: { name:'Xung Kích', role:'tổ của người chơi' }, us:{ name:'Sao Đỏ' }, core:{ name:'Lõi' },
+    mg:    { name:'Hùng', tag:'HÙNG', role:'mg', hud:'ĐL', field:true, trait:'to mồm, đùa cay, đếm từng băng đạn' },
+    medic: { name:'Lan', tag:'LAN', role:'medic', hud:'YT', field:true, trait:'điềm tĩnh, hay mắng, không bỏ ai lại' },
+    at:    { name:'Sơn', tag:'SƠN', role:'at', hud:'B41', field:true, trait:'trẻ nhất tổ, hăng, hay viết thư về nhà' },
+    scout: { name:'Minh', tag:'MINH', role:'rifle', hud:'BB', trait:'trinh sát đi đầu, ít lời, hay huýt sáo' },
+    intel: { name:'Khang', tag:'TÌNH BÁO', role:'sĩ quan tình báo', trait:'mười năm bên chỉ huy; câu nào cũng chốt "xác nhận"' },
+    foe:   { name:'Hắc Thiết', tag:'SÓNG ĐỊCH', role:'điện đài địch bị nghe trộm' } },
+  generals:{
+    bull:'Chưa từng lùi một bước, chưa từng đọc hết một mệnh lệnh. Thua {cmd} ba ván cờ, lần nào cũng lật bàn.',
+    tempest:'Đánh nhanh, rút nhanh, không ngủ hai đêm một chỗ. Sợ nhất bị vây: {cmd} từng vây hắn chín ngày.',
+    goliath:'Mười năm gác băng, đêm nào cũng tự cầm đèn đi tuần. Từng cõng {cmd} qua đèo tuyết, hồi còn chung màu áo.',
+    reaper:'Không bao giờ bắn phát thứ hai. Có thói gửi ảnh cho gia đình kẻ hắn săn. {cmd} mất cả một tổ trinh sát vì hắn.',
+    overlord:'Thầy cũ của {cmd}, người vẽ nên {core} đầu tiên. Sợ bóng tối từ ngày thành của hắn bắt đầu mất điện.',
+    inferno:'Em ruột {g1}, đến đòi nợ máu cho anh. Thứ gì anh hắn không giữ nổi, hắn đốt.',
+    serpent:'Phó tướng cũ của {g3}. Kiên nhẫn như băng: chờ con mồi mỏi rồi mới siết.',
+    thunder:'Học trò của {g4}, nóng hơn thầy: bắn trước, ngắm sau, ghét phải chờ.' },
+  heir:'Kẻ kế vị mang danh {boss}. Hồ sơ còn trống — chỉ biết hắn đến để rửa hận.',
+  acts:['Hồi I · Giữ chốt', 'Hồi II · Truy kích', 'Hồi III · Lật ngược'],
+  stages:[
+    { act:0, prev:'Rạng sáng nay chiến tranh bắt đầu. Chưa ai hiểu vì sao.',
+      loop:'Danh hiệu {boss} đã có người kế vị. {foe} kéo quân về đúng bãi cát cũ.',
+      epi:['{g1} ngã trên cát. Trong túi áo hắn: sơ đồ hầm {core} và giờ đổi gác của ta.', 'Nét mực còn mới. Có ai đó vừa vẽ nó cho hắn.'],
+      beats:{ 1:['intel|Sau đồi cát chỉ có tốp thăm dò. Sườn phải sạch. Xác nhận.'], 2:['mg|Sạch cái gì mà sạch! Tình báo ngủ gật à?'],
+        3:['foe|…lấy {core} nguyên vẹn. Nhắc lại: nguyên vẹn. {g5} cần nó còn sống.'], 4:['scout|Chúng mang cáng thép, không mang bộc phá. Tôi bám theo xem chúng đi đâu.'],
+        5:['at|Giữ được {core} là em viết thư kể cho mẹ ngay. Mà phải giữ được đã!'] } },
+    { act:1, prev:'Trước đó: {g1} ngã ở Bão Cát, trong túi là sơ đồ hầm {core} do người phe ta vẽ.',
+      loop:'Một kẻ khác đã nhận danh hiệu {boss}. Trạm tiếp sóng dựng lại giữa đống gạch cũ.',
+      epi:['{g2} gục giữa phố. {scout} vẫn không trả lời — trong hẻm bắc chỉ còn chiếc mũ sắt của cậu.', 'Bức điện cuối của trạm tiếp sóng: "Nguồn tin xác nhận." Người của ta, trên sóng của ta.'],
+      beats:{ 1:['intel|Hẻm phía bắc đã quét sạch. Cho trinh sát vào trước đi. Xác nhận.'],
+        2:['scout|Hẻm bắc có người! Không sạch — chúng nằm chờ s…', '{scout}, trả lời đi! … Mất liên lạc với {scout}. Cả tổ, đánh tiếp.'],
+        3:['at|Anh {scout} hứa dạy em huýt sáo. Anh ấy đã dạy xong đâu…'], 4:['foe|Nguồn tin vẫn đều. Toạ độ tổ xung kích: đã nhận.'],
+        5:['mg|Chúng biết lối ta vào trước cả ta. Ai mách chúng?'] } },
+    { act:1, prev:'Trước đó: {scout} mất tích trong thành phố. Địch biết trước từng bước của ta.',
+      loop:'Kẻ mang danh {boss} lên gác băng thay người đã ngã. Radar mới, trực thăng mới, cái lạnh vẫn cũ.',
+      epi:['{g3} nằm lại trên băng, tay vẫn nắm chiếc đèn đi tuần.', '{scout} mất tích trước khi có giờ xuất phát — cậu không thể là kẻ đưa tin. Kẻ đó vẫn ngồi trên sóng.'],
+      beats:{ 1:['foe|Nguồn tin báo: chúng rời trại lúc ba giờ. Đúng từng phút.'],
+        2:['mg|Thằng {scout} khai rồi! Không nó thì ai biết đường mình đi?', 'medic|{scout} mất tích trước khi có giờ xuất phát. Không phải cậu ấy, {mg}.'],
+        4:['intel|Đừng nghi nhau giữa trận. Tôi sẽ rà lại đường dây. Xác nhận.'], 5:['Giờ xuất phát chỉ ba người biết. Tôi là một. Xong trận ta nói tiếp.'] } },
+    { act:2, prev:'Trước đó: {g3} ngã trên băng. Kẻ đưa tin chưa lộ mặt, {scout} vẫn chưa về.',
+      loop:'Lò luyện đỏ lửa trở lại dưới tay kẻ kế vị {boss}. Pháo của chúng đã kịp đúc nòng mới.',
+      epi:['{g4} ngã cạnh xấp ảnh chưa kịp gửi. {scout} được cáng ra khỏi lò, vẫn huýt sáo.', '{intel} nộp súng. {cmd} không còng tay anh — chỉ đẩy lại chiếc máy điện đài.'],
+      beats:{ 1:['scout|{squad}… {scout} đây. Còn sống. Tôi nằm trong lò, nghe hết sóng của chúng.'],
+        2:['scout|Kẻ đưa tin dùng mã của Tình Báo. Câu chốt lúc nào cũng là: "xác nhận".'],
+        3:['{intel}… mười năm. Vì sao?', 'intel|Chúng giữ vợ con tôi, thủ trưởng. Mỗi tuần {g4} gửi cho tôi một tấm ảnh.'],
+        4:['{intel}, gửi tiếp đi. Lần này toạ độ do tôi đọc.', 'foe|Nguồn tin xác nhận toạ độ mới. Pháo, bắn!'],
+        5:['mg|Pháo chúng nã vào đầu chúng kìa! {scout} ơi, tao xin lỗi mày!'] } },
+    { act:2, prev:'Trước đó: {intel} lộ mặt, {scout} còn sống, pháo địch đã câm. Chỉ còn {g5}.',
+      loop:'Kẻ kế vị khoác áo {boss} và thắp lại Thành Luỹ Cuối. Chiến tranh chưa chịu dừng.',
+      epi:['{g5} ngã, Thành Luỹ Cuối tắt đèn. Chiến tranh dừng lại hôm nay.', 'Dưới hầm, vợ con {intel} còn sống. Sóng của anh thì đã tắt từ rạng sáng.'],
+      beats:{ 1:['foe|Nguồn tin xác nhận: chúng đánh cổng đông. Dồn hết cận vệ sang đông!'],
+        2:['intel|Chúng tin rồi, thủ trưởng. Cổng tây bỏ trống. Lần cuối tôi nói: xác nhận.'], 3:['at|Thư về nhà em viết xong rồi. Hết trận em gửi. Nhất định gửi.'],
+        4:['foe|Nguồn tin nói dối! Tìm nó! Cắt sóng nó ngay!'], 5:['{intel}? {intel}, trả lời… Mất sóng rồi. {squad} — làm cho xong.'] } } ],
+  loopEpi:['{boss} ngã, nhưng {foe} vẫn còn kẻ kế vị.', 'Tổ {squad} lau súng, đếm lại quân số, rồi đi tiếp.'],
+  lines:{
+    // the director's phases (campaign/director.js dirSay → 'dir_' + its key; its `must` lines are said at once)
+    dir_lull:{ p:1, t:['Tạm lắng — nạp đạn đi!', 'Chúng chững lại rồi — thay băng đạn, băng bó nhanh!', 'Địch nằm im — tranh thủ nạp đạn, đổi vị trí!', 'medic|Lặng rồi. Ai dính đạn thì lên tiếng — nhanh!', 'mg|Chúng thở thì mình cũng thở. Thay băng!', 'at|Em đếm lại đạn đây. Anh uống ngụm nước đi.'] },
+    dir_drop:{ p:2, t:['Anh sắp gục rồi — dù cứu thương và đạn rơi ngay trước mặt, ra lấy!', 'Thả dù tiếp tế cho anh đấy: túi cứu thương trước, đạn sau!', 'medic|Dù tiếp tế kìa! Lấy túi cứu thương ngay, tôi bắn che!'] },
+    dir_peak:{ p:2, t:['Chúng dồn lên rồi — bám công sự, giữ vững!', 'Hoả lực địch rất mạnh — đừng đứng một chỗ!', 'mg|Đông quá! Băng này chưa hết, lũ khác đã tới!', 'at|Chúng lên cả đàn! Em nạp không kịp bắn!', 'medic|Cúi thấp xuống! Tôi không vá kịp cả tổ đâu!'] },
+    dir_build:{ p:1, t:['Chúng lại lên — vào vị trí!', 'Hết lặng rồi — địch đang áp sát!', 'mg|Hết giờ nghỉ. Khách tới!', 'at|Chúng quay lại kìa anh! Em sẵn sàng rồi!'] },
+    dir_hunt:{ p:2, t:['Địch đã lần ra chỗ anh — chúng đang kéo tới!', 'Chúng biết anh ở đâu rồi — coi chừng các hướng!', 'mg|Lại biết chỗ mình rồi! Có ma dẫn đường cho chúng à?', 'medic|Chúng đi thẳng tới đây. Như có người chỉ lối vậy.'] },
+    dir_left:{ p:2, t:['Chúng đang vòng sườn trái!', 'Một tốp tách ra, bò sang trái anh — chặn lại!', 'mg|Sườn trái! Chúng bò sang trái kìa!', 'at|Bên trái, anh ơi! Bên trái!'] },
+    dir_right:{ p:2, t:['Chúng đang vòng sườn phải!', 'Một tốp tách ra, bò sang phải anh — chặn lại!', 'mg|Sườn phải! Chúng bò sang phải kìa!', 'at|Bên phải, anh ơi! Bên phải!'] },
+    dir_rear:{ p:2, t:['Địch vòng ra sau lưng — quay lại!', 'medic|Sau lưng! Chúng ở ngay sau lưng ta!', 'mg|Đằng sau! Quay súng lại!'] },
+    dir_finale:{ p:3, t:['Trận địa lặng rồi — tướng địch sắp ra trận. Nạp đạn, băng bó, chuẩn bị!', 'Lính thường rút hết rồi. Kẻ sắp ra là {boss} — nạp đạn, sẵn sàng!'] },
+    // the enemy's tactics (ai/tiers.js, ai/squads.js)
+    marksman:{ p:4, t:['Có xạ thủ bắn tỉa — thấy ánh kính loé lên là lăn đi ngay!', 'mg|Bắn tỉa! Kính nó loé kìa — cúi xuống!', 'medic|Ánh kính bên kia! Đừng ló đầu — phát đó tôi không vá nổi đâu.'] },
+    mg:{ p:4, t:['Đại liên địch bắn kiềm chế — đừng đứng ngoài trống, vòng vào sườn nó!', 'mg|Đại liên chúng lên tiếng rồi. Để tôi đáp lời — anh vòng sườn đi!', 'at|Đại liên! Ghìm đầu nó cho em, em thổi một quả B41!'] },
+    nade:{ p:2, cd:10, t:['Lựu đạn — rời vị trí ngay!', 'mg|Lựu đạn dưới chân — lăn đi!', 'at|Lựu đạn! Chạy khỏi chỗ đó, anh ơi!'] },
+    surrender:{ p:1, cd:40, t:['Hắn buông súng rồi — đừng bắn người đầu hàng.', 'medic|Nó giơ tay rồi. Để nó đi.', 'mg|Một thằng biết điều. Hiếm đấy.'] },
+    enemy_break:{ p:1, cd:45, t:['Tốp địch vỡ rồi, đang lùi về công sự — ép tiếp!', 'mg|Chúng chạy rồi! Bám theo, đừng cho chúng gom lại!', 'at|Chúng rút kìa! Mình thắng tốp này rồi anh ơi!'] },
+    // the player's own state (campaign/story.js storyTick, actors/damage.js)
+    first_kill:{ p:1, max:1, t:['Phát đầu trúng đích. Cứ thế mà đánh.', 'mg|Thằng đầu tiên! Mở hàng rồi đấy!', 'at|Trúng rồi! Anh bắn đẹp quá!'] },
+    streak:{ p:1, cd:50, max:3, t:['Chúng đang vỡ đội hình. Đánh tiếp, đừng cho chúng gom lại!', 'mg|Một hơi cả tốp! Để phần tôi với chứ!', 'at|Anh chậm thôi, em đếm không kịp!', 'medic|Bắn hay lắm. Cứ thế thì tôi đỡ phải vá ai.'] },
+    hurt:{ p:2, cd:35, max:3, t:['{squad}, anh sắp gục. Rút vào chỗ nấp, ngay!', 'medic|Anh trúng đạn rồi! Nằm xuống, tôi tới ngay!', 'medic|Máu ra nhiều quá — lùi sau công sự, chờ tôi!', 'mg|Tổ trưởng dính đạn! Tôi bắn che, lùi lại đi!'] },
+    recovered:{ p:1, cd:60, max:2, t:['Tốt. Còn thở là còn đánh.', 'medic|Đứng được rồi đấy. Lần sau đừng lấy thân đỡ đạn.', 'mg|Tưởng mất anh rồi chứ. Vào hàng đi, tổ trưởng!'] },
+    dry:{ p:1, cd:60, max:2, t:['mg|Thay băng đi, tôi ghìm chúng cho!', 'at|Anh hết đạn à? Em che cho, thay nhanh!'] },
+    // the squad (actors/squad-mates.js): wounded, down, back from the rear, patched up
+    mate_hurt:{ p:1, cd:40, t:['{name} bị thương — bắn che cho đồng đội lùi về sau!', 'medic|{name} dính đạn! Nằm yên đó, tôi tới!'] },
+    mate_hurt_mg:{ p:1, cd:40, t:['mg|Dính một phát! Không sao, vẫn bóp cò được!', 'medic|{mg} trúng đạn rồi! Ngồi im cho tôi băng, đừng cãi!'] },
+    mate_hurt_medic:{ p:1, cd:40, t:['medic|Tôi dính đạn… vẫn băng được. Lo cho các anh trước.', 'mg|{medic} bị thương! Ai băng cho người băng bó bây giờ?!'] },
+    mate_hurt_at:{ p:1, cd:40, t:['at|Em bị bắn rồi! Chị {medic} ơi!', 'medic|{at} trúng đạn! Thằng bé còn tỉnh — bắn che cho tôi!'] },
+    mate_down:{ p:2, cd:8, t:['{name} trúng đạn, đã đưa về tuyến sau — đợt tới sẽ quay lại.', 'medic|{name} gục rồi! Tôi kéo về sau — giữ lấy chỗ này!', 'mg|{name} ngã rồi! Bắn che cho cáng thương!'] },
+    mate_down_mg:{ p:2, t:['{mg} trúng đạn, đã về tuyến sau. Thiếu đại liên — bám công sự mà đánh.', 'medic|{mg} ngã rồi! Cái mồm đó mà im là tôi sợ đấy — cõng về sau!', 'at|Anh {mg}! Anh ấy còn thở… để em giữ khẩu đại liên!'] },
+    mate_down_medic:{ p:2, t:['{medic} bị thương, đã về tuyến sau. Tự băng bó lấy, đánh cẩn thận hơn.', 'mg|{medic} trúng đạn! Từ giờ cấm ai bị thương nữa, nghe chưa!', 'at|Chị {medic}! Ai giúp chị ấy với!'] },
+    mate_down_at:{ p:2, t:['{at} trúng đạn, đã về tuyến sau. Hết B41 — coi chừng máy bay.', 'medic|{at}! Thằng bé còn thở. Đưa nó về sau, nhanh!', 'mg|Thằng nhóc dính đạn rồi! Đứa nào bắn nó, tao tính sổ!'] },
+    mate_back:{ p:1, q:2, t:['Tổ của anh đủ quân số trở lại — {name} đã về hàng.', 'medic|{name} về rồi. Vết thương tôi khâu đấy, đừng làm bung chỉ.'] },
+    mate_back_mg:{ p:1, q:2, t:['{mg} đã trở lại vị trí. Đại liên lại lên tiếng.', 'mg|Tôi về rồi đây! Chưa chết được — còn nợ {medic} một lời cảm ơn.'] },
+    mate_back_medic:{ p:1, q:2, t:['{medic} đã trở lại. Tổ có y tá rồi — nhưng đừng ỷ lại.', 'medic|Tôi quay lại rồi. Lúc tôi vắng có ai làm liều không đấy?'] },
+    mate_back_at:{ p:1, q:2, t:['{at} đã trở lại, B41 trên vai. Tổ đủ quân số.', 'at|Em về rồi! Chị {medic} bảo em mạng lớn lắm!'] },
+    mate_saved:{ p:1, cd:45, t:['medic|{name} ổn rồi. Đứng dậy, bắn tiếp!', 'medic|Vá xong cho {name}. Người tiếp theo làm ơn đừng là tổ trưởng.'] },
+    patched:{ p:1, cd:60, t:['medic|Băng xong. Đừng làm tôi tốn thêm cuộn nào nữa.', 'medic|Xong rồi đấy. Đau thì kêu, đừng có gồng.', 'medic|Cầm máu rồi. Anh mà gục là cả tổ gục theo, nhớ lấy.'] },
+    // the stage's general (campaign/general-duel.js): he takes the field · he calls more guards at half health · he goes for broke · he is down
+    general:{ p:3, t:['{boss} ra trận rồi. Bám công sự, bắn khi hắn thay đạn.', 'mg|{boss} kìa! Tướng thì cũng chỉ có một mạng thôi!'] },
+    general_bull:{ p:3, first:1, t:['{boss} không biết lùi. Cứ để hắn lao tới rồi bắn.', 'mg|{boss} kìa! To thế kia thì khó mà bắn trượt!'] },
+    general_tempest:{ p:3, first:1, t:['{boss} ghét bị vây. Ép hắn vào góc, đừng cho hắn chạy.', 'at|Hắn nhanh quá! Anh ghìm chân hắn, em vòng ra sau!'] },
+    general_goliath:{ p:3, first:1, t:['{boss} đấy. Ngày xưa ông ấy cõng tôi qua đèo… Hôm nay thì bắn đi.', 'medic|Ông ta to thật. Nhưng to mấy thì cũng chảy máu.'] },
+    general_reaper:{ p:3, first:1, t:['{boss} không bắn phát thứ hai. Đừng cho hắn bắn phát thứ nhất.', 'mg|Thằng gửi ảnh cho vợ con người ta đây à? Để nó cho tôi!'] },
+    general_overlord:{ p:3, first:1, t:['Thầy… Hôm nay học trò đến trả bài. {squad}, nổ súng.', 'at|Kia là {boss}… Hạ được hắn là em gửi được thư rồi!'] },
+    general_inferno:{ p:3, t:['{boss} — em ruột {g1}. Hắn đến đòi nợ máu, đừng để lửa của hắn chạm tới anh.'] },
+    general_serpent:{ p:3, t:['{boss} chờ ta mỏi rồi mới siết. Đừng cho hắn thời gian.'] },
+    general_thunder:{ p:3, t:['{boss} nóng hơn cả thầy hắn. Dụ hắn bắn hụt rồi áp sát.'] },
+    general_half:{ p:3, t:['Hắn gọi thêm cận vệ — nghĩa là hắn đang núng. Đánh tiếp!', 'mg|Gọi thêm người à? Tức là run rồi đấy!', 'medic|Cận vệ ra thêm! Đừng để bị kẹp giữa hai tốp!'] },
+    general_rage:{ p:4, t:['boss|Ta chưa thua đâu!', 'boss|Chưa xong đâu! Cận vệ, theo ta!'] },
+    general_rage_bull:{ p:4, first:1, t:['boss|Lùi à? Cả đời ta chưa học chữ đó!'] },
+    general_rage_tempest:{ p:4, first:1, t:['boss|Không ai vây được ta lần thứ hai! Không ai!'] },
+    general_rage_goliath:{ p:4, first:1, t:['boss|{cmd}… ngày đó lẽ ra ta nên để ngươi lại trên đèo!'] },
+    general_rage_reaper:{ p:4, first:1, t:['boss|Ta chưa từng cần phát thứ hai. Hôm nay ta bắn cả băng!'] },
+    general_rage_overlord:{ p:4, first:1, t:['boss|{cmd}! Trò đâu biết bóng tối lạnh đến mức nào!'] },
+    general_down:{ p:4, t:['{boss} đã gục! Cận vệ tan rã — trận này là của anh!'] },
+    general_down_bull:{ p:4, first:1, t:['{boss} gục rồi. Ván này hắn hết lật bàn.'] },
+    general_down_tempest:{ p:4, first:1, t:['{boss} hết đường chạy rồi. Làm tốt lắm, {squad}.'] },
+    general_down_goliath:{ p:4, first:1, t:['{boss} ngã rồi… Yên nghỉ, bạn cũ. Làm tốt lắm, {squad}.'] },
+    general_down_reaper:{ p:4, first:1, t:['{boss} đã gục. Hắn không kịp bắn phát thứ hai.'] },
+    general_down_overlord:{ p:4, first:1, t:['Thầy ngã rồi. Tắt đèn đi, thầy… {squad}, hết chiến tranh rồi.'] } } };
 // EQUIPMENT (Z82) — tank-mounted support kit on the SPELL wheel. Each is a counter to a specific threat.
 export const EQUIP = {
   smoke:{ dur:10, radius:9, spreadMul:4.5, sightK:0.8 },       // smoke grenades: enemy aim ×spreadMul, guided missiles lose lock

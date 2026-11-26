@@ -5,7 +5,7 @@
 //   and the wounded of the squad too. (The radio's GỌI TỔ BỘ BINH still brings a whole fireteam on top of them.)
 import * as THREE from 'three';
 import { TROOPER, TROOPS } from '../../config.js';
-import { FT, CAREER, S, armAlly, clampFieldXZ, floatText, kitAttach, radio, ringPulse, sfx, spawnAlly, spawnPart, updateHUD } from '../hub.js';
+import { FT, CAREER, S, armAlly, clampFieldXZ, floatText, kitAttach, radio, ringPulse, sfx, spawnAlly, spawnPart, storyMate, storyNamed, updateHUD } from '../hub.js';
 
 const ROSTER = [];   // { role, name, a (his live fireteam entry, or null), back (true = bring him now), dead }
 let _names = [], _wave = '', _medAt = 0, _thinkAt = 0, _medMat = null;
@@ -13,13 +13,16 @@ const C = () => TROOPER.squad;
 const NOW = () => performance.now() / 1000;
 export const ROLE_VI = { mg:'xạ thủ máy', medic:'y tá', at:'lính B40', rifle:'xạ thủ' };
 const GROW = ['at', 'rifle', 'mg', 'medic', 'rifle', 'at'];
-function nextName(){ if(!_names.length) _names = C().names.slice().sort(() => Math.random() - 0.5); return _names.pop(); }
-export function squadReset(){ ROSTER.length = 0; _names = []; _wave = ''; _medAt = 0; _thinkAt = 0; for(const role of C().start) ROSTER.push({ role, name:nextName(), a:null, back:true, dead:false }); }
+// STORY 1 the squad's first man of a role carries the story's name for it (Hùng the machine-gunner, Lan the medic, Sơn the B41 man — config.js STORY.cast);
+//   the others draw from the list, never a name the story uses
+function nextName(role){ const c = storyMate(role); if(c && !ROSTER.some(r => r.name === c)) return c;
+  if(!_names.length) _names = C().names.filter(n => !storyNamed(n)).sort(() => Math.random() - 0.5); return _names.pop(); }
+export function squadReset(){ ROSTER.length = 0; _names = []; _wave = ''; _medAt = 0; _thinkAt = 0; for(const role of C().start) ROSTER.push({ role, name:nextName(role), a:null, back:true, dead:false }); }
 export function squadRoom(){ return C().max - ROSTER.length; }
 export function squadList(){ return ROSTER; }
 // a new man for the squad (a rank, a perk): he runs in from behind at once
 export function squadGrow(role){ if(squadRoom() <= 0) return false;
-  const r = { role:role || GROW[(ROSTER.length - C().start.length) % GROW.length], name:nextName(), a:null, back:false, dead:false }; ROSTER.push(r); join(r, true); return true; }
+  const rl = role || GROW[(ROSTER.length - C().start.length) % GROW.length], r = { role:rl, name:nextName(rl), a:null, back:false, dead:false }; ROSTER.push(r); join(r, true); return true; }
 // health and damage by his rank and the CHỈ HUY perk (a fraction of the old health kept)
 function stats(a){ const K = C(), lead = CAREER.lv.leader || 0, F = TROOPS.fireteam, was = a.maxHp ? a.hp / a.maxHp : 1;
   a.maxHp = Math.round(F.hp * (1 + CAREER.rank * K.hpK + lead * K.leadK)); a.hp = Math.max(1, Math.round(a.maxHp * was)); a.dmgK = 1 + CAREER.rank * K.dmgK + lead * K.leadK; }

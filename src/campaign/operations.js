@@ -2,11 +2,11 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { ENTRY, RAMP, OPERATIONS, OBJECTIVES, OBJ_REWARD } from '../../config.js';
-import { ARENA, S, WAVE, _canvasTex, realObjective, addScore, aoeDamage, bigExplode, blocks, camera, clampFieldXZ, decalScorch, deformCrater, diffHpMul, fireball, freeEnemyBar, getEnemyBar, heightAt, hitFlash, inField, loopHpMul, makeFlag, panelTex, propTex, radioType, ringPulse, sayVoice, scene, sfx, showBanner, spawnPart, spawnSquad, unwave, vnTex, voiceKeyFor } from '../hub.js';
+import { ARENA, S, WAVE, _canvasTex, realObjective, addScore, aoeDamage, bigExplode, blocks, camera, clampFieldXZ, decalScorch, deformCrater, diffHpMul, fireball, freeEnemyBar, getEnemyBar, heightAt, hitFlash, inField, loopHpMul, makeFlag, panelTex, propTex, radioType, ringPulse, sayVoice, scene, sfx, showBanner, spawnPart, spawnSquad, storyOp, unwave, vnTex, voiceKeyFor } from '../hub.js';
 
 // ===== Z83 · CAMPAIGN OPERATIONS — named operation per stage: briefing, radio chatter, scripted waves and a high-value objective =====
 export let OBJ=null; export const OBJ_SCALE=1.5;   // objectives read as big, important structures
-export function opFor(stage){ return OPERATIONS[(Math.max(1,stage)-1)%OPERATIONS.length]; }
+export function opFor(stage){ return storyOp((Math.max(1,stage)-1)%OPERATIONS.length); }   // STORY 1 the operation with the cast's names filled in (campaign/story.js)
 export function objMod(key, d){ d=(d===undefined?1:d); return (OBJ && OBJ.alive && OBJ.def.mods[key]!=null) ? OBJ.def.mods[key] : d; }
 export function radio(msg, vkey){ const el=document.getElementById('radio'); if(!el || !msg) return; radioType(el, msg);   // Z228 net + frequency header, typed out like a teleprinter
   el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); clearTimeout(radio._t); radio._t=setTimeout(()=>el.classList.remove('show'), 4600); { const vk=vkey || voiceKeyFor(msg); if(!(vk && sayVoice(vk))) sfx('beep'); } }   // Z161 the line is spoken too · Z166 the voice file carries its own squelch + roger beep · Z169 only danger calls and big moments are spoken

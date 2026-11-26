@@ -44,6 +44,20 @@
 - HP mục tiêu × NG+ loop × độ khó × `(1 + 0.14×(màn−1))`. Thưởng phá: **300 + 120×màn xu** (× loop × độ khó × hợp đồng) **+ 1 💎 + 1.500 điểm**.
 - Wave có kịch bản thay cho sự kiện ngẫu nhiên. **Phục kích:** 2 tổ (3 từ màn 3) bộ binh xuất hiện cách xe ~17. **Đoàn xe:** heavy + grunt + gunner + grunt (+ heavy + atgm từ màn 3, + shield + heavy từ màn 5) vào cùng 1 hướng, nhịp ×0.4.
 
+### Cốt truyện xuyên năm màn (STORY 1–3 — `config.js → STORY`, `src/campaign/story.js`)
+
+| Màn | Hồi | Chuyện gì xảy ra | Tướng địch (hồ sơ một dòng ở màn giao nhiệm vụ) |
+|---|---|---|---|
+| 1 Bão Cát | I · Giữ chốt | Hắc Thiết vượt biên nhưng không phá Lõi — chúng đến để **khiêng Lõi đi**. Trong túi Bò Thép: sơ đồ hầm Lõi do người phe ta vẽ. | Bò Thép — không biết lùi, thua Đại Bàng ba ván cờ |
+| 2 Thành phố đổ nát | II · Truy kích | Tổ mang Lõi bám đường rút của địch. Tình Báo báo "hẻm bắc đã quét sạch" — trinh sát **Minh mất tích** ở đó. | Cuồng Phong — sợ bị vây |
+| 3 Im lặng trắng | II · Truy kích | Địch biết đúng giờ xuất phát. Hùng nghi Minh khai; Lan chỉ ra Minh mất tích trước khi có giờ đó. | Khổng Lồ — từng cõng Đại Bàng qua đèo tuyết |
+| 4 Lò lửa thép | III · Lật ngược | **Minh còn sống**, gọi về từ trong lò: kẻ đưa tin là **Khang (Tình Báo)** — Tử Thần giữ vợ con anh. Đại Bàng đọc toạ độ sai cho Khang gửi tiếp. | Tử Thần — không bắn phát thứ hai, gửi ảnh cho gia đình kẻ hắn săn |
+| 5 Thành luỹ cuối | III · Lật ngược | Bức điện sai cuối cùng của Khang mở đường và **trả bằng mạng anh**; vợ con anh còn sống dưới hầm. | Bạo Chúa — thầy cũ của Đại Bàng, sợ bóng tối |
+
+- **Dàn nhân vật** (`STORY.cast`; mọi câu gọi tên qua khoá `{cmd}` `{mg}` `{scout}` `{boss}`… nên đổi tên chỉ sửa một chỗ): **Đại Bàng** (chỉ huy, mạng SCH) · **Hùng** ĐL · **Lan** YT · **Sơn** B41 · **Minh** BB trinh sát · **Khang** Tình Báo · **Sóng địch** (điện đài Hắc Thiết bị nghe trộm). Hai người đầu tiên của tổ luôn là Hùng và Lan, lính B41 đầu tiên là Sơn.
+- **Manh mối cài sẵn:** mọi bức điện của Tình Báo đều chốt bằng "Xác nhận."; điện đài địch nghe trộm được thì luôn nói "Nguồn tin xác nhận…". Câu "địch đã lần ra chỗ anh" của đạo diễn trận đánh (DIR) vì thế cũng thành một phần câu chuyện.
+- **Vòng NG+:** cốt truyện chính không kể lại; mỗi màn có một dòng dẫn riêng (danh hiệu tướng có người kế vị, chiến tranh chưa dừng) — `STORY.stages[i].loop`.
+
 ## 1c. Lái xe, va chạm & địa vật (Z85–Z86)
 | Thông số (`DRIVE`, config.js) | Giá trị | Ý nghĩa |
 |---|---|---|
