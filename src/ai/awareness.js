@@ -9,7 +9,7 @@
 //   without contact do they drop to searching it, and after keep.search more give the search up. The first shot waits a reaction delay (AWARE.react).
 //   The group of an alerted man's bursts (e.zero, 0 wide … 1 tight) closes while the player stands in his sight and opens when he runs or breaks the line.
 import { AWARE, STEALTH } from '../../config.js';
-import { CV, NIGHT, S, UGRID, aiIQ, clampFieldXZ, crushables, enemies, floatText, heightAt, playerSight, quietDeath, sfx, stealthSpot, tierK, unitsNear, wrapAngle } from '../hub.js';
+import { CV, NIGHT, S, UGRID, aiIQ, clampFieldXZ, crushables, enemies, floatText, heightAt, playerSight, quietDeath, sfx, sneakK, stealthSpot, tierK, unitsNear, wrapAngle } from '../hub.js';
 
 const A = AWARE, R2 = a => a[0] + Math.random() * (a[1] - a[0]), mix = (a, k) => a[0] + (a[1] - a[0]) * k;
 // the player as the enemy's eyes get him this moment: r = how far off a man looking his way makes him out
@@ -35,7 +35,7 @@ function init(e, now){ const p = S.player, k = e.lk || (e.lk = { x:0, z:0 }), ho
 // he is in the fight from now: (x, z) is where he believes the player to be (default: where he is). why: see · shot · hit · death · shout · order
 export function alertEnemy(e, now, why, x, z){ const p = S.player; if(!p || !e.def || !e.def.inf) return; if(e.alert === undefined) init(e, now); const k = e.lk, was = e.alert;
   if(was >= 2){ if(!e.sees){ k.x = x ?? p.pos.x; k.z = z ?? p.pos.z; e.lkAt = now; } return; }   // already fighting: news of him only matters while he is out of sight
-  k.x = x ?? p.pos.x; k.z = z ?? p.pos.z; e.lkAt = now; e.alert = 2; e.det = 1; e.zero = 0; e.actAt = now; e.srAt = 0; e.tgtAt = 0; e.burstLeft = 0; e.coverAt = 0;
+  k.x = x ?? p.pos.x; k.z = z ?? p.pos.z; e.lkAt = now; e.alert = 2; e.alWhy = why; e.det = 1; e.zero = 0; e.actAt = now; e.srAt = 0; e.tgtAt = 0; e.burstLeft = 0; e.coverAt = 0;
   e.reactAt = Math.max(e.reactAt || 0, now + (why === 'hit' ? A.reactHit : R2(A.react) * mix(A.reactK, aiIQ()) * tierK('react'))); e.fireAt = Math.max(e.fireAt || 0, e.reactAt);
   if(why === 'see' || why === 'hit' || why === 'death'){ e.shoutAt = now + A.shout.delay; SHOUTS.push(e); }   // (a shot is heard by all of them at once; a shout does not echo on)
   bark(e, '!', '#ff5a3a', now); }
@@ -49,7 +49,8 @@ export function awareTick(e, now){ if(e.alert === undefined) init(e, now); if(no
   const dx = p.pos.x - e.pos.x, dz = p.pos.z - e.pos.z, d = Math.hypot(dx, dz) || 1, al = e.alert >= 2, C = A.see, k = e.lk;
   let R = al ? Math.max(PL.r * C.alertK, PL.spotted ? STEALTH.alertR : 0) : PL.r * coneK(e, dx, dz), vis = 0;
   if(al && e.sees) R = Math.max(R, C.r * C.track * (1 - (1 - C.night) * (NIGHT.k || 0)) * (PL.bush ? C.bush : 1));   // a man he is watching does not vanish by dropping flat in the open
-  if(d < Math.max(R, C.near) && playerSight(e.pos.x, heightAt(e.pos.x, e.pos.z) + 1.6, e.pos.z)) vis = d < C.near ? 1 : Math.max(0.03, 1 - d / R);
+  const nr = C.near * sneakK(e, dx, dz);   // SUPPLY 3 (crept up on from behind he senses a man only at arm's length — game/quiet.js)
+  if(d < Math.max(R, nr) && playerSight(e.pos.x, heightAt(e.pos.x, e.pos.z) + 1.6, e.pos.z)) vis = d < nr ? 1 : Math.max(0.03, 1 - d / R);
   if(vis > 0){
     if(al){ if(!e.sees && e.sq) for(const o of e.sq.m){ if(o !== e && o.alert >= 2 && !o.sees){ o.lk.x = p.pos.x; o.lk.z = p.pos.z; o.lkAt = now; } }   // he has him again: his squad knows (no second shout)
       e.sees = true; k.x = p.pos.x; k.z = p.pos.z; e.lkAt = now; }

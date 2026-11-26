@@ -2511,7 +2511,7 @@ export const COOP = { proto:1, snapHz:20, inputHz:30,
 //   tick: s between two looks of the module (never per frame) · say: every line of text of the modules ({n} a number or a name, {c} the class's name, {d} m, {b} a bearing).
 // SUPPLY 2 RESUPPLY HE PLAYS FOR, AND THE WEIGHT OF IT (game/logistics.js):
 //   pouch: a fallen enemy soldier leaves his pouch with chance p (pLow while that class's reserve is under lowMags magazines): n[0]…n[1] rounds for the first class of
-//     `fits` he carries (× the difficulty), a B40 man a rocket with chance `rocket` — walked over like any loot.
+//     `fits` he carries (× the difficulty), a B40 man a rocket with chance `rocket` — walked over like any loot; none from a man who falls over maxD m from him.
 //   depot: the ammunition point at our base (crates at the rally point `off` m from its centre; no rally point: coreOff m from the core) — standing within r m one
 //     magazine every `every` s to the gun in his hands first, then to the emptiest class, without end; a captured depot (within fwdR m) and a captured fortress (within
 //     fortK × its radius, fwdR at least) do the same out of fwdStock magazines each a stage.
@@ -2527,12 +2527,13 @@ export const COOP = { proto:1, snapHz:20, inputHz:30,
 //     falls within killT s of such a shot alerts only the men within deathR m, and if he had not been alerted he drops where he stood and LIES there.
 //   knife: the nearest enemy soldier within reach m and arc rad of his aim, cd s between two uses, a lunge of `lunge` m/s. A man who is not alerted, taken from outside his
 //     front `front` rad (the side, the back), goes down in silence — never the general, a fortress commander, an elite; anyone else takes dmg (and knows). A takedown is
-//     seen only by a man within seenR m who is looking that way (cone rad either side).
+//     seen only by a man within seenR m who is looking that way (cone rad either side). Creeping up: a man who does not know sensed anyone within AWARE.see.near m —
+//     now, from outside his front and slower than senseV m/s (a walk, a crouch, a crawl — not a run, not a ride), only within near × senseK m (ai/awareness.js awareTick).
 //   body: a man downed in silence lies `life` s (the last `sink` s of it sinking away; `max` on the field). An unalerted man within r m looking that way (cone rad) or
 //     within near m FINDS it: he and the unalerted men within callR m of him turn suspicious and search from the body (looked for every `every` s); for searchT s any of
 //     them who then makes the player out raises the alarm, like a sentry.
-//   alarm: a SENTRY (a man holding a post: a fortress's, a camp's, a depot's garrison) or a searcher who becomes alerted — by sight, by a shot heard, by a mate falling —
-//     raises it `delay` s later, a red ring on him every ringT s; kill him first and it passes to another alerted sentry within passR m (pass s more) or is SILENCED.
+//   alarm: a SENTRY (a man holding a post: a fortress's, a camp's, a depot's garrison) or a searcher who becomes alerted within r m of him BY HIS OWN DOING — he is seen,
+//     his shot is heard, a takedown is witnessed; never by our own men's fire — raises it `delay` s later, a red ring on him every ringT s; kill him first and it passes to another alerted sentry within passR m (pass s more) or is SILENCED.
 //     Raised: a whistle (a siren too when he is a fortress's man or a watchtower stands within sirenR m), every enemy soldier within r m alerted (knowing where he is to
 //     err m), and the director asked for ONE more squad (campaign/director.js dirAlarm: not in a lull, not while he is nearly dead; none with maxFoes men on the field).
 //     At most `max` a stage, cd s apart — a clean approach earns the quieter fight.
@@ -2541,7 +2542,7 @@ export const COOP = { proto:1, snapHz:20, inputHz:30,
 export const LOGISTICS = { tick:0.25,
   start:{ rifle:5, pistol:5, belt:2, shot:5, heavy:5, rocket:4, shell:3, fuel:2, cell:4, blade:4 }, diff:{ recruit:1.3, soldier:1, veteran:0.8 }, capK:1.6,
   warn:{ low:1, say:5 }, regen:{ mags:1, magT:28 }, give:{ fresh:2, again:1 }, crate:{ share:0.6 },
-  pouch:{ p:0.3, pLow:0.75, lowMags:2, n:[8, 15], rocket:0.35, fits:['rifle', 'belt', 'pistol'] },
+  pouch:{ p:0.3, pLow:0.75, lowMags:2, n:[8, 15], rocket:0.35, maxD:45, fits:['rifle', 'belt', 'pistol'] },
   depot:{ r:4.5, every:0.6, off:[2.7, 0.6], coreOff:[6, 3], fwdR:7, fortK:0.55, fwdStock:10 },
   drop:{ low:0.3, cd:80, wait:40, d:[30, 46], sideR:60, tries:8, foes:1, foeR:18, share:0.7, noticeR:55, noticeN:5, stale:100 },
   mate:{ r:7, magK:0.34, rounds:60, cd:14, stock:2, cls:['rifle', 'pistol', 'belt', 'shot'] },
@@ -2549,7 +2550,7 @@ export const LOGISTICS = { tick:0.25,
     gun:{ rifle:3.5, pistol:2.6, belt:8.5, shot:3.4, heavy:8, rocket:6.3, shell:2.7, fuel:9, cell:5, blade:5 },
     round:{ rifle:0.017, pistol:0.012, belt:0.028, shot:0.05, heavy:0.11, rocket:2.2, shell:0.23, fuel:0.03, cell:0.05, blade:0.1 } },
   quiet:{ suppR:12, killT:1.2, deathR:7, every:0.25, btn:[286, 316],
-    knife:{ reach:2.2, arc:1.5, cd:0.8, lunge:4.5, front:1.05, dmg:14, seenR:6, cone:1.3 },
+    knife:{ reach:2.2, arc:1.5, cd:0.8, lunge:4.5, front:1.05, dmg:14, seenR:6, cone:1.3, senseK:0.3, senseV:2.2 },
     body:{ life:60, sink:1.5, max:8, r:9, near:2.5, cone:1.3, callR:16, searchT:45, every:0.5 },
     alarm:{ delay:2.6, ringT:0.5, passR:14, pass:1, r:60, err:5, sirenR:75, max:2, cd:80, maxFoes:80 },
     eye:{ r:70, det:0.15 } },
@@ -2558,7 +2559,7 @@ export const LOGISTICS = { tick:0.25,
     crateDs:'Đầy băng mọi súng · thêm đạn dự trữ · kỹ năng sẵn sàng ngay',
     pouch:'TÚI ĐẠN ĐỊCH', pouchDs:'Đạn nhặt từ lính địch ngã xuống', depotOut:'KHO Ở ĐÂY ĐÃ CẠN', depotIn:'ĐIỂM TIẾP ĐẠN',
     drop:['SCH: Thả dù đạn cách anh {d} m về hướng {b} — ra lấy trước khi địch mò tới!', 'SCH: Đạn đang xuống, {d} m hướng {b} — địch cũng thấy dù đấy, nhanh lên!'],
-    dropGot:'ĐÃ NHẬN ĐẠN TIẾP TẾ', bearings:['bắc', 'đông bắc', 'đông', 'đông nam', 'nam', 'tây nam', 'tây', 'tây bắc'],
+    dropTip:'Dù đạn: {d} m hướng {b}', dropGot:'ĐÃ NHẬN ĐẠN TIẾP TẾ', bearings:['bắc', 'đông bắc', 'đông', 'đông nam', 'nam', 'tây nam', 'tây', 'tây bắc'],
     mate:['{n}: BẮT LẤY BĂNG ĐẠN!', '{n}: ĐẠN ĐÂY, ANH!'], mateRocket:'{n}: ĐẠN B41 ĐÂY!', load:'−{n}%',
     eye:['ẨN', 'NGHI', 'LỘ'], knife:'DAO GĂM — HẠ GỤC', knifeDown:'HẠ GỤC LẶNG LẼ', knifeHit:'ĐÂM!', body:'CÓ XÁC! CÓ ĐỊCH!', bodyTip:'ĐỊCH THẤY XÁC — CHÚNG ĐANG LÙNG',
     raise:'SẮP BÁO ĐỘNG!', silenced:'BỊT MIỆNG KỊP — KHÔNG BÁO ĐỘNG', alarm:'⚠ BÁO ĐỘNG!',

@@ -4,13 +4,13 @@
 //   · The KNIFE (its key, the takedown prompt — a button on phones — or the mount key while the prompt shows): a short lunge at the nearest man in arm's reach. One who is
 //     not alerted, taken from the side or from behind, goes down without a sound and leaves his pouch; from the front, or a man who knows, it is a weak stab (and he knows).
 //   · A man downed in silence LIES where he fell (actors/infantry.js). An enemy who comes on the BODY turns suspicious with the men near him and searches from it.
-//   · The ALARM: a sentry (a man holding a post) or a man searching from a body who becomes alerted raises it a moment later — a red ring on him says so; silence him first
+//   · The ALARM: a sentry (a man holding a post) or a man searching from a body who SEES him or HEARS his shot (never one roused by our own men's fire) raises it a moment later — a red ring on him says so; silence him first
 //     and it is not raised (unless another alerted sentry stands close). Raised: a whistle, a siren where there are towers, the whole camp alerted, and the director is asked
 //     for one more squad (campaign/director.js dirAlarm). A few a stage at most: the clean approach earns the quieter fight, the botched one is punished where he can read it.
 //   · The EYE chip (loot/powerups.js updateBuffHUD → game/logistics.js hudChips → QUIET.eye): closed — nobody suspects; half — a man is suspicious; open — a man is alerted.
 //   Everything is read LOGISTICS.quiet.every s apart on one pass over the enemies (no sight line a frame; one ray when a takedown is on offer).
 import { AWARE, LOGISTICS } from '../../config.js';
-import { CV, GUNS, MOBILE, S, UGRID, alertEnemy, awareNoise, damageEnemy, dirAlarm, edgeEntry, enemies, entrySeen, floatText, hatchEntry, heightAt, inField, keyLabel, keysFor, killEnemy, lineClear, radio, ringPulse, sfx, showBanner, spawnSquad, squadTypes, suspectEnemy, towers, unitsNear, wrapAngle } from '../hub.js';
+import { CV, GUNS, MOBILE, PL, S, UGRID, alertEnemy, awareNoise, damageEnemy, dirAlarm, edgeEntry, enemies, entrySeen, floatText, hatchEntry, heightAt, inField, keyLabel, keysFor, killEnemy, lineClear, radio, ringPulse, sfx, showBanner, spawnSquad, squadTypes, suspectEnemy, towers, unitsNear, wrapAngle } from '../hub.js';
 
 const Q = LOGISTICS.quiet, SAY = LOGISTICS.say, NOW = () => performance.now() / 1000;
 // eye: −1 not on foot · 0 unseen · 1 suspected · 2 seen — can: the man a takedown is on offer for — bodies: { x, z, t, found } — pend: the alarm about to be raised { e, at, ring, x, z }
@@ -27,11 +27,14 @@ export function quietDeath(e){ const p = S.player; if(!p) return false; const no
   const r = knife ? Q.knife.seenR : Q.deathR, r2 = r * r, er = AWARE.death.err;
   for(const o of unitsNear(UGRID.inf, e.pos.x, e.pos.z, r, _nb)){ if(o === e || !(o.hp > 0)) continue; const dx = e.pos.x - o.pos.x, dz = e.pos.z - o.pos.z; if(dx * dx + dz * dz > r2) continue;
     if(knife && Math.abs(wrapAngle(Math.atan2(dx, dz) - o.facing)) > Q.knife.cone) continue;
-    alertEnemy(o, now, 'death', p.pos.x + (Math.random() - 0.5) * er, p.pos.z + (Math.random() - 0.5) * er); }
+    alertEnemy(o, now, 'see', p.pos.x + (Math.random() - 0.5) * er, p.pos.z + (Math.random() - 0.5) * er); }   // (he saw it done: a sentry among them raises the alarm)
   if(knife || !(e.alert >= 2)){ e._quietKill = true; QUIET.stats.quiet++; const B = QUIET.bodies; if(B.length >= Q.body.max) B.shift(); B.push({ x:e.pos.x, z:e.pos.z, t:now, found:false }); }
   return true; }
 
 // ---- the knife ----
+// ai/awareness.js awareTick: how much of AWARE.see.near an unaware man has — all of it for anyone in front of him, or coming fast, or riding; crept up on from the
+//   side or from behind (dx, dz: from him to the player) only senseK of it, so a man can be reached with the knife at all
+export function sneakK(e, dx, dz){ const K = Q.knife; return e.alert >= 2 || CV.mounted || PL.v > K.senseV || Math.abs(wrapAngle(Math.atan2(dx, dz) - e.facing)) <= K.front ? 1 : K.senseK; }
 // the man in arm's reach along his aim (nearest), or null
 function knifeTarget(p){ const K = Q.knife, a = p.aimSmoothed ?? p.facing; let best = null, bd = K.reach * K.reach;
   for(const e of unitsNear(UGRID.inf, p.pos.x, p.pos.z, K.reach, _nb)){ if(!(e.hp > 0) || e.rise) continue; const dx = e.pos.x - p.pos.x, dz = e.pos.z - p.pos.z, d2 = dx * dx + dz * dz;
@@ -82,7 +85,7 @@ function reinforce(x, z){ const p = S.player, q = edgeEntry(Math.atan2(z, x), 1.
   return false; }
 function raise(e, now){ const A = Q.alarm, p = S.player, x = e.pos.x, z = e.pos.z, r2 = A.r * A.r; QUIET.alarmN++; QUIET.alarmAt = now; QUIET.stats.raised++;
   let siren = !!(e.guard && e.guard.fort); for(let i = 0; i < towers.length && !siren; i++){ const t = towers[i]; siren = !t.falling && !t.gone && (t.x - x) ** 2 + (t.z - z) ** 2 < A.sirenR * A.sirenR; }
-  sfx('whistle', e.pos); if(siren) sfx('alarm'); showBanner(SAY.alarm, '#ff5a3a');
+  sfx('whistle', e.pos); if(siren) sfx('alarm'); showBanner(SAY.alarm, '#ff5a3a'); floatText(SAY.alarm, '#ff5a3a', p.pos, 20);   // (the banner is shared with the combo counter: said over his head too)
   for(let i = 0; i < enemies.length; i++){ const o = enemies[i]; if(!o.def.inf || !(o.hp > 0) || (o.pos.x - x) ** 2 + (o.pos.z - z) ** 2 > r2) continue; o._al2 = true;   // (the men it alerts do not raise it again)
     alertEnemy(o, now, 'order', p.pos.x + (Math.random() - 0.5) * A.err, p.pos.z + (Math.random() - 0.5) * A.err); }
   const sent = enemies.length < A.maxFoes && dirAlarm(now) && reinforce(x, z); if(sent) QUIET.stats.squads++; radio(sent ? SAY.alarmSquad : SAY.alarmHold); }
@@ -100,9 +103,9 @@ function pending(p, now){ const P = QUIET.pend, A = Q.alarm; if(!P) return;
 export function updateQuiet(dt, now){ const p = S.player; if(!p || !p.cav || now < QUIET.tickAt) return; QUIET.tickAt = now + Q.every; const A = Q.alarm, E = Q.eye, er2 = E.r * E.r;
   const key = (S.loop || 0) + ':' + (S.stage || 1); if(key !== QUIET.key){ QUIET.key = key; QUIET.alarmN = 0; QUIET.alarmAt = -1e9; QUIET.pend = null; QUIET.bodies.length = 0; }
   let eye = (p.spotUntil || 0) > now ? 2 : 0;
-  for(let i = 0; i < enemies.length; i++){ const e = enemies[i]; if(!e.def.inf || !(e.hp > 0)) continue; const al = e.alert >= 2;
-    if(eye < 2 && (e.pos.x - p.pos.x) ** 2 + (e.pos.z - p.pos.z) ** 2 < er2){ const k = al ? 2 : e.alert === 1 || e.det > E.det ? 1 : 0; if(k > eye) eye = k; }
-    if(al && !e._al2 && !QUIET.pend && !S.awaitingUpgrade && QUIET.alarmN < A.max && now - QUIET.alarmAt > A.cd && sentry(e, now)) QUIET.pend = { e, at:now + A.delay, ring:0, said:false, x:e.pos.x, z:e.pos.z };
+  for(let i = 0; i < enemies.length; i++){ const e = enemies[i]; if(!e.def.inf || !(e.hp > 0)) continue; const al = e.alert >= 2, d2 = (e.pos.x - p.pos.x) ** 2 + (e.pos.z - p.pos.z) ** 2;
+    if(eye < 2 && d2 < er2){ const k = al ? 2 : e.alert === 1 || e.det > E.det ? 1 : 0; if(k > eye) eye = k; }
+    if(al && !e._al2 && !QUIET.pend && !S.awaitingUpgrade && (e.alWhy === 'see' || e.alWhy === 'shot') && d2 < A.r * A.r && QUIET.alarmN < A.max && now - QUIET.alarmAt > A.cd && sentry(e, now)) QUIET.pend = { e, at:now + A.delay, ring:0, said:false, x:e.pos.x, z:e.pos.z };
     e._al2 = al; }
   QUIET.eye = CV.mounted || CV.dead ? -1 : eye;
   pending(p, now); if(now >= QUIET.bodyAt){ QUIET.bodyAt = now + Q.body.every; bodies(now); }

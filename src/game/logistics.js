@@ -82,7 +82,7 @@ const POUCH = {};
 function pouchDef(c){ return POUCH[c] || (POUCH[c] = { id:'pouch_' + c, svg:'mag', color:0xd8c070, vi:L.say.pouch, ds:L.say.pouchDs, cat:'ammo', tier:0, quiet:true,
   apply(p){ const n = ammoGain(c, c === 'rocket' ? 1 : R2(L.pouch.n) * diffK()); LOGI.stats.pouch += n; floatText(n ? ammoSay(n, c) : L.say.full, n ? '#ffd86a' : '#9aa3ad', p.pos, 15); } }); }
 // loot/soldier-arms.js armsDrop: this man has fallen — his pouch, maybe (sure: always — the man a knife took never fired a round)
-export function ammoPouch(e, sure){ const p = S.player; if(!p || !e.def || !e.def.inf) return; const r = ensure(p), P = L.pouch; let c = null;
+export function ammoPouch(e, sure){ const p = S.player, P = L.pouch; if(!p || !e.def || !e.def.inf || (e.pos.x - p.pos.x) ** 2 + (e.pos.z - p.pos.z) ** 2 > P.maxD * P.maxD) return; const r = ensure(p); let c = null;
   if(e.def.rpg && 'rocket' in r && Math.random() < P.rocket) c = 'rocket'; else for(let i = 0; i < P.fits.length && !c; i++) if(P.fits[i] in r) c = P.fits[i];
   if(!c || !sure && Math.random() >= (r[c] < P.lowMags * bigMag(p, c) ? P.pLow : P.p)) return; dropPowerup(e.pos, 0, pouchDef(c)); }
 
@@ -127,7 +127,8 @@ function callDrop(p, now){ const D = L.drop, px = p.pos.x, pz = p.pos.z; let ex 
   if(bn === 1e9){ LOGI.dropAt = now + 5; return false; } if(!dirSupply(now)){ LOGI.dropAt = now + 2; return false; }
   const u = spawnGift({ x:bx, z:bz }, () => { ammoCrate(D.share); LOGI.stats.drops++; if(S.player) floatText(L.say.dropGot, '#ffd86a', S.player.pos, 18); });
   LOGI.drops.push({ x:bx, z:bz, u, t:now }); LOGI.dropAt = now + D.cd; LOGI.stats.called++;
-  const dx = bx - px, dz = bz - pz, T = L.say.drop; radio(fmt(T[(Math.random() * T.length) | 0], { d:Math.round(Math.hypot(dx, dz) / 5) * 5, b:L.say.bearings[(Math.round(Math.atan2(dx, -dz) / (Math.PI / 4)) + 8) % 8] }));   // (north is up the minimap: −z)
+  const dx = bx - px, dz = bz - pz, T = L.say.drop, o = { d:Math.round(Math.hypot(dx, dz) / 5) * 5, b:L.say.bearings[(Math.round(Math.atan2(dx, -dz) / (Math.PI / 4)) + 8) % 8] };   // (north is up the minimap: −z)
+  radio(fmt(T[(Math.random() * T.length) | 0], o)); floatText(fmt(L.say.dropTip, o).toUpperCase(), '#ffd86a', p.pos, 17);   // (the radio is busy in a fight: said over his head too)
   for(let i = 0, m = 0; i < enemies.length && m < D.noticeN; i++){ const e = enemies[i]; if(!e.def.inf || e.guard || e.alert >= 2 || (e.pos.x - bx) ** 2 + (e.pos.z - bz) ** 2 > D.noticeR * D.noticeR) continue; suspectEnemy(e, now, bx, bz); m++; }
   return true; }
 
