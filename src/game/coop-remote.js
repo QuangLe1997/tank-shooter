@@ -84,7 +84,7 @@ function el(id, css){ let e = document.getElementById(id); if(!e){ e = document.
 function marks(on, now){ const M = MATE, C = COOP.mate; if(typeof document === 'undefined') return;
   _tag = _tag || el('coopTag', 'text-align:center;'); _arrow = _arrow || el('coopArrow', 'text-align:center;');
   if(!on || !S.player || (S.mode !== 'playing' && S.mode !== 'countdown' && S.mode !== 'dying')){ _tag.style.display = _arrow.style.display = 'none'; if(_xray) _xray.visible = false; M.onScreen = false; return; }
-  const col = M.down ? C.downCss : C.css, W = innerWidth, Hh = innerHeight;
+  const col = M.down ? C.downCss : C.css, W = innerWidth, Hh = innerHeight; camera.updateMatrixWorld();   // (the camera moved this frame; its matrices are otherwise the last frame's — the tag would trail him in a pan)
   _v.set(M.x, M.y + (M.mounted ? C.rideTagY : M.stance === 'prone' ? C.tagY * 0.45 : C.tagY), M.z).project(camera); const front = _v.z < 1, sx = (_v.x * 0.5 + 0.5) * W, sy = (-_v.y * 0.5 + 0.5) * Hh, seen = front && sx > 8 && sx < W - 8 && sy > 8 && sy < Hh - 8; M.onScreen = seen;
   if(seen){ const t = (M.down ? '✚ ' : '') + M.name + (M.down ? ' — NGÃ' + (M.revive > 0 ? ' ' + Math.round(M.revive * 100) + '%' : '') : ''), hp = Math.max(0, Math.min(1, M.hp / M.hpMax));
     if(_tag._t !== t || _tag._c !== col){ _tag._t = t; _tag._c = col; _tag.textContent = t; _tag.style.color = col; const b = document.createElement('div'); b.style.cssText = 'height:3px;margin:2px auto 0;width:46px;background:rgba(0,0,0,.55);'; const f = document.createElement('div'); f.style.cssText = 'height:100%;background:' + col + ';transform-origin:0 50%;'; b.appendChild(f); _tag.appendChild(b); _tag._f = f; }

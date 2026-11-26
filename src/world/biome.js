@@ -1,7 +1,7 @@
 // world/biome.js — Z103 split from world/physics.js: apply a battlefield biome (ground maps, terrain, sky, perimeter,
 // decor, arms-doctrine env) + the initial menu-backdrop dressing that runs at boot.
 import { SPACE, CAMPAIGN } from '../../config.js';
-import { modeSeed, BIOME, BIOMES, CAMPAIGN_BIOMES, FIELD_STATE, MACRO, NIGHT, PATCH_COL, S, __set_BIOME, applyAtmosphere, applyGroundPhoto, applyWeather, buildFloodlights, buildHighland, buildHorizon, buildPerimeter, buildTerrainDecor, computeEnv, decalReset, genField, genTerrain, groundMaps, groundMat, idle, paintTroops, perimeter, ring, rockSet, todFor } from '../hub.js';
+import { modeSeed, BIOME, BIOMES, CAMPAIGN_BIOMES, FIELD_STATE, MACRO, NIGHT, PATCH_COL, S, __set_BIOME, applyAtmosphere, applyGroundPhoto, applyWeather, buildFloodlights, buildHighland, buildHorizon, buildPerimeter, buildTerrainDecor, computeEnv, decalReset, genField, genTerrain, groundMaps, groundMat, idle, paintTroops, perimeter, ring, rockSet, todFor, coopSeedStep } from '../hub.js';
 
 export function applyBiome(stage){
   const R = S.run || { mode:'campaign' }, custom = R.mode==='custom';                // Z107 CUSTOM battle: your map · hour · weather · space
@@ -21,7 +21,8 @@ export function applyBiome(stage){
   buildHorizon(BIOME);     // Z189 distant ranges, smoke columns, flashes on the horizon
   computeEnv();            // ARMS DOCTRINE battlefield conditions (night / heat / frost / urban / open)
   if(!custom){ const nb=BIOMES[Math.min(stage, CAMPAIGN_BIOMES-1)]; if(nb!==BIOME && typeof idle==='function') idle(()=>{ groundMaps(nb); rockSet(nb.name); }); }   // prepare the next stage's battlefield while you fight
-  modeSeed(3); buildTerrainDecor(BIOME);
+  modeSeed(3); coopSeedStep(1);   // COOP 4 (the scatter on its own dice in a co-op battle; nothing otherwise)
+  buildTerrainDecor(BIOME);
   paintTroops();   // Z179 both sides' uniforms re-dyed to stand out from this ground
 }
 performance.mark('boot:ground');

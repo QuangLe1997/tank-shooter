@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BALANCE, RAMP, ROSTER, TROOPS, LOOT } from '../../config.js';
-import { AIR_SCALE, reviveSoldierMesh, ENEMY_DEFS, GLOW, S, WAVE, addLootBeacon, barWanted, buildGunship, buildHind, buildHip, cMod, camera, diffHpMul, heightAt, heliRoll, infMesh, loopHpMul, makeSoldierBar, scene, stanceBarK, tip, entryCheck } from '../hub.js';
+import { AIR_SCALE, reviveSoldierMesh, ENEMY_DEFS, GLOW, S, WAVE, addLootBeacon, barWanted, buildGunship, buildHind, buildHip, cMod, camera, diffHpMul, heightAt, heliRoll, infMesh, loopHpMul, makeSoldierBar, scene, stanceBarK, tip, entryCheck, CO, netRand } from '../hub.js';
 
 export const enemies=[]; export const enemyPool={};
 // floating HP bar over each enemy tank (pooled; reuses the soldier billboard-bar mechanism)
@@ -20,7 +20,8 @@ export function getEnemyMesh(type){
   enemyPool[type] = enemyPool[type]||[];
   let m = enemyPool[type].pop();
   const _d=ENEMY_DEFS[type];
-  if(!m){ if(_d.inf) m=infMesh(type); else if(_d.air) m=_d.bombHeli ? buildHind() : _d.troopHeli ? buildHip() : buildGunship(_d.pal); }
+  if(!m){ const dice = CO.live ? Math.random : null; if(dice) Math.random = netRand;   // COOP 4 in a co-op battle a NEW mesh's own variations (his build, his tint) are not drawn from the battlefield's dice: the two pages' pools hold different numbers of men, and a garrison placed while the field is built must cost the same draws on both
+    try{ if(_d.inf) m=infMesh(type); else if(_d.air) m=_d.bombHeli ? buildHind() : _d.troopHeli ? buildHip() : buildGunship(_d.pal); }finally{ if(dice) Math.random = dice; } }
   m.scale.setScalar(_d.scale*(_d.inf?1:AIR_SCALE)); if(_d.inf){ m.rotation.set(0,0,0); reviveSoldierMesh(m); const u=m.userData; u.pose=null; if(u.body){ u.body.rotation.set(0,0,0); u.body.position.set(0,0,0); } if(u.arms) u.arms.rotation.x=0; if(u.up) u.up.rotation.x=0; }   // Z105 a recycled man stands up again                       // always reset (elites scaled it up)   · (an airframe at the world's vehicle scale)
   const fx=m.getObjectByName('eliteFX'); if(fx){ m.remove(fx); if(fx.material) fx.material.dispose(); }   // strip old elite glow
   m.visible=true; return m;

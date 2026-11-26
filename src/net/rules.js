@@ -1,6 +1,7 @@
 // net/rules.js — COOP 4 THE RULES BOTH PAGES MUST AGREE ON, AS PLAIN FUNCTIONS (they run in Node: tools/coop-test.mjs): the cue codes, whether two machines can
 // build the same battlefield, the seed in the address, a hit report's parameter, which of the two players an enemy regards, and going down / being stood up again
 import { COOP } from '../../config.js';
+import { NET_EV } from './protocol.js';
 
 export const NET_CUE = COOP.cue;
 // ---- the lobby: can these two pages build the same land? mine / theirs = { mobile, arena, quality }. '' = yes · 'mobile' (a phone with a desktop: the field's size
@@ -41,3 +42,33 @@ export function coopMU16(a){ return ((a & 0xffff) - 32768) / 100; }
 // ---- an explosion (EXPLOSION): x, y, z = where, a = its colour's upper 16 bits, b = the lower 8, p = its size × 100
 export function coopBlastAB(color){ const c = (color >>> 0) & 0xffffff; return [c >>> 8, c & 0xff]; }
 export function coopBlastColor(a, b){ return ((a & 0xffff) << 8) | (b & 0xff); }
+
+// ================= COOP 7 WHO MAY SAY WHAT: the host is the authority, the guest's word is checked =================
+// May an event of this kind, with these fields, be acted on by the page that RECEIVED it? recvIsHost = it came from the guest. From the guest the host takes
+// only a hit report against an enemy id and "I stand at the gate of stage b"; never a hit on a player, a death, a blast, a score, a wave, a stage won or lost,
+// down or up. From the host the guest takes every kind, with its numbers in range. Anything else is dropped (counted, never thrown).
+export function coopEventAllowed(recvIsHost, type, a, b, p){ const C = NET_CUE, T = COOP.trust, first = COOP.ids.firstEntity, G = COOP.ids.guest, stage = v => v >= 1 && v <= T.stageMax;
+  if(recvIsHost){ if(type === NET_EV.HIT) return a === G && b >= first; if(type === NET_EV.CUE) return p === C.GATE && a === G && stage(b); return false; }
+  if(type === NET_EV.HIT) return b === G && a !== G; if(type === NET_EV.DEATH) return a >= first; if(type === NET_EV.EXPLOSION) return p >= 1; if(type === NET_EV.GRENADE) return p >= 1 && p <= T.nadeMs;
+  if(type === NET_EV.MARK) return a === 0 || a === 1; if(type === NET_EV.RADIO || type === NET_EV.SHOT) return true;
+  if(type === NET_EV.CUE){ if(p === C.GATE || p === C.GO) return stage(b); if(p === C.WON) return stage(a); return p === C.LOST || p === C.SCORE || p === C.WAVE || p === C.PHASE || p === C.UP || p === C.DOWN; }
+  return false; }
+// ---- the host's judgment of a guest's hit report. TR = makeCoopTrust() (the rate buckets, the weapons his state named, counters).
+//   q = { now (s), dmg, heavy, weapon (the index the report names), enemyAlive, dist (m: where he last said he was → the enemy), gunDmg (one round of that
+//   weapon in the HOST's own table), gunRange (m, the host's own), gunHeavy (that weapon fires heavy rounds), guestDown } → out { ok, dmg, heavy, why }:
+//   ok false = dropped (why: 'down' 'no-enemy' 'no-damage' 'weapon' 'range' 'rate'); else dmg is what the host takes off — the report's, cut to the weapon's most
+export function makeCoopTrust(){ const T = COOP.trust; return { tok:T.hitsPerS, heavyTok:T.heavyBurst, at:-1, w:[-1, -1], ok:0, dropped:0, clamped:0, why:'' }; }
+export function coopTrustWeapon(TR, w){ if(TR.w[0] !== w){ TR.w[1] = TR.w[0]; TR.w[0] = w; } }   // (the last two: a report may cross a change of weapon)
+export function coopJudgeHit(TR, q, out){ const T = COOP.trust; out = out || {}; out.ok = false; out.dmg = 0; out.heavy = false; out.why = '';
+  if(TR.at >= 0){ const dt = Math.max(0, Math.min(5, q.now - TR.at)); TR.tok = Math.min(T.hitsPerS, TR.tok + dt * T.hitsPerS); TR.heavyTok = Math.min(T.heavyBurst, TR.heavyTok + dt * T.heavyPerS); } TR.at = q.now;
+  let why = ''; if(q.guestDown) why = 'down'; else if(!q.enemyAlive) why = 'no-enemy'; else if(!(q.dmg > 0) || !isFinite(q.dmg)) why = 'no-damage'; else if(q.weapon !== TR.w[0] && q.weapon !== TR.w[1]) why = 'weapon';
+  else if(!(q.dist <= Math.max(T.rangeMin, (q.gunRange || 0) * T.rangeK))) why = 'range'; else if(TR.tok < 1) why = 'rate';
+  if(why){ TR.dropped++; TR.why = out.why = why; return out; } TR.tok -= 1;
+  let heavy = !!q.heavy, cap = Math.max(T.dmgMin, (q.gunDmg || 0) * T.dmgK);
+  if(heavy && !q.gunHeavy){ if(TR.heavyTok >= 1) TR.heavyTok -= 1; else heavy = false; }   // (a grenade, the knife, a trample: a few a second, no more)
+  if(heavy) cap = Math.max(cap, T.heavyDmg); let dmg = q.dmg; if(dmg > cap){ dmg = cap; TR.clamped++; }
+  out.ok = true; out.dmg = dmg; out.heavy = heavy; TR.ok++; return out; }
+// ---- the host's own ledger of the guest's health (he is DOWN when the HOST says so). led = the ledger, rep = what his state reports, max = his most
+//   (already cut to COOP.trust.hpMax): it falls with his report at once (he may hurt himself: a fall, lava) and rises no faster than healPerS; hold = inside the
+//   syncS after the host hurt him or stood him up, when a report may still be the staler one → the ledger does not move
+export function coopLedger(led, rep, max, dt, hold){ const T = COOP.trust; rep = Math.max(0, Math.min(max, rep)); if(led < 0) return rep; if(hold) return Math.min(led, max); return rep < led ? rep : Math.min(rep, led + T.healPerS * dt, max); }

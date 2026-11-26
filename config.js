@@ -2556,7 +2556,7 @@ export const BACKDROP = { on:true, ground:14000, lead:-Math.PI / 2 + 0.42, snow:
 //   puppets: true = on the GUEST the enemy is drawn from the host's snapshots and his own enemy AI / waves / director do not run (false = each page fights its own
 //     enemy: the two only see each other) · sayMax = letters of a radio line the host passes on
 //   cue: the codes of a CUE event (p): at the gate of a stage · go · stage won (a = the next stage, b = 1 the campaign) · lost · score (a low, b high 16 bits) ·
-//     wave (a) · director's phase (a) · stood up again
+//     wave (a) · director's phase (a) · stood up again · down (the host's word to the guest)
 //   lobby: levelMax = stages the host may start at · tod / wx = the hours and weathers on offer · gateWaitS = a page waits this long at the 3-2-1 for the other
 //   mate (the other player's soldier): tagY / rideTagY = his name over his head (m; mounted) · arrowPad = px the edge arrow keeps from the screen's edge ·
 //     losEvery = s between two looks whether something hides him (losStep m between samples of the ground, losClear m of earth over the line = hidden) ·
@@ -2569,6 +2569,13 @@ export const BACKDROP = { on:true, ground:14000, lead:-Math.PI / 2 + 0.42, snow:
 //   puppet (the guest's drawn enemy): fireMs = a man who fired within this long is sent as firing · fireEvery = s between two drawn shots of his ·
 //     goneS = a man gone from the snapshots without a death is taken off after this long · blastPerS = explosions passed on a second at most ·
 //     nadeN = grenades in the air drawn at once · hitMax = the most one reported hit may take (a guard against a broken page)
+//   trust (COOP 7 who may say what — net/rules.js coopEventAllowed / coopJudgeHit; the HOST is the authority, a guest's word is checked): the guest may send only
+//     hit REPORTS against enemy ids and "I am at the gate"; a report is dropped when its enemy is gone, its weapon is not one of the last two his state named, he
+//     is down, the enemy is further than max(rangeMin, the gun's reach × rangeK) from where he last said he was, or he is over hitsPerS reports a second; its
+//     damage is cut to max(dmgMin, the weapon's own round × dmgK); a heavy hit from a light gun (a grenade, the knife, a trample) spends one of heavyBurst
+//     tokens (heavyPerS back a second) and takes heavyDmg at most · stageMax = the highest stage number a cue may name · nadeMs = the longest grenade flight ·
+//     hpMax = the most health the host believes a guest has, healPerS = how fast the host lets his reported health rise (it falls at once), syncS = after the host
+//     stands him up or hurts him it does not follow a staler report for this long
 export const COOP = { proto:1, snapHz:20, inputHz:30,
   interp:{ delayMs:100, inputDelayMs:70, extrapMs:120, keep:10, teleportM:6, driftMs:0.05, offsetUp:0.25 },
   quant:{ pos:100, head:256, aim:65536 },
@@ -2578,12 +2585,13 @@ export const COOP = { proto:1, snapHz:20, inputHz:30,
   session:{ tickMs:250, pingMs:1000, helloMs:3000, peerLostMs:15000 },
   ids:{ host:1, guest:2, firstEntity:16 },
   puppets:true, sayMax:160,
-  cue:{ GATE:1, GO:2, WON:3, LOST:4, SCORE:5, WAVE:6, PHASE:7, UP:8 },
+  cue:{ GATE:1, GO:2, WON:3, LOST:4, SCORE:5, WAVE:6, PHASE:7, UP:8, DOWN:9 },
   lobby:{ levelMax:5, tod:['day', 'noon', 'sunset', 'night'], wx:['clear', 'rain', 'sand', 'fog', 'snow'], gateWaitS:120 },
   mate:{ tagY:2.25, rideTagY:3.0, arrowPad:54, losEvery:0.25, losStep:3, losClear:1.2, fireEvery:0.12, tracerV:230, tracerLife:0.16, tracerN:24, hex:0x6fd0ff, css:'#6fd0ff', downCss:'#ff8a5a', hitR:0.55, rideR:1.2, xrayH:2.0, xrayW:1.05, spawnGap:3.2 },
   focus:{ every:0.7, stick:0.75 },
   down:{ r:2.6, reviveS:4, hpK:0.4, safeS:2.5, decay:0.5 },
-  puppet:{ fireMs:220, fireEvery:0.14, goneS:0.6, blastPerS:6, nadeN:8, hitMax:3000 } };
+  puppet:{ fireMs:220, fireEvery:0.14, goneS:0.6, blastPerS:6, nadeN:8, hitMax:3000 },
+  trust:{ hitsPerS:40, heavyBurst:8, heavyPerS:3, dmgK:16, dmgMin:20, heavyDmg:600, rangeK:1.6, rangeMin:60, stageMax:999, nadeMs:8000, hpMax:600, healPerS:25, syncS:1.2 } };
 // SUPPLY 1 AMMUNITION IS A SUPPLY LINE (game/logistics.js; a gun's ammunition class: data/guns.js ammoKind) — "magazines" = × the gun's own magazine; rounds, s, m, kg.
 //   start: the reserve he sets out with by class, in magazines of the gun he carries in it (× diff by the difficulty setting); a new stage and a new life bring every class
 //     back up to it · capK: a class's reserve holds at most capK × that · warn: the reserve at or under `low` magazines = ÍT ĐẠN, none = BĂNG CUỐI, none and an empty
