@@ -86,7 +86,7 @@ function lockHit(dmg){ const G=UNDER.gate; if(!G || G.opening) return; G.lockHp-
 function openGate(){ const G=UNDER.gate; G.opening=true; const now=performance.now()/1000; if(G.bar){ freeEnemyBar(G.bar); G.bar=null; }
   bigExplode({ x:G.lock.x, z:G.lock.z }, 0x9ad8ff, 1.0); for(let k=0;k<26;k++) spawnPart(G.lock.x, heightAt(G.lock.x,G.lock.z)+2.4, G.lock.z, R(-6,6), R(2,8), R(-6,6), { color:0xbfe8ff, size:0.12, life:0.6, grav:-18, drag:1 });
   G.lockMesh.rotation.z=0.5; G.screen.material=mats().black; const i=blocks.indexOf(G.lockBlk); if(i>=0) blocks.splice(i,1);
-  sfx('alarm'); showBanner('KHOÁ ĐIỆN TỬ BỊ PHÁ — CỬA HẦM ĐÃ MỞ!', '#9be04a'); radio('SCH: Cửa xuống căn cứ ngầm đã mở — lái thẳng xuống, phá kho lính và kho xe của chúng!');
+  sfx('alarm'); showBanner('KHOÁ ĐIỆN TỬ BỊ PHÁ — CỬA HẦM ĐÃ MỞ!', '#9be04a'); radio('SCH: Cửa xuống căn cứ ngầm đã mở — xuống thẳng, phá kho lính và kho xe của chúng!');
   addScore(UNDERBASE.score.lock, { x:G.lock.x, y:3, z:G.lock.z }); G.openAt=now; }
 function turretHit(T, dmg){ if(!T.alive) return; T.hp-=dmg; burst({ x:T.x, z:T.z }, 0xffe0a0, 4, 3, { y:heightAt(T.x,T.z)+2, life:0.3, size:0.2, grav:-14, drag:1.5, up:2 });
   if(T.hp<=0){ T.alive=false; T.head.rotation.x=0.7; T.head.position.y-=0.4; T.eye.material=mats().black; bigExplode({ x:T.x, z:T.z }, 0xffae5c, 0.8); spawnDebris({ x:T.x, z:T.z }, 0.8, 0x4a4a4a);

@@ -46,7 +46,7 @@ function spot(){ const p=S.player; for(let i=0;i<80;i++){ const a=Math.random()*
   return [0, -ARENA*0.25]; }
 export function spawnRelic(){ removeRelic(); const [x,z]=spot(); const g=build(); g.position.set(x, heightAt(x,z), z); scene.add(g);
   Object.assign(RELIC, { g, x, z, prog:0, alerted:false, live:true, t:0 });
-  setTimeout(()=>{ if(RELIC.live && S.mode==='playing') radio('SCH: Phát hiện THÁNH TÍCH CỔ — cột sáng vàng trên bản đồ. Giữ xe trong vòng sáng để đánh thức nó!'); }, 4500); }
+  setTimeout(()=>{ if(RELIC.live && S.mode==='playing') radio('SCH: Phát hiện THÁNH TÍCH CỔ — cột sáng vàng trên bản đồ. Đứng trong vòng sáng để đánh thức nó!'); }, 4500); }
 export function removeRelic(){ if(RELIC.g){ scene.remove(RELIC.g); RELIC.g.traverse(o=>{ if(o.geometry) o.geometry.dispose(); }); } RELIC.g=null; RELIC.live=false; relicBar(-1); }
 // stage over / new run: the powers fade with the stage
 export function clearRelicBoons(){ const p=S.player; for(const u of RELIC.undo) try{ u(p); }catch(e){} RELIC.undo.length=0; document.body.classList.remove('relic-on'); }

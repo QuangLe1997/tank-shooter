@@ -13,7 +13,7 @@
 //     The squad's first man of a role carries the cast's name (actors/squad-mates.js: storyMate, storyNamed).
 //   Text only: every line goes out with STORY.noVoice, a key audio/voice.js has no file for — the recorded voices stay with the lines they were read from.
 import { OPERATIONS, STORY } from '../../config.js';
-import { BOSS_DEFS, DIR, FT, S, bossForStage, radio, squadList } from '../hub.js';
+import { BOSS_DEFS, DIR, FT, S, banterCue, bossForStage, radio, squadList } from '../hub.js';
 
 const C = STORY, NOW = () => performance.now() / 1000, FAR = -1e9;
 const words = t => String(t || '').toLocaleLowerCase('vi').replace(/(^|[\s(.-])(\S)/g, (m, a, c) => a + c.toLocaleUpperCase('vi'));   // "BÒ THÉP" → "Bò Thép"
@@ -71,7 +71,7 @@ function kill(e, now){ const p = S.player, K = C.streak; if(!p || S.awaitingUpgr
 
 // THE ENTRY POINT. ev: 'wave' (a wave begins) · 'kill' (data: the enemy) · a pool of STORY.lines ('dir_lull', 'nade', 'mate_down', 'general' …).
 //   data: a sub-key (a general's id), or the squad's roster entry the cue is about ({ role, name }). must: say it now, whatever the radio is doing.
-export function storyCue(ev, data, must){ if(!C.on) return false; const now = NOW();
+export function storyCue(ev, data, must){ banterCue(ev, data); if(!C.on) return false; const now = NOW();   // (VOICE 2 the squad, the enemy and the soldier say their word: audio/banter.js)
   if(ev === 'wave' || ev === 'kill'){ if(S.mode === 'playing'){ if(ev === 'wave') beats(now); else kill(data, now); } return true; }
   const key = poolKey(ev, data); if(!key) return false; if(S.mode !== 'playing') return true;
   const L = C.lines[key], now0 = must || L.p >= 4;

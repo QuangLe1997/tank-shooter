@@ -42,7 +42,7 @@ function captureDepot(d){ d.state='ours'; d.ring.visible=false;
   unwave(d.flag); d.g.remove(d.flag); const fl=makeFlag(rallyFlagTex(),1.7,1.1,1); fl.position.set(d.flagPos[0], d.flagPos[1]+5.4, d.flagPos[2]); d.g.add(fl); d.flag=fl;   // our colours go up
   const R=Math.round; addScore(R(DEPOT.score*loopRewardMul()), new THREE.Vector3(d.x,5,d.z));
   floatText('ĐÃ CHIẾM KHO VŨ KHÍ', '#9be04a', new THREE.Vector3(d.x,6,d.z), 24); sfx('levelup');
-  radio('Tổ bộ binh: Kho vũ khí đã về tay ta — anh em nhận súng chống tăng!'); dropPowerup({x:d.x,z:d.z}, 1, GUN_DROP_DEF); dropPowerup({x:d.x,z:d.z}, 1); }   // a new gun + supplies
+  radio('Tổ bộ binh: Kho vũ khí đã về tay ta — anh em nhận súng mới!'); dropPowerup({x:d.x,z:d.z}, 1, GUN_DROP_DEF); dropPowerup({x:d.x,z:d.z}, 1); }   // a new gun + supplies
 export function updateDepots(dt, now){ const p=S.player; if(!p) return;
   for(const d of DEPOTS){
     if(d.state==='held'){ if(Math.hypot(p.pos.x-d.x, p.pos.z-d.z)<40 && now>d.seenAt){ d.seenAt=now+1e9; tip('depot'); }
@@ -53,5 +53,5 @@ export function updateDepots(dt, now){ const p=S.player; if(!p) return;
       if(f>=1) captureDepot(d); continue; }
     // ours: arm whoever walks in; crew the parked tanks one soldier at a time
     for(const a of FT.slice()){ if(Math.hypot(a.pos.x-d.x, a.pos.z-d.z) > d.q.r*0.8) continue;
-      if(d.kind==='arms' && !a.at){ armAlly(a); burst({x:a.pos.x,z:a.pos.z}, 0x9be04a, 4, 3, {y:heightAt(a.pos.x,a.pos.z)+1.6, life:0.4, size:0.35, grav:-6, drag:2, up:3}); floatText('NHẬN SÚNG CHỐNG TĂNG', '#9be04a', {x:a.pos.x, y:heightAt(a.pos.x,a.pos.z)+3.2, z:a.pos.z}, 13); }
+      if(d.kind==='arms' && !a.at){ armAlly(a); burst({x:a.pos.x,z:a.pos.z}, 0x9be04a, 4, 3, {y:heightAt(a.pos.x,a.pos.z)+1.6, life:0.4, size:0.35, grav:-6, drag:2, up:3}); floatText('NHẬN SÚNG MỚI', '#9be04a', {x:a.pos.x, y:heightAt(a.pos.x,a.pos.z)+3.2, z:a.pos.z}, 13); }
  } } }

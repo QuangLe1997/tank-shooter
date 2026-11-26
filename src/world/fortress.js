@@ -448,7 +448,7 @@ function checkCleared(f, now){ if(f.cleared) return; for(const e of f.units) if(
   for(const e of (f.escort||[])) if(enemies.includes(e)) return;
   f.cleared=true; const C=S.cmd, mine=C && C.kind==='assault' && C.f===f, inside=FT.filter(a=>Math.hypot(a.pos.x-f.x, a.pos.z-f.z) < f.R+6).length;
   if(mine || inside){ S.cmd={ kind:'muster', until:now+COMMAND.musterT }; for(const a of FT){ a.thinkAt=0; a.hold=null; }
-    radio(f.name+' đã sạch bóng địch — toàn đội rút ra, tập kết về xe!'); floatText('RÚT QUÂN VỀ XE', '#9be04a', S.player.pos, 16); } }
+    radio(f.name+' đã sạch bóng địch — toàn đội rút ra, tập kết ngoài cổng!'); floatText('RÚT QUÂN, TẬP KẾT', '#9be04a', S.player.pos, 16); } }
 // ---- garrison: comes alive when you close in (or the gate is hit) — refilled from the fortress pool ----
 function spawnInside(f, type){ const a=Math.random()*Math.PI*2, r=Math.random()*((f.Rin||f.R)-4.5); let x=f.x+Math.cos(a)*r, z=f.z+Math.sin(a)*r; if(f.keepR && Math.hypot(x-f.x-f.keepX, z-f.z-f.keepZ)<f.keepR+1.5){ x=2*f.x-x; z=2*f.z-z; }   // Z145 never inside the donjon
   return spawnAt(f, type, x, z); }
@@ -539,7 +539,7 @@ function tunnelAmbush(f, now){ if(UNDER.on) return;   // Z226 not while you are 
   if(p){ for(let t=0;t<24;t++){ const a=(p.facing||0)+Math.PI+(Math.random()-0.5)*2.4, d=12+Math.random()*10, x=p.pos.x+Math.sin(a)*d, z=p.pos.z+Math.cos(a)*d;   // behind or beside the tank
       if(!inField(x, z, 3) || FORTS.some(o=>Math.hypot(o.x-x,o.z-z)<o.R+2) || blocks.some(b=>Math.hypot(b.x-x,b.z-z)<b.r+2)) continue;
       const h=makeHatch(f, x, z); f.hatches.push(h); popHatch(h); bigExplode(new THREE.Vector3(x, heightAt(x,z)+0.5, z), 0x8a7a64, 0.7); squadAt(f, x, z, nS, false); break; } }
-  showBanner('ĐỊCH CHUI LÊN TỪ ĐƯỜNG HẦM!', '#ff6a4a'); radio('SCH: Phục kích từ đường hầm dưới '+f.name+'! Quay nòng lại!'); }
+  showBanner('ĐỊCH CHUI LÊN TỪ ĐƯỜNG HẦM!', '#ff6a4a'); radio('SCH: Phục kích từ đường hầm dưới '+f.name+'! Quay lại bắn!'); }
 // HUD: one line per fortress — name · gate % / sealed / garrison stirred / ours (written only when it changes)
 let _fh='';
 export function updateFortHud(){ const el=document.getElementById('fortHud'); if(!el) return; if(!FORTS.length){ if(_fh){ _fh=''; el.classList.add('hidden'); } return; }

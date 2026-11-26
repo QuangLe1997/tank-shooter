@@ -190,22 +190,22 @@ export const RIDE_ACT = { crawl:{ v:1.3, reach:0.11, lift:0.07, kneeF:0.08, knee
   heave:{ grab:0.35, h1:[0.75, 0.42], slip:[0.35, 0.22], breath:0.4, h2:1.05, hold:0.4, hip:[0.52, 0.86], bend:[0.85, 0.22], back:[0.18, 0.06], off:[0.42, 0.3], feet:0.19,
     step:0.13, stepT:0.17, stepH:0.07, lead:0.2, shake:0.012, seat:[0.13, 0, -0.06] },
   give:{ jump:[2.4, 2.6, 0.5], run:3.4, runClip:1.1, beside:0.9, far:18, drop:0.45, up:1.1, behind:0.5, sink:0.1, bow:[0.55, 0.3], shake:0.01, show:1.6, wait:5 } };
-// Z296 what the driver and the soldier say to each other, by event (d = the driver, s = the soldier's answer) — on screen now, voices to be laid on later
+// Z296 what the driver and the soldier say to each other, by event (d = the driver, s = the soldier's answer) — on screen (THOẠI TRÊN MÀN HÌNH) and spoken: VOICE 2 files d_<event>_<n> / s_<event>_<n>, n = index + 1 (tools/voice/build.mjs)
 export const RIDE_TALK = { gap:7, reply:1.3, col:{ d:'#ffe9a8', s:'#b8e3ff' },
-  start:{ d:['Lên xe đi con, chú chở!', 'Ngồi chắc nha, mình đi!'], s:['Đi chú!', 'Chạy đi chú, em yểm trợ!'] },
-  wheelie:{ d:['Bốc đầu nè!', 'Ôm chặt vô!', 'Coi chú nè!'], s:['Trời đất ơi chú!', 'Từ từ thôi chú!'] },
+  start:{ d:['Lên xe đi con, chú chở!', 'Ngồi chắc nha, mình đi!', 'Cuốc này mười lăm nghìn nha, đạn bay thì tính phụ thu!'], s:['Đi chú!', 'Chạy đi chú, em yểm trợ!', 'Chạy đi chú, tiền xăng con bao!'] },
+  wheelie:{ d:['Bốc đầu nè!', 'Ôm chặt vô!', 'Coi chú nè!', 'Hồi trẻ chú đua xe đó nghe!'], s:['Trời đất ơi chú!', 'Từ từ thôi chú!'] },
   turn:{ d:['Ôm cua nha!', 'Nghiêng theo chú!'], s:['Rõ!'] },
   fast:{ d:['Lên số nè!', 'Vít ga luôn!'], s:['Nhanh nữa chú!'] },
-  underfire:{ d:['Cúi xuống! Đạn kìa!', 'Trời ơi nó bắn!', 'Nấp sau lưng chú!'], s:['Để em xử nó!', 'Chú cứ chạy, em lo!'] },
+  underfire:{ d:['Cúi xuống! Đạn kìa!', 'Trời ơi nó bắn!', 'Nấp sau lưng chú!', 'Trời đất ơi, cuốc mười lăm nghìn mà chạy vô lửa vầy nè!', 'Thủng lốp là con đền nghen!', 'Tụi nó bắn xe chú kìa! Xe trả góp chưa xong đó!'], s:['Để em xử nó!', 'Chú cứ chạy, em lo!'] },
   crash:{ d:['Té rồi! Té rồi!', 'Ui da!', 'Xe ngã rồi con ơi!'], s:['Chú có sao không?!', 'Em yểm trợ, chú dựng xe đi!'] },
   getup:{ d:['Không sao… còn sống!', 'Đau quá mà không chết!'], s:['Nhanh lên chú!'] },
   lift:{ d:['Dựng xe dậy cái đã!', 'Một… hai… ba… lên!'], s:['Em canh cho!'] },
   slip:{ d:['Hự… tuột tay!', 'Nặng quá trời đất ơi…', 'Ối… thêm cái nữa!'], s:['Cố lên chú!', 'Lẹ lên chú ơi!'] },   // Z331 the first heave slips back
-  surrender:{ d:['Đừng bắn! Tôi đầu hàng!', 'Tôi chỉ chạy xe ôm thôi mà!', 'Tha cho tôi, nhà còn vợ con!'], s:[] },   // Z331 the soldier is down: he gives himself up
-  remount:{ d:['Lên xe! Chạy tiếp!', 'Ngon rồi, đi thôi!', 'Lên xe! Cuốc này chú tính gấp đôi nha!'], s:['Đi!', 'Dạ… ghi sổ nha chú!'] },
+  surrender:{ d:['Đừng bắn! Tôi đầu hàng!', 'Tôi chỉ chạy xe ôm thôi mà!', 'Tha cho tôi, nhà còn vợ con!', 'Thôi xong… ai trả tiền cuốc này đây trời!'], s:[] },   // Z331 the soldier is down: he gives himself up
+  remount:{ d:['Lên xe! Chạy tiếp!', 'Ngon rồi, đi thôi!', 'Lên xe! Cuốc này chú tính gấp đôi nha!', 'Đó! Đã nói rồi, xe chú lì lắm!'], s:['Đi!', 'Dạ… ghi sổ nha chú!'] },
   // Z361 the bike dies: on the seat · the kick-start · the tyre booted · the hurt foot · the row (argue: the soldier answers the line of the same index)
   //   · giving in · the spark-plug mutter at the repair · fired up, urging the soldier on · a panicked look back under fire
-  stall:{ d:['Ơ… ơ… tắt máy rồi!', 'Thôi xong, chết máy!', 'Ủa ủa… sao vậy trời!'], s:['Gì nữa vậy chú?!', 'Chú đừng nói hết xăng nha!'] },
+  stall:{ d:['Ơ… ơ… tắt máy rồi!', 'Thôi xong, chết máy!', 'Ủa ủa… sao vậy trời!', 'Lại chết máy! Con xe này nó ghét chú!'], s:['Gì nữa vậy chú?!', 'Chú đừng nói hết xăng nha!'] },
   kickstart:{ d:['Nổ đi mà… nổ đi cưng!', 'Một cái nữa thôi… nổ!', 'Đạp muốn rụng giò mà không nổ!'], s:[] },
   kick:{ d:['Đồ xe cà tàng!', 'Mày phản tao hả!', 'Hư hoài vậy mậy!'], s:[] },
   ouch:{ d:['Á á! Đau chân!', 'Ui da… cái giò tui!', 'Ối… trật khớp rồi!'], s:['Đá chi cho đau vậy chú…', 'Xe có lỗi gì đâu chú!', 'Chú… có sao không?'] },
@@ -213,16 +213,35 @@ export const RIDE_TALK = { gap:7, reply:1.3, col:{ d:'#ffe9a8', s:'#b8e3ff' },
     s:['Tại xe chú cũ rích chứ bộ!', 'Thì bữa nay nó hư đó chú!', 'Dạ… ghi sổ quân đội đi chú!', 'Xe còn nguyên đó chú, sửa lẹ đi!', 'Câu đó chú nói lần thứ ba rồi đó!'] },
   giveup:{ d:['Thôi được rồi… để chú coi máy.', 'Đứng canh cho chú sửa đó nghe chưa!', 'Hừ… nói không lại con!'], s:['Rõ!', 'Chú lẹ lẹ nha!'] },
   fixing:{ d:['Chắc tại cái bugi…', 'Lau cái bugi là chạy liền!', 'Bình xăng con lại nghẹt rồi…'], s:['Sửa được không chú?', 'Lẹ lên chú ơi, địch tới!'] },
-  charge:{ d:['Quậy đục nước nó cho tao! Tiến lên!!', 'Xông lên con! Bắn nát tụi nó!', 'Đằng kia kìa! Bắn! Bắn!', 'Tiến lên!! Có chú đây!', 'Cho tụi nó biết tay dân xe ôm!'], s:['Rõ, chú!', 'Xông lên!!', 'Chú cứ chạy, em lo!'] },   // (fired up, the hand thrust ahead)
+  charge:{ d:['Quậy đục nước nó cho tao! Tiến lên!!', 'Xông lên con! Bắn nát tụi nó!', 'Đằng kia kìa! Bắn! Bắn!', 'Tiến lên!! Có chú đây!', 'Cho tụi nó biết tay dân xe ôm!', 'Bám chặt! Chú lách sát tụi nó, con cứ bắn!', 'Chú áp sát, con bắn chết tụi nó đi!', 'Bắn đi, đừng tiếc đạn, tiền đạn không tính vô cuốc!'], s:['Rõ, chú!', 'Xông lên!!', 'Chú cứ chạy, em lo!'] },   // (fired up, the hand thrust ahead)
   // Z363 the hammer · his break: a smoke (the lines as he pulls over, mid-drag), a pee, done, cut short by the fighting
-  bang:{ d:['Đồ quỷ! Đồ quỷ!', 'Chạy coi! Chạy coi!', 'Tao cho mày biết tay!'], s:['Từ từ chú ơi, gãy xe bây giờ!', 'Đập vậy hư thêm đó chú!'] },
+  bang:{ d:['Đồ quỷ! Đồ quỷ!', 'Chạy coi! Chạy coi!', 'Tao cho mày biết tay!', 'Đợi xíu, dộng nó mấy búa là chạy liền!'], s:['Từ từ chú ơi, gãy xe bây giờ!', 'Đập vậy hư thêm đó chú!'] },
   smoke:{ d:['Mệt quá… cho chú làm điếu thuốc cái đã!', 'Nghỉ chút con, chú run tay quá rồi!', 'Hút điếu thuốc cho tỉnh cái đầu…'], s:['Chú ơi đang đánh nhau mà!', 'Hút lẹ đi chú!', 'Trời đất, giờ này mà hút thuốc!'] },
-  puff:{ d:['Phù… sướng…', 'Đời xe ôm, có điếu thuốc là vui rồi…', 'Hút xong điếu này chú chở con tới chân trời luôn!'], s:[] },
+  puff:{ d:['Phù… sướng…', 'Đời xe ôm, có điếu thuốc là vui rồi…', 'Hút xong điếu này chú chở con tới chân trời luôn!', 'Con hút không? À thôi, lính đang trực.'], s:[] },
   pee:{ d:['Chờ chú xíu… mắc quá rồi!', 'Chú đi giải quyết nỗi buồn cái!', 'Nín không nổi nữa con ơi!'], s:['Trời đất, ngay lúc này hả chú?!', 'Lẹ lẹ nha chú!', 'Chú ra xa xa chút!'] },
-  peeing:{ d:['Aaa… nhẹ cả người…', 'Phù… sống lại rồi…'], s:[] },
+  peeing:{ d:['Aaa… nhẹ cả người…', 'Phù… sống lại rồi…', 'Đừng có ngó nghen!'], s:[] },
   rested:{ d:['Rồi, đi tiếp! Lên xe con!', 'Tỉnh rồi! Đi thôi!'], s:['Lẹ lên chú!', 'Đi!'] },
-  cut:{ d:['Ối! Tụi nó tới! Về xe, về xe!', 'Chưa kịp xong nữa trời ơi!'], s:['Lẹ lên chú!'] },
+  cut:{ d:['Ối! Tụi nó tới! Về xe, về xe!', 'Chưa kịp xong nữa trời ơi!', 'Trời ơi, cho người ta tè cũng không yên!'], s:['Lẹ lên chú!'] },
   behind:{ d:['Phía sau! Nó đuổi sau lưng kìa!', 'Má ơi, còn nữa kìa!', 'Chết rồi chết rồi!'], s:['Chú nhìn đường dùm em!', 'Em thấy rồi, chú cứ chạy!'] } };
+// VOICE 2 THE FUN TALK (audio/banter.js; the lines and who reads them: tools/voice/lines.json → src/data/voice-lines.js): the driver, the soldier, the squad and the
+//   enemy SPEAK — RIDE_TALK's lines and the extra events below — one speaker at a time, under the commander's radio (prio: a higher speaker cuts a lower one, an equal
+//   or lower one is dropped; a soldier's answer waits for the line it answers, hold s at most). gap: s between two lines of a group ([min, max] = a fresh draw each
+//   time; scene: the driver's own acts — the rant, the break, the spill — only need sceneGap s after the last line ended); budget: at most n chatter lines in win s
+//   (the acts and the danger calls are not counted); a group's lines are cycled (none again until all were said). tick: s between two looks at the game (reload,
+//   grenades, hits, the ride, the quiet counters). streak: n kills inside win s → the commander's streak call (a helicopter counts air). kill: the chance he calls
+//   his own kill · hurt: a hit of dmg or more → a gasp (the commander's low-health call wins under 30 %) · ammoCmd: the chance a dry magazine gets the commander's
+//   joke instead of the soldier's shout · knifeCmd: from the nth silent blade kill in a row the commander may say "gọn gàng" (p) · nadeR: an enemy grenade within
+//   this many m → the squad's warning · brake: H.stop.k over this = a hard stop · ride: s on the seat before the night / rain line · near: the "xe ôm" shout of the
+//   enemy at first contact on the bike, cd s apart · pos: the driver off his bike / an enemy is heard from where he is (full within ref m, then × ref / d, never under
+//   min; farther than max m: not said) · gain: by group · sub: the subtitle (s on screen after the line, colour by speaker). PROFILE.banter === false (Cài đặt →
+//   Âm thanh → Thoại vui) mutes all of it; the danger calls stay.
+export const VOICE_CHAT = { on:true, tick:0.25, hold:3, sceneGap:0.6,
+  prio:{ cmd:4, drv:3, sol:3, mate:2, foe:1 },
+  gap:{ drv:[8, 12], sol:[5, 8], mate:[10, 16], foe:[9, 14], cmd:[25, 40] }, budget:{ n:6, win:60 },
+  scene:['crash', 'getup', 'lift', 'slip', 'surrender', 'remount', 'stall', 'kickstart', 'kick', 'ouch', 'argue', 'giveup', 'fixing', 'bang', 'smoke', 'puff', 'pee', 'peeing', 'rested', 'cut', 'call', 'drop', 'pickup', 'win'],
+  streak:{ n:4, win:7, air:3 }, kill:{ p:0.3 }, hurt:{ dmg:9 }, ammoCmd:0.35, knifeCmd:{ n:2, p:0.5 }, nadeR:22, brake:0.55, ride:8, near:{ cd:90 },
+  pos:{ ref:6, min:0.3, max:45 }, gain:{ cmd:0.95, drv:0.95, sol:0.85, mate:0.85, foe:0.8 },
+  sub:{ t:1.2, who:{ c:['SCH', '#9fd0ff'], v:['TƯỚNG ĐỊCH', '#ff8a6a'], f:['TƯỚNG GIỮ THÀNH', '#ff8a6a'], d:['BÁC TÀI', '#ffe9a8'], s:['BẠN', '#b8e3ff'], m:['ĐỒNG ĐỘI', '#cfe6a8'], e:['LÍNH ĐỊCH', '#ffb0a0'] } } };
 // Z361 THE BIKE DIES UNDER HIM (actors/driver-rant.js; s, m, rad). stall, on the seat: the throttle wrung in vain (wring s, twist rad at twistF rad/s),
 //   the bike let roll to a stop (below still m/s, or roll s more at most), then n kicks on the kick-start, kick s each (the foot on the pad until at[0]
 //   of it, stamped down by at[1], the lever let back up), the pad up and down [up, along] m from the right peg and out from it, how far he stands up

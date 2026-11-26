@@ -1,6 +1,6 @@
 // ui/settings.js — Z103 split from ui/menus.js · XK-UI SETTINGS in tabs (Trò chơi · Hình ảnh · Âm thanh · Điều khiển · Tay cầm · Camera · Tài khoản): one row per option, a plain hint under its name, Mặc định resets the open tab, Xong goes back to home or to the pause menu.
 import { PAD_CFG, CLOUD_CFG, CAM_TUNE, SHAKE, SETTINGS_DEF } from '../../config.js';
-import { CLOUDSAVE, MOBILE, PAD, PROFILE, S, afxOn, audio, camParams, controlScheme, hide, linkGoogle, onCloud, openPadWizard, padCfg, padDiagram, padMapFor, padRumble, padTest, refreshStartUI, resetPadMap, saveProfile, sayVoice, setMusicOn, setMuted, setQuality, sfx, show, syncNow, tapBtn, tapEl, toggleFullscreen, isFs, hudOn, setHud, applyHud, askConfirm, openKeys, openNick, escapeHtml, refreshBestLine, __set_BEST } from '../hub.js';
+import { banterPreview, CLOUDSAVE, MOBILE, PAD, PROFILE, S, afxOn, audio, camParams, controlScheme, hide, linkGoogle, onCloud, openPadWizard, padCfg, padDiagram, padMapFor, padRumble, padTest, refreshStartUI, resetPadMap, saveProfile, sayVoice, setMusicOn, setMuted, setQuality, sfx, show, syncNow, tapBtn, tapEl, toggleFullscreen, isFs, hudOn, setHud, applyHud, askConfirm, openKeys, openNick, escapeHtml, refreshBestLine, __set_BEST } from '../hub.js';
 
 export const SET = { tab:'game', from:'start' };
 export const SET_TABS = ['game', 'video', 'audio', 'ctrl', 'pad', 'cam', 'account'];
@@ -28,6 +28,7 @@ export function buildSettings(){
   { const So=box('setSound'); if(So){ So.appendChild(_segChip('Tắt', !PROFILE.sound, ()=>_setSnd(false))); for(const [k,t] of [['low','Nhỏ'],['mid','Vừa'],['high','Lớn']]) So.appendChild(_segChip(t, PROFILE.sound && (PROFILE.sfxVol||'mid')===k, ()=>_setSnd(true,k))); } }   // Z151 effects level: Tắt / Nhỏ / Vừa / Lớn
   onOff('setMusic', PROFILE.music, on=>_setMus(on));
   onOff('setVoice', PROFILE.voice!==false, on=>{ PROFILE.voice=on; saveProfile(); buildSettings(); if(on) sayVoice('open', true); else sfx('click'); });   // Z161 radio voices
+  onOff('setBanter', PROFILE.banter!==false, on=>{ PROFILE.banter=on; saveProfile(); buildSettings(); if(on) banterPreview(); else sfx('click'); });   // VOICE 2 the fun talk (the danger calls stay)
   onOff('setAmb', PROFILE.ambience!==false, on=>{ PROFILE.ambience=on; saveProfile(); redo(); });   // XK-UI birds, wind, sea (the audio reads PROFILE.ambience; unset = on)
   onOff('setRealAudio', afxOn(), on=>{ PROFILE.realAudio=on; saveProfile(); redo(); });   // AUDIO 3 the whole battle sound layer (audio/afx.js afxOn: unset = on; off = the sound as it was before it; with ?oldaudio it stays off)
   onOff('setTinnitus', PROFILE.tinnitus!==false, on=>{ PROFILE.tinnitus=on; saveProfile(); redo(); });   // AUDIO 3 the deafened moment after a close blast (audio/afx-mix.js; unset = on)
@@ -69,7 +70,7 @@ export function setTab(t){ SET.tab = SET_TABS.includes(t) ? t : 'game';
 export function resetTab(){ const D=SETTINGS_DEF, t=SET.tab;
   if(t==='game'){ PROFILE.difficulty=D.difficulty; PROFILE.hud=null; PROFILE.gore=true; saveProfile(); applyHud(); }
   else if(t==='video'){ PROFILE.quality=D.quality; PROFILE.fps=D.fps; PROFILE.shake=SHAKE.def; saveProfile(); setQuality(D.quality); }
-  else if(t==='audio'){ PROFILE.sound=true; PROFILE.sfxVol=D.sfxVol; PROFILE.music=true; PROFILE.voice=true; PROFILE.ambience=true; PROFILE.realAudio=true; PROFILE.tinnitus=true; saveProfile(); audio(); setMuted(false); setMusicOn(true); }
+  else if(t==='audio'){ PROFILE.sound=true; PROFILE.sfxVol=D.sfxVol; PROFILE.music=true; PROFILE.voice=true; PROFILE.banter=true; PROFILE.ambience=true; PROFILE.realAudio=true; PROFILE.tinnitus=true; saveProfile(); audio(); setMuted(false); setMusicOn(true); }
   else if(t==='ctrl'){ PROFILE.ctrl=D.ctrl; padCfg().phone=PAD_CFG.def.phone; saveProfile(); }
   else if(t==='pad'){ const C=padCfg(); for(const k in PAD_CFG.def) C[k]=PAD_CFG.def[k]; saveProfile(); }
   else if(t==='cam'){ PROFILE.camStyle=D.camStyle; PROFILE.camTune=null; saveProfile(); }

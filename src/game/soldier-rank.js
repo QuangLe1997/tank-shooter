@@ -31,7 +31,7 @@ function rankUp(){ const p = S.player, top = R.rank >= T().ranks.length - 1, U =
   giftDrop(nm); }
 // what a rank brings by itself, over the radio
 function milestone(r){ const m = T().milestone[r]; if(!m) return; const nm = rankName(r);
-  if(m === 'at' || m === 'mg'){ if(squadGrow(m === 'at' ? 'at' : 'mg')) radio('SCH: Chúc mừng ' + nm.toLowerCase() + '! Bổ sung cho tổ anh một ' + (m === 'at' ? 'lính B40 chống tăng.' : 'xạ thủ súng máy.')); }
+  if(m === 'at' || m === 'mg'){ if(squadGrow(m === 'at' ? 'at' : 'mg')) radio('SCH: Chúc mừng ' + nm.toLowerCase() + '! Bổ sung cho tổ anh một ' + (m === 'at' ? 'lính B40.' : 'xạ thủ súng máy.')); }
   else if(m === 'supply'){ supplyDrop(); radio('SCH: ' + nm + ' — bộ chỉ huy thả dù tiếp tế cạnh anh: súng mới và cứu thương.'); }
   else if(m === 'para'){ callPara(); radio('SCH: ' + nm + ' — trực thăng đang thả một tiểu đội lính dù xuống cạnh anh!'); }
   else if(m === 'barrage'){ callStrike(); setTimeout(callStrike, 1600); radio('SCH: ' + nm + '! Pháo kích toàn tuyến theo toạ độ của anh — cúi đầu xuống!'); } }

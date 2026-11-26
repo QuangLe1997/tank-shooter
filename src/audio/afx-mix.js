@@ -59,7 +59,7 @@ export function updateAfxMix(dt, now){ if(!AFXX.wired) return; const D = A.duck,
   if(play && p && now >= AFXX.barkAt){ AFXX.barkAt = now + A.barks.tick; barks(p); }
   if(now < AFXX.at) return; AFXX.at = now + M.tick; const t = actx.currentTime, U = AFXX.mus;
   if(play && DIR.on) afxMusic(DIR.phase, DIR.P, DIR.phase === 'finale' && DIR.fin > 0, duelOn(), M, U); else { U.lp = M.open; U.gain = 1; }
-  const wT = afxDuckWorld(!!VOICE.playing, 0, D), mT = U.gain * afxDuckMusic(AFXX.heat, false, D) * (1 - D.blast * AFXX.blast);
+  const wT = afxDuckWorld(!!(VOICE.playing || VOICE.talk), 0, D), mT = U.gain * afxDuckMusic(AFXX.heat, false, D) * (1 - D.blast * AFXX.blast);
   try{ if(Math.abs(wT - AFXX.wT) > 0.01){ AFXX.wT = wT; AFXX.world.gain.setTargetAtTime(wT, t, D.glide); }
     if(Math.abs(mT - AFXX.mT) > 0.01){ AFXX.mT = mT; AFXX.mDuck.gain.setTargetAtTime(mT, t, mT < AFXX.mDuck.gain.value ? D.glide : D.back); }
     if(U.lp !== AFXX.lT){ AFXX.lT = U.lp; AFXX.mLp.frequency.setTargetAtTime(U.lp, t, M.tau); } }catch(e){} }

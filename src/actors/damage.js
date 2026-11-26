@@ -12,7 +12,7 @@ export function damageEnemy(e, dmg){
 export function killEnemy(e){
   if(e.puppet && coopGuestHit(e, e.maxHp*4)) return;   // COOP 6 (a kill that is not a round's — a trample, the knife: reported as a hit that does it)
   if(e.general && nemSlip(e)) return;   // NEMESIS 1 the general may slip away instead of dying (campaign/nemesis.js): he lives, the duel sees him run
-  const i=enemies.indexOf(e); if(i<0) return; enemies.splice(i,1); if(e.nid) coopHostDeath(e);   /* COOP 6 (an id only on a co-op host) */ if(e._big && !e.def.inf){ const n=performance.now()/1000; S.hitStop=n+0.05; S.shake=Math.min(3.2,(S.shake||0)+0.6); } if(!e.def.inf) voiceKill();   // Z168 a heavy round that kills a vehicle: a beat of hit-stop
+  const i=enemies.indexOf(e); if(i<0) return; enemies.splice(i,1); if(e.nid) coopHostDeath(e);   /* COOP 6 (an id only on a co-op host) */ if(e._big && !e.def.inf){ const n=performance.now()/1000; S.hitStop=n+0.05; S.shake=Math.min(3.2,(S.shake||0)+0.6); } voiceKill(e);   // Z168 a heavy round that kills a vehicle: a beat of hit-stop
   freeEnemyBar(e.bar); e.bar=null;
   dirKill(); S.kills = (S.kills | 0) + 1;   // DIR 1 the director's clock since the last enemy fell · MODE 3 the battle's count of enemies down (campaign/mode-run.js)
   storyCue('kill', e);   // STORY 2 the first enemy down near him, a run of them: a word on the radio (campaign/story.js)
