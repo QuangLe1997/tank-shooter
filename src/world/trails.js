@@ -1,7 +1,7 @@
 // world/trails.js — Z432 TRAILS: the tracks worn between the places of a battlefield (our gates, the spawn, the forts' gates, the bases, the depots, the checkpoints, the roads off the field), routed round what stands, painted into the floor, with stones and grass along both sides
 import * as THREE from 'three';
 import { TRAILS } from '../../config.js';
-import { ARENA, BIOME, DECAL_U, DEF, DEPOTS, FENCE_GAPS, FORTS, HILLWAY, MOBILE, OBJ, ROAD_EXITS, SCENE, SUPPLY, UNDER, _R, blocks, buildPerimeter, bushes, crushables, decorGroup, fieldDepth, grass, heightAt, inField, onPaved, photoDiff, plantFlora, roadRocks, realStones, rockSet, solidShape, wetAt } from '../hub.js';
+import { diceSeeded, ARENA, BIOME, DECAL_U, DEF, DEPOTS, FENCE_GAPS, FORTS, HILLWAY, MOBILE, OBJ, ROAD_EXITS, SCENE, SUPPLY, UNDER, _R, blocks, buildPerimeter, bushes, crushables, decorGroup, fieldDepth, grass, heightAt, inField, onPaved, photoDiff, plantFlora, roadRocks, realStones, rockSet, solidShape, wetAt } from '../hub.js';
 
 // one trail = { pts:[[x, z], …] every 2 m, w (its width, m), len } · mask: a 1 m grid over the field's square, 2 = on the worn track, 1 = its verge
 export const TRAIL = { paths:[], mask:null, mn:0 };
@@ -31,7 +31,8 @@ function grid(){ const C = TRAILS, A = ARENA, c = C.cell[MOBILE ? 1 : 0], n = Ma
   const box = (s, p) => { const sn = Math.sin(s.obb.f), cs = Math.cos(s.obb.f), hl = s.obb.hl + p, hw = s.obb.hw + p, R = Math.hypot(hl, hw), [i0, i1] = span(s.x, R), [j0, j1] = span(s.z, R);   // (solid-shape.js: along (sin f, cos f) ± hl, across ± hw)
     for(let j = j0; j <= j1; j++) for(let i = i0; i <= i1; i++){ const dx = cc(i) - s.x, dz = cc(j) - s.z; if(Math.abs(dx * sn + dz * cs) < hl && Math.abs(dx * cs - dz * sn) < hw) W[j * n + i] = Infinity; } };
   const p = C.pad, seen = new Set();
-  for(const b of blocks){ if(!b || !(b.x === b.x) || b.air) continue; let s = null; try{ s = solidShape(b); }catch(e){}
+  const plan = diceSeeded();   // SYNC 1 a seeded battle's tracks go round what the layout put there, not round whichever model was drawn on it when the field was built
+  for(const b of blocks){ if(!b || !(b.x === b.x) || b.air) continue; let s = null; try{ s = solidShape(b, false, plan); }catch(e){}
     if(s && s.obb){ if(!seen.has(s)){ seen.add(s); box(s, p); } } else if(b.r > 0.2) disc(b.x, b.z, b.r + p); }
   for(const q of SCENE.pieces || []) if(!q.far && q.r > 0.3) disc(q.x, q.z, q.r * 0.8 + p);
   for(const t of crushables) if(t.kind === 'tree' && t.alive) disc(t.x, t.z, (t.r || 0.5) + 1);

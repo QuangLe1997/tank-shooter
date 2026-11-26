@@ -1,6 +1,7 @@
 // render/materials.js — procedural textures the world shares: the welded-panel albedo (panelTex), a height map → normal map (_heightToNormal),
 //   a vehicle's battlefield side-coat (sideCoat) (no-tanks: moved from tank/; the tank's tracks, wheels, blob shadow, grime and roughness maps are gone)
 import * as THREE from 'three';
+import { cosmetic } from '../hub.js';
 
 export const _SEAMH=[38,128,212], _SEAMV=[58,150,228];
 export function _makePanelTex(){                                                          // ALBEDO — worn painted armor (tints with material color)
@@ -40,7 +41,7 @@ export function _heightToNormal(hc, strength){                                  
   ox.putImageData(od,0,0); const t=new THREE.CanvasTexture(out); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=4; return t;
 }
 export let _PANEL_TEX=null;
-export const panelTex=()=>(_PANEL_TEX||(_PANEL_TEX=_makePanelTex()));
+export const panelTex=()=>(_PANEL_TEX||(_PANEL_TEX=cosmetic(_makePanelTex)));   // SYNC 1 (made once: not on the battlefield's dice)
 // Z403 SIDE COAT — whose tank it is, at a glance and at range. U (per vehicle, shared by its materials): coat = how much of the model's own colour gives way to
 //   the side's paint (the material colour) laid over the texture's light and shade (its luminance × gain, gain = 1 / the texture's mean; detail = how much of that
 //   light and shade the coat keeps, the rest is flat paint; bright = the paint's albedo × its colour, as a painted plate's), metal = how much of the

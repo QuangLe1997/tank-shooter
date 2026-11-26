@@ -16,6 +16,7 @@ export * from './net/transport.js';   // COOP 2 the line between the two players
 export * from './net/coop.js';   // COOP 2 the session and the game's hooks (asleep unless the address has ?room=)
 export * from './net/rules.js';   // COOP 4 the rules both pages agree on (cue codes, lobby clash, hit report, focus, down / up) — pure
 export * from './core/config.js';
+export * from './core/dice.js';   // SYNC 1 two dice: a seeded battle's layout is the seed's value only (before any module that makes a mesh at load)
 export * from './ui/icons.js';
 export * from './ui/gunart.js';   // Z150 one studio photo per gun, used on every screen
 export * from './core/state.js';

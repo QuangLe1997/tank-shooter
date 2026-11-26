@@ -10,7 +10,7 @@
 //   · drive back up the ramp to surface at the gate
 import * as THREE from 'three';
 import { SCENERY, UNDERBASE } from '../../config.js';
-import { ARENA, BIOME, FT, HZN, MOBILE, NIGHT, S, SKY, TUN, UNDER, addScore, dressFit, dressHeadRWS, sceneDims, scenePiece, ambient, applyAtmosphere, applyWeather, bigExplode, blocks, bullets, burst, damageEnemy, detailize, enemies, enemyPool, floatText, freeEnemyBar, getEnemyBar, heightAt, hemi, homeClear, inField, inZone, radio, recycleBullet, renderer, scene, sfx, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnSquad, sun, blPulse, holoRing, playerSeen } from '../hub.js';
+import { cosmetic, ARENA, BIOME, FT, HZN, MOBILE, NIGHT, S, SKY, TUN, UNDER, addScore, dressFit, dressHeadRWS, sceneDims, scenePiece, ambient, applyAtmosphere, applyWeather, bigExplode, blocks, bullets, burst, damageEnemy, detailize, enemies, enemyPool, floatText, freeEnemyBar, getEnemyBar, heightAt, hemi, homeClear, inField, inZone, radio, recycleBullet, renderer, scene, sfx, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnSquad, sun, blPulse, holoRing, playerSeen } from '../hub.js';
 
 const R=(a,b)=>a+Math.random()*(b-a), TAU=Math.PI*2;
 const _V=new THREE.Vector3();
@@ -24,7 +24,8 @@ function floorTex(){ const c=document.createElement('canvas'); c.width=c.height=
   x.strokeStyle='rgba(30,30,30,0.55)'; x.lineWidth=2; for(let i=0;i<=512;i+=128){ x.beginPath(); x.moveTo(i,0); x.lineTo(i,512); x.stroke(); x.beginPath(); x.moveTo(0,i); x.lineTo(512,i); x.stroke(); }   // poured slabs
   for(let i=0;i<14;i++){ const px=Math.random()*512, py=Math.random()*512, r=20+Math.random()*60, g=x.createRadialGradient(px,py,0,px,py,r); g.addColorStop(0,'rgba(20,18,16,0.35)'); g.addColorStop(1,'rgba(0,0,0,0)'); x.fillStyle=g; x.fillRect(px-r,py-r,r*2,r*2); }   // oil stains
   const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(10,8); t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=4; return t; }
-function mats(){ if(_M) return _M;
+function mats(){ return _M || cosmetic(mats0); }   // SYNC 1 (made once and kept: not on the battlefield's dice — core/dice.js)
+function mats0(){
   _M={ conc:detailize(new THREE.MeshStandardMaterial({ color:0x8a8780, roughness:0.9 }), { scale:0.3, bump:0.05, alb:0.3, foot:2, streak:0.35 }), dark:new THREE.MeshStandardMaterial({ color:0x3a3c3e, roughness:0.6, metalness:0.6 }),
     steel:new THREE.MeshStandardMaterial({ color:0x5a5e60, roughness:0.45, metalness:0.75 }), hazard:new THREE.MeshStandardMaterial({ map:hazardTex(), roughness:0.6, metalness:0.3 }),
     black:new THREE.MeshBasicMaterial({ color:0x000000 }), red:new THREE.MeshStandardMaterial({ color:0x300000, emissive:0xff2a14, emissiveIntensity:3 }),

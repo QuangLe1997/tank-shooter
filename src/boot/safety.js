@@ -1,8 +1,9 @@
 /* Z98 classic (non-module) boot script — runs synchronously before first paint. */
   /* TEST 1 ?seed=N — a battle that can be played again: Math.random becomes a seeded generator (mulberry32) before any module runs, and every
      battlefield starts from the same state (game/flow.js startGame calls __reseed), so the land, the forts and the first wave come out the same */
-  (function(){ var m=/[?&]seed=(\d+)/.exec(location.search); if(!m) return; var s0=(+m[1])>>>0||1, a=s0; window.__seed=s0;
-    Math.random=function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; };
+  (function(){ var m=/[?&]seed=(\d+)/.exec(location.search); if(!m) return; var s0=(+m[1])>>>0||1, a=s0, n=0; window.__seed=s0; window.__rand0=Math.random;   /* SYNC 1 the page's own generator, kept for what is not layout (core/dice.js) */
+    Math.random=function(){ n++; a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; };
+    Math.random.back=function(k){ n-=k; a=a-Math.imul(k,0x6D2B79F5)|0; }; Math.random.at=function(){ return n; };   /* SYNC 1 it steps back: three.js's uuid draws are handed back */
     window.__reseed=function(k){ a=(s0^Math.imul((k|0)+1,0x9E3779B1))>>>0; }; })();
   /* safety net: if the ES module never boots (CDN blocked / very old browser) say so instead of spinning forever */
   setTimeout(function(){ var b=document.getElementById('boot'), m=document.getElementById('bootMsg');

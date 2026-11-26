@@ -2,14 +2,15 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RIVERS } from '../../config.js';
-import { landform, ARENA, BIOME, MOBILE, RIVER, _R, arena, bedAt, fieldPath, heightAt, propTex, rockSet, scene, holoRing } from '../hub.js';
+import { cosmetic, landform, ARENA, BIOME, MOBILE, RIVER, _R, arena, bedAt, fieldPath, heightAt, propTex, rockSet, scene, holoRing } from '../hub.js';
 
 // ---- perimeter: concrete jersey barriers (instanced) topped with concertina razor wire on steel pickets ----
 export const perimeter = new THREE.Group(); arena.add(perimeter);
 // Z432 where a trail runs out of the field the fence opens for it (world/trails.js fills it, then builds the fence again): { x, z, r, pts: the track beyond }
 export const FENCE_GAPS = [];
 const gapAt = (x, z, m) => FENCE_GAPS.some(g => (g.x - x) ** 2 + (g.z - z) ** 2 < (g.r + m) ** 2 || g.pts.some(p => (p[0] - x) ** 2 + (p[1] - z) ** 2 < (g.r + m) ** 2));
-export function buildPerimeter(b, withHighland=true){
+export function buildPerimeter(b, withHighland=true){ cosmetic(perimeter0, b, withHighland); }   // SYNC 1 the fence's jitter and the rocks beyond it are dressing — and how many are drawn depends on the LAST field's fence gaps: not on the battlefield's dice
+function perimeter0(b, withHighland){
   for(let i=perimeter.children.length-1;i>=0;i--){ const c=perimeter.children[i]; perimeter.remove(c); if(c.geometry) c.geometry.dispose(); }
   const prof=new THREE.Shape(); prof.moveTo(-0.62,0); prof.lineTo(0.62,0); prof.lineTo(0.62,0.08); prof.lineTo(0.4,0.3); prof.lineTo(0.17,1.25); prof.lineTo(-0.17,1.25); prof.lineTo(-0.4,0.3); prof.lineTo(-0.62,0.08); prof.closePath();   // New-Jersey barrier profile
   const jg=new THREE.ExtrudeGeometry(prof,{depth:2.9,bevelEnabled:true,bevelThickness:0.03,bevelSize:0.03,bevelSegments:1}); jg.translate(0,0,-1.45); { const uv=jg.attributes.uv; for(let i=0;i<uv.count;i++) uv.setXY(i,uv.getX(i)*0.4,uv.getY(i)*0.4); }
@@ -62,7 +63,8 @@ export function buildPerimeter(b, withHighland=true){
 // never frustum-culled and every rock round the arena was drawn every frame (~95k triangles on a phone); now only the arcs on screen draw.
 export const HIGHLAND_ARCS = 12;
 export const highland = new THREE.Group(); arena.add(highland);
-export function buildHighland(b){ for(let i=highland.children.length-1;i>=0;i--){ const c=highland.children[i]; highland.remove(c); if(c.isInstancedMesh) c.dispose(); }
+export function buildHighland(b){ cosmetic(highland0, b); }   // SYNC 1
+function highland0(b){ for(let i=highland.children.length-1;i>=0;i--){ const c=highland.children[i]; highland.remove(c); if(c.isInstancedMesh) c.dispose(); }
   const LF=landform(b), keep=LF ? LF.rocks : 1; if(!keep) return;   // Z428 the landform is the border now (a cliff, a sea, a mountain wall): fewer boulder rows, or none
   const rs=rockSet(b?b.name:'DESERT'), P=fieldPath(MOBILE?7:4.5, -5), geo=rs.big[0], per=Math.ceil(P.length/HIGHLAND_ARCS);
   const M=new THREE.Matrix4(), Q=new THREE.Quaternion(), V=new THREE.Vector3(), Sc=new THREE.Vector3(), E=new THREE.Euler();

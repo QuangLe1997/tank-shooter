@@ -3,13 +3,13 @@ import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { REALPROP } from '../../config.js';
-import { BIOME, MOBILE, detailize, loadRealCover, stoneTriMat, trackCover, batchCover } from '../hub.js';
+import { cosmetic, BIOME, MOBILE, detailize, loadRealCover, stoneTriMat, trackCover, batchCover } from '../hub.js';
 
 // ----------------------------- BATTLEFIELD PROPS (procedural, merged geometry, cached) -----------------------------
 // rocks (displaced + fractured icosahedra, smooth normals, AO vertex colours) · sandbags · fuel drums · tyre stacks · ammo crates ·
 // concrete culvert pipes · concrete blocks · HESCO barriers · Czech hedgehogs · jersey-barrier + concertina-wire perimeter
 export const _R=(a,b)=>a+Math.random()*(b-a);
-export function _canvasTex(W, H, draw, srgb){ const c=document.createElement('canvas'); c.width=W; c.height=H||W; draw(c.getContext('2d'), W, H||W); const t=new THREE.CanvasTexture(c); if(srgb!==false) t.colorSpace=THREE.SRGBColorSpace; t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=4; return t; }
+export function _canvasTex(W, H, draw, srgb){ const c=document.createElement('canvas'); c.width=W; c.height=H||W; cosmetic(draw, c.getContext('2d'), W, H||W); const t=new THREE.CanvasTexture(c);   /* SYNC 1 a texture's speckle is not the battlefield's dice (core/dice.js) */ if(srgb!==false) t.colorSpace=THREE.SRGBColorSpace; t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=4; return t; }
 export const PROP_TEX = {};
 export function propTex(name){
   if(PROP_TEX[name]) return PROP_TEX[name];
@@ -71,7 +71,8 @@ export function _mergeColored(parts){
 export const _xf=(geo, x,y,z, rx,ry,rz, sx,sy,sz)=>{ const m=new THREE.Matrix4().compose(new THREE.Vector3(x,y,z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx||0,ry||0,rz||0)), new THREE.Vector3(sx||1,sy||1,sz||1)); geo.applyMatrix4(m); return geo; };
 // ---- rocks ----
 export function _n3(x,y,z){ return Math.sin(x*1.7+Math.sin(z*1.3+y))*0.5 + Math.sin(y*2.3+x*0.9)*0.3 + Math.sin(z*3.1+y*1.4+x*0.3)*0.2; }
-export function makeRockGeo(detail, flat, topCol, baseCol){
+export function makeRockGeo(detail, flat, topCol, baseCol){ return cosmetic(rockGeo0, detail, flat, topCol, baseCol); }   // SYNC 1 a rock's shape is made once and kept: not on the battlefield's dice
+function rockGeo0(detail, flat, topCol, baseCol){
   let g=new THREE.IcosahedronGeometry(1, detail); g.deleteAttribute('normal'); g.deleteAttribute('uv'); g=mergeVertices(g);
   const p=g.attributes.position, n=p.count, col=new Float32Array(n*3), o=[_R(0,50),_R(0,50),_R(0,50)];
   const cuts=[]; for(let k=0;k<4;k++){ const a=_R(0,6.28), e=_R(-0.3,0.9); cuts.push([Math.cos(a)*Math.cos(e), Math.sin(e), Math.sin(a)*Math.cos(e), _R(0.62,0.82)]); }   // fracture planes → flat cleaved faces
@@ -88,7 +89,8 @@ export function makeRockGeo(detail, flat, topCol, baseCol){
 }
 export const ROCK_TINT = { DESERT:[0xd6bf94,0xa8865a], RUINS:[0xa8a49c,0x7a766e], TUNDRA:[0xf4f8fc,0x6a7078], FOUNDRY:[0x5a504a,0x2e2a28], CITADEL:[0x9a8466,0x5e4c38], MEADOW:[0x7a9a4a,0x7e7c72], CITY:[0x9a9a98,0x6a6a6a], HILLS:[0x8e9082,0x686a5c], VILLAGE:[0x9a9a86,0x6e6e60], SAVANNA:[0xb08a5a,0x7a5a38], ARCTIC:[0xe8f2fa,0x8aa4b8], STEELMILL:[0x5a4a40,0x2e2622], VOLCANO:[0x34302e,0x141212], QUARRY:[0xf0ece2,0xb0a898], CAVERN:[0x9a9282,0x4a443c] };
 export const _rockCache={};
-export function rockSet(bn){ if(_rockCache[bn]) return _rockCache[bn]; const t=ROCK_TINT[bn]||ROCK_TINT.DESERT; const set={ small:[], big:[] };
+export function rockSet(bn){ return _rockCache[bn] || cosmetic(rockSet0, bn); }   // SYNC 1
+function rockSet0(bn){ const t=ROCK_TINT[bn]||ROCK_TINT.DESERT; const set={ small:[], big:[] };
   for(let i=0;i<5;i++) set.small.push(makeRockGeo(2, _R(0.5,0.85), t[0], t[1]));
   for(let i=0;i<4;i++) set.big.push(makeRockGeo(MOBILE?3:4, _R(0.55,0.8), t[0], t[1]));
   set.mat=stoneTriMat(bn==='CITY'?'cracked_concrete':'rock_face', bn);   // Z267 the city's loose stones are broken concrete, not field rock   // Z259 photographed rock face, projected three ways (was the Z145 procedural grain)
@@ -103,8 +105,8 @@ export function boxUV(g, su, sv){ const P=g.attributes.position, N=g.attributes.
 export const COVER_GEO = {};
 // Z174 real heights: a sandbag breastwork ~1.2 m (was 1.7) · Czech hedgehog ~1.6 m (was 2.0) · drums on a pallet ~1.05 m (was 1.3); crates, tyres, pipes, HESCO, T-wall stacks are already true
 export const COVER_REAL_Y = { sandbag:0.7, hedgehog:0.8, drums:0.8 };
-export function coverGeo(kind){
-  if(COVER_GEO[kind]) return COVER_GEO[kind];
+export function coverGeo(kind){ return COVER_GEO[kind] || cosmetic(coverGeo0, kind); }   // SYNC 1 a piece's shape is made on first use: not on the battlefield's dice
+function coverGeo0(kind){
   const P=[]; let g;
   if(kind==='sandbag'){ const tones=[0xc9b48a,0xb8a276,0xa8936a,0xd4c29a,0x9c8a64];                          // 5 courses, alternating bond, slight sag/jitter
     for(let L=0;L<5;L++){ const along=L%2===0, y=0.19+L*0.33;

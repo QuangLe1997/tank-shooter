@@ -1,7 +1,7 @@
 // world/decals.js — GROUND SCARS: tread marks (fade over time) + scorch/craters/impact dirt (permanent per stage) painted into a canvas draped on the field
 import * as THREE from 'three';
 import { CONTACT, TRAILS } from '../../config.js';
-import { ARENA, BIOME, DECAL_U, MOBILE, PAVED, SCENE, TRAIL, blocks, bloodSplat, inField, solidShape, trailNormal } from '../hub.js';
+import { cosmetic, ARENA, BIOME, DECAL_U, MOBILE, PAVED, SCENE, TRAIL, blocks, bloodSplat, inField, solidShape, trailNormal } from '../hub.js';
 
 // ---- GROUND SCARS: tread marks (fade over time) + scorch/craters/impact dirt (permanent per stage) painted into a canvas draped on the field ----
 export const DECAL = { W: MOBILE?512:1024, DW: MOBILE?256:512, dirtyS:false, dirtyD:false, tS:0, tD:0, fadeT:0 };
@@ -46,6 +46,8 @@ export function decalReset(b){
   DECAL.sx.clearRect(0,0,DECAL.W,DECAL.W); DECAL.dx.clearRect(0,0,DECAL.DW,DECAL.DW); DECAL.dirtyS=DECAL.dirtyD=true;
   const nm=b&&b.name; _treadCol = (nm==='TUNDRA'||nm==='ARCTIC') ? 'rgba(70,84,100,' : nm==='SAVANNA' ? 'rgba(90,60,30,' : (nm==='MEADOW'||nm==='HILLS'||nm==='VILLAGE') ? 'rgba(48,40,24,' : nm==='CITY' ? 'rgba(20,20,24,' : nm==='FOUNDRY' ? 'rgba(10,8,6,' : 'rgba(42,30,18,';
   _treadA = (nm==='TUNDRA'||nm==='ARCTIC') ? 0.26 : nm==='SAVANNA' ? 0.22 : (nm==='MEADOW'||nm==='HILLS'||nm==='VILLAGE') ? 0.24 : 0.16;
+  cosmetic(oldCraters); }   // SYNC 1 painted marks, tried against the LAST field's outline (the new one is drawn after this): not on the battlefield's dice
+function oldCraters(){
   for(let i=0;i<(MOBILE?8:14);i++){ let x=0,z=0,ok=false; for(let t=0;t<12&&!ok;t++){ x=(Math.random()*2-1)*(ARENA-6); z=(Math.random()*2-1)*(ARENA-6); ok=Math.hypot(x,z)>14 && Math.hypot(x,z-ARENA*0.55)>8 && inField(x,z,4); }   // old shell craters from earlier fighting
     if(ok) decalCrater(x,z,1.4+Math.random()*2.6, 0.6); }
 }

@@ -10,7 +10,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { OPEN_LAND, REALCITY, REALTREE, RIDE_HIT, BREAKUP } from '../../config.js';
-import { ARENA, DEBRIS_GEOS, LAND, MOBILE, S, TEX_K, ZONES, _R, _mergeColored, arena, blocks, burst, crushAt, crushables, detailize, drawStreetVehicles, floatText, floraMat, heightAt, inField, inZone, maxAniso, pickCar, sfx, spawnDebris, spawnPart, treeBroadleaf, treePalm , floorBands, pickBuilding , streetSurface , TREES, trackTrees , loadRealCity, realCityReady, cityProp, stoneMat, stoneBox, buildTraffic, trafficBlast, updateTraffic, decalAsh } from '../hub.js';
+import { cosmetic, ARENA, DEBRIS_GEOS, LAND, MOBILE, S, TEX_K, ZONES, _R, _mergeColored, arena, blocks, burst, crushAt, crushables, detailize, drawStreetVehicles, floatText, floraMat, heightAt, inField, inZone, maxAniso, pickCar, sfx, spawnDebris, spawnPart, treeBroadleaf, treePalm , floorBands, pickBuilding , streetSurface , TREES, trackTrees , loadRealCity, realCityReady, cityProp, stoneMat, stoneBox, buildTraffic, trafficBlast, updateTraffic, decalAsh } from '../hub.js';
 
 const G=46, ST=8, BV=17, MED=2.6, WALK=2.6, BWALK=3.6;     // grid pitch · street · boulevard · median · pavements
 const isBlvd=i=>((i%3)+3)%3===0, roadW=i=>isBlvd(i)?BV:ST, walkW=i=>isBlvd(i)?BWALK:WALK;
@@ -19,7 +19,7 @@ const WALLC=['#d6c48e','#cda59a','#a9bfae','#abb9c8','#e2ded4','#d4b08c','#bab3c
 // ---------- textures (canvas, cached) ----------
 const _tx={};
 function tex(key, w, h, paint){ if(_tx[key]) return _tx[key]; const c=document.createElement('canvas'), e=document.createElement('canvas'); c.width=e.width=w*TEX_K; c.height=e.height=h*TEX_K;   // Z145 painted 4× finer
-  const x=c.getContext('2d'), y=e.getContext('2d'); x.scale(TEX_K,TEX_K); y.scale(TEX_K,TEX_K); y.fillStyle='#000'; y.fillRect(0,0,w,h); paint(x, y, w, h);
+  const x=c.getContext('2d'), y=e.getContext('2d'); x.scale(TEX_K,TEX_K); y.scale(TEX_K,TEX_K); y.fillStyle='#000'; y.fillRect(0,0,w,h); cosmetic(paint, x, y, w, h);   // SYNC 1 (a texture's speckle, made once: not on the battlefield's dice)
   const t=new THREE.CanvasTexture(c), em=new THREE.CanvasTexture(e), A=maxAniso(); for(const q of [t,em]){ q.wrapS=q.wrapT=THREE.RepeatWrapping; q.colorSpace=THREE.SRGBColorSpace; q.anisotropy=A; }
   return (_tx[key]={ t, em }); }
 const lit=(y,px,py,w,h)=>{ if(Math.random()<0.35){ y.fillStyle='#ffd890'; y.fillRect(px,py,w,h); return true; } return false; };

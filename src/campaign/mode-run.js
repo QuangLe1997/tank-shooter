@@ -13,7 +13,7 @@
 //   clocks count the frames' own dt (a pause stops them); a delayed line is a frame count too (modeSay), never a timer. The campaign director's memory of deaths
 //   (PROFILE.dirEase) is parked in PROFILE.modes.hold for the run and put back — at the next page load if the tab was closed in the middle of one.
 import { DIRECTOR, DRONEWAR, LOGISTICS, SIDEMISSION } from '../../config.js';
-import { BIOME, DIFF_META, PROFILE, S, SHOTS, TOD_LABEL, biomeVi, capVi, hide, knobApply, knobRefs, launchGame, modeClockTx, quitToMenu, radio, saveProfile, sfx, show, tapBtn } from '../hub.js';
+import { fieldMark, coopSeedStep, BIOME, DIFF_META, PROFILE, S, SHOTS, TOD_LABEL, biomeVi, capVi, hide, knobApply, knobRefs, launchGame, modeClockTx, quitToMenu, radio, saveProfile, sfx, show, tapBtn } from '../hub.js';
 
 const KNOBS = { DIRECTOR, DRONEWAR, LOGISTICS, SIDEMISSION };   // the config objects a modifier's `set` may name (test.js holds DAILY.mods to this list)
 const DEFS = {};                                                // id → the mode's handlers (modeDefine)
@@ -43,7 +43,8 @@ export function modeBegin(run){ modeEnd(); const id = run && run.mode === 'custo
   MODE.H.begin && MODE.H.begin(run); }
 // a step of the battlefield's build begins (world/biome.js applyBiome, world/cover.js buildBlocks): a mode that builds from a seed starts that step's draws afresh,
 //   so a step never inherits how many draws the steps before it happened to make (a texture or a material made on first use draws too — and only on first use)
-export function modeSeed(k){ if(MODE.id && MODE.H.seed) MODE.H.seed(k); }
+//   SYNC 1 a co-op battle too (its own dice, every step: game/coop-glue.js coopSeedStep) · the step's draws and the field's hash kept when asked (core/dice.js fieldMark)
+export function modeSeed(k){ fieldMark(k, 0); if(MODE.id && MODE.H.seed) MODE.H.seed(k); else coopSeedStep(32 + k); fieldMark(k, 1); }
 // the soldier stands ready, the battlefield is built (startGame, just before the intro)
 export function modeReady(){ if(MODE.id && MODE.H.ready) MODE.H.ready(S.player); }
 // every frame of play, after the waves (game/loop.js): the first one is the fight going live

@@ -7,7 +7,7 @@
 // load, or if they fail, the procedural trees stay.
 import * as THREE from 'three';
 import { NEARDETAIL, REALTREE, TREEFALL } from '../../config.js';
-import { BIOME, FLORA, MOBILE, SUN_VIEW, WTIME, blocks, crushables, loadGLTF, NEAR_DETAIL, nearFrame, nearModel, trunkOf } from '../hub.js';
+import { DICE, diceSeeded, BIOME, FLORA, MOBILE, SUN_VIEW, WTIME, blocks, crushables, loadGLTF, NEAR_DETAIL, nearFrame, nearModel, trunkOf } from '../hub.js';
 
 const SP = {}, GEO = {}, EXTRA = new Set(), MAT = {}; let _p = null;
 const hOf = k => { const [f, i] = k.split(':'); return i == null ? REALTREE.h[k] : REALTREE.parts[f][+i]; };   // Z450 a part of a many-plant file stands at its own height
@@ -69,7 +69,8 @@ export function dressTrees(im){ const T = im.userData.tree; if(!T || T.real) ret
   if(!GEO[key]){ const g = S.geo.clone(), h = hOf(k) / T.sMid; g.scale(h, h, h); g.computeBoundingBox(); g.computeBoundingSphere(); GEO[key] = g; }
   im.geometry = ownGeo(GEO[key], im.instanceMatrix.count); im.material = S.mat; im.computeBoundingSphere(); T.real = k; T.h = hOf(k) / T.sMid; if(!k.includes(':')) NT.ims.add(im);   // (Z450 a bush has no whole near copy: its own mesh is the scan's)
   if(!S.leafy) for(const c of crushables) if(c.im === im) c.leafy = false;
-  for(const b of blocks) if(b.kind === 'trunk' && b.im === im){ const t = trunkOf(im.geometry, b.sy, TREEFALL.giantBand); if(t > 0) b.r = t * b.sh; } }   // Z404 a giant's solid trunk: the real one's girth (it was the procedural trunk's, 1.5× too thin)
+  const girth = () => { for(const b of blocks) if(b.kind === 'trunk' && b.im === im){ const t = trunkOf(im.geometry, b.sy, TREEFALL.giantBand); if(t > 0) b.r = t * b.sh; } };
+  if(DICE.building && diceSeeded()) Promise.resolve().then(girth); else girth(); }   // SYNC 1 in a seeded build the trunk keeps its drawn girth until the field stands (what is planted after it must not depend on whether the scan had loaded), then takes the real one   // Z404 a giant's solid trunk: the real one's girth (it was the procedural trunk's, 1.5× too thin)
 
 // Z395 THE NEAR TREES: the shipped trees were simplified to about 40 % of their triangles, and up close a canopy of leaf cards collapses into spiky
 //   shards. The few standing nearest the camera (NEARDETAIL.trees: n within at m) are drawn whole from the original (hd/tree_<k>.glb through

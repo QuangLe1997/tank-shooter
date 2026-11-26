@@ -1,7 +1,7 @@
 // world/ground.js — ARENA ground: procedural ground maps per biome, macro variation + patch textures (cached)
 import * as THREE from 'three';
 import { GROUND_PHOTO, RELIEF } from '../../config.js';
-import { APPLE, ARENA, GROUND_STYLE, MOBILE, _heightToNormal } from '../hub.js';
+import { cosmetic, APPLE, ARENA, GROUND_STYLE, MOBILE, _heightToNormal } from '../hub.js';
 
 // ----------------------------- ARENA -----------------------------
 // ---- procedural PBR battlefield ground: tileable fBm albedo + height→normal, per-biome surface features, macro variation (no visible tiling) ----
@@ -18,8 +18,8 @@ export function tileNoise(W, periods, gainK){                           // tilea
   for(let i=0;i<out.length;i++) out[i]/=tot; return out;
 }
 export const _gCache={};
-export function groundMaps(b){
-  if(_gCache[b.name]) return _gCache[b.name];
+export function groundMaps(b){ return _gCache[b.name] || cosmetic(groundMaps0, b); }   // SYNC 1 (made once and kept: not on the battlefield's dice — core/dice.js)
+function groundMaps0(b){
   const st=GROUND_STYLE[b.name]||GROUND_STYLE.DESERT, W=MOBILE?512:1024, N=W*W;
   const n1=tileNoise(W,[4,8,16,32,64,128,256],0.52), n2=tileNoise(W,[3,6,12],0.5), n3=tileNoise(W,[32,64,128],0.55);
   const H=new Float32Array(N);

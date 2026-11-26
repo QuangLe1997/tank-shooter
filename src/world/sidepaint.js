@@ -1,7 +1,7 @@
 // world/sidepaint.js — Z179 BATTLEFIELD-AWARE PAINT: soldiers and vehicles of both sides are recoloured for each battlefield so they stand out from its ground (tan troops on sand, olive tanks on grass used to vanish)
 import * as THREE from 'three';
 
-import { BIOME, GROUND_STYLE, SOLDIER_KIT, _R } from '../hub.js';
+import { cosmetic, BIOME, GROUND_STYLE, SOLDIER_KIT, _R } from '../hub.js';
 
 // each side keeps its identity: ours = cool greens, theirs = warm tans / reds. When the ground is the same hue, ours turn slate-teal and theirs turn crimson;
 // when the ground is the same brightness, the paint goes darker (light ground) or darker / lighter (dark ground) until it separates
@@ -32,7 +32,8 @@ const cssOf=hex=>'#'+hex.toString(16).padStart(6,'0'), hexOf=css=>parseInt(css.s
 // Z403 SIDE MARK: a vehicle's side shown on it — the real model's paint laid on as a coat (tank/materials.js sideCoat), a rim of the side's colour round its
 //   silhouette; own = our own tank (player / garage): its skin stays as it is, the rim still shows
 // the soldiers' shared atlas: camo (u 0–64 px), gear stripe (64–80), helmet stripe (80–96) → redrawn for this battlefield
-export function paintTroops(){ for(const side of ['f','e']){ const K=SOLDIER_KIT[side]; if(!K || K.real) continue;   // Z249 the Meshy kit wears its own texture
+export function paintTroops(){ cosmetic(paintTroops0); }   // SYNC 1 (the stand-in kit's camo blots: only drawn while the real kit is not in)
+function paintTroops0(){ for(const side of ['f','e']){ const K=SOLDIER_KIT[side]; if(!K || K.real) continue;   // Z249 the Meshy kit wears its own texture
  const T=SIDE_PAINT.troops[side], sh=sideShift(hexOf(T.base), side);
     const map=K.mat.map, x=map.image.getContext('2d'), c=v=>cssOf(shiftHex(hexOf(v), sh));
     x.fillStyle=c(T.base); x.fillRect(0,0,64,64); for(let i=0;i<40;i++){ x.fillStyle=c(T.blot[i%T.blot.length]); x.beginPath(); x.ellipse(_R(0,64),_R(0,64),_R(3,9),_R(2,6),_R(0,3),0,7); x.fill(); }

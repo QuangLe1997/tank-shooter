@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RIVERS } from '../../config.js';
-import { ARENA, HF, MODEL_FILES, MOBILE, RIVER, RIVER_FMAX, WET_U, WTIME, _heightToNormal, arena, depthTex, fieldDepth, loadGLTF, propTex, wadeAt } from '../hub.js';
+import { cosmetic, ARENA, HF, MODEL_FILES, MOBILE, RIVER, RIVER_FMAX, WET_U, WTIME, _heightToNormal, arena, depthTex, fieldDepth, loadGLTF, propTex, wadeAt } from '../hub.js';
 
 const smooth = (a, b, v) => { const t = Math.max(0, Math.min(1, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
 // where a polyline is at share u of its points: position, the downstream direction
@@ -86,7 +86,7 @@ const WATER_GLSL = `#include <color_fragment>
     vec3 ni = texture2D(normalMap, vWP.xz / uRp.x).xyz * 2.0 - 1.0; al = 0.97 * smoothstep(0.0, 0.02, dep); wN = normalize(vec3(ni.xy * mix(0.12, 0.5, wSnow), 1.0)); wFoam = 0.0; }
   diffuseColor.rgb = col; diffuseColor.a = al; }`;
 function riverMeshes(C){
-  if(!RIVER.mesh){ const nrm = waterNormal();
+  if(!RIVER.mesh){ const nrm = cosmetic(waterNormal);   /* SYNC 1 (made once: not on the battlefield's dice) */
     const mat = new THREE.MeshStandardMaterial({ color:0xffffff, normalMap:nrm, normalScale:new THREE.Vector2(1, 1), transparent:true, roughness:0.05, metalness:0.02, envMapIntensity:RIVERS.env, depthWrite:false });
     mat.userData.u = { uDepth:{ value:null }, uWY:{ value:RIVER.y }, uA:{ value:ARENA }, uHF:{ value:new THREE.Vector2(1 / HF.step, 1 / HF.W) }, uT:WTIME, uSh:{ value:new THREE.Color() }, uDp:{ value:new THREE.Color() },
       uFl:{ value:new THREE.Vector4(RIVER_FMAX, RIVERS.cycle, 0, 0) }, uRp:{ value:new THREE.Vector2(...RIVERS.ripple) }, uFo:{ value:new THREE.Vector4(...RIVERS.foam, 0) },

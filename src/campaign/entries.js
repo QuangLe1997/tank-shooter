@@ -7,7 +7,7 @@
 //   remembered — a base's reinforcements, a fortress's garrison waking, the relic's attackers, the general and his guards come up out of the ground, lid first.
 import * as THREE from 'three';
 import { ENTRY } from '../../config.js';
-import { ENEMY_DEFS, S, TUN, UNDER, camera, fieldDepth, fieldEdgePoint, hatchNear, hatchOpen, heightAt, inField, makeSquad, poseSoldier, spawnEnemy, spiderHole, wetAt } from '../hub.js';
+import { DICE, ENEMY_DEFS, S, TUN, UNDER, camera, fieldDepth, fieldEdgePoint, hatchNear, hatchOpen, heightAt, inField, makeSquad, poseSoldier, spawnEnemy, spiderHole, wetAt } from '../hub.js';
 
 const _p = new THREE.Vector3(), PEND = [];
 // is the point inside the camera's frame (a man's chest height; pad = a margin round the frame, in half-screens)
@@ -36,7 +36,7 @@ export function riseHere(e, wait){ const now = performance.now() / 1000 + (wait 
   e.mesh.position.set(e.pos.x, heightAt(e.pos.x, e.pos.z) - E.depth * Math.max(1, e.mesh.scale.y), e.pos.z); return e; }
 // spawnEnemy's net: a soldier raised during a battle whose caller named no way in comes up out of a hatch (the garrisons placed while a field is built, and
 //   the underground base's own men, are simply at their posts)
-export function entryCheck(e, how){ e.spawnHow = how || 'post'; if(how || !e.def.inf || S.mode !== 'playing' || UNDER.on || UNDER.x0 != null && e.pos.x > UNDER.x0) return; entryRise(e); }
+export function entryCheck(e, how){ e.spawnHow = how || 'post'; if(how || !e.def.inf || S.mode !== 'playing' || DICE.building || UNDER.on || UNDER.x0 != null && e.pos.x > UNDER.x0) return; entryRise(e); }
 // one step of the climb out (actors/infantry.js, before anything else he does): true while he is still coming up — below ground at first, hands up on the rim,
 //   no move of his own, no shot; he can be hit
 export function riseStep(e, dt, now){ const r = e.rise, E = ENTRY, k = (now - r.t0) / r.dur, u = e.mesh.userData;

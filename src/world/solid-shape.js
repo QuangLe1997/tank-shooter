@@ -18,7 +18,12 @@ const SHAPE = Symbol('shape'), FOOT = Symbol('foot');
 const fortHW = bl => { const f = bl.fort, sl = f && f.wallSl && f.wallSl[bl.piece.i], g = sl && sl[0].geometry;
   if(g){ if(!g.boundingBox) g.computeBoundingBox(); const b = g.boundingBox; if(!b.isEmpty()) return Math.min(f.wallHW || 9, Math.max(-b.min.z, b.max.z) + 0.05); }
   return (f && f.wallHW) || (FORT.wallT + 3.0) / 2; };
-export function solidShape(bl, foot){ if(!bl) return null; if(bl.cover && bl.mesh && bl.mesh.isMesh) return coverShape(bl); if(bl.obb) return bl;
+// SYNC 1 plan = the shape the LAYOUT gives a thing, whatever model is drawn on it at the moment: a seeded battle's tracks are laid round these (world/trails.js),
+//   so the same seed gives the same tracks whether the scans were in when the field was built or not. A piece of cover is its own box when the layout gave
+//   it one (a container, a wreck), else its circle; a fort wall section is the drawn wall's thickness; a watchtower's circle is not read off its model here.
+function planShape(bl){ if(bl.obb) return bl; if(bl.kind === 'fortwall' && bl.piece){ const pc = bl.piece; return { x:bl.x, z:bl.z, obb:{ f:Math.atan2(pc.ux, pc.uz), hl:Math.max(0.1, pc.pl / 2 + 0.02), hw:(FORT.wallT + 3.0) / 2 } }; }
+  if(bl.kind === 'building' && bl.bld){ const B = bl.bld; return B[SHAPE] || (B[SHAPE] = { x:B.x, z:B.z, obb:{ f:B.ry, hl:B.d / 2, hw:B.w / 2 }, bld:B }); } return null; }
+export function solidShape(bl, foot, plan){ if(!bl) return null; if(plan) return planShape(bl); if(bl.cover && bl.mesh && bl.mesh.isMesh) return coverShape(bl); if(bl.obb) return bl;
   if(bl.kind === 'fortwall' && bl.piece){ const pc = bl.piece, hw = fortHW(bl), cut = foot && (pc.cut0 || pc.cut1), K = cut ? FOOT : SHAPE, c = bl[K]; if(c && c.obb.hw === hw) return c;
     const c0 = cut ? pc.cut0 || 0 : 0, c1 = cut ? pc.cut1 || 0 : 0, sh = (c0 - c1) / 2;   // (Z378 foot: cut back from a breach, for the soldier and his ride)
     return (bl[K] = { x:bl.x + pc.ux * sh, z:bl.z + pc.uz * sh, obb:{ f:Math.atan2(pc.ux, pc.uz), hl:Math.max(0.1, (pc.pl - c0 - c1) / 2 + 0.02), hw } }); }

@@ -3,7 +3,9 @@
 //   Nothing here reads the clock, the profile or Math.random: every function is its arguments' value only.
 
 // ---- a small deterministic generator (mulberry32) and a string / number hash to seed it ----
-export function modeRng(seed){ let a = (seed >>> 0) || 1; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+// SYNC 1 it can step back: f.back(n) un-draws the last n numbers, f.at() = how many are taken (core/dice.js hands three.js's uuid draws back with it)
+export function modeRng(seed){ let a = (seed >>> 0) || 1, n = 0; const f = () => { n++; a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  f.back = k => { n -= k; a = a - Math.imul(k, 0x6D2B79F5) | 0; }; f.at = () => n; return f; }
 export function modeHash(n, salt){ let h = (Math.imul((n | 0) ^ 0x9E3779B1, 0x85EBCA6B) ^ Math.imul((salt | 0) + 0x7F4A7C15, 0xC2B2AE35)) >>> 0; h ^= h >>> 16; h = Math.imul(h, 0x45D9F3B) >>> 0; h ^= h >>> 15; return h >>> 0; }
 
 // ---- the day: one number for everybody (the calendar day in UTC+tz) and its date ----

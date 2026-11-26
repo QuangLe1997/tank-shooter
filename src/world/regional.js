@@ -2,7 +2,7 @@
 //   look of the land (adobe in the desert, ice blocks on the tundra, riveted plate at the foundry, concrete T-walls in the city, log palisades in the hills,
 //   red brick with tiled gate roofs in the Vietnamese village…) but stay military: thick walls, merlons, wire, stakes. Materials + cap / roof geometry, cached.
 import * as THREE from 'three';
-import { BIOME, TEX_K, _mergeColored, _xf, detailize, hiResMaps, photoSet } from '../hub.js';
+import { cosmetic, BIOME, TEX_K, _mergeColored, _xf, detailize, hiResMaps, photoSet } from '../hub.js';
 import { WALLSKIN } from '../../config.js';
 
 // pattern · base colour · mortar / seam colour · roughness · metalness · cap on the wall top · roof on gate towers
@@ -86,7 +86,7 @@ function grain(c, st){ const W=c.width, x=c.getContext('2d'), im=x.getImageData(
 const _lum=(h)=>{ const v=parseInt(h.slice(1),16); return ((v>>16)&255)*0.299+((v>>8)&255)*0.587+(v&255)*0.114; };
 const _mat={};
 export function wallMat(name){ const st=regionOf(name), k=(typeof name==='object' && name) ? name.key : (name||BIOME.name); if(_mat[k]) return _mat[k];
-  const M=hiResMaps(paint(st), { inv:_lum(st.seam)>_lum(st.base), rough:st.rough, nrm:st.pat==='ice'?1.6:st.pat==='plate'?2.0:3.0 });   // Z145 colour + normal + roughness
+  const M=hiResMaps(cosmetic(paint, st), { inv:_lum(st.seam)>_lum(st.base), rough:st.rough, nrm:st.pat==='ice'?1.6:st.pat==='plate'?2.0:3.0 });   // Z145 colour + normal + roughness
   const m=new THREE.MeshStandardMaterial({ map:M.map, normalMap:M.normalMap, roughnessMap:M.roughnessMap, roughness:1, metalness:st.metal, envMapIntensity:st.pat==='ice'?1.3:0.6 });
   m.userData.rough=st.rough; detailize(m, { scale:0.37, bump:st.pat==='ice'?0.012:st.pat==='plate'?0.01:0.03, alb:st.pat==='ice'?0.12:0.3, foot:1.6, streak:st.pat==='ice'?0.05:0.26 });
   skinWall(m, st, String(k).split('#')[0]);

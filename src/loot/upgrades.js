@@ -1,6 +1,6 @@
 // loot/upgrades.js — THE STAGE WON: pick 1 of 3 of the soldier's perks (game/soldier-rank.js), then the next battlefield is built and briefed
 import { OBJECTIVES } from '../../config.js';
-import { SOLDIER, gpuHeld, gpuRelease, modelEpoch, BIOME, S, STAGE_TAGS, TOD_LABEL, WAVE, applyBiome, biomeVi, buildBlocks, buildLava, buildObjective, buildTrails, buildUnderground, clearRelic, clearSoldiers, conditionsText, deploySoldiers, hide, iconEl, opFor, openBriefing, parkAtSpawn, rebuildCore, sfx, show, showBanner, updateHUD, blendWhenReady, scene, soldierStagePerks, storyEpilogue, nemEpilogue, coopActive, coopBuildField } from '../hub.js';
+import { modeSeed, SOLDIER, gpuHeld, gpuRelease, modelEpoch, BIOME, S, STAGE_TAGS, TOD_LABEL, WAVE, applyBiome, biomeVi, buildBlocks, buildLava, buildObjective, buildTrails, buildUnderground, clearRelic, clearSoldiers, conditionsText, deploySoldiers, hide, iconEl, opFor, openBriefing, parkAtSpawn, rebuildCore, sfx, show, showBanner, updateHUD, blendWhenReady, scene, soldierStagePerks, storyEpilogue, nemEpilogue, coopActive, coopBuildField } from '../hub.js';
 
 export function openUpgrade(){
   S.mode='upgrade';
@@ -42,7 +42,7 @@ export function chooseUpgrade(u){
   hide('upgrade');
   parkAtSpawn(); const held=gpuHeld(); modelEpoch();   // Z396 what the last battlefield holds on the GPU · Z180 the new battlefield is built around our spawn: whoever won the last stage inside a fort must not wake up inside the next one's walls
   if(coopActive()) coopBuildField(S.stage, true);   // COOP 4 (hook M5) a co-op battle: the next stage from the same dice on both pages, on a field with no enemy left on either (game/coop-glue.js)
-  else { applyBiome(S.stage); buildBlocks(); buildObjective(); buildLava(); buildUnderground(); buildTrails(); }   // Z187 · Z225
+  else { applyBiome(S.stage); buildBlocks(); modeSeed(16); buildObjective(); modeSeed(17); buildLava(); modeSeed(18); buildUnderground(); modeSeed(19); buildTrails(); modeSeed(20); }   // Z187 · Z225
   rebuildCore(S.stage); gpuRelease(held);   // grander monument for the new stage (preserves max HP, heals to full) · Z396 then the last battlefield's geometries and maps off the GPU
   blendWhenReady(scene);                 // Z325 the new battlefield's buildings and models graded into its colours while the briefing is up
   clearSoldiers(); deploySoldiers(SOLDIER.base);   // a fresh guard squad each stage

@@ -3,13 +3,14 @@
 //   Tanks plough through it all: trees topple, bushes / flowers / reeds flatten (decor.js crushables).
 import * as THREE from 'three';
 import { DIET, GRASS, LIGHT, OPEN_LAND, TUFT } from '../../config.js';
-import { AREA_K, ARENA, BIOME, MOBILE, RIVER, SUN_VIEW, TREES, WTIME, _R, _mergeColored, arena, blocks, clearTrees, crushables, dressTrees, heightAt, inField, inZone, loadRealTrees, wetAt } from '../hub.js';
+import { cosmetic, AREA_K, ARENA, BIOME, MOBILE, RIVER, SUN_VIEW, TREES, WTIME, _R, _mergeColored, arena, blocks, clearTrees, crushables, dressTrees, heightAt, inField, inZone, loadRealTrees, wetAt } from '../hub.js';
 
 let _mat=null;
 // Z146 LEAF ATLAS → Z202 four regions: u 0–¼ BARK (vertical fissures, lichen — trunks and limbs) · ¼–½ broadleaf clusters · ½–¾ needle / frond sprays ·
 //   ¾–1 GRASS: a clump of thin curved tapering blades (with seed heads) on transparent ground. Every card is tinted by its vertex + instance colour.
 const AREG=4;
-let _atlas=null; function leafAtlas(){ if(_atlas) return _atlas; const S=256, c=document.createElement('canvas'); c.width=S*AREG; c.height=S; const x=c.getContext('2d');
+let _atlas=null; function leafAtlas(){ return _atlas || cosmetic(leafAtlas0); }   // SYNC 1
+function leafAtlas0(){ const S=256, c=document.createElement('canvas'); c.width=S*AREG; c.height=S; const x=c.getContext('2d');
   let sd=91; const rnd=()=>((sd=(sd*16807)%2147483647)/2147483647);
   { x.fillStyle='#d8d2c8'; x.fillRect(0,0,S,S); for(let i=0;i<140;i++){ const xx=rnd()*S, w=1+rnd()*3, v=(110+rnd()*90)|0; x.strokeStyle=`rgba(${v-30},${v-36},${v-44},${0.35+rnd()*0.4})`; x.lineWidth=w; x.beginPath(); x.moveTo(xx,0);   // bark: long wandering fissures
       let yy=0, cx=xx; while(yy<S){ yy+=8+rnd()*16; cx+=(rnd()-0.5)*5; x.lineTo(cx,yy); } x.stroke(); }
@@ -52,7 +53,7 @@ export function floraMat(){ if(_mat) return _mat; _mat=new THREE.MeshStandardMat
   return _mat; }
 // Z202 every species comes in several VARIANTS (built once each, seeded differently): instances are spread across them
 const G={};
-function geo(k, f){ return G[k]||(G[k]=f()); }
+function geo(k, f){ return G[k]||(G[k]=cosmetic(f)); }   // SYNC 1 (built once and kept: not on the battlefield's dice — core/dice.js)
 function vars(k, n, f){ const a=[]; for(let v=0;v<n;v++) a.push(geo(k+'#'+v, ()=>f(v))); return a; }
 const mergeL=(P)=>leafy(P);
 // a limb that bends and tapers: a tube along a curve, its radius shrinking from r0 to r1

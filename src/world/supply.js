@@ -6,7 +6,7 @@
 //   → fewer troops in every wave.
 import * as THREE from 'three';
 import { SUPPLYB, FENCE, SCENERY, FUEL_TANK } from '../../config.js';
-import { spawnSquad, landform, fieldDepth, ARENA, BIOME, BUMPS, CAMPS, CAMP_R, COVER_K, ENEMY_DEFS, HF, MOBILE, S, _R, _mergeColored, _xf, aaGun, addScore, aoeDamage, aviationMat, bigExplode, blocks, buildTower, burst, camera, clampFieldXZ, coverSpot, crushables, decalScorch, deformCrater, diffHpMul, driveHint, dropPowerup, enemies, fireball, floatText, freeEnemyBar, getEnemyBar, heightAt, hitFlash, homeClear, inField, inZone, leaveRubble, loopHpMul, makeCoverMesh, propTex, radarTower, radarYard, radio, radome, shelterCabin, genset, dishMount, scene, sfx, shockDome, showBanner, spawnDebris, spawnEnemy, spawnPart, toppleTower, updateAAGun, updateTopple, playerSeen, ridgeRockDown, sceneDims, fuelBlast, fuelChain } from '../hub.js';
+import { cosmetic, spawnSquad, landform, fieldDepth, ARENA, BIOME, BUMPS, CAMPS, CAMP_R, COVER_K, ENEMY_DEFS, HF, MOBILE, S, _R, _mergeColored, _xf, aaGun, addScore, aoeDamage, aviationMat, bigExplode, blocks, buildTower, burst, camera, clampFieldXZ, coverSpot, crushables, decalScorch, deformCrater, diffHpMul, driveHint, dropPowerup, enemies, fireball, floatText, freeEnemyBar, getEnemyBar, heightAt, hitFlash, homeClear, inField, inZone, leaveRubble, loopHpMul, makeCoverMesh, propTex, radarTower, radarYard, radio, radome, shelterCabin, genset, dishMount, scene, sfx, shockDome, showBanner, spawnDebris, spawnEnemy, spawnPart, toppleTower, updateAAGun, updateTopple, playerSeen, ridgeRockDown, sceneDims, fuelBlast, fuelChain } from '../hub.js';
 
 export const SUPPLY = { bases:[], fuel:0, ammo:0, camp:0, radar:0 };
 // what the enemy has lost, as multipliers (1 = nothing lost yet)
@@ -19,7 +19,8 @@ export function resetSupply(){ for(const B of SUPPLY.bases){ if(B.decor) scene.r
 
 // ---------- materials / textures ----------
 let _M=null;
-function mats(){ if(_M) return _M; const V=(o)=>new THREE.MeshStandardMaterial(Object.assign({ vertexColors:true, roughness:0.85, metalness:0.1 }, o));
+function mats(){ return _M || cosmetic(mats0); }   // SYNC 1 (made once and kept: not on the battlefield's dice — core/dice.js)
+function mats0(){ const V=(o)=>new THREE.MeshStandardMaterial(Object.assign({ vertexColors:true, roughness:0.85, metalness:0.1 }, o));
   const netT=(()=>{ const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d'); x.clearRect(0,0,128,128);
     for(let i=0;i<260;i++){ x.fillStyle=['#4a5530','#5e6a3a','#6a5a3a','#3a4428'][i%4]; x.beginPath(); x.ellipse(Math.random()*128,Math.random()*128,3+Math.random()*7,2+Math.random()*4,Math.random()*3,0,7); x.fill(); }   // leaf scrim
     x.strokeStyle='#2a2a20'; x.lineWidth=1.5; for(let k=0;k<=128;k+=11){ x.beginPath(); x.moveTo(k,0); x.lineTo(k,128); x.moveTo(0,k); x.lineTo(128,k); x.stroke(); }
@@ -89,7 +90,8 @@ function garrison(B, nInf){ const st=S.stage, n=Math.round(Math.min(SUPPLYB.guar
 
 // ---------- Z195 a real compound: chain-link + barbed-wire fence (tanks flatten it), steel gate with a name board and a boom, warning signs ----------
 const SIGN_MAT={};
-function signMat(kind){ if(SIGN_MAT[kind]) return SIGN_MAT[kind]; const W=256, H=kind==='name'?72:160, c=document.createElement('canvas'); c.width=W; c.height=H; const x=c.getContext('2d');
+function signMat(kind){ return SIGN_MAT[kind] || cosmetic(signMat0, kind); }   // SYNC 1
+function signMat0(kind){ const W=256, H=kind==='name'?72:160, c=document.createElement('canvas'); c.width=W; c.height=H; const x=c.getContext('2d');
   const F=(px,w)=>(w||900)+' '+px+'px "Saira Condensed", Rajdhani, Arial, sans-serif', txt=(t,y,px,col,w)=>{ x.fillStyle=col; x.font=F(px,w); x.textAlign='center'; x.textBaseline='middle'; x.fillText(t, W/2, y); };
   const grime=()=>{ for(let i=0;i<500;i++){ x.fillStyle='rgba(60,45,30,'+(Math.random()*0.18).toFixed(2)+')'; x.fillRect(Math.random()*W,Math.random()*H,2,2); } for(let i=0;i<6;i++){ const sx=Math.random()*W; const g=x.createLinearGradient(sx,0,sx,H); g.addColorStop(0,'rgba(110,60,25,0.35)'); g.addColorStop(1,'rgba(110,60,25,0)'); x.fillStyle=g; x.fillRect(sx,0,3,H); } for(const [bx,by] of [[10,10],[W-10,10],[10,H-10],[W-10,H-10]]){ x.fillStyle='#555'; x.beginPath(); x.arc(bx,by,3.5,0,7); x.fill(); } };
   const tri=(cx,cy,r,fill)=>{ x.fillStyle='#111'; x.beginPath(); x.moveTo(cx,cy-r); x.lineTo(cx+r*0.95,cy+r*0.7); x.lineTo(cx-r*0.95,cy+r*0.7); x.closePath(); x.fill(); x.fillStyle=fill; x.beginPath(); x.moveTo(cx,cy-r+9); x.lineTo(cx+r*0.95-9,cy+r*0.7-5); x.lineTo(cx-r*0.95+9,cy+r*0.7-5); x.closePath(); x.fill(); };
@@ -113,7 +115,8 @@ function signMat(kind){ if(SIGN_MAT[kind]) return SIGN_MAT[kind]; const W=256, H
 let _sb=null; function signBack(){ return _sb||(_sb=new THREE.MeshStandardMaterial({ color:0x6a6c64, roughness:0.7, metalness:0.4, side:THREE.BackSide })); }
 // one 3 m fence bay (built once): Y-picket with an outrigger, 3 barbed strands + 2 on the outrigger, a razor concertina along the foot outside, and the chain-link panel
 let _bayG=null;
-function bayGeo(){ if(_bayG) return _bayG; const P=[], L=3;
+function bayGeo(){ return _bayG || cosmetic(bayGeo0); }   // SYNC 1
+function bayGeo0(){ const P=[], L=3;
   P.push({ geo:B3(0.09,2.5,0.09,0,1.25,0), col:0x5a4a3a }); P.push({ geo:_xf(new THREE.BoxGeometry(0.06,0.7,0.06),0,2.72,0.18,0.75,0,0), col:0x5a4a3a });   // picket + outrigger
   P.push({ geo:B3(L,0.05,0.05,L/2,2.45,0), col:0x6a6660 }); P.push({ geo:B3(L,0.05,0.05,L/2,0.12,0), col:0x6a6660 });   // top + bottom rail
   for(const [y,z] of [[2.62,0.08],[2.82,0.25],[3.0,0.42]]) P.push({ geo:_xf(new THREE.CylinderGeometry(0.012,0.012,L,3),L/2,y,z,0,0,Math.PI/2), col:0x9a9a92 });   // barbed strands on the outrigger

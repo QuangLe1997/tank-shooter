@@ -2763,3 +2763,22 @@ export const DAILY = { tz:7, keep:14, level:[2, 5], tod:['day', 'noon', 'sunset'
 export const ANIMLIB = { on:true, version:1, path:'assets/anim/', index:'index.json',
   groups:['loco', 'stance', 'air', 'combat', 'react', 'social'], preload:['loco', 'stance'],
   decode:{ hips:true, root:true, eager:false } };
+// SYNC 1 THE SAME SEED, THE SAME BATTLEFIELD — on a fresh page, on a relaunch, on both co-op pages (core/dice.js). A seeded battle (the daily challenge, a
+//   co-op room, ?seed) draws its LAYOUT from the seeded generator; what is not layout no longer does:
+//   uuid      three.js spends `Math.random` on every object's uuid (4 draws each): handed back to the seeded generator as they are spent (uuidOf: the
+//             three classes whose constructor writes one; uuidBuf: the tag three puts on an interleaved model's ArrayBuffer at its first clone).
+//             false = they shift the layout again (before / after).
+//   cosmetic  cosmetic(fn) runs on the page's own generator: what is made once and kept, a fall-back mesh, a pooled piece. false = on the seeded dice again.
+//   trace     keep every build's steps (draws + field hash per step: fieldSteps(), fieldStepsDiff(a, b)) — also ?fieldtrace, or DICE.trace = true in the
+//             console before a launch. Off: nothing is computed.
+//   waitMs    a seeded battle waits this long at most, under the loading veil, for the real cover pieces before it builds: a container's / a wreck's
+//             collider is sized off its model (world/cover.js placeLone), the drawn stand-in's box differs. 0 = no wait.
+//   steps     the builders behind each modeSeed(k) step, for the trace's report; last = the step that closes a build; from = the step at which each
+//             list is the new field's (before it, it still holds the last battle's and stays out of the step's hash).
+//   (?nofieldsync turns uuid + cosmetic off for one page.)
+export const FIELD_SYNC = { uuid:true, uuidBuf:true, cosmetic:true, trace:false, last:20, waitMs:4000, from:{ blocks:4, forts:4, towers:8, trees:13 },
+  uuidOf:['Object3D', 'BufferGeometry', 'Material', 'Texture', 'Source', 'Shape', 'Skeleton', 'AnimationClip', 'InterleavedBuffer', 'AnimationObjectGroup'],
+  steps:{ 1:'field outline + terrain (genField, genTerrain)', 2:'perimeter + horizon (buildPerimeter, buildHorizon)', 3:'terrain decor (buildTerrainDecor)', 4:'zones + forts planned, our compound (planZones, buildCoreWalls)',
+    5:'landmarks (buildLandmarks)', 6:'the enemy defence (buildDefense)', 7:'cover scatter', 8:'watchtowers, hedgehogs, rock outcrops (buildTowers)', 9:'containers + wrecks (placeLone)', 10:'ridges + brick walls (buildRidges, buildBrickWalls)',
+    11:'supply, camps, caches (buildSupply, buildCamps, placeCaches)', 12:'zones + forts built (buildZones)', 13:'scenery (buildScenery)', 14:'garrisons (garrisonSupply, garrisonDefense)', 15:'(end of buildBlocks)',
+    16:'objective (buildObjective)', 17:'lava (buildLava)', 18:'underground (buildUnderground)', 19:'trails (buildTrails)' } };
