@@ -1,6 +1,6 @@
 // actors/infantry.js — Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 import * as THREE from 'three';
-import { AWARE, BALANCE, DEATH_POP, ENV, EQUIP, FIELDCRAFT, INFANTRY, REAL, SQUAD } from '../../config.js';
+import { AWARE, BALANCE, DEATH_POP, ENV, EQUIP, FIELDCRAFT, INFANTRY, REAL, SQUAD, LOGISTICS } from '../../config.js';
 import { objMod, BIOME, ENVMOD, FT, MOBILE, S, UGRID, _cv, aiIQ, animateSoldier, atCover, burst, cMod, canThrow, clampField, clearGore, combatDive, coverSpot, dazePose, dazed, decalBlood, diffDmgMul, diffScale, dropSoldierGun, endFall, enemies, enemyPool, fortExitDir, fortWallCross, heightAt, inSmoke, infPushBlocks, kitAttach, launchEnemyMissile, loadGLTF, loopDmgMul, losBlocked, makeSoldierMesh, makeSquad, nadeFlee, nadeTarget, peekMove, poseSoldier, reviveSoldierMesh, rifleFX, ringPulse, scene, sfx, smokeSpreadK, soldierReloading, spawnBullet, spawnEnemy, spawnPart, squadMove, throwNade, tracerNext, unitsNear, wantPeek, wrapAngle, asShipped, nearShape, riverWay, wadeAt, gunFlash, awareTick, PL, hatchEntry, riseStep, dirFireK, giveUpStep, markAim, markStep, nemFleeStep, gunSound } from '../hub.js';
 
 // ===== Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
@@ -161,6 +161,7 @@ export function updateInfantry(e, dt, now, edt){
 // a tank rolling over a soldier at speed crushes him; slower contact just shoves him aside
 export function infantryDown(e){
   const m=e.mesh, gy=heightAt(e.pos.x,e.pos.z);
+  if(e._quietKill){ layOut(m, e.pos.x, e.pos.z); m.rotation.order='XYZ'; INF_DEAD.push({ e, t:0, quiet:true }); return; }   // SUPPLY 3 downed in silence (the knife, a suppressed round on a man who did not know — game/quiet.js): he drops where he stood and LIES there, to be found
   // Z402 every other death: thrown whole along the shot (a heavy round or a blast throws him far), and gone in a burst a moment after he lands
   const heavy=!!(e._big || e._blast); let ux=e._blast ? e.pos.x-e._blast.x : (e._hx||0), uz=e._blast ? e.pos.z-e._blast.z : (e._hz||0); const L=Math.hypot(ux,uz);
   if(L<0.05){ const a=Math.random()*6.283; ux=Math.cos(a); uz=Math.sin(a); } else { ux/=L; uz/=L; }
@@ -204,6 +205,8 @@ export function bloodSpurt(x, z, dx, dz, k){ k=Math.max(0.4, Math.min(2.5, k||1)
   if(Math.random()<0.6) decalBlood(x+dx*(0.6+Math.random()*0.8*k), z+dz*(0.6+Math.random()*0.8*k), 0.25+0.15*k); }
 export function updateInfDead(dt){
   for(let i=INF_DEAD.length-1;i>=0;i--){ const d=INF_DEAD[i], m=d.e.mesh; d.t+=dt;
+    if(d.quiet){ const B=LOGISTICS.quiet.body, k=Math.min(1, d.t/0.55), out=Math.max(0, d.t-(B.life-B.sink))/B.sink; m.rotation.x=k*k*(3-2*k)*Math.PI/2; m.position.y=heightAt(m.position.x, m.position.z)+0.12*k-out*0.5;   // SUPPLY 3 he folds forward onto the ground, lies, and at the end sinks away
+      if(out>=1){ poolDead(d.e); INF_DEAD.splice(i,1); } continue; }
     if(d.crushed){ if(d.t>=DEATH_POP.crush){ popBody(m, 0.6); poolDead(d.e); INF_DEAD.splice(i,1); } continue; }   // Z402 flattened, then gone
     if(stepFlung(d, m, dt)){ poolDead(d.e); INF_DEAD.splice(i,1); } }
 }

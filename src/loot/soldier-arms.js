@@ -23,7 +23,7 @@ function heavyPick(n){ const have = new Set(S.player.guns.map(g => g.id)), all =
 // killEnemy (through game/soldier-rank.js soldierKill): his weapon on the ground, maybe
 export function armsDrop(e){ if(!S.player) return; const D = TROOPER.drop;
   if(e.general){ for(const id of heavyPick(2)) dropPowerup(e.pos, 2, wpnDef(id)); dropPowerup(e.pos, 1, MEDAL); return; }
-  let id = null; ammoPouch(e, false);   // SUPPLY 2 a soldier's ammunition pouch, maybe (game/logistics.js)
+  let id = null; ammoPouch(e, e._knife === true);   // SUPPLY 2 a soldier's ammunition pouch, maybe (game/logistics.js) · SUPPLY 3 always from a man the knife took
   if(e.def.inf){ if(Math.random() < (D[e.type] ?? D.rifle)) id = e.def.rpg ? 't_rpg' : 't_ak'; }   // (Z355 a rifleman's AK-47)
   else if(!e.def.air && Math.random() < D._veh) id = trooperGunPick();
   if(id) dropPowerup(e.pos, 1, wpnDef(id)); }

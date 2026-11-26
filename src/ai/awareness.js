@@ -9,7 +9,7 @@
 //   without contact do they drop to searching it, and after keep.search more give the search up. The first shot waits a reaction delay (AWARE.react).
 //   The group of an alerted man's bursts (e.zero, 0 wide … 1 tight) closes while the player stands in his sight and opens when he runs or breaks the line.
 import { AWARE, STEALTH } from '../../config.js';
-import { CV, NIGHT, S, UGRID, aiIQ, clampFieldXZ, crushables, enemies, floatText, heightAt, playerSight, sfx, stealthSpot, tierK, unitsNear, wrapAngle } from '../hub.js';
+import { CV, NIGHT, S, UGRID, aiIQ, clampFieldXZ, crushables, enemies, floatText, heightAt, playerSight, quietDeath, sfx, stealthSpot, tierK, unitsNear, wrapAngle } from '../hub.js';
 
 const A = AWARE, R2 = a => a[0] + Math.random() * (a[1] - a[0]), mix = (a, k) => a[0] + (a[1] - a[0]) * k;
 // the player as the enemy's eyes get him this moment: r = how far off a man looking his way makes him out
@@ -78,12 +78,12 @@ export function awareFrame(dt, now){ if(now >= PL.at) playerLook(now);
     if(e.sq) for(const o of e.sq.m) if(o !== e && o.hp > 0) alertEnemy(o, now, 'shout', k.x, k.z);
     for(const o of unitsNear(UGRID.inf, e.pos.x, e.pos.z, r, _nb)){ if(o === e || !(o.hp > 0) || (o.pos.x - e.pos.x) ** 2 + (o.pos.z - e.pos.z) ** 2 > r2) continue; alertEnemy(o, now, 'shout', k.x, k.z); } } }
 // the player's own shot at (x, z): every enemy soldier in earshot is alerted and knows the spot (a man already fighting and out of sight of him: updated)
-export function awareNoise(x, z, now){ now = now || performance.now() / 1000; const H = A.hear; if(now - _noiseAt < H.gap) return; _noiseAt = now; const r2 = H.shot * H.shot;
+export function awareNoise(x, z, now, r){ now = now || performance.now() / 1000; const H = A.hear; if(now - _noiseAt < H.gap) return; _noiseAt = now; const r2 = (r || H.shot) ** 2;   // (SUPPLY 3 r: a suppressed gun's short reach — game/quiet.js)
   for(let i = 0; i < enemies.length; i++){ const e = enemies[i]; if(!e.def.inf) continue; const dx = e.pos.x - x, dz = e.pos.z - z; if(dx * dx + dz * dz > r2) continue;
     alertEnemy(e, now, 'shot', x + (Math.random() - 0.5) * H.shotErr, z + (Math.random() - 0.5) * H.shotErr); } }
 // a round has just hit this man and he lives: alerted at once, a short reaction
 export function awareHit(e){ const p = S.player; if(!p || !e.def.inf || !(e.hp > 0)) return; const er = A.hit.err; alertEnemy(e, performance.now() / 1000, 'hit', p.pos.x + (Math.random() - 0.5) * er, p.pos.z + (Math.random() - 0.5) * er); }
 // this man has just fallen: the men round him know they are under fire
-export function awareDeath(e){ const p = S.player; if(!p || !e.def.inf) return; const D = A.death, now = performance.now() / 1000, r2 = D.r * D.r;
+export function awareDeath(e){ const p = S.player; if(!p || !e.def.inf || quietDeath(e)) return;   /* SUPPLY 3 the knife, a suppressed round: only the men right beside him know (game/quiet.js) */ const D = A.death, now = performance.now() / 1000, r2 = D.r * D.r;
   for(const o of unitsNear(UGRID.inf, e.pos.x, e.pos.z, D.r, _nb)){ if(o === e || !(o.hp > 0) || (o.pos.x - e.pos.x) ** 2 + (o.pos.z - e.pos.z) ** 2 > r2) continue;
     alertEnemy(o, now, 'death', p.pos.x + (Math.random() - 0.5) * D.err, p.pos.z + (Math.random() - 0.5) * D.err); } }

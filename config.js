@@ -1851,7 +1851,7 @@ export const SHAKE = { levels:{ off:0, low:0.32, mid:0.6, high:1 }, def:'low', p
 export const TOUCH_HELP = [
   ['Cần lái (nửa phải màn hình)', 'Đẩy về hướng muốn đi — súng tự bám địch gần nhất, anh đi đâu nòng vẫn ngắm mục tiêu'],
   ['BẮN (trái)', 'Giữ để bắn · TỰ BẮN: tự khai hoả khi nòng đã chĩa trúng địch'], ['LƯỚT', 'Bứt tốc / phi nước đại'], ['SÚNG', 'Đổi súng'], ['KỸ NĂNG', 'Dùng / đổi kỹ năng — có drone địch thì nút này tự chuyển sang GÂY NHIỄU'],
-  ['LÍNH', 'Chạm: xuống / lên xe'], ['TẬP KẾT / XUNG PHONG / LÍNH DÙ', 'Ba nút chỉ huy quân ta'], ['TỰ ĐỘNG', 'Camera tự động: tự lùi xa khi đông địch / gần thành, tự gần lại khi yên'], ['1.5× · ⟳', 'Đổi độ zoom · xoay góc nhìn 45°'], ['⏸', 'Tạm dừng — có nút bật/tắt nhạc nền và nút xem bảng điều khiển'] ];
+  ['LÍNH', 'Chạm: xuống / lên xe'], ['HẠ GỤC (chỉ hiện khi áp sát sau lưng / bên sườn địch chưa hay biết)', 'Dao găm: hạ gục lặng lẽ — chạm nút đó, hoặc nút LÍNH'], ['TẬP KẾT / XUNG PHONG / LÍNH DÙ', 'Ba nút chỉ huy quân ta'], ['TỰ ĐỘNG', 'Camera tự động: tự lùi xa khi đông địch / gần thành, tự gần lại khi yên'], ['1.5× · ⟳', 'Đổi độ zoom · xoay góc nhìn 45°'], ['⏸', 'Tạm dừng — có nút bật/tắt nhạc nền và nút xem bảng điều khiển'] ];
 // Z107 FORTRESSES (ĐẠI BẢN DOANH) — every stage the enemy holds 3–4 walled strongholds, each with a name and a commander.
 //   Walls (solid, block fire) with riflemen along the top, watchtowers at the corners, ONE heavy gate. Inside: a crowded garrison (it pours out once you come near or the gate falls) + the commander.
 //   Troops on the open field SALLY from these gates (no-tanks: every gate stands open); the main citadel's commander is the stage's general,
@@ -2054,7 +2054,7 @@ export const FEEL = {
 //   pad buttons = standard mapping by position: 0 A · 1 B · 2 X · 3 Y · 4 LB · 5 RB · 6 LT · 7 RT · 8 View · 9 Menu · 10 L3 · 11 R3 · 12-15 D-pad ↑↓←→
 export const ACTIONS = [
   ['up','Tiến / đi lên','DI CHUYỂN',['w','arrowup'],null,1], ['down','Lùi / đi xuống','DI CHUYỂN',['s','arrowdown'],null,1], ['left','Quay / sang trái','DI CHUYỂN',['a','arrowleft'],null,1], ['right','Quay / sang phải','DI CHUYỂN',['d','arrowright'],null,1],
-  ['fire','Bắn (giữ = liên thanh) · chuột trái','CHIẾN ĐẤU',[],7,1], ['dash','Lướt né · lính đi bộ: nhảy','CHIẾN ĐẤU',[' '],0,0], ['sprint','Lính: chạy nhanh (giữ)','CHIẾN ĐẤU',['shift'],null,1], ['roll','Lính: lăn né đạn','CHIẾN ĐẤU',['alt','l'],null,0], ['climb','Lính: leo lên đá / tường / cổng / container (bấm lại: buông tay · trên cao: tụt xuống)','CHIẾN ĐẤU',['j'],null,0], ['skill','Dùng kỹ năng · bấm chuột phải · bấm nhanh LT (giữ LT = xoay camera)','CHIẾN ĐẤU',['e'],6,0], ['skillNext','Đổi kỹ năng','CHIẾN ĐẤU',['q'],2,0],
+  ['fire','Bắn (giữ = liên thanh) · chuột trái','CHIẾN ĐẤU',[],7,1], ['dash','Lướt né · lính đi bộ: nhảy','CHIẾN ĐẤU',[' '],0,0], ['sprint','Lính: chạy nhanh (giữ)','CHIẾN ĐẤU',['shift'],null,1], ['roll','Lính: lăn né đạn','CHIẾN ĐẤU',['alt','l'],null,0], ['knife','Lính: dao găm — áp sát sau lưng / bên sườn địch chưa hay biết: hạ gục lặng lẽ — khi hiện nút HẠ GỤC thì bấm phím lên / xuống xe (G); chưa gán phím riêng (phím I đã là GÂY NHIỄU drone) · còn lại: đâm yếu','CHIẾN ĐẤU',[],null,0], ['climb','Lính: leo lên đá / tường / cổng / container (bấm lại: buông tay · trên cao: tụt xuống)','CHIẾN ĐẤU',['j'],null,0], ['skill','Dùng kỹ năng · bấm chuột phải · bấm nhanh LT (giữ LT = xoay camera)','CHIẾN ĐẤU',['e'],6,0], ['skillNext','Đổi kỹ năng','CHIẾN ĐẤU',['q'],2,0],
   ['droneRecon','Drone trinh sát: thả lên, đánh dấu địch quanh điểm ngắm (hồi riêng)','CHIẾN ĐẤU',['9'],null,0], ['droneFpv','Drone FPV cảm tử: lái bằng chuột / WASD · BẮN hoặc bấm lại = cho nổ (có hạn mỗi màn)','CHIẾN ĐẤU',['0'],null,0], ['droneJam','Gây nhiễu: drone địch trong 40 m mất lái vài giây (hồi riêng)','CHIẾN ĐẤU',['i'],null,0],
   ['reload','Nạp đạn (băng chưa cạn: thay nhanh, không lên đạn)','CHIẾN ĐẤU',['r'],null,0], ['gunPrev','Súng trước · cuộn chuột','CHIẾN ĐẤU',['o'],4,0], ['gunNext','Súng sau · cuộn chuột','CHIẾN ĐẤU',['f'],5,0], ['autoFire','Bật / tắt tự bắn','CHIẾN ĐẤU',['y'],3,0], ['autoAim','Bật / tắt tự ngắm (nhấn cần phải)','CHIẾN ĐẤU',['k'],11,0],
   ['crew','Lính xuống xe · giữ: gọi về','QUÂN',['g'],1,1], ['muster','Tập kết toàn quân','QUÂN',['t'],12,0], ['assault','Xung phong vào thành (L3)','QUÂN',['x'],10,0], ['para','Gọi lính dù','QUÂN',['b'],13,0], ['sqOrder','Lệnh tổ bộ binh: tự do → giữ vị trí → tiến công → vòng trái → vòng phải','QUÂN',['u'],null,0],
@@ -2523,6 +2523,21 @@ export const COOP = { proto:1, snapHz:20, inputHz:30,
 //     only from the B40 man), cd s apart, `stock` a man a wave.
 //   weight: a gun by class (gun, kg) and every round carried (round, kg); over `comfort` kg the sprint is slower and the combat roll comes back later — in proportion, up to
 //     `max` at comfort + span kg; the chip shows from `show` up. Firing it off lightens him.
+// SUPPLY 3 QUIET OR LOUD (game/quiet.js) — quiet: a suppressed gun (GUNS.supp) is heard suppR m off, not AWARE.hear.shot, and its flash gives no position away; a man who
+//     falls within killT s of such a shot alerts only the men within deathR m, and if he had not been alerted he drops where he stood and LIES there.
+//   knife: the nearest enemy soldier within reach m and arc rad of his aim, cd s between two uses, a lunge of `lunge` m/s. A man who is not alerted, taken from outside his
+//     front `front` rad (the side, the back), goes down in silence — never the general, a fortress commander, an elite; anyone else takes dmg (and knows). A takedown is
+//     seen only by a man within seenR m who is looking that way (cone rad either side).
+//   body: a man downed in silence lies `life` s (the last `sink` s of it sinking away; `max` on the field). An unalerted man within r m looking that way (cone rad) or
+//     within near m FINDS it: he and the unalerted men within callR m of him turn suspicious and search from the body (looked for every `every` s); for searchT s any of
+//     them who then makes the player out raises the alarm, like a sentry.
+//   alarm: a SENTRY (a man holding a post: a fortress's, a camp's, a depot's garrison) or a searcher who becomes alerted — by sight, by a shot heard, by a mate falling —
+//     raises it `delay` s later, a red ring on him every ringT s; kill him first and it passes to another alerted sentry within passR m (pass s more) or is SILENCED.
+//     Raised: a whistle (a siren too when he is a fortress's man or a watchtower stands within sirenR m), every enemy soldier within r m alerted (knowing where he is to
+//     err m), and the director asked for ONE more squad (campaign/director.js dirAlarm: not in a lull, not while he is nearly dead; none with maxFoes men on the field).
+//     At most `max` a stage, cd s apart — a clean approach earns the quieter fight.
+//   eye: the chip on foot — closed: nobody within r m suspects anything; half: a man is suspicious or is making him out (his detection over det); open: a man is alerted.
+//   btn: the takedown prompt's distance from the bottom of the screen (px: desktop, phones) — it is a button there.
 export const LOGISTICS = { tick:0.25,
   start:{ rifle:5, pistol:5, belt:2, shot:5, heavy:5, rocket:4, shell:3, fuel:2, cell:4, blade:4 }, diff:{ recruit:1.3, soldier:1, veteran:0.8 }, capK:1.6,
   warn:{ low:1, say:5 }, regen:{ mags:1, magT:28 }, give:{ fresh:2, again:1 }, crate:{ share:0.6 },
@@ -2533,10 +2548,18 @@ export const LOGISTICS = { tick:0.25,
   weight:{ comfort:28, span:25, max:0.12, show:0.02,
     gun:{ rifle:3.5, pistol:2.6, belt:8.5, shot:3.4, heavy:8, rocket:6.3, shell:2.7, fuel:9, cell:5, blade:5 },
     round:{ rifle:0.017, pistol:0.012, belt:0.028, shot:0.05, heavy:0.11, rocket:2.2, shell:0.23, fuel:0.03, cell:0.05, blade:0.1 } },
+  quiet:{ suppR:12, killT:1.2, deathR:7, every:0.25, btn:[286, 316],
+    knife:{ reach:2.2, arc:1.5, cd:0.8, lunge:4.5, front:1.05, dmg:14, seenR:6, cone:1.3 },
+    body:{ life:60, sink:1.5, max:8, r:9, near:2.5, cone:1.3, callR:16, searchT:45, every:0.5 },
+    alarm:{ delay:2.6, ringT:0.5, passR:14, pass:1, r:60, err:5, sirenR:75, max:2, cd:80, maxFoes:80 },
+    eye:{ r:70, det:0.15 } },
   say:{ cls:{ rifle:'ĐẠN 7.62', pistol:'ĐẠN 9 MM', belt:'ĐẠN DÂY', shot:'ĐẠN GHÉM', heavy:'ĐẠN 12.7', rocket:'ĐẠN B41', shell:'LỰU 40 MM', fuel:'XĂNG ĐẶC', cell:'PIN', blade:'LƯỠI CƯA' },
-    low:'ÍT ĐẠN', last:'BĂNG CUỐI', dry:'HẾT ĐẠN', dryTip:'HẾT ĐẠN — ĐỔI SÚNG!', got:'+{n} {c}', full:'ĐẦY ĐẠN',
+    low:'ÍT ĐẠN', last:'BĂNG CUỐI', dry:'HẾT ĐẠN', dryTip:'HẾT ĐẠN — ĐỔI SÚNG HOẶC RÚT DAO!', got:'+{n} {c}', full:'ĐẦY ĐẠN',
     crateDs:'Đầy băng mọi súng · thêm đạn dự trữ · kỹ năng sẵn sàng ngay',
     pouch:'TÚI ĐẠN ĐỊCH', pouchDs:'Đạn nhặt từ lính địch ngã xuống', depotOut:'KHO Ở ĐÂY ĐÃ CẠN', depotIn:'ĐIỂM TIẾP ĐẠN',
     drop:['SCH: Thả dù đạn cách anh {d} m về hướng {b} — ra lấy trước khi địch mò tới!', 'SCH: Đạn đang xuống, {d} m hướng {b} — địch cũng thấy dù đấy, nhanh lên!'],
     dropGot:'ĐÃ NHẬN ĐẠN TIẾP TẾ', bearings:['bắc', 'đông bắc', 'đông', 'đông nam', 'nam', 'tây nam', 'tây', 'tây bắc'],
-    mate:['{n}: BẮT LẤY BĂNG ĐẠN!', '{n}: ĐẠN ĐÂY, ANH!'], mateRocket:'{n}: ĐẠN B41 ĐÂY!', load:'−{n}%' } };
+    mate:['{n}: BẮT LẤY BĂNG ĐẠN!', '{n}: ĐẠN ĐÂY, ANH!'], mateRocket:'{n}: ĐẠN B41 ĐÂY!', load:'−{n}%',
+    eye:['ẨN', 'NGHI', 'LỘ'], knife:'DAO GĂM — HẠ GỤC', knifeDown:'HẠ GỤC LẶNG LẼ', knifeHit:'ĐÂM!', body:'CÓ XÁC! CÓ ĐỊCH!', bodyTip:'ĐỊCH THẤY XÁC — CHÚNG ĐANG LÙNG',
+    raise:'SẮP BÁO ĐỘNG!', silenced:'BỊT MIỆNG KỊP — KHÔNG BÁO ĐỘNG', alarm:'⚠ BÁO ĐỘNG!',
+    alarmSquad:'SCH: Địch đã báo động — một toán tăng viện đang kéo tới chỗ anh!', alarmHold:'SCH: Địch đã báo động — cả vị trí biết anh ở đâu rồi!' } };

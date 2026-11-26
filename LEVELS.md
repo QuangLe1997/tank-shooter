@@ -429,6 +429,27 @@ Vai trò: **RIFLE** đa năng · **SMG** cận chiến xe nhẹ · **SHOTGUN** c
 | **AGL-40** | HE | 16 (nổ lan 2.9) | 0.26s | 16 / 3.0s | Lựu vòng cung vào con trỏ, liên thanh. Khắc chế bộ binh và xe nhẹ đứng cụm. Không trúng trực thăng. Giá 2.600 xu, rơi từ màn 2. |
 | **THERMOBARIC** | TBX | 70 trực tiếp, 56 lan (bán kính 6.5) + đốt cháy | 1.6s | 3 / 4.4s | Tên lửa nhiệt áp: phá công sự/tháp (×1.8/×2.2), yếu với giáp nặng (×0.7). Giá 5.400 xu, rơi từ màn 4. |
 
+### Đạn dự trữ, tiếp tế, lặng lẽ hay ồn ào (SUPPLY 1–3 — `config.js → LOGISTICS`, `src/game/logistics.js`, `src/game/quiet.js`)
+Súng của lính **không còn nạp vô hạn**: mỗi loại đạn một kho dự trữ (viên), nạp đạn lấy từ kho, băng còn dở được giữ. Sát thương / tốc độ bắn / cỡ băng / thời gian nạp không đổi; lính địch vẫn đạn vô hạn.
+
+| Loại đạn | Súng | Dự trữ xuất phát (băng → viên) | Cân nặng súng · mỗi viên (kg) |
+|---|---|---|---|
+| 7.62 (`rifle`) | Súng trường 7.62, AK-47, M4 giảm thanh, thép gỉ | 5 → 150 | 3,5 · 0,017 |
+| 9 mm (`pistol`) | MP5 | 5 → 150 | 2,6 · 0,012 |
+| Đạn dây (`belt`) | PKM, nòng xoay | 2 → 200 / 480 | 8,5 · 0,028 |
+| Đạn ghém (`shot`) | Súng săn 12 | 5 → 35 | 3,4 · 0,05 |
+| 12.7 (`heavy`) | Bắn tỉa 12.7, tỉa bán tự động, súng ray | 5 → 25 / 50 / 20 | 8 · 0,11 |
+| Đạn B41 (`rocket`) | B41 | 4 → 4 quả | 6,3 · 2,2 |
+| Lựu 40 mm (`shell`) | M79 | 3 → 18 | 2,7 · 0,23 |
+| Xăng đặc (`fuel`) | Phun lửa | 2 → 240 | 9 · 0,03 |
+| Pin (`cell`) | Xung điện | 4 → 80 | 5 · 0,05 |
+| Lưỡi cưa (`blade`) | Bắn lưỡi cưa | 4 → 48 | 5 · 0,1 |
+
+- Độ khó: × 1,3 (TÂN BINH) · × 1 (CHIẾN SĨ) · × 0,8 (LÃO LUYỆN). Trần kho 1,6 × cơ số. Màn mới / mất mạng: bù đủ cơ số.
+- Lấy lại đạn: túi đạn địch (30 % → 75 % khi còn dưới 2 băng; +8…15 viên) · điểm tiếp đạn ở khu tập kết (1 băng / 0,6 giây, không giới hạn) · kho / thành đã chiếm (10 băng mỗi nơi mỗi màn) · dù đạn của SCH khi dự trữ < 30 % (70 % cơ số, cách 30–46 m, ≥ 80 giây một lần) · đồng đội đưa băng (≤ 7 m, 2 băng mỗi người mỗi đợt) · THÙNG ĐẠN (60 % cơ số) · nhặt súng (2 băng; súng đã có: 1) · súng phát theo người tự hồi tới 1 băng (28 giây một băng).
+- Sức nặng: quá 28 kg → chạy nước rút và hồi lăn chậm dần, tối đa 12 % ở 53 kg (bộ xuất phát ≈ 24 kg: không mất gì).
+- Lặng lẽ: súng giảm thanh nghe 12 m (súng thường 70 m), không lộ vị trí · dao găm (I / nút HẠ GỤC / G khi nút hiện): tầm 2,2 m, hạ gục lặng lẽ tên chưa báo động từ ngoài 60° trước mặt, còn lại đâm 14 máu · xác nằm 60 giây, địch thấy trong 9 m thì lùng 45 giây · báo động: lính gác / tên đang lùng chuyển sang báo động → 2,6 giây sau báo động (hạ kịp thì thôi) → mọi địch trong 60 m biết chỗ, thêm đúng 1 tổ tăng viện; tối đa 2 lần mỗi màn, cách ≥ 80 giây.
+
 ### Điều kiện chiến trường (`ENV`) — báo trên màn chuyển
 | Điều kiện | Khi nào | Hiệu ứng |
 |---|---|---|

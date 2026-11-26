@@ -64,6 +64,7 @@ export const GLYPH={
   compress:'<path d="M10 4v6H4M14 4v6h6M10 20v-6H4M14 20v-6h6"/>',
   alert:'<path d="M12 3 1.8 20.5h20.4L12 3Z"/><path d="M12 9.5v4.8"/><path d="M12 17.4v.7"/>',
   pack:'<path d="M8.5 8V6.8a3.5 3.5 0 0 1 7 0V8"/><rect x="5.5" y="8" width="13" height="12.5" rx="2.4"/><path d="M5.5 13.5h13M10 13.5v2.6h4v-2.6"/>',   // SUPPLY 2 the load he carries (a pack)
+  eyeOpen:'<path d="M2 12s3.7-6.5 10-6.5S22 12 22 12s-3.7 6.5-10 6.5S2 12 2 12Z"/><circle cx="12" cy="12" r="2.9"/>', eyeHalf:'<path d="M2 12s3.7-6.5 10-6.5S22 12 22 12s-3.7 6.5-10 6.5S2 12 2 12Z"/><path d="M4.2 10.4h15.6"/><path d="M9.3 12.4a2.8 2.8 0 0 0 5.4 0"/>', eyeShut:'<path d="M2.5 10.5s3.5 5 9.5 5 9.5-5 9.5-5"/><path d="M5.6 13.9 4.2 16.2M9.6 15.3 9 17.9M14.4 15.3l.6 2.6M18.4 13.9l1.4 2.3"/>',   // SUPPLY 3 the unseen eye: seen / suspected / unseen
   drone:'<circle cx="12" cy="12" r="2.6"/><circle cx="5.5" cy="6.5" r="2"/><circle cx="18.5" cy="6.5" r="2"/><path d="M7 8l3 2.4M17 8l-3 2.4M12 14.6V18M9.5 18.4h5"/>',
   fpv:'<circle cx="5.5" cy="6" r="2.2"/><circle cx="18.5" cy="6" r="2.2"/><path d="M7.2 7.6l2.6 2.2M16.8 7.6l-2.6 2.2"/><rect x="9.8" y="9.4" width="4.4" height="3.6" rx="1"/><path d="M12 13v5.2M9.6 18.2 12 22l2.4-3.8Z"/>',   // DRONE 2 a quadcopter with its charge
   jam:'<path d="M12 21V11.2"/><circle cx="12" cy="9.2" r="1.7"/><path d="M8 13.4a5.8 5.8 0 0 1 0-8.4M16 5a5.8 5.8 0 0 1 0 8.4M5 16.2a10 10 0 0 1 0-14M19 2.2a10 10 0 0 1 0 14"/>',   // DRONE 3 an aerial throwing rings

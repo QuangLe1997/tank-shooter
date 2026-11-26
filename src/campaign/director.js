@@ -158,3 +158,6 @@ export function dirSpawned(sp){ const st = DIR.stats; st.entries++; if(DIR.pass 
 // SUPPLY 2 the HQ is asked for ammunition by parachute (game/logistics.js, his reserves low): never on top of a peak — he could not go and fetch it — never once the
 //   stage is won; a drop that goes is noted in the log
 export function dirSupply(now){ if(S.awaitingUpgrade || DIR.on && DIR.phase === 'peak') return false; note(now, 'supply', 'ammunition by parachute'); return true; }
+// SUPPLY 3 an alarm has gone up (game/quiet.js): may ONE more squad be sent in for it? Not in a lull or the last lull, not in the duel, not once the stage is won,
+//   never while he is nearly dead; a squad that goes is counted and noted
+export function dirAlarm(now){ if(duelOn() || DIR.fin || S.awaitingUpgrade || DIR.hp < D.thr.crit || DIR.on && DIR.phase === 'release') return false; DIR.stats.alarms = (DIR.stats.alarms || 0) + 1; note(now, 'alarm', 'one more squad'); return true; }

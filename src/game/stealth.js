@@ -5,7 +5,7 @@
 //   close by, caught in a searchlight's pool, or given away by his own muzzle flash — then every enemy within STEALTH.alertR knows where he lies for a while.
 //   The combat roll is also a dodge: a round that would hit him while he goes over usually misses (dodgeShot; running fast dodges a few).
 import { EQUIP, STEALTH, TENT } from '../../config.js';
-import { CV, NIGHT, S, awareNoise, floatText, heightAt, lineClear, tentHides } from '../hub.js';
+import { CV, NIGHT, S, awareNoise, floatText, heightAt, lineClear, quietShot, tentHides } from '../hub.js';
 
 const now_ = () => performance.now() / 1000;
 let _sayAt = -9, _dodgeAt = -9;
@@ -44,7 +44,7 @@ export function playerSight(x, y, z){ const p = S.player; if(!p) return false; i
 // AI 1 a rifleman made him out lying flat (ai/awareness.js): every gun within alertR knows where he lies for a moment, as when a guard spots him
 export function stealthSpot(why){ const p = S.player; if(p && p.cav && !CV.mounted) spot(p, now_(), STEALTH.keep.near, why); }
 // he fired (combat/lock-on.js, a round of the player's): the flash gives him away — AI 1 and the report alerts every enemy soldier in earshot (on foot or in the saddle)
-export function stealthShot(){ const p = S.player; if(!p) return; awareNoise(p.pos.x, p.pos.z, now_()); if(p.cav && !CV.mounted) spot(p, now_(), STEALTH.keep.shot, 'LỘ VỊ TRÍ!'); }
+export function stealthShot(){ const p = S.player; if(!p) return; if(quietShot(p)) return;   /* SUPPLY 3 a suppressed gun: heard only close by, no flash (game/quiet.js) */ awareNoise(p.pos.x, p.pos.z, now_()); if(p.cav && !CV.mounted) spot(p, now_(), STEALTH.keep.shot, 'LỘ VỊ TRÍ!'); }
 // a searchlight's pool on the ground (fx/searchlight.js leaves its size, stretch and heading on it): is he inside it
 export function stealthLight(L){ const p = S.player; if(!p || !p.cav || CV.mounted || !L || !L.on || !(L.r > 0)) return;
   const dx = p.pos.x - L.hit.x, dz = p.pos.z - L.hit.z, al = dx * L.ux + dz * L.uz, ac = dx * L.uz - dz * L.ux, k = STEALTH.lit;

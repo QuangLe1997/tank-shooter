@@ -14,7 +14,7 @@
 //   game/cavalry.js and game/soldier-moves.js) — a chip shows how much; firing it off lightens him.
 import * as THREE from 'three';
 import { LOGISTICS } from '../../config.js';
-import { BUFF_COL, BUFF_ICON, CV, DEPOTS, FORTS, FT, GIFTS, GUNS, PROFILE, RALLY_PT, S, ammoKind, blocksNear, clampFieldXZ, core, dirSupply, dropPowerup, enemies, floatText, heightAt, holoRing, inBlock, inField, magCap, radio, scene, sfx, spawnGift, startReload, suspectEnemy, updateGunHUD } from '../hub.js';
+import { BUFF_COL, BUFF_ICON, CV, DEPOTS, FORTS, FT, GIFTS, GUNS, PROFILE, QUIET, RALLY_PT, S, ammoKind, blocksNear, clampFieldXZ, core, dirSupply, dropPowerup, enemies, floatText, heightAt, holoRing, inBlock, inField, magCap, radio, scene, sfx, spawnGift, startReload, suspectEnemy, updateGunHUD } from '../hub.js';
 
 const L = LOGISTICS, NOW = () => performance.now() / 1000, R2 = a => a[0] + Math.random() * (a[1] - a[0]);
 const fmt = (s, o) => s.replace(/\{(\w)\}/g, (m, k) => o[k] ?? '');
@@ -144,8 +144,11 @@ function mateHand(p, now){ const M = L.mate, eq = p.guns[p.gunIdx], g = GUNS[eq.
 function weigh(p, r){ const W = L.weight; let kg = 0; for(let i = 0; i < p.guns.length; i++){ const gi = p.guns[i], c = ammoKind(GUNS[gi.id]); kg += (W.gun[c] || 0) + Math.max(0, gi.ammo) * (W.round[c] || 0); }
   for(const c in r) kg += r[c] * (W.round[c] || 0); LOGI.kg = kg; p.loadK = 1 - Math.max(0, Math.min(1, (kg - W.comfort) / W.span)) * W.max; }
 // loot/powerups.js updateBuffHUD: the module's chips among the buffs' — the load, once it costs him something on foot
-export function hudChips(items){ const p = S.player; if(!p || !p.cav || CV.mounted) return; if(!BUFF_ICON.load){ BUFF_ICON.load = 'pack'; BUFF_COL.load = '#ffb35a'; }
-  const k = 1 - (p.loadK || 1); if(k >= L.weight.show) items.push(['load', fmt(L.say.load, { n:Math.round(k * 100) }), '']); }
+//   SUPPLY 3 …and the eye: unseen / suspected / seen (game/quiet.js QUIET.eye)
+const EYE = ['eyeShut', 'eyeHalf', 'eyeOpen'], EYE_COL = ['#9be04a', '#ffd86a', '#ff5a3a'];
+export function hudChips(items){ const p = S.player; if(!p || !p.cav || CV.mounted) return;
+  if(!BUFF_ICON.load){ BUFF_ICON.load = 'pack'; BUFF_COL.load = '#ffb35a'; for(let i = 0; i < 3; i++){ BUFF_ICON['eye' + i] = EYE[i]; BUFF_COL['eye' + i] = EYE_COL[i]; } }
+  const k = 1 - (p.loadK || 1), e = QUIET.eye; if(k >= L.weight.show) items.push(['load', fmt(L.say.load, { n:Math.round(k * 100) }), '']); if(e >= 0) items.push(['eye' + e, L.say.eye[e], '']); }
 
 // ---- the minimap (ui/radar.js): a small crate at every ammunition point that still has stock, a crate under a canopy where a drop waits ----
 function crateMark(c, x, y){ c.strokeRect(x - 3, y - 2.5, 6, 5); c.beginPath(); c.moveTo(x, y - 2.5); c.lineTo(x, y + 2.5); c.stroke(); }
