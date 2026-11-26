@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { LOOT, HUMAN_SCALE, INFGUN } from '../../config.js';
-import { SOLDIER, addScore, soldierLoot, BIOME, GUNS, S, __set_soldierLvl, burst, clampField, core, damageEnemy, deploySoldiers, enemies, equippedGun, floatText, gunPicEl, gunTierTx, heightAt, iconEl, ringPulse, scene, setIcon, sfx, soldierLvl, soldiers, spawnDrone, tip, updateHUD, blPulse, holoArc, holoRing, trooperGunPick, trooperGive, loadGLTF, svgGlyphTex, asShipped, nearShape } from '../hub.js';
+import { SOLDIER, addScore, soldierLoot, BIOME, GUNS, S, __set_soldierLvl, burst, clampField, core, damageEnemy, deploySoldiers, enemies, equippedGun, floatText, gunPicEl, gunTierTx, heightAt, iconEl, ringPulse, scene, setIcon, sfx, soldierLvl, soldiers, droneCrate, tip, updateHUD, blPulse, holoArc, holoRing, trooperGunPick, trooperGive, loadGLTF, svgGlyphTex, asShipped, nearShape } from '../hub.js';
 
 // ===== POWER-UPS (drops) =====
 // Power-ups: TIMED buffs (longer now), PERMANENT buffs (∞ until death), instant, gun drops.
@@ -23,7 +23,7 @@ export const POWERUPS = [
   { id:'shield', svg:'shield', color:0x4fd1ff, vi:'KHIÊN NĂNG LƯỢNG', ds:'Bất tử 5 giây', cat:'tech', tier:1, apply(p){ p.invincibleUntil=NOW()+5; p.shieldUntil=NOW()+5; } },
   { id:'bomb',   svg:'bomb', color:0xff6030, vi:'BOM CHÙM', ds:'80 sát thương mọi địch', cat:'bomb', tier:2, apply(){ for(const e of enemies.slice()) damageEnemy(e,80); S.shake=2; } },
   { id:'freeze', svg:'snow', color:0x6fd0ff, vi:'ĐÓNG BĂNG', ds:'Địch đứng hình 3,5 giây', cat:'tech', tier:0, apply(){ const n=NOW(); for(const e of enemies) e.stunUntil=n+3.5; } },
-  { id:'drone',  svg:'drone', color:0x6fd0ff, vi:'DRONE YỂM TRỢ', ds:'Drone bắn tự động 22 giây', cat:'tech', tier:1, apply(){ spawnDrone(); } },     // 22s orbiting auto-turret
+  { id:'drone',  svg:'drone', color:0x6fd0ff, vi:'THÙNG DRONE', ds:'Drone trinh sát sẵn sàng ngay', cat:'tech', tier:1, apply(){ droneCrate(); } },     // DRONE 1 (the gatling gunship is retired: combat/drone-skills.js)
   { id:'troops', svg:'team', color:0x9bd14a, vi:'TĂNG VIỆN', ds:'Bổ sung & hồi máu lính', cat:'ammo', tier:0, apply(){ deploySoldiers(SOLDIER.base); for(const s of soldiers) s.hp=s.maxHp; if(S.player) floatText('TĂNG VIỆN ĐÃ TỚI', '#9bd14a', S.player.pos, 18); } },   // refill core guards + tank crew + heal
   { id:'armory', svg:'up',     color:0xffd24a, vi:'TRANG BỊ LÍNH', ds:'Lính bắn mạnh & nhanh hơn', cat:'ammo', tier:1, apply(){ __set_soldierLvl(soldierLvl + 1); for(const s of soldiers) s.hp=Math.min(s.maxHp,s.hp+25); if(S.player) floatText('TRANG BỊ LÍNH +'+soldierLvl, '#ffd24a', S.player.pos, 18); } },   // +35% soldier damage & faster fire
   // Z115 GUN PARTS — permanent, per gun, stacking (GUN_MODS)

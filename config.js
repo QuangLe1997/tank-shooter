@@ -33,14 +33,6 @@ export const BALANCE = {
     soldier:{ hp:1.0,  dmg:1.0, reward:1.0 },
     veteran:{ hp:1.5,  dmg:1.4, reward:1.6 },
   },
-  // SUPPORT DRONE (power-up): a 22s orbiting escort with a gatling. It is a HELPER, NOT a primary weapon —
-  // low per-round damage (chips HP / finishes weak foes; it takes MANY rounds to down a tank), a slow cadence,
-  // a small belt and a DELIBERATELY long reload so the player can't lean on it to win fights. It auto-acquires the
-  // nearest enemy inside `detect` (reaches beyond the player). NOT invincible — enemy fire crossing its orbit
-  // chips `hp`; at 0 it detonates. Sustained DPS ≈ mag·dmg / (mag·fireCd + reload) ≈ 5 (≈ a fraction of the tank's).
-  // `fireRot`/`idleRot` = gatling barrel spin (rad/s) when firing vs idle (the "nòng xoáy").
-  drone:{ guardR:44, guardHit:0.55, strikeR:3.4, strikeFireR:14, dur:22, orbit:4.8, height:3.0, detect:26, hp:120, dmg:6, bspeed:78,
-          mag:6, fireCd:0.4, reload:5.0, fireRot:18, idleRot:6, hitR:1.0 },
 };
 
 // ============================================================================
@@ -940,6 +932,7 @@ export const KEYS_HELP = [
   [['W','A','S','D'], 'Đi lên · trái · xuống · phải THEO MÀN HÌNH — xe tự quay đầu về hướng đó (↑←↓→ cũng được)', 'LÁI XE'], [['Cách'], 'Lướt né — bứt tốc ngắn', 'LÁI XE'],
   [['Chuột'], 'Ngắm', 'CHIẾN ĐẤU'], [['Giữ chuột trái'], 'Bắn liên tục', 'CHIẾN ĐẤU'], [['1','…','8'], 'Chọn súng trong kho mang theo', 'CHIẾN ĐẤU'], [['Lăn chuột'], 'Đổi súng kế tiếp', 'CHIẾN ĐẤU'], [['R'], 'Nạp đạn — băng chưa cạn thì thay nhanh hơn (không phải lên đạn)', 'CHIẾN ĐẤU'],
   [['E'], 'Dùng kỹ năng', 'KỸ NĂNG'], [['Q'], 'Đổi kỹ năng', 'KỸ NĂNG'], [['Bấm chuột phải'], 'Dùng kỹ năng (nhanh)', 'KỸ NĂNG'],
+  [['9'], 'Drone trinh sát — bay vòng phía trước điểm ngắm, đánh dấu địch (dấu đỏ xuyên tường, hiện trên bản đồ)', 'KỸ NĂNG'],
   [['G'], 'Chạm: lính xuống / lên xe · Giữ: gọi lính trong tầm về', 'QUÂN TA'], [['T'], 'TẬP KẾT — gọi toàn bộ lính trên bản đồ về bên xe', 'QUÂN TA'],
   [['X'], 'XUNG PHONG — cả đội đánh thẳng vào thành gần nhất', 'QUÂN TA'], [['B'], 'Gọi trực thăng thả lính dù xuống cạnh xe', 'QUÂN TA'],
   [['Esc','P'], 'Tạm dừng', 'KHÁC'], [['−','='], 'Camera: thu xa · phóng gần', 'CAMERA'], [['[',']'], 'Camera: xoay trái · xoay phải 45°', 'CAMERA'], [['Giữ chuột phải + kéo','Giữ chuột giữa + kéo'], 'Camera: kéo ngang xoay quanh lính · kéo dọc nghiêng cao / thấp', 'CAMERA'], [['Giữ chuột phải + lăn chuột'], 'Camera: lăn lên gần · lăn xuống xa', 'CAMERA'], [['Tay cầm: giữ LT + cần phải'], 'Camera: xoay và nghiêng góc nhìn (bấm nhanh LT vẫn là kỹ năng)', 'CAMERA'], [['Ctrl/Shift + cuộn','Chụm 2 ngón'], 'Camera: zoom mượt (trackpad / chuột)', 'CAMERA'], [['Vuốt ngang 2 ngón'], 'Camera: xoay góc nhìn (trackpad)', 'CAMERA'], [['C'], 'Bật / tắt CAMERA TỰ ĐỘNG (tự lùi xa khi đông địch, chạy nhanh, gần thành, gặp trùm)', 'CAMERA'], [['V'], 'Đặt lại camera (độ zoom mặc định, hướng thẳng)', 'CAMERA'], [['M'], 'Bật / tắt nhạc nền (tiếng súng, tiếng nổ vẫn giữ)', 'KHÁC'], [['F3'], 'Bảng đo hiệu năng: FPS, thời gian khung, logic, GPU, lệnh vẽ', 'KHÁC'], [['G'], 'Lên / xuống ngựa · ngựa ở xa: huýt sáo gọi về', 'KỴ SĨ THÉP'], [['Space'], 'Trên ngựa: phi nước đại 5 s · đi bộ: chạy nước rút', 'KỴ SĨ THÉP'], [['C'], 'Đi bộ: quỳ / đứng dậy', 'KỴ SĨ THÉP'], [['Z'], 'Đi bộ: nằm / đứng dậy (nằm + di chuyển = bò)', 'KỴ SĨ THÉP'],
@@ -1023,6 +1016,55 @@ export const AWARE = { tick:[0.22, 0.34],
 //   depth m below ground, hold s more before his first shot; the lid opens open s before the first man, one man every gap s; the tunnel network's own hatch
 //   within reuse m is used, else a spider hole opens there and is filled in hole s later; ambush: the scripted ring of holes this far from the player (m).
 export const ENTRY = { minD:45, pad:0.12, tries:12, edgeIn:4, seeD:130, nearD:30, rise:0.8, depth:1.75, hold:0.3, open:0.5, gap:0.45, reuse:7, hole:22, ambush:[17, 23] };
+// DRONE 1–3 THE DRONE WAR (actors/drone.js the airframes, their wrecks and the buzz · combat/drone-skills.js his own three skills · campaign/drone-raid.js the
+//   enemy's · ui/drone-hud.js what he is shown). on: false (or ?nodrones) = no drone flies, the three skills are off the list, the hat never draws a raid.
+//   max: drones in the air at once, both sides (a launch past it is refused; wrecks: burning wrecks kept) · wreck: a downed drone falls at fall m/s², burns burn s.
+//   size: how many times life size a quadcopter (0.6 m across) and the recon airframe are drawn — a real one is a speck from the follow camera.
+//   recon (skill reconDrone, its own clock cd s): thrown from the hand, climbs climb m/s to alt m and circles (orbit m, spin rad/s) a point `ahead` m along his aim for
+//     dur s; every tick s each enemy soldier within r m of the spot under it, the line from the drone to his head open and no roof over him (a block he stands in whose
+//     top is roof m above the ground under him), is MARKED for mark s (at most markMax): a diamond over him through walls, a blip on the map, and his squad's men count a marked man
+//     as × mateK as far when they pick a target. A marked man is not alerted. notice: every `every` s an enemy within r m may look up (p; × alertK once alerted) — he
+//     holds his fire for look s, then puts a round at it (hit: the chance); at most max of them at once; hp rounds bring it down.
+//   fpv (skill fpvDrone): a STOCK of stock a stage (the old DRONE crate gives one more, at most stockMax) and lock s between two — not a cooldown: a fixed stock makes
+//     each strike a decision, bounds what one stage's general can lose to it, and gives the retired gunship crate a job. The view goes to the drone's nose (fov°): up
+//     to dur s; it starts at v0 m/s and settles at cruise + dive × how steeply it points down − climbK × how steeply up (acc m/s²); the mouse off the middle of the
+//     screen (dead: the still zone, in half-screens), WASD / the arrows, the pad's left stick or the phone's stick turn it (yaw, pitch rad/s; bank: the roll into a
+//     turn); it goes off on whatever it strikes, or on FIRE / the skill pressed again once armed (arm s). Lost past range m from him, above ceil m it is pushed down,
+//     and it is lost when he has taken hitExit of his health since the launch. mobile: false keeps it off phones (the view from the nose is unseen there).
+//     blast: r m / dmg (the grenade's rule: a man in the core is dead), × struct on cover, towers and walls, direct on what it flew into, and a jet ahead of it —
+//     jetDmg on every enemy within jet m inside cone rad of its line (× vehK on an aircraft) and on the first solid thing there; an airburst fades between airH m up.
+//     The general: one capped slice a drone, like any other hit (actors/damage.js hitCap).
+//   jam (skill jammer, cd s): every enemy drone within r m loses its link for t s — it sinks (sink m/s: the spotter, the kamikaze), sparks, forgets its fix; one
+//     that lives through it needs rearm s before it may dive.
+//   enemy (from stage `from`; the surprises' hat draws a raid with weight w, never within gap s of the last one, never in the general's duel; hold: no other
+//     surprise for this long after one starts): kinds — spot: a quadcopter that comes in enterD m out, off the screen, circles him (orbit m at alt m) and, having
+//     held him in view (within view m, the line open, no roof, no smoke) for hold s, gives him away: every enemy soldier within alertR m knows the spot and (mortarP)
+//     a mortar round is laid on it (the surprises' own shell: ring, whistle; t s, the ring for the last warn s); it stays dur s, a new fix no sooner than refix s.
+//     kami: an FPV with a charge — the buzz from the moment it is in the air (buzz: hz from far to near within r m, a chunk every `every` s, vol), a shout on the
+//     radio, a marker on the screen's edge; it cruises at speed m/s, alt m up, and may not dive before warn s have passed (test.js: ≥ 3) — then down at dive m/s,
+//     turning at most turn rad/s; sight of him lost for lost s it goes for the last place it saw him, loiters loiter s and dives there. hitR / hitY: the sphere
+//     his rounds must pass through. From stage `two` a second one twoGap s behind the first. mates: his squad's men within r m fire on a drone (p every `every` s).
+//   say: the radio lines (their own clock: gap s apart unless it must be heard) and the floating words.
+export const DRONEWAR = { on:!(typeof location !== 'undefined' && /[?&]nodrones\b/.test(location.search)), max:5, wrecks:4, wreck:{ fall:14, burn:3.2, smoke:0.07 }, size:{ quad:2.2, recon:2.6 },
+  recon:{ cd:35, dur:20, hp:3, alt:18, climb:7, speed:13, ahead:22, orbit:9, spin:0.75, r:35, tick:0.3, mark:9, markMax:24, mateK:0.6, roof:1.9,
+    notice:{ r:34, every:0.7, p:0.2, alertK:1.6, look:[0.7, 1.2], hit:0.3, max:2 } },
+  fpv:{ stock:2, stockMax:4, lock:6, dur:12, hp:2, arm:0.45, fov:84, v0:9, cruise:17, dive:16, climbK:6, acc:16, yaw:1.9, pitch:1.5, pitchMin:-1.35, pitchMax:0.85, bank:0.5, dead:0.08,
+    ceil:45, range:150, hitExit:0.18, mobile:false, blast:{ r:5.5, dmg:260, struct:2.4, direct:420, jet:10, cone:0.5, jetDmg:240, vehK:1.8, fx:1.9, airH:[2.5, 9] } },
+  jam:{ cd:30, r:40, t:4, sink:[2.5, 5.5], rearm:1.5 },
+  enemy:{ from:2, w:1.3, gap:70, hold:14, enterD:[78, 95], kinds:{ spot:1, kami:1.2 }, two:4, twoGap:5,
+    spot:{ hp:3, alt:17, speed:11, orbit:13, spin:0.55, view:30, hold:3, decay:1.5, dur:38, refix:12, alertR:60, mortarP:0.7, mortar:{ t:3.4, warn:2.6, R:5, dmg:40 }, hitR:1.7, hitY:1.9, score:120,
+      hum:{ hz:[95, 150], every:0.11, vol:[0.01, 0.045], r:60 } },
+    kami:{ hp:2, alt:13, speed:18, dive:25, turn:1.5, diveR:24, warn:3.2, lost:1.2, loiter:5, blast:{ r:4.2, dmg:62, edge:0.4 }, hitR:1.6, hitY:1.9, score:150,
+      buzz:{ hz:[150, 420], every:0.085, vol:[0.025, 0.15], r:95 } },
+    mates:{ r:38, every:0.6, p:0.16 } },
+  say:{ gap:9,
+    recon:['TỔ: Drone trinh sát đã lên — địch hiện trên bản đồ!', 'TỔ: Mắt thần đang quét phía trước — bám theo dấu đỏ!'], reconDown:['TỔ: Mất drone trinh sát — chúng bắn rơi rồi!'],
+    fpv:['TỔ: FPV xuất kích — anh lo lái, bọn tôi che!'], fpvLost:['TỔ: Mất tín hiệu FPV!'], fpvHit:['TỔ: Trúng đích! Đẹp lắm!'],
+    spot:['TỔ: Drone trinh sát địch trên đầu — bắn hạ nó hoặc tìm chỗ nấp!', 'TỔ: Có con mắt trên trời — nấp dưới mái, thả khói đi!'],
+    fix:['SCH: Drone địch đã bắt được vị trí của anh — cối sắp rót, đổi chỗ ngay!', 'SCH: Anh bị lộ rồi — rời vị trí, địch đang kéo tới!'],
+    kami:['TỔ: FPV cảm tử! Nghe tiếng vo ve — nấp ngay, bắn hạ nó!', 'TỔ: Drone tự sát đang lao tới — vào dưới mái, bật gây nhiễu!', 'TỔ: Có FPV! Thả khói, tìm công sự!'],
+    kamiDown:['TỔ: Hạ được FPV rồi!', 'TỔ: Rơi rồi — bắn đẹp!'], jam:['TỔ: Gây nhiễu bật — drone địch mất lái!'], jamNone:'KHÔNG CÓ DRONE ĐỊCH TRONG TẦM',
+    hint:{ kami:'⚠ FPV CẢM TỬ ĐỊCH!', kamiSub:'BẮN HẠ · NẤP DƯỚI MÁI · KHÓI · GÂY NHIỄU', spot:'⚠ DRONE TRINH SÁT ĐỊCH', fix:'⚠ BỊ DRONE ĐỊCH SOI — ĐỔI VỊ TRÍ!' } } };
 // DIR 1 THE BATTLE'S DIRECTOR (campaign/director.js) — the fight round the player is read `sample` s apart (never per frame) into one PRESSURE 0…1 and the waves,
 //   the surprises and the general are released by it. on: false (or ?nodirector) = it reads and decides nothing (the old clocks).
 //   The reading: alerted men within nearR m count as near (an aircraft within airR m as two), a man who fired in the last fireT s as firing; the damage he took is
@@ -1912,6 +1954,7 @@ export const FEEL = {
 export const ACTIONS = [
   ['up','Tiến / đi lên','DI CHUYỂN',['w','arrowup'],null,1], ['down','Lùi / đi xuống','DI CHUYỂN',['s','arrowdown'],null,1], ['left','Quay / sang trái','DI CHUYỂN',['a','arrowleft'],null,1], ['right','Quay / sang phải','DI CHUYỂN',['d','arrowright'],null,1],
   ['fire','Bắn (giữ = liên thanh) · chuột trái','CHIẾN ĐẤU',[],7,1], ['dash','Lướt né · lính đi bộ: nhảy','CHIẾN ĐẤU',[' '],0,0], ['sprint','Lính: chạy nhanh (giữ)','CHIẾN ĐẤU',['shift'],null,1], ['roll','Lính: lăn né đạn','CHIẾN ĐẤU',['alt','l'],null,0], ['climb','Lính: leo lên đá / tường / cổng / container (bấm lại: buông tay · trên cao: tụt xuống)','CHIẾN ĐẤU',['j'],null,0], ['skill','Dùng kỹ năng · bấm chuột phải · bấm nhanh LT (giữ LT = xoay camera)','CHIẾN ĐẤU',['e'],6,0], ['skillNext','Đổi kỹ năng','CHIẾN ĐẤU',['q'],2,0],
+  ['droneRecon','Drone trinh sát: thả lên, đánh dấu địch quanh điểm ngắm (hồi riêng)','CHIẾN ĐẤU',['9'],null,0],
   ['reload','Nạp đạn (băng chưa cạn: thay nhanh, không lên đạn)','CHIẾN ĐẤU',['r'],null,0], ['gunPrev','Súng trước · cuộn chuột','CHIẾN ĐẤU',['o'],4,0], ['gunNext','Súng sau · cuộn chuột','CHIẾN ĐẤU',['f'],5,0], ['autoFire','Bật / tắt tự bắn','CHIẾN ĐẤU',['y'],3,0], ['autoAim','Bật / tắt tự ngắm (nhấn cần phải)','CHIẾN ĐẤU',['k'],11,0],
   ['crew','Lính xuống xe · giữ: gọi về','QUÂN',['g'],1,1], ['muster','Tập kết toàn quân','QUÂN',['t'],12,0], ['assault','Xung phong vào thành (L3)','QUÂN',['x'],10,0], ['para','Gọi lính dù','QUÂN',['b'],13,0], ['sqOrder','Lệnh tổ bộ binh: tự do → giữ vị trí → tiến công → vòng trái → vòng phải','QUÂN',['u'],null,0],
   ['zoomPing','Camera: phóng to ⇄ thu nhỏ · chạm đôi = về mặc định (D-pad ← = M1)','CAMERA',['z'],14,0], ['camTurn','Camera: xoay 45° · chạm đôi = về góc đầu (D-pad → = M2)','CAMERA',['n'],15,0], ['zoomOut','Camera: thu xa (cuối thì quay về gần)','CAMERA',['-'],null,0], ['zoomIn','Camera: phóng gần','CAMERA',['='],null,0], ['rotL','Camera: xoay trái 45°','CAMERA',['['],null,0], ['rotR','Camera: xoay phải 45°','CAMERA',[']'],null,0],

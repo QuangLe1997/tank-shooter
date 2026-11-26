@@ -1,7 +1,7 @@
 // actors/fireteam.js — Z89/Z100 friendly FIRETEAM: called in on foot (no-tanks: no APC, no hull to board), free-roam inside the soldier's combat zone
 import * as THREE from 'three';
 import { TROOPS, SQUAD, DEPLOY, FIELDCRAFT, REAL } from '../../config.js';
-import { CAMPS, FTSQ, HELI_DOWN, MOBILE, S, _RUP, _rdir, _sV, animateSoldier, aoeDamage, atCover, bigExplode, blocks, blocksAt, bullets, burst, camera, canThrow, clampField, clearLadders, cmdGoal, combatDive, concuss, coverSpot, damageBlock, damageEnemy, dazePose, dazed, deformCrater, dropGuard, dropPowerup, enemies, fieldEdgePoint, flingDead, floatText, heightAt, inRally, infBlastK, kitAttach, liveGuards, lootModel, losBlocked, makeMortarShell, makeSoldierBar, makeSoldierMesh, nadeBark, nadeFlee, nadeTarget, orderGoal, pickups, playerRange, poseSoldier, radio, rallySpot, riverWay, rifleFX, scene, sfx, shootGuard, smokeSpreadK, soldierReloading, spawnBullet, spawnPart, stanceBarK, stashLoot, stepFlung, takePickup, throwNade, throwSmoke, tip, towers, tracerNext, tryClimb, updateClimb, updateLadders, wadeAt, wantPeek, wrapAngle, zoneJob, gunFlash } from '../hub.js';
+import { CAMPS, FTSQ, HELI_DOWN, MOBILE, S, droneMarkK, _RUP, _rdir, _sV, animateSoldier, aoeDamage, atCover, bigExplode, blocks, blocksAt, bullets, burst, camera, canThrow, clampField, clearLadders, cmdGoal, combatDive, concuss, coverSpot, damageBlock, damageEnemy, dazePose, dazed, deformCrater, dropGuard, dropPowerup, enemies, fieldEdgePoint, flingDead, floatText, heightAt, inRally, infBlastK, kitAttach, liveGuards, lootModel, losBlocked, makeMortarShell, makeSoldierBar, makeSoldierMesh, nadeBark, nadeFlee, nadeTarget, orderGoal, pickups, playerRange, poseSoldier, radio, rallySpot, riverWay, rifleFX, scene, sfx, shootGuard, smokeSpreadK, soldierReloading, spawnBullet, spawnPart, stanceBarK, stashLoot, stepFlung, takePickup, throwNade, throwSmoke, tip, towers, tracerNext, tryClimb, updateClimb, updateLadders, wadeAt, wantPeek, wrapAngle, zoneJob, gunFlash } from '../hub.js';
 
 // ---- friendly FIRETEAM ----
 export const FT=[]; 
@@ -42,7 +42,7 @@ export function infPushBlocks(pos){ for(const bl of blocksAt(pos.x, pos.z)){ if(
 //   JOBS (capture an open depot, free an open POW stockade) → ADVANCE on the nearest enemy → REGROUP around the tank.
 export function recallRange(){ return Math.max(TROOPS.fireteam.zoneMin, playerRange()); }   // the visible range ring
 function allyTarget(a){ const F=TROOPS.fireteam; let best=null, bs=F.detect;
-  for(const e of enemies){ if(e.dead) continue; const d=Math.hypot(e.pos.x-a.pos.x, e.pos.z-a.pos.z);
+  for(const e of enemies){ if(e.dead) continue; const d=Math.hypot(e.pos.x-a.pos.x, e.pos.z-a.pos.z)*droneMarkK(e);   // DRONE 1 a man the recon drone has marked counts as nearer
     if(e.def.inf){ if(d<bs){ bs=d; best={ kind:'inf', ref:e, pos:e.pos }; } } }
   if(a.at) for(const t of towers){ if(t.falling || (t.block && !blocks.includes(t.block))) continue; let live=0; for(const gd of t.guards) if(gd.alive) live++; if(!live) continue;   // Z175 a man with a launcher puts a rocket into a manned tower
     const d=Math.hypot(t.x-a.pos.x, t.z-a.pos.z), w=d*(1.1-0.12*Math.min(4,live)); if(d>5 && d<SQUAD.at.range+6 && w<bs){ bs=w; best={ kind:'towerAT', ref:t, pos:{ x:t.x, z:t.z } }; } }

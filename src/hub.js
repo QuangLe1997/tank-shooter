@@ -225,7 +225,9 @@ export * from './core/profile.js';
 export * from './core/cloud.js';   // Z162 Firebase cloud save
 export * from './core/score-report.js';   // Z163 the leaderboard's run report (no-tanks: was the server economy client)
 export * from './ui/alarm.js';
-export * from './actors/drone.js';
+export * from './actors/drone.js';   // DRONE 1 the drone war's airframes, wrecks and buzz (the gatling support drone is retired)
+export * from './combat/drone-skills.js';   // DRONE 1 his own drones: the recon drone and its marks
+export * from './ui/drone-hud.js';   // DRONE 1 the diamonds over the marked, the scan ring, the map's part
 export * from './loot/beacons.js';
 export * from './actors/soldiers.js';
 export * from './actors/loft.js';   // Z246 sculpted lofted surfaces (horse, plate armour)

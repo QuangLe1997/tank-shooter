@@ -80,22 +80,6 @@ const A = BALANCE.artillery;
 
 // DODGEABLE: the player must be able to clear the blast radius within the lock+flight window at base speed
 
-grp('SUPPORT DRONE — gunship combat tuning');
-const D = BALANCE.drone;
-for (const k of ['dur','orbit','height','detect','hp','dmg','bspeed','mag','fireCd','reload','fireRot','idleRot','hitR'])
-  ok(typeof D[k] === 'number' && isFinite(D[k]) && D[k] > 0, `drone.${k} is a positive finite number`);
-ok(D.detect > D.orbit, 'drone detect radius reaches beyond its orbit (can engage past the player)');
-ok(D.fireRot > D.idleRot, 'gatling spins faster firing than idle (visible spin-up)');
-ok(D.mag >= 1 && D.fireCd < D.reload, 'belt is sane: ≥1 round & per-round gap shorter than the reload');
-ok(D.reload >= 4, `drone reload is deliberately long (${D.reload}s ≥ 4) — can't lean on it to win fights`);
-ok(D.fireCd >= 0.3, `drone cadence is slow (${D.fireCd}s ≥ 0.3) — a helper, not a primary weapon`);
-// sustained DPS = mag·dmg / (mag·fireCd + reload) — SUPPORT tier: low chip damage, far below the tank's own output
-const droneDps = D.mag * D.dmg / (D.mag * D.fireCd + D.reload);
-ok(droneDps > 1 && droneDps < 12, `drone sustained DPS (${droneDps.toFixed(1)}) is support-tier (1–12, well under a tank's)`);
-// it must take MANY rounds to down a basic grunt (~32 HP) → clearly a chipper, not a killer
-ok(32 / D.dmg >= 4, `drone needs ≥4 hits to kill a grunt (${Math.ceil(32/D.dmg)} hits) — chips, doesn't delete`);
-ok(D.hp >= 60 && D.hp <= 300, `drone HP (${D.hp}) is killable-but-durable (60–300) so enemy fire matters`);
-
 grp('SUPPORT UPGRADES — buyable drone + guard tracks');
 const SUP = BALANCE.support;
 
@@ -1722,6 +1706,18 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
     'the player\'s death is his kill (a mark, a word at once; on the last life the word stands on the defeat screen, as text); the plate without history reads as before');
   ok(!/storyCue\(|STORY\.lines|STORY\.cast\[/.test(nm) && (nm.match(/radio\([^)]*STORY\.noVoice\)/g)||[]).length===2 && /now - R\.saidAt < Y\.gap \|\| quiet < Y\.gap && \(now - it\.from < Y\.wait \|\| quiet < Y\.cut\)/.test(nm) && /NB = bdef \? nemBrief\(bdef\.id\) : ''/.test(rd('src/ui/briefing.js')),
     'the lines live in NEMESIS.say and go out as text through radio() on their own cooldown: no new story event, no edit of the story\'s pools; the briefing\'s dossier adds what he remembers'); }
+// DRONE 1 the drone war: the recon drone and its marks (config.js DRONEWAR; actors/drone.js, combat/drone-skills.js, ui/drone-hud.js)
+{ const fs=await import('node:fs'), C=await import('./config.js'), W=C.DRONEWAR, R=W.recon, rd=f=>fs.readFileSync(f,'utf8'); grp('DRONE WAR — the airframes, his recon drone');
+  const dr=rd('src/actors/drone.js'), sk=rd('src/combat/drone-skills.js'), hud=rd('src/ui/drone-hud.js'), sp=rd('src/combat/spells.js'), ts=rd('src/combat/trooper-spells.js');
+  ok(typeof W.on==='boolean' && /nodrones/.test(rd('config.js')) && W.max>=3 && W.max<=8 && W.wrecks>=1 && W.wrecks<=6 && W.wreck.burn>=1.5 && W.wreck.burn<=6 && /if\(!DW\.on \|\| DW\.list\.length >= D\.max\) return null/.test(dr), 'a handful of drones at most, wrecks burn briefly, ?nodrones: nothing ever takes the air');
+  ok(R.cd>=25 && R.cd<=60 && R.dur>=12 && R.dur<=30 && R.dur<R.cd && R.r>=25 && R.r<=45 && R.alt>=10 && R.hp>=1 && R.hp<=6, `the recon drone: ${R.dur} s in the air on a ${R.cd} s clock, a ${R.r} m circle, ${R.hp} hits`);
+  ok(R.tick>=0.2 && R.mark>=R.tick*3*2 && R.markMax>=8 && R.markMax<=32 && R.mateK>0 && R.mateK<1 && /i % 3 !== ph/.test(sk) && /roofOver\(e\.pos\.x, e\.pos\.z\) \|\| !lineClear\(d\.x, d\.y, d\.z/.test(sk), 'marks are laid a few times a second, a third of the men at a time, by the line from above and the roof over a man — and outlast two rounds of it');
+  ok(!/alertEnemy|suspectEnemy|awareNoise/.test(sk) && /e\.markUntil = now \+ R\.mark/.test(sk), 'a mark alerts nobody');
+  ok(R.notice.p>0 && R.notice.p<=0.5 && R.notice.hit>0 && R.notice.hit<=0.5 && R.notice.max>=1 && R.notice.max<=3 && R.notice.look[0]>=0.4 && /e\.fireAt = Math\.max\(e\.fireAt \|\| 0, now \+ t\)/.test(sk) && /droneHurt\(d, 1\)/.test(sk), 'the men under it may look up (the look costs them their fire) and shoot it down');
+  ok(/export function spellReady\(sp, p\)/.test(sp) && /sp\.cast\(now\)===false\) return false/.test(sp) && /id:'reconDrone'[^\n]*own:true/.test(ts) && /filter\(s => !s\.own \|\| DRONEWAR\.on\)/.test(ts) && /spellReady\(spellNow\(\), p\)/.test(rd('src/game/loop.js')), 'the drone skills keep a clock of their own; a refused launch spends nothing; the dial shows it');
+  ok(C.ACTIONS.some(a=>a[0]==='droneRecon' && a[3].includes('9')) && C.ACTIONS.filter(a=>a[3].includes('9')).length===1 && /case 'droneRecon': castSpellId\('reconDrone'\)/.test(rd('src/input/bindings.js')) && C.KEYS_HELP.some(r=>r[0].includes('9')), '9 launches the recon drone (the key sheet lists it)');
+  ok(/InstancedMesh\(g, m, D\.recon\.markMax\)/.test(hud) && /depthTest:false/.test(hud) && /drawDroneRadar\(c\)/.test(rd('src/ui/radar.js')) && /\*droneMarkK\(e\)/.test(rd('src/actors/fireteam.js')) && /BUFF_ICON\.recon = 'drone'/.test(hud), 'a marked man: a diamond through walls (one instanced mesh), a blip on the map, nearer for the squad; the time left in the buff bar');
+  ok(!/spawnDrone|damageDrone|S\.drone\b/.test(rd('src/combat/lock-on.js')+rd('src/loot/powerups.js')+rd('src/game/loop.js')+rd('src/game/flow.js')+rd('src/dev/hooks.js')) && C.BALANCE.drone===undefined && /droneCrate\(\)/.test(rd('src/loot/powerups.js')), 'the gatling support drone is retired; its crate readies the recon drone'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

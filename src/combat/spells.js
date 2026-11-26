@@ -15,11 +15,17 @@ export function clearEquip(){ const p=S.player; if(p) p.smokeUntil=0; }
 // Z307 the soldier's skills (combat/trooper-spells.js); the pick wraps to the list
 export function spellList(){ return TROOPER_SPELLS; }
 export function spellNow(){ const L=spellList(); return L[S.spell] || L[0]; }
-export function trySpell(){
-  if(S.mode!=='playing') return; const p=S.player, now=performance.now()/1000;
-  const sp=spellNow(); if(now < p.spellCdUntil) return;
-  p.spellCdUntil = now + sp.cd * p.spellCdMul; sp.cast(now); sfx('spell'); updateSpellHUD();
-}
+// DRONE 1 a skill with own:true (the drones: combat/drone-skills.js) keeps a clock of its own (p.ownCd[id]) — launching a drone must not lock the grenade, nor
+//   a grenade the jammer — and its cast may return false (nothing to launch, the sky full): then nothing is spent
+export function spellReady(sp, p){ return sp.own ? (p.ownCd && p.ownCd[sp.id]) || 0 : p.spellCdUntil; }
+export function spellHold(id, until){ const p=S.player; if(p) (p.ownCd || (p.ownCd={}))[id]=until; }
+function castSpell(sp){ const p=S.player, now=performance.now()/1000; if(!p || !sp || now < spellReady(sp, p)) return false;
+  if(sp.own){ if(sp.cast(now)===false) return false; spellHold(sp.id, Math.max(spellReady(sp, p), now + sp.cd * p.spellCdMul)); }
+  else { p.spellCdUntil = now + sp.cd * p.spellCdMul; sp.cast(now); }
+  sfx('spell'); updateSpellHUD(); return true; }
+export function trySpell(){ if(S.mode!=='playing') return; castSpell(spellNow()); }
+// a skill cast by a key of its own, whichever one is in hand (input/bindings.js: the drones' keys)
+export function castSpellId(id){ if(S.mode!=='playing') return; const sp=spellList().find(s=>s.id===id); if(sp) castSpell(sp); }
 export function cycleSpell(d=1){ const n=spellList().length; S.spell=((S.spell%n)+d+n)%n; updateSpellHUD(); sfx('click'); }
 // Z104 blast vs a man on foot: 1 = killed (inside the core), else the fraction of the blast damage he takes (fades to edgeMin at reach)
 export function infBlastK(d, r){ const c=r*LETHAL.core, R=r*LETHAL.reach; if(d<=c) return 1; if(d>=R) return 0; return LETHAL.edgeMin + (1-LETHAL.edgeMin)*(1-(d-c)/(R-c)); }
