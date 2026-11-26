@@ -158,7 +158,7 @@ export function updateTroopBatch(now){
     let rootShown=tbShown(r); if(rootShown){ r.updateWorldMatrix(true, true); _tbSp.center.setFromMatrixPosition(r.matrixWorld); _tbSp.radius=2.2*(r.scale.x||1)+3; if(!_tbFr.intersectsSphere(_tbSp)) rootShown=false; }
     const dx=r.matrixWorld.elements[12]-_tbPx, dz=r.matrixWorld.elements[14]-_tbPz, d2=dx*dx+dz*dz, far=d2>_tbFar2;   // TROOP 1 how far he stands from the soldier
     const hit=(u.flashUntil||0)>now || u.torso.material.emissiveIntensity>0, sh=!MOBILE && u._cs!==false && d2<_tbSh2, K=SOLDIER_KIT[u.kitKey], skin=!!(K && K.skin && u.realKit);
-    if(skin && rootShown){ const id=u.kitKey+'_body_'+(sh?1:0)+(far?'f':''), B=_tbBk[id]||(_tbBk[id]={ n:0, m:[], c:[], key:u.kitKey, kind:'body', sh, far }); B.m[B.n]=u; B.c[B.n]=hit ? _tbHit : (u.tint||_tbWhite); B.n++; }   // Z344 skinned: the man once, his joints read off his rig
+    if(skin && rootShown && !u.clipDraw){ const id=u.kitKey+'_body_'+(sh?1:0)+(far?'f':''), B=_tbBk[id]||(_tbBk[id]={ n:0, m:[], c:[], key:u.kitKey, kind:'body', sh, far }); B.m[B.n]=u; B.c[B.n]=hit ? _tbHit : (u.tint||_tbWhite); B.n++; }   // Z344 skinned: the man once, his joints read off his rig
     for(const pt of u.parts){ if(skin && pt.kind!=='gun') continue; const detached=!pt.o.parent || pt.o.parent===scene || (pt.kind==='gun' && u.droppedGun);   // a rifle dropped beside the dead lies on its own
       if(detached){ if(!tbShown(pt.o)) continue; pt.o.updateWorldMatrix(true, false); } else if(!rootShown || !tbShown(pt.o)) continue;
       const id=u.kitKey+'_'+pt.kind+'_'+(sh?1:0), B=_tbBk[id]||(_tbBk[id]={ n:0, m:[], c:[], key:u.kitKey, kind:pt.kind, sh });

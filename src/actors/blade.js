@@ -21,7 +21,7 @@
 //   Nothing allocates per frame.
 import * as THREE from 'three';
 import { AMBUSH, BLADE, CAV, LOGISTICS, REALCAV } from '../../config.js';
-import { AMBST, MATE, coopBladeCodeOf, ambushClang, ambushMateK, ambushSaySeen, ambushTouch, suspectEnemy, decalBlood, enemyPool, getEnemyMesh, layOut, reviveSoldierMesh, hangState, hangStep, CV, MOBILE, PROFILE, RDRAG, S, animClip, animInfo, animRootAt, bloodSpurt, blocksNear, climbing, curlHand, damageBlock, damageEnemy, enemies, floatText, fpvFlying, heightAt, heldAction, ik2, lineClear, loadAnimGroup, loadGLTF, saveProfile, scene, selectGun, sfx, spawnPart, updateGunHUD } from '../hub.js';
+import { SOLDIER_KIT, TROOP_BATCH, renderer, troopSkinDone, troopSkinMesh, troopSkinWrite, AMBST, MATE, coopBladeCodeOf, ambushClang, ambushMateK, ambushSaySeen, ambushTouch, suspectEnemy, decalBlood, enemyPool, getEnemyMesh, layOut, reviveSoldierMesh, hangState, hangStep, CV, MOBILE, PROFILE, RDRAG, S, animClip, animInfo, animRootAt, bloodSpurt, blocksNear, climbing, curlHand, damageBlock, damageEnemy, enemies, floatText, fpvFlying, heightAt, heldAction, ik2, lineClear, loadAnimGroup, loadGLTF, saveProfile, scene, selectGun, sfx, spawnPart, updateGunHUD } from '../hub.js';
 
 const V3 = () => new THREE.Vector3(), Q4 = () => new THREE.Quaternion(), clamp = (v, a, b) => Math.max(a, Math.min(b, v)), smooth = k => { k = clamp(k, 0, 1); return k * k * (3 - 2 * k); }, wrapA = a => Math.atan2(Math.sin(a), Math.cos(a)), D2R = Math.PI / 180;
 const _a = V3(), _b = V3(), _c = V3(), _d = V3(), _k = V3(), _m = V3(), _n = V3(), _x = V3(), _y = V3(), _z = V3(), _p = V3(), _t = V3(), _u = V3(), _r = V3(), _bk = V3(), _ws = V3(), _one = V3();
@@ -353,7 +353,26 @@ function capOn(par, y, r){ if(!_capG){ const n = 16, P = [0, 0, 0], Cc = [0.62, 
     _capM = new THREE.MeshLambertMaterial({ vertexColors:true, side:THREE.DoubleSide, emissive:0x3a0504 }); } const c = CAPS.pop() || new THREE.Mesh(_capG, _capM); c.scale.setScalar(r); c.position.set(0, y, 0); c.rotation.set(0, 0, 0); c.visible = true; par.add(c); return c; }
 function shrink(S0, o, k){ S0.push(o, o.scale.x, o.scale.y, o.scale.z, o.position.x, o.position.y, o.position.z); o.scale.multiplyScalar(k); }
 function unsever(s, pool){ for(let i = 0; i < s.keep.length; i += 7){ const o = s.keep[i]; o.scale.set(s.keep[i + 1], s.keep[i + 2], s.keep[i + 3]); o.position.set(s.keep[i + 4], s.keep[i + 5], s.keep[i + 6]); } for(const c of s.caps){ c.parent && c.parent.remove(c); CAPS.push(c); }
-  for(const m of [s.a, s.b]){ m.visible = false; if(m.userData.gun) m.userData.gun.visible = true; m.quaternion.copy(s.q0); if(pool && m.parent){ reviveSoldierMesh(m); (enemyPool[s.type] = enemyPool[s.type] || []).push(m); } } }
+  if(s.dg){ s.dg.busy = false; s.dg.A.m.visible = s.dg.B.m.visible = false; s.dg = null; }
+  for(const m of [s.a, s.b]){ m.userData.clipDraw = false; m.visible = false; if(m.userData.gun) m.userData.gun.visible = true; m.quaternion.copy(s.q0); if(pool && m.parent){ reviveSoldierMesh(m); (enemyPool[s.type] = enemyPool[s.type] || []).push(m); } } }
+// BLADE 11 THE DIAGONAL CUT (a move's sever:'diag' — the dadao's leaping cut): no joint lies along a line from one shoulder to the other hip, so the frozen man is drawn
+//   TWICE outside the troop batch, each by a one-man skinned mesh clipped by the cut's own plane (carried by its half's rigid motion): the half with his head and far
+//   shoulder slides off down the cut and falls, the rest (legs, the near flank and arm) stands a beat and goes over. A red face lies in the plane on each half.
+//   The meshes are pooled per kit (made on the first such cut). Needs the real (skinned) kit; the blocky one falls back to the waist cut.
+const DG = [], _dp = new THREE.Plane(), _dv = V3(), _dw = V3(), _dh = V3(), _dq = Q4(), _dS = V3(), _dH = V3(), _dM = new THREE.Matrix4();
+function diagPair(K){ let d = null; for(const x of DG) if(!x.busy && x.key === K.key){ d = x; break; }
+  if(!d){ const mk = () => { const m = troopSkinMesh(K.skin, K.mat, 1), pl = new THREE.Plane(); m.material.clippingPlanes = [pl]; m.customDepthMaterial.clippingPlanes = [pl]; m.frustumCulled = false; m.castShadow = true; m.receiveShadow = true; m.count = 1; m.visible = false; scene.add(m); return { m, pl }; };
+    d = { key:K.key, A:mk(), B:mk(), busy:false }; DG.push(d); renderer.localClippingEnabled = true; } d.busy = true; return d; }
+// the cut's plane in his rig's own frame (→ s.lp): through the base of his neck on the side the blade came from and his other hip, along his front; + = his head's side
+function diagPlane(s, m, u){ m.updateWorldMatrix(true, true); _dq.copy(m.quaternion).invert(); _dh.set(s.dx, 0, s.dz).applyQuaternion(_dq); const sd = _dh.x < 0 ? 1 : -1;
+  const toL = (o, out) => m.worldToLocal(o.getWorldPosition(out)); const hR = u.legs.find(l => l.sx > 0) || u.legs[0], hL = u.legs.find(l => l.sx < 0) || u.legs[1];
+  toL(hR.hip, _dv); toL(hL.hip, _dw); const span = _dv.distanceTo(_dw); toL(sd > 0 ? hL.hip : hR.hip, _dH); toL(u.head, _dh); toL(u.arms || u.up, _dS); _dS.y += (_dh.y - _dS.y) * BLADE.sever.diag.neck; _dS.x += sd * span * BLADE.sever.diag.side;
+  _dv.subVectors(_dH, _dS); const L = _dv.length(); _dw.crossVectors(_dv, _dp.normal.set(0, 0, 1)).normalize(); if(_dw.dot(_dh.sub(_dS)) < 0) _dw.negate(); s.lp = new THREE.Plane().setFromNormalAndCoplanarPoint(_dw, _dS);
+  s.cut = { m:_dS.clone().add(_dH).multiplyScalar(0.5), x:_dv.clone().divideScalar(L), n:_dw.clone(), L, w:span * BLADE.sever.diag.depth }; s.sd = sd; }
+function diagCap(par, s, sg){ const c = capOn(par, 0, 1), C = s.cut; _dv.crossVectors(C.x, C.n); _dM.makeBasis(C.x, _dw.copy(C.n).multiplyScalar(sg), _dv.multiplyScalar(sg)); c.quaternion.setFromRotationMatrix(_dM); c.position.copy(C.m); c.scale.set(C.L * 0.5, 1, C.w); return c; }
+function diagDraw(s){ const K = SOLDIER_KIT[s.a.userData.kitKey], d = s.dg; if(!K || !d) return; for(const [r, h, sg] of [[s.a, d.A, 1], [s.b, d.B, -1]]){ r.updateWorldMatrix(true, true); troopSkinWrite(h.m, 0, r.userData, K.joints, TROOP_BATCH.kinds); troopSkinDone(h.m);
+    h.pl.copy(s.lp).applyMatrix4(r.matrixWorld); if(sg < 0) h.pl.negate(); h.m.setColorAt(0, r.userData.tint || _dCol); h.m.instanceColor.needsUpdate = true; h.m.visible = true; } }
+const _dCol = new THREE.Color(1, 1, 1);
 export function bladeSever(e){ const C = BLADE.sever, m = e.mesh, u = m && m.userData, p = S.player; if(!C.on || !u || !u.up || !u.head || !u.body || !u.legs || u.legs.length < 2 || e.puppet || !m.parent || !p) return false;
   while(SEV.length >= C.max) unsever(SEV.shift(), true); const kind = e._bladeCut, x = e.pos.x, z = e.pos.z; let dx = e._hx || 0, dz = e._hz || 0; const dl = Math.hypot(dx, dz); if(dl < 0.05){ dx = Math.sin(p.facing); dz = Math.cos(p.facing); } else { dx /= dl; dz /= dl; }
   layOut(m, x, z); const b = getEnemyMesh(e.type), v = b.userData; if(!v.up || !v.legs){ b.visible = false; (enemyPool[e.type] = enemyPool[e.type] || []).push(b); return false; } if(b.parent !== m.parent) m.parent.add(b);
@@ -362,6 +381,8 @@ export function bladeSever(e){ const C = BLADE.sever, m = e.mesh, u = m && m.use
   if(kind === 'neck'){ shrink(K, u.head, E); shrink(K, v.legs[0].hip, E); shrink(K, v.legs[1].hip, E); if(v.arms) shrink(K, v.arms, E); shrink(K, v.up, E); shrink(K, v.head, 1 / E); v.head.position.multiplyScalar(1 / E);   // (a: the body, headless · b: the head alone — its parent shrunk, itself grown back)
     s.caps.push(capOn(u.up, u.head.position.y, R.neck), capOn(v.body, v.up.position.y + 0.02, R.neck)); s.hy = (v.up.position.y + K[K.length - 2] ) * v.body.scale.y * b.scale.y; }
   else if(kind === 'leg'){ const i = Math.random() < 0.5 ? 0 : 1; shrink(K, u.legs[i].hip, E); shrink(K, v.legs[1 - i].hip, E); shrink(K, v.up, E); s.caps.push(capOn(u.body, hy, R.leg), capOn(v.body, hy, R.leg)); s.caps[0].position.x = s.caps[1].position.x = u.legs[i].hip.position.x; }   // (a: the man less a leg · b: the leg)
+  else if(kind === 'diag' && SOLDIER_KIT[u.kitKey] && SOLDIER_KIT[u.kitKey].skin){ diagPlane(s, m, u); s.dg = diagPair(SOLDIER_KIT[u.kitKey]); u.clipDraw = v.clipDraw = true; s.caps.push(diagCap(m, s, -1), diagCap(b, s, 1));
+    _dh.set(-s.sd, 0, 0).applyQuaternion(m.quaternion); s.dx = s.dx * 0.4 + _dh.x * 0.6; s.dz = s.dz * 0.4 + _dh.z * 0.6; const l = Math.hypot(s.dx, s.dz) || 1; s.dx /= l; s.dz /= l; diagDraw(s); }   // (a: his head and far shoulder, sliding off down the cut · b: the rest — both whole, each clipped by the plane)
   else { shrink(K, u.legs[0].hip, E); shrink(K, u.legs[1].hip, E); shrink(K, v.up, E); s.caps.push(capOn(u.up, 0.01, R.waist), capOn(v.body, hy, R.waist)); }   // (a: from the waist up · b: his legs)
   bloodSpurt(x, z, dx, dz, 2.2); bloodSpurt(x, z, -dz, dx, 1.4); decalBlood(x, z, 1.1 + Math.random() * 0.3); sfx('crunch', e.pos, 0.8); SEV.push(s); BLADEST.severed++; return true; }
 function severTick(dt){ const C = BLADE.sever; for(let i = SEV.length - 1; i >= 0; i--){ const s = SEV[i]; if(!s.a.parent || !s.b.parent){ unsever(s, false); SEV.splice(i, 1); continue; } s.t += dt; if(s.t > C.life){ unsever(s, true); SEV.splice(i, 1); continue; } if(s.done && s.t < C.life - C.sink) continue;
@@ -370,7 +391,7 @@ function severTick(dt){ const C = BLADE.sever; for(let i = SEV.length - 1; i >= 
       const f = Math.min(1, s.t / 0.45), d = C.slide + 1.1 * f; s.b.position.set(s.a.position.x + s.dx * d, gy - (s.hy - 0.14) * f * f + 0.5 * Math.sin(Math.PI * Math.min(1, f)) * (1 - f * 0.5), s.a.position.z + s.dz * d); s.b.quaternion.copy(_sq.setFromAxisAngle(_sax, f * 4)).multiply(s.q0); }
     else { s.a.quaternion.copy(_sq.setFromAxisAngle(_sax, ka * Math.PI / 2)).multiply(s.q0); if(!s.ax){ s.ax = s.a.position.x; s.az = s.a.position.z; } s.a.position.set(s.ax + s.dx * sl, gy + 0.14 * ka, s.az + s.dz * sl);   // (what he kept slides off along the cut, tips over and lies)
       s.b.quaternion.copy(_sq.setFromAxisAngle(_sax, -kb * Math.PI / 2)).multiply(s.q0); s.b.position.y = gy + 0.1 * kb; }   // (what came away stands a beat, then goes over the other way)
-    if(s.t > C.tip[1] + C.wait + 0.1) s.done = true; } }
+    if(s.dg) diagDraw(s); if(s.t > C.tip[1] + C.wait + 0.1) s.done = true; } }
 export const bladeSevered = () => SEV.length;
 
 // soldier-fire: the trigger is down this frame. true: the round is not fired (the blade has it)
