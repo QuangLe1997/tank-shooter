@@ -4,15 +4,16 @@
 // he is out of the picture, a dot on the map. Nothing here exists until the other player's first state arrives (mateUpdate), and nothing runs without a room.
 import * as THREE from 'three';
 import { CAV, COOP, HORSE, HUMAN_SCALE, XEOM } from '../../config.js';
-import { CV, GUNS, NET_PFLAG, NET_STANCE, S, addTrail, animateHorse, animateSoldier, buildBikeMount, buildGeneral, buildHorse, camera, cloakFoot, fitRealCav, gunFlash, gunSound, heightAt, lineClear, lineHit, poseRider, poseSoldier, scene, seatTurnOff, updateRealCav } from '../hub.js';
+import { CV, GUNS, NET_PFLAG, NET_STANCE, S, addTrail, playerRange, animateHorse, animateSoldier, buildBikeMount, buildGeneral, buildHorse, camera, cloakFoot, fitRealCav, gunFlash, gunSound, heightAt, lineClear, lineHit, poseRider, poseSoldier, scene, seatTurnOff, updateRealCav } from '../hub.js';
 
 const RIDES = [null, 'cav', 'xeom', 'bagac', 'bantai'], wrapA = a => Math.atan2(Math.sin(a), Math.cos(a)), _v = new THREE.Vector3();
 let _gunIds = null; const gunIds = () => _gunIds || (_gunIds = Object.keys(GUNS));
 export function mateGunIndex(id){ const i = gunIds().indexOf(id); return i < 0 ? 0 : i; }
+export function mateGunId(i){ return gunIds()[i] || ''; }
 export function mateRideCode(p){ return p && p.bike ? Math.max(1, RIDES.indexOf(p.bike)) : 1; }
 // what this page knows of the other soldier (plain numbers, set every frame from the interpolated state) + his rig
 export const MATE = { on:false, name:'', root:null, G:null, H:null, RC:null, p:null, base:null, mount:0, x:0, y:0, z:0, heading:0, aim:0, pitch:0, vx:0, vz:0, speed:0, stance:'stand', gun:'', flags:0, hp:0, hpMax:1,
-  mounted:false, down:false, dead:false, firing:false, hidden:false, losAt:0, fireAt:0, lastX:0, lastZ:0, lastH:0, yawRate:0, dist:0, onScreen:false, shots:0, err:0, lastErr:'', frames:0, revive:0 };
+  mounted:false, down:false, dead:false, firing:false, hidden:false, losAt:0, fireAt:0, lastX:0, lastZ:0, lastH:0, yawRate:0, dist:0, onScreen:false, shots:0, err:0, lastErr:'', frames:0, revive:0, mark:null };
 const TR = [];   // his rounds as drawn: { x, y, z, vx, vy, vz, life } — light only, they strike nothing
 let _tag = null, _arrow = null, _xray = null;
 
@@ -38,6 +39,8 @@ function proxy(){ const base = MATE.base, p = Object.create(base);
     hp:100, maxHp:100, radius:CAV.radius.foot, hitT:0, kbx:0, kbz:0, invincibleUntil:0, shieldUntil:0, respawnBlinkUntil:0, fireAt:0, cav:MATE.RC, bike:MATE.H.bike || null, burns:[], defK:1, armor:0, lives:9, fwdSpeed:0, throttle:0 });
   return p; }
 export function mateProxy(){ return MATE.on ? MATE.p : null; }
+// how far the gun in his hands reaches, by this page's own table (the host judges his hit reports with it)
+export function mateRange(){ if(!MATE.p) return 0; const sp = S.player; S.player = MATE.p; try{ return playerRange(); }catch(e){ return 0; }finally{ S.player = sp; } }
 // the pose code is written for ONE soldier and reads him off globals: for the length of fn they describe the other one (always put back)
 const _sv = { p:null, f:false, trans:null, jump:null, climb:null, roll:null, land:0, cover:null, aimUp:false };
 function asMate(fn){ _sv.p = S.player; _sv.f = S.firing; _sv.trans = CV.trans; _sv.jump = CV.jump; _sv.climb = CV.climb; _sv.roll = CV.roll; _sv.land = CV.land; _sv.cover = CV.cover; _sv.aimUp = CV.aimUp;
@@ -100,5 +103,6 @@ function marks(on, now){ const M = MATE, C = COOP.mate; if(typeof document === '
   if(_xray){ _xray.visible = M.hidden && seen; if(_xray.visible){ _xray.material.color.set(col); _xray.scale.set(C.xrayW * (M.stance === 'prone' ? 1.7 : 1), C.xrayH * (M.stance === 'prone' ? 0.45 : M.mounted ? 1.25 : 1), 1); _xray.position.y = _xray.scale.y / 2; } } }
 // the map: a ring round a dot in his colour (ui/radar.js drawRadar calls it last)
 export function mateRadar(c, toX, toY){ const M = MATE; if(!M.on) return; const x = toX(M.x), y = toY(M.z), col = M.down ? COOP.mate.downCss : COOP.mate.css;
+  if(M.mark){ const mx = toX(M.mark.x), my = toY(M.mark.z); c.globalAlpha = 0.6 + 0.4 * Math.sin(performance.now() / 170); c.strokeStyle = '#7fd0ff'; c.lineWidth = 1.6; c.beginPath(); c.arc(mx, my, 6, 0, 6.283); c.stroke(); c.globalAlpha = 1; }   // (the host's side mission: its place)
   c.fillStyle = col; c.beginPath(); c.arc(x, y, 3, 0, 6.283); c.fill(); c.strokeStyle = col; c.lineWidth = 1.4; c.beginPath(); c.arc(x, y, 6, 0, 6.283); c.stroke(); }
-export function mateClear(){ MATE.on = false; TR.length = 0; marks(false); unbuild(); MATE.base = null; MATE.mount = 0; MATE.revive = 0; }
+export function mateClear(){ MATE.on = false; MATE.mark = null; TR.length = 0; marks(false); unbuild(); MATE.base = null; MATE.mount = 0; MATE.revive = 0; }
