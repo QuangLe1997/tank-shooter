@@ -2057,8 +2057,8 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/if\(f\.wallMat\) for\(const m of matList\(f\.wallMat\)\) m\.dispose\(\);/.test(rd('src/world/fortress.js')) && !/f\.wallMat\.dispose\(\)/.test(rd('src/world/fortress.js')), 'SYNC 2 clearForts: a kit wall\'s material may be a list — each one is disposed (the call on the list threw and left the next battle half built)'); }
 // GRAPH 1 the soldier's motion graph: the switch off by default, every clip it names is in the library, its numbers hold together, the wiring
 { const C = await import('./config.js'), fs = await import('node:fs'), G = C.ANIMGRAPH, rd = f => fs.readFileSync(f, 'utf8'), J = JSON.parse(rd(C.ANIMLIB.path + C.ANIMLIB.index)), by = new Map(J.clips.map(c => [c.id, c])), ag = rd('src/actors/anim-graph.js'), rc = rd('src/actors/real-cav.js');
-  ok(G.on === false && /\[\?&\]animgraph/.test(rd('config.js')) && G.groups.every(g => C.ANIMLIB.groups.includes(g)) && G.groups.includes('loco') && G.groups.includes('stance'),
-    'ANIMGRAPH: off unless the address says ?animgraph; it fetches only groups the library has (the walking and standing ones among them)');
+  ok(G.on === false && /on:typeof location !== 'undefined' && !\/\[\?&\]noanimgraph\\b\/\.test\(location\.search\)/.test(rd('config.js')) && G.groups.every(g => C.ANIMLIB.groups.includes(g)) && G.groups.includes('loco') && G.groups.includes('stance'),
+    'ANIMGRAPH: on in the game unless the address says ?noanimgraph (GRAPH 5; off under Node: no location); it fetches only groups the library has (the walking and standing ones among them)');
   const sets = Object.values(G.sets), stride = sets.flatMap(S => S.gaits.flatMap(p => G.dirs.map(d => p + d)));
   ok(G.dirs.length === 8 && new Set(G.dirs).size === 8 && sets.length === 2 && stride.every(id => { const c = by.get(id); return c && c.g === 'loco' && c.loop && !c.travels && c.speed > 0.5 && c.dir; })
     && G.dirs.every((d, i) => { const c = by.get(G.sets.stand.gaits[0] + d), a = Math.atan2(c.dir[0], c.dir[1]), w = i * Math.PI / 4; return Math.abs(Math.atan2(Math.sin(a - w), Math.cos(a - w))) < 0.02; })
@@ -2373,6 +2373,15 @@ grp('HIT 1 a man is hit, not a hull: flesh, blood, heat — no metal, no fire on
   ok(/export function storyCue\(ev, data, must\)\{ banterCue\(ev, data\);/.test(R('src/campaign/story.js')) && /banterCue\('throw'\)/.test(R('src/combat/trooper-spells.js')) && /RIDE_VOICE\.on = true; RIDE_VOICE\.play = ride;/.test(bt) && /banterCut\(\);/.test(vo) && /VOICE\.playing \|\| VOICE\.talk/.test(R('src/audio/afx-mix.js'))
     && /id="setBanter"/.test(R('index.html')) && /Thoại vui \(bác tài, đồng đội\)/.test(R('index.html')) && /onOff\('setBanter', PROFILE\.banter!==false/.test(R('src/ui/settings.js')) && /PROFILE\.banter !== false/.test(bt) && /export function voiceSub\(/.test(bt) && /voiceSub\(L\[0\], L\[1\], buf\.duration\)/.test(vo), 'hooked: the story cues, his grenade, the ride\'s lines; a radio line cuts the banter, the fight ducks under either; the "Thoại vui" switch; a subtitle for every line');
   ok(!/setInterval\(tick, [^)]*\)/.test(bt.replace(/if\(!BANTER\.poll[^;]*;/, '')) && /if\(!BANTER\.poll && typeof setInterval === 'function'\)/.test(bt), 'the look-out is one timer for the whole session, started once'); }
+// GRAPH 5 the motion graph on by default: no blend drags a foot, a step travels only while clear of the ground, the crouch and prone changes keep the feet
+grp('GRAPH 5 the motion graph: on by default, lifted feet instead of dragged ones, crouch-to-knee and prone changes with planted feet');
+{ const C = await import('./config.js'), fs = await import('node:fs'), G = C.ANIMGRAPH, Ft = G.feet, F = C.CAV.foot, rd = f => fs.readFileSync(f, 'utf8'), ag = rd('src/actors/anim-graph.js');
+  ok(/!\/\[\?&\]noanimgraph\\b\/\.test\(location\.search\)/.test(rd('config.js')) && G.on === false,
+    'ANIMGRAPH is on in the game unless the address says ?noanimgraph (Node has no location: off here)');
+  ok(Array.isArray(Ft.drag) && Ft.drag.length === 4 && Ft.drag[0] > 0 && Ft.drag[1] >= 0 && Ft.drag[2] > 0.02 && Ft.drag[2] <= Ft.liftMax && Ft.drag[3] > F.fire && Ft.drag[3] < F.run && Ft.dragRate > 10 && Ft.dragRate < 120 && /const drag = Fc\.drag && !F\.on/.test(ag),
+    'a foot carried fast over the ground by the pose (below '+Ft.drag[3]+' m/s) is lifted '+Ft.drag[2]+' m clear in a few frames, not dragged');
+  ok(Ft.stepWin[0] > 0 && Ft.stepWin[0] < Ft.stepWin[1] && Ft.stepWin[1] < 1 && Ft.liftMin >= 0.03 && Ft.liftMin <= Ft.liftMax && Ft.proneLock === true && G.trans.crouchKneel === true && /C\.trans\.crouchKneel/.test(ag),
+    'a step travels only in the middle '+Ft.stepWin.join('–')+' of its arc, at least '+Ft.liftMin+' m up; down from a crouch onto the knee by the clip; the feet stay planted getting down to and up from the belly'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

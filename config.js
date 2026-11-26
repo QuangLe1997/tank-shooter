@@ -2957,7 +2957,8 @@ export const FIELD_SYNC = { uuid:true, uuidBuf:true, cosmetic:true, trace:false,
 //   legs' numbers: GUNFEEL.feet.slope for the foot's pitch, SOLDIER_LEGS.maxDrop for the hips): vmax = how fast a foot's ground may rise or fall
 //   under it (m/s: a kerb is climbed, not jumped) · fade = a foot this high in its swing no longer reaches down into a dip (m) · max = the most
 //   a foot is moved off the level through his middle (m) · rate = how fast the hips come back up (/s; three times that going down).
-export const ANIMGRAPH = { on:typeof location !== 'undefined' && /[?&]animgraph\b/.test(location.search), groups:['loco', 'stance', 'air'],
+// GRAPH 5 the motion graph is ON by default (?noanimgraph: the old legs)
+export const ANIMGRAPH = { on:typeof location !== 'undefined' && !/[?&]noanimgraph\b/.test(location.search), groups:['loco', 'stance', 'air'],
   dirs:['forward', 'forward-left', 'left', 'backward-left', 'backward', 'backward-right', 'right', 'forward-right'],
   sets:{ stand:{ idle:'stance-rifle-idle-aim', gaits:['loco-rifle-walk-', 'loco-rifle-run-', 'loco-rifle-sprint-'], turn:['loco-rifle-turn-90-left', 'loco-rifle-turn-90-right'], wide:['loco-rifle-turn-180-deg-left', 'loco-rifle-turn-180-deg-right'] },
     crouch:{ idle:'stance-idle-crouch-aim', gaits:['loco-rifle-walk-crouch-'], turn:['loco-rifle-crouch-turn-90-left', 'loco-rifle-crouch-turn-90-right'], wide:['loco-rifle-crouch-turn-180-deg-left', 'loco-rifle-crouch-turn-180-deg-right'] } },
@@ -2966,9 +2967,9 @@ export const ANIMGRAPH = { on:typeof location !== 'undefined' && /[?&]animgraph\
   inert:{ half:0.08, stance:0.13, jump:0.15, vmax:25 },
   turn:{ at:1.0, early:0.25, max:1.75, wide:2.0, rate:1.5, lag:0.7, catchUp:3, end:0.95, moveV:0.3, settle:9 }, stop:{ clip:'loco-adv-run-to-stop', phase:[0.5, 0.76], late:0.07, minV:2.2, maxV:5.6, ahead:0.85, stillV:0.15, rate:1.2, maxRate:3, end:0.92, hipMin:0.86, hipSoft:0.04 }, kneel:{ idle:'stance-rifle-kneel-idle', stillV:0.25, wait:0.2 },
   prone:{ idle:'stance-prone-idle', crawl:'stance-prone-forward', crawlV:0.3, rate:[0.6, 3], drop:0, match:true, band:[0.45, 1.6], blendT:0.25, stopV:0.08, holdT:1.2, outT:0.9 },
-  trans:{ standKneel:['stance-pistol-stand-to-kneel', 0.12, 0.75, 1.4], kneelStand:['stance-rifle-kneel-to-stand', 0.1, 0.95, 1.5], kneelProne:['stance-rifle-kneel-to-prone', 0.1, 1.95, 1.6], proneKneel:['stance-rifle-prone-to-kneel', 0, 1.85, 1.6], fast:1.6, cutV:1.0 },
+  trans:{ standKneel:['stance-pistol-stand-to-kneel', 0.12, 0.75, 1.4], kneelStand:['stance-rifle-kneel-to-stand', 0.1, 0.95, 1.5], kneelProne:['stance-rifle-kneel-to-prone', 0.1, 1.95, 1.6], proneKneel:['stance-rifle-prone-to-kneel', 0, 1.85, 1.6], fast:1.6, cutV:1.0, crouchKneel:true },
   air:{ up:['air-jump-up', 0.27, 0.533], loop:'air-jump-loop', down:['air-jump-down', 0.07, 0.33, 0.66], upT:0.22, landRate:1.3, snapV:3 },
-  feet:{ on:true, hOn:0.05, hOff:0.065, retro:0.12, heel:0.02, rest:0.12, restT:0.35, stepHalf:0.09, lift:0.45, liftMax:0.07, flyT:0.2, vOn:[0.5, 0.6], slowV:1.0, landV:3, vLand:[1.5, 1.2], brake:8, vOff:[1.8, 0.9], vRelV:3, walkLock:false, pull:0.45, arc:true, stepT:[0.16, 0.5, 0.32], liftMin:0.03, half:0.05, peel:3, stretch:0.985, stepV:0.4, stepGap:0.16 },
+  feet:{ on:true, hOn:0.05, hOff:0.065, retro:0.12, heel:0.02, rest:0.12, restT:0.35, stepHalf:0.09, lift:0.45, liftMax:0.07, flyT:0.2, vOn:[0.5, 0.6], slowV:1.0, landV:3, vLand:[1.5, 1.2], brake:8, vOff:[1.8, 0.9], vRelV:3, walkLock:false, pull:0.45, drag:[0.35, 0.5, 0.05, 4.2], dragRate:40, proneLock:true, arc:true, stepT:[0.16, 0.5, 0.32], stepWin:[0.3, 0.75], liftMin:0.045, half:0.05, peel:3, stretch:0.985, stepV:0.4, stepGap:0.16 },
   slope:{ on:true, rate:14, vmax:3, fade:0.2, max:0.45 }, shot:{ half:0.1, rate:1 },
   // GRAPH 3 leap: a jump off at a run (above v m/s) is the stride carried through the air, the next footfall at least `min` of a stride on timed to the landing ·
   //   lean (rad per m/s², caps in rad): the trunk into his acceleration (k: ahead / behind, fwd / back caps) and into a bend (kr × speed × turn rate), on a spring of

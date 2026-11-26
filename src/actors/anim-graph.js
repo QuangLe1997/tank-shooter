@@ -1,4 +1,4 @@
-// actors/anim-graph.js — GRAPH 1 THE SOLDIER'S MOTION GRAPH (the PLAYER'S soldier, on his feet; behind ANIMGRAPH.on / ?animgraph — off, none of it runs):
+// actors/anim-graph.js — GRAPH 1 THE SOLDIER'S MOTION GRAPH (the PLAYER'S soldier, on his feet; ANIMGRAPH.on — on by default since GRAPH 5, ?noanimgraph turns it off and then none of it runs):
 // his hips, legs and (a tunable share of) his spine come from the Mixamo library (actors/anim-lib.js) instead of one forward-only clip + procedural legs.
 //   · THE BLEND SPACE: his real velocity in his legs' own frame (speed + bearing) picks the eight-way rifle walk / run / sprint clips (the crouch-walk
 //     set when crouched) — two bearings × two gaits at most, the idle below a walk. Every clip rides ONE stride phase (each clip's own offset is measured
@@ -206,12 +206,13 @@ function lean(dt, wx, wz, own){ const L = C.lean, k = 1 - Math.exp(-dt * 0.6931 
 const code = () => A.st === 'loco' ? (A.set === 'crouch' ? 1 : 0) : A.st === 'kneel' ? 2 : A.st === 'prone' ? 3 : -1;
 function settle(c, half){ A.st = c <= 1 ? 'loco' : c === 2 ? 'kneel' : 'prone'; if(c <= 1) A.set = c ? 'crouch' : 'stand'; A.turn = null; A.kick = Math.max(A.kick, half); }
 function trans(key, to, goal, fast){ const D = C.trans[key], g = clipOf(D[0]); if(!g){ settle(to, C.inert.stance); return; }
-  TR.g = g; TR.t = D[1]; TR.t1 = D[2]; TR.rate = D[3] * (fast || 1); TR.to = to; TR.goal = goal; TR.feet = key === 'standKneel' || key === 'kneelStand'; A.st = 'trans'; A.turn = null; A.kick = Math.max(A.kick, C.inert.stance); }
+  TR.g = g; TR.t = D[1]; TR.t1 = D[2]; TR.rate = D[3] * (fast || 1); TR.to = to; TR.goal = goal; TR.feet = key === 'standKneel' || key === 'kneelStand' || (C.feet.proneLock && (key === 'proneKneel' || key === 'kneelProne')); A.st = 'trans'; A.turn = null; A.kick = Math.max(A.kick, C.inert.stance); }
 function route(cur, want, still){ const I = C.inert; if(cur === want){ if(A.st !== 'loco' && A.st !== 'kneel' && A.st !== 'prone') settle(want, I.half); return; }
   if(cur < 0) return settle(want, I.stance);                                                       // from the game's own pose (a roll, a ride, a wall): straight in
   if(want === 3) return cur === 0 ? trans('standKneel', 2, want, C.trans.fast) : trans('kneelProne', 3, want);   // down: onto a knee, then onto his belly
   if(cur === 3) return trans('proneKneel', 2, want);                                               // up: onto a knee first, on from there
   if(cur === 0 && want === 2 && still) return trans('standKneel', 2, want);
+  if(cur === 1 && want === 2 && still && C.trans.crouchKneel) return trans('standKneel', 2, want);   // GRAPH 5 crouched and stopped: down onto the knee by the clip too (the feet planted through it), not a cut from the crouch to the kneel
   if(cur === 2 && want === 0 && still) return trans('kneelStand', 0, want);
   settle(want, I.stance); }
 function airStep(dt, inAir){ const J = CV.jump, U = C.air.up, Dn = C.air.down; A.airT += dt;
@@ -351,11 +352,16 @@ export function graphFeet(cv, R, G, dt, P){ if(cv !== CV || !A.live || !A.own ||
     if(F.on){ F.ox = F.lx - _b.x; F.oz = F.lz - _b.z; locks++; }
     // GRAPH 3 A STEP IS A STEP: up, over, down — the foot leaves the ground before it travels and is down before it stops (a timed arc of feet.stepT ×
     //   its length), never a glide along the ground that only lifts in the middle
-    else if(F.rest && F.st !== undefined && Fc.arc){ if(F.st < 0){ F.st = 0; F.rx = F.ox; F.rz = F.oz; F.o0 = Math.max(F.o0 || 0, Math.hypot(F.ox, F.oz)); } F.st += dt; const T = clamp(Fc.stepT[0] + Fc.stepT[1] * F.o0, Fc.stepT[0], Fc.stepT[2]), u = Math.min(1, F.st / T), k = 1 - smooth(clamp((u - 0.2) / 0.65, 0, 1));
+    else if(F.rest && F.st !== undefined && Fc.arc){ if(F.st < 0){ F.st = 0; F.rx = F.ox; F.rz = F.oz; F.o0 = Math.max(F.o0 || 0, Math.hypot(F.ox, F.oz)); } F.st += dt; const T = clamp(Fc.stepT[0] + Fc.stepT[1] * F.o0, Fc.stepT[0], Fc.stepT[2]), u = Math.min(1, F.st / T), k = 1 - smooth(clamp((u - Fc.stepWin[0]) / (Fc.stepWin[1] - Fc.stepWin[0]), 0, 1));   // (it travels only while well clear of the ground)
       F.ox = F.rx * k; F.oz = F.rz * k; F.ovx = F.ovz = 0; if(u >= 1){ F.rest = false; F.ox = F.oz = 0; } }
     else if(F.ox || F.oz){ const y = F.rest ? y1 : y0, ey = F.rest ? ey1 : ey0, jx = F.ovx + F.ox * y, jz = F.ovz + F.oz * y;   // (a deliberate step takes its time)
       F.ox = ey * (F.ox + jx * dt); F.ovx = ey * (F.ovx - jx * y * dt); F.oz = ey * (F.oz + jz * dt); F.ovz = ey * (F.ovz - jz * y * dt); if(F.ox * F.ox + F.oz * F.oz < 1e-8) F.ox = F.oz = F.ovx = F.ovz = 0; }
-    let lift = 0; if(F.rest && !Fc.arc){ const o = Math.hypot(F.ox, F.oz), u = F.o0 > 1e-4 ? 1 - o / F.o0 : 1; if(o < Fc.rest * 0.12 || sp > Fc.slowV * 2) F.rest = false; else lift = Math.min(Fc.liftMax, Fc.lift * F.o0) * 4 * u * (1 - u); } else if(F.rest){ if(sp > Fc.vRelV){ F.rest = false; } else { const T = clamp(Fc.stepT[0] + Fc.stepT[1] * F.o0, Fc.stepT[0], Fc.stepT[2]), u = Math.min(1, Math.max(0, F.st) / T); lift = Math.max(Fc.liftMin, Math.min(Fc.liftMax, Fc.lift * F.o0)) * Math.sin(Math.PI * u); } } if(F.fly > 0) lift = Fc.liftMax; F.ly += (lift - F.ly) * Math.min(1, dt * 30);
+    // GRAPH 5 NO BLEND DRAGS A FOOT: a foot that is not planted, low, and carried fast over the ground by the pose (the blend's weights swinging at a change of
+    //   direction, a stance coming in, the stop's last shuffle) is lifted clear — at least feet.drag[2] off the ground for as long as it travels — so it
+    //   steps through the air instead of skating; it comes down as it slows (and is planted where it lands)
+    const drag = Fc.drag && !F.on && can && sp < Fc.drag[3] && h < Fc.hOn && va > Fc.drag[0] + Fc.drag[1] * sp ? Math.max(0, Fc.drag[2] - Math.max(0, h)) : 0;
+    let lift = 0; if(F.rest && !Fc.arc){ const o = Math.hypot(F.ox, F.oz), u = F.o0 > 1e-4 ? 1 - o / F.o0 : 1; if(o < Fc.rest * 0.12 || sp > Fc.slowV * 2) F.rest = false; else lift = Math.min(Fc.liftMax, Fc.lift * F.o0) * 4 * u * (1 - u); } else if(F.rest){ {   /* (a step once begun is finished, whatever the speed does meanwhile) */ const T = clamp(Fc.stepT[0] + Fc.stepT[1] * F.o0, Fc.stepT[0], Fc.stepT[2]), u = Math.min(1, Math.max(0, F.st) / T); lift = Math.max(Fc.liftMin, Math.min(Fc.liftMax, Fc.lift * F.o0)) * Math.sin(Math.PI * u); } } if(F.fly > 0) lift = Fc.liftMax; if(drag > lift) lift = drag; if(lift > 0 && h < 0) lift -= Math.max(h, -0.05);   // (clearance over the ground, wherever the clip holds the foot)
+    if(F.rest && Fc.arc && !drag) F.ly = lift; else F.ly += (lift - F.ly) * Math.min(1, dt * (drag && F.ly < lift ? Fc.dragRate : 30));   // (a step's arc is its own curve; a drag is lifted quickly — in a few frames, not one: no pop)
     F.px = _b.x; F.pz = _b.z; F.has = true; F.h = h; F.va = va; F.ax = _a.x; F.ay = _a.y; F.az = _a.z; F.fl = Math.hypot(_b.x - _a.x, _b.z - _a.z); }
   // SLOPE 1 THE GROUND UNDER EACH FOOT (as the old legs had it — actors/soldier-legs.js; its numbers kept: GUNFEEL.feet.slope, SOLDIER_LEGS.maxDrop): a
   //   foot stands on the ground under IT, not on the level through his middle — up onto a rise at once (it must clear it), down into a dip only as it
