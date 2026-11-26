@@ -2417,6 +2417,26 @@ grp('GRAPH 5 the motion graph: on by default, lifted feet instead of dragged one
     && /\*\(MOBILE\?FORT\.mobileR\*CAM_ROOM\.yard\.rKMobile:CAM_ROOM\.yard\.rK\)\);/.test(fo) && /\*Y\.coverK\)/.test(fo) && /_segDist\(x, z, f\.gx, f\.gz, lkx, lkz\)<Y\.lane/.test(fo) && /CAM_ROOM\.yard\.arenaK\)\);/.test(cc),
     'every fort\'s yard ×'+(K.yard.rK*K.yard.rK).toFixed(2)+' (radius ×'+K.yard.rK+', the field ×'+K.yard.arenaK+' to keep them clear), its cover at the same density, the road from the gate to the keep kept clear'); }
 
+// SWIM 1 the soldier in the river: wading by depth, swimming past chest-deep (the library's tread / stroke on the operator, the rifle slung), diving, pools dug to swim in
+{ const fs=await import('node:fs'), C=await import('./config.js'), W=C.SWIM, rd=f=>fs.readFileSync(f,'utf8'), sw=rd('src/game/swim.js'), N=(await import('./src/net/protocol.js')).NET_STANCE, ix=JSON.parse(rd('assets/anim/index.json')), by=new Map(ix.clips.map(c=>[c.id, c]));
+  ok(W && W.on===true && W.bands.length===4 && W.bands.every((b, i)=>b>0 && (i===0 || b>W.bands[i-1])) && W.deep[0]>W.bands[3] && W.deep[1]<W.deep[0] && W.deep[1]>W.bands[3] && W.crouch<W.deep[1] && W.prone<W.bands[2] && W.jump<W.deep[1],
+    'the depth bands rise ankle → knee → waist → chest; he swims past '+W.deep[0]+' m and stands again under '+W.deep[1]+' m (no flicker on the edge); he kneels only to '+W.crouch+' m, lies down only to '+W.prone+' m');
+  ok(W.speed[0][0]===0 && W.speed[0][1]===1 && W.speed.every((q, i)=>i===0 || q[0]>W.speed[i-1][0] && q[1]<W.speed[i-1][1]) && W.speed[W.speed.length-1][0]>=W.deep[0] && W.speed[W.speed.length-1][1]>0.2 && W.turn>1 && W.turn<9,
+    'the deeper the water the slower he wades (×'+W.speed.map(q=>q[1]).join(' → ×')+'), and waist-deep he turns at most '+W.turn+' rad/s');
+  ok(W.swim.v>0.5 && W.swim.v<C.CAV.foot.walk && W.dive.v<=W.swim.v && W.swim.head>0 && W.swim.head<0.3 && W.swim.defK<1 && W.dive.defK<W.swim.defK && W.dive.breath>=8 && W.dive.breath<=40 && W.dive.back>1 && W.dive.depth>0.5 && W.dive.floor>0.2 && W.wade.defLoss>0 && W.wade.defLoss<1 && W.swim.slingT>=0.3 && W.swim.armRate[1]>W.swim.armRate[0],
+    'a swimmer goes '+W.swim.v+' m/s (slower than a walk), under the water '+W.dive.v+' m/s with '+W.dive.breath+' s of breath; little of a round reaches him afloat (×'+W.swim.defK+'), almost none under (×'+W.dive.defK+')');
+  const tr=by.get(W.swim.tread), sk=by.get(W.swim.stroke); ok(tr && sk && tr.loop && sk.loop && tr.g===sk.g && C.ANIMLIB.groups.includes(tr.g) && W.swim.ts[0]>0 && W.swim.ts[1]>W.swim.ts[0],
+    'the library has his clips: '+W.swim.tread+' on the spot, '+W.swim.stroke+' on the move (group '+(tr && tr.g)+', fetched when he first goes in)');
+  ok(W.pool.on===true && W.pool.deep+C.RIVERS.D*0.5>W.deep[0]+W.dive.depth*0.5 && W.pool.u>0.2 && W.pool.u<1 && W.pool.gap>=C.RIVERS.clear && W.pool.ramp>0 && W.foe.maxD<W.deep[1] && W.foe.maxD>W.bands[2] && W.foe.look>0,
+    'the carved rivers were never deep enough to swim: a pool '+W.pool.deep+' m deeper is dug mid-channel, '+W.pool.gap+' m clear of every bridge and ford; enemy infantry wade no deeper than '+W.foe.maxD+' m');
+  ok(N.SWIM===64 && N.DIVE===128 && !(N.SWIM & (15|N.SLUNG|N.BLADE)) && !(N.DIVE & (15|N.SLUNG|N.BLADE|N.SWIM)) && /m\.stance \|= swimNet\(\);/.test(rd('src/game/coop-glue.js')) && /M\.RC\.swim = sw; if\(sw\) M\.stance = M\.RC\.stance = 'swim';/.test(rd('src/game/coop-remote.js')),
+    'co-op: two more bits of the stance byte (SWIM '+N.SWIM+', DIVE '+N.DIVE+') — the other page\'s puppet of him swims and dives too; a page that does not know them still reads "stood"');
+  ok(/const wade=swimStep\(p, dt, now\);/.test(rd('src/game/cavalry.js')) && /swimPlace\(p, dt, now\);/.test(rd('src/game/cavalry.js')) && /const SWc = swimClip\(CV, R, dt, P, mounted\);/.test(rd('src/actors/real-cav.js')) && /swimPose\(CV, R, G, dt, P\)\)\{ steadyHead\(R, dt\); return; \}/.test(rd('src/actors/real-cav.js'))
+    && /if\(swimSlung\(cv\)\) return 'swim';/.test(rd('src/actors/gun-carry.js')) && /if\(swimFire\(now\)\) return;/.test(rd('src/combat/soldier-fire.js')) && /if\(swimNoSkill\(sp\)\) return false;/.test(rd('src/combat/spells.js')) && /swimPools\(h, lines\);/.test(rd('src/world/river.js'))
+    && /CV\.diving === true/.test(rd('src/game/stealth.js')) && /const wk=swimFoeK\(e, mx, mz\);/.test(rd('src/actors/infantry.js')) && /\*swimFoeK\(a, mx, mz\)/.test(rd('src/actors/fireteam.js')) && (rd('src/game/soldier-moves.js').match(/swimNoMove\(\)\) return;/g) || []).length===2
+    && /export function swimStep\(p, dt, now\)/.test(sw) && /CV\.stance = 'swim';/.test(sw) && /quietKnife\(\)/.test(sw) && /HAND = \{ grenade:1, smokeHand:1, medkit:1 \}/.test(sw) && /game\/swim\.js/.test(rd('src/hub.js')),
+    'one module has the water (game/swim.js); every other file calls it in one line — his pace and height, his clips and arms, the rifle on his back, the trigger as the knife, no throwing, the pools, the stealth, the enemy kept out of the deep');
+}
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

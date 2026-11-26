@@ -11,7 +11,7 @@ const now_ = () => performance.now() / 1000;
 let _sayAt = -9, _dodgeAt = -9;
 function say(txt, col, size){ const p = S.player; if(!p) return; floatText(txt, col, { x:p.pos.x, y:heightAt(p.pos.x, p.pos.z) + 2.2, z:p.pos.z }, size || 15); }
 // lying flat on foot (not rolling, not getting on or off the ride): the only way he can go unseen
-export function playerHidden(){ const p = S.player; return !!(p && p.cav && !CV.mounted && !CV.trans && CV.stance === 'prone' && !CV.roll); }
+export function playerHidden(){ const p = S.player; return !!(p && p.cav && !CV.mounted && !CV.trans && (CV.stance === 'prone' && !CV.roll || CV.diving === true)); }   /* SWIM 1 under the water (game/swim.js sets CV.diving): as hard to make out as a man lying flat */
 // he has been spotted: every enemy close enough (alertR) knows where he is for keep s
 function spot(p, t, keep, why){ const was = (p.spotUntil || 0) > t; p.spotUntil = Math.max(p.spotUntil || 0, t + keep);
   if(!was && why && playerHidden() && t - _sayAt > STEALTH.say){ _sayAt = t; say(why, '#ff7a5a'); } }

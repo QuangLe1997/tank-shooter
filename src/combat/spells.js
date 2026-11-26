@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { EQUIP, LETHAL, REAL } from '../../config.js';
 import { bladeSpecial, TROOPER_SPELLS, COVER_HP, MOBILE, S, fpvDetonate, fpvFlying, armorOf, bigExplode, blastAllies, blocks, burst, cityBlast, concuss, core, damageBlock, damageCore, damageEnemy, damagePlayer, decalScorch, deformCrater, enemies, envDmg, fenceBlast, fortIntactCross, heightAt, ringPulse, sfx, siegeMul, spawnPart, structMul, suppress, tunnelBlast, typeMul, updateSpellHUD, blastTrees, sandBlastProof } from '../hub.js';
+import { swimNoSkill } from '../hub.js';   // SWIM 1 (game/swim.js)
 
 export function inSmoke(now){ const p=S.player; return !!(p && now<(p.smokeUntil||0) && Math.hypot(p.pos.x-p.smokeX, p.pos.z-p.smokeZ) < EQUIP.smoke.radius); }
 export function updateEquip(dt, now){
@@ -21,6 +22,7 @@ export function spellReady(sp, p){ return sp.own ? (p.ownCd && p.ownCd[sp.id]) |
 export function spellHold(id, until){ const p=S.player; if(p) (p.ownCd || (p.ownCd={}))[id]=until; }
 function castSpell(sp){ const p=S.player, now=performance.now()/1000; if(fpvFlying()){ fpvDetonate(); return false; }   // DRONE 2 any skill key while the FPV drone flies sets it off
   if(!p || !sp || now < spellReady(sp, p)) return false;
+  if(swimNoSkill(sp)) return false;   // SWIM 1 no grenade, smoke or medkit while he swims (game/swim.js)
   if(sp.own){ if(sp.cast(now)===false) return false; spellHold(sp.id, Math.max(spellReady(sp, p), now + sp.cd * p.spellCdMul)); }
   else { p.spellCdUntil = now + sp.cd * p.spellCdMul; sp.cast(now); }
   sfx('spell'); updateSpellHUD(); return true; }

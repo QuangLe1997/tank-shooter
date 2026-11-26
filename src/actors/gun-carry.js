@@ -30,6 +30,7 @@
 import * as THREE from 'three';
 import { GUNCARRY, GUNFEEL, GUNHOLD, INFGUN, LOGISTICS, REALCAV } from '../../config.js';
 import { backGap, hangState, hangStep, bladeHeld, CV, FIT, LEGKIT, MATE, QUIET, S, climbW, fpvFlying, graphOwned, graphState, headLevel } from '../hub.js';
+import { swimSlung } from '../hub.js';   // SWIM 1 (game/swim.js)
 
 const V3 = () => new THREE.Vector3(), Q4 = () => new THREE.Quaternion(), clamp = (v, a, b) => Math.max(a, Math.min(b, v)), smooth = k => { k = clamp(k, 0, 1); return k * k * (3 - 2 * k); }, seg = (u, a, b) => clamp((u - a) / (b - a), 0, 1);
 const SIDE = ['Right', 'Left'], FING = ['Thumb', 'Index', 'Middle', 'Ring', 'Pinky'], UP = new THREE.Vector3(0, 1, 0), NP = 10;
@@ -135,7 +136,7 @@ const FRONT = { knife:1, revive:1 };
 function why(R, cy, P, p, cv, dt, now){ const K = GUNCARRY.sling; if(R.cyDev) return R.cyDev.why || '';   // (dev / the pose studio: CV.real.cyDev = { why:'patrol' | 'drone' | 'revive' | 'knife' | '' })
   if(bladeHeld(cv)) return 'blade';   // BLADE 2 the blade is in his hands (actors/blade.js): the rifle on his back, by the quick sling
   if(cv.mate) return cv.slung ? 'mate' : ''; if(cv !== CV) return '';
-  const cw = climbW(); if(K.climb && cw > 0.001) return 'climb'; if(cv.mounted || cv.trans){ cy.quiet = 0; if(!K.mounted || cv.trans) return ''; }
+  const cw = climbW(); if(K.climb && cw > 0.001) return 'climb'; if(swimSlung(cv)) return 'swim'; if(cv.mounted || cv.trans){ cy.quiet = 0; if(!K.mounted || cv.trans) return ''; }
   if(K.drone && fpvFlying()) return 'drone';
   if(QUIET.knifeAt !== cy.kAt){ cy.kAt = QUIET.knifeAt; if(cy.kAt > now && cy.kAt - now > LOGISTICS.quiet.knife.cd - 0.1) cy.knifeAt = now; }   // (game/quiet.js quietKnife has just struck)
   const inst = p.guns && p.guns[p.gunIdx], busy = S.firing || !!(inst && inst.rU) || !!(P && P.hit);

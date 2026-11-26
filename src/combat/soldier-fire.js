@@ -8,6 +8,7 @@
 import * as THREE from 'three';
 import { RIDER_TURN, TROOPER, XHAIR, REAL } from '../../config.js';
 import { bladeFire, GUNS, MOBILE, PAD, PROFILE, S, fpvFire, boreNow, burstRound, burstSpread, camKick, shotCase, aimTarget, cMod, fireFlame, gunFlash, gunLight, fireMortar, floatText, magCap, playerRange, rifleFX, ringPulse, sfx, spawnBullet, spawnPart, startReload, updateGunHUD, airShot, CV, fireLine, climbPerch, gunSound, ammoOnGive, fireFxOn, rpgLaunchFX } from '../hub.js';
+import { swimFire } from '../hub.js';   // SWIM 1 (game/swim.js)
 
 const _v = new THREE.Vector3();
 // Z359 the rifle he may carry in from the start (CHUẨN BỊ TRẬN · TRANG BỊ, and Z411 KHO SÚNG in soldier mode) · Z411 every hand weapon of his, by tier — it listed
@@ -27,6 +28,7 @@ export function trooperGive(id){ const p = S.player, g = GUNS[id]; if(!p || !g) 
   else { p.guns.push({ id, ammo:magCap(g), rU:0, rD:0 }); floatText(g.name + ' — NHẶT ĐƯỢC (' + p.guns.length + ')', '#ffd24a', p.pos, 20); ammoOnGive(id, true); }   // SUPPLY 1 a new gun comes with magazines of its own (game/logistics.js)
   updateGunHUD(); }
 export function soldierFire(now, range){ const p = S.player; if(!p || !p.guns.length || p.downed) return;   /* COOP 7 down in a co-op battle: he cannot fire (a field only co-op sets) */ if(fpvFire()) return;   // DRONE 2 no shot while he flies the FPV drone: the trigger sets it off (combat/drone-skills.js)
+  if(swimFire(now)) return;   // SWIM 1 swimming: no rifle — the knife at arm's length (game/swim.js)
   if(bladeFire(now)) return;   // BLADE 2 the blade in his hands (or an enemy at arm's length: AUTO draws it) — the trigger is a cut (actors/blade.js)
   const inst = p.guns[p.gunIdx], g = GUNS[inst.id];
   if(!g || inst.rU) return; if(!p.infiniteAmmo && inst.ammo <= 0){ startReload(now, inst); return; } if(now < p.fireAt) return;

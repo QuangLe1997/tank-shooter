@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { CAV, COOP, HORSE, HUMAN_SCALE, XEOM } from '../../config.js';
 import { CV, GUNS, NET_PFLAG, NET_STANCE, S, addTrail, playerRange, animateHorse, animateSoldier, buildBikeMount, buildGeneral, buildHorse, camera, cloakFoot, fitRealCav, gunFlash, gunSound, heightAt, lineClear, lineHit, poseRider, poseSoldier, scene, seatTurnOff, updateRealCav } from '../hub.js';
+import { swimOfNet } from '../hub.js';   // SWIM 1 (game/swim.js)
 
 const RIDES = [null, 'cav', 'xeom', 'bagac', 'bantai'], wrapA = a => Math.atan2(Math.sin(a), Math.cos(a)), _v = new THREE.Vector3();
 let _gunIds = null; const gunIds = () => _gunIds || (_gunIds = Object.keys(GUNS));
@@ -62,6 +63,7 @@ export function mateUpdate(dt, now, st, name){ const M = MATE;
   M.yawRate += ((first || dt <= 0 ? 0 : wrapA(st.heading - M.heading) / dt) - M.yawRate) * Math.min(1, dt * 8); M.heading = st.heading; M.aim = st.aimYaw; M.pitch = st.aimPitch; M.vx = st.vx; M.vz = st.vz; M.speed = Math.hypot(st.vx, st.vz);
   M.flags = st.flags; M.hp = st.hp; M.hpMax = st.hpMax || 1; M.down = !!(st.flags & F.DOWNED); M.dead = !!(st.flags & F.DEAD); M.firing = !!(st.flags & F.FIRING) && !M.down && !M.dead; const mounted = !!(st.flags & F.MOUNTED) && !M.down && !M.dead;
   M.stance = M.down || st.stance === NET_STANCE.PRONE ? 'prone' : st.stance === NET_STANCE.CROUCH ? 'crouch' : 'stand'; M.gun = gunIds()[st.weapon] || gunIds()[0]; M.RC.stance = M.stance; M.RC.aimUp = !(st.flags & F.SPRINT); M.RC.slung = !!(st.stance & NET_STANCE.SLUNG); M.RC.blade = !!(st.stance & NET_STANCE.BLADE) && M.stance === 'stand'; M.bladeAt = M.RC.blade ? (M.bladeAt >= 0 ? M.bladeAt : now) : -1;   /* (AMBUSH 2 since when this page has seen the blade in his hands: the host takes no cut before BLADE.draw s of it) */   /* BLADE 3 the other player's blade in his hands: his stance and the weapon, not his cuts */   // (CARRY 1 the other player's rifle on his back: actors/gun-carry.js reads cv.slung)
+  { const sw = M.down ? 0 : swimOfNet(st.stance); M.RC.swim = sw; if(sw) M.stance = M.RC.stance = 'swim'; }   // SWIM 1 he swims / is under: the puppet plays the same clips, no foot planted (game/swim.js)
   if(mounted !== M.mounted || first){ M.mounted = mounted; try{ seat(mounted); }catch(e){ fail(e); } }
   M.root.position.set(M.x, M.y, M.z); M.root.rotation.y = M.heading;
   // the player-shaped object follows him (the pose code and, on the host, the enemy read it)

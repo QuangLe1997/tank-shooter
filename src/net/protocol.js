@@ -21,7 +21,7 @@ export const NET_MSG = { SNAP:1, INPUT:2, PING:3, PONG:4 };
 export const NET_CTL = ['hello', 'settings', 'ready', 'start', 'end', 'field', 'say'];   // (COOP 6 say: a line of the host's radio for the guest's)
 export const NET_EV = { SHOT:1, HIT:2, DEATH:3, EXPLOSION:4, GRENADE:5, RADIO:6, MARK:7, CUE:8, BLOCK:9, GUARD:10, LOOT:11, PING:12, GIVE:13, STATE:14 };   // (COOP 9: 9–14, their fields in net/rules.js)
 export const NET_PFLAG = { FIRING:1, RELOADING:2, MOUNTED:4, DOWNED:8, AIMING:16, SPRINT:32, AIRBORNE:64, DEAD:128 };
-export const NET_STANCE = { STAND:0, CROUCH:1, PRONE:2, CLIMB:3, HORSE:4, PILLION:5, SLUNG:16, BLADE:32 };   // (CARRY 1 SLUNG: a bit OR-ed onto STAND — his rifle is on his back; a page that does not know it still reads "stood" · BLADE 3 BLADE: one more such bit — his blade is in his hands)
+export const NET_STANCE = { STAND:0, CROUCH:1, PRONE:2, CLIMB:3, HORSE:4, PILLION:5, SLUNG:16, BLADE:32, SWIM:64, DIVE:128 };   // (CARRY 1 SLUNG: a bit OR-ed onto STAND — his rifle is on his back; a page that does not know it still reads "stood" · BLADE 3 BLADE: one more such bit — his blade is in his hands · SWIM 1 SWIM / DIVE: he swims / is under the water)
 // an entity's state byte: bits 0–2 its pose (NET_POSE), then flags
 export const NET_ESTATE = { POSE:0x07, FIRING:0x08, RELOADING:0x10, COVER:0x20, ELITE:0x40, ALLY:0x80 };
 export const NET_POSE = { STAND:0, RUN:1, CROUCH:2, PRONE:3, CLIMB:4, MOUNTED:5, STUNNED:6, DOWN:7 };

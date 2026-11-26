@@ -174,6 +174,7 @@ export * from './game/ride-feel.js';   // RIDE 2 the hard stop: the horse on its
 export * from './world/solid-shape.js';   // Z337 the true footprint of walls and buildings, for bumping into them and for the camera's sight line
 export * from './game/soldier-moves.js';   // Z336 the soldier on his feet: jump, sprint, combat roll, taking cover
 export * from './game/soldier-climb.js';   // Z451 the soldier climbs rocks, walls, gates, containers: stands, walks and fires up there, drops off
+export * from './game/swim.js';   // SWIM 1 the soldier in the river: wading by depth, swimming, diving, the pools dug to swim in
 export * from './combat/solid-line.js';   // Z380 the first solid thing on a round's path or an eye's line, by its true shape and height
 export * from './game/logistics.js';   // SUPPLY 1 ammunition reserves by class, what a reload takes, the chip's magazine / reserve and its warnings
 export * from './game/ambush.js';   // AMBUSH 1 the blade does not give him away: noise and sight apart, who saw a blade kill, the flat-footed mark, bodies behind walls, the guest's cut judged

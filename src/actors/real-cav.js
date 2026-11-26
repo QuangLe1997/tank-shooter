@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
 import { ANIMGRAPH, BODYFIX, BODYMEND, GUNFIT, GUNHOLD, HUMAN_SCALE, INFGUN, PUPPET, REALCAV, RIDEFEEL, XEOM, AIRAIM, AIRPOSE, RIDER_TURN, XHAIR, GUNFEEL } from '../../config.js';
 import { bladeClip, bladeHold, bladePre, ANIMGRAPH_STAT, graphFeet, graphHipYaw, graphOwned, graphPose, XH, FIT, GUNKICK, GUNS, LEGKIT, PROFILE, S, curlHand, stirrupFeet, fitHold, sideProfile, underAt, drivePuppet, handRoll, limbTwist, trunkLean, heightAt, ik2, loadGLTF, asShipped, nearShape, makePuppet, rollHand, sfx, spawnPart, turnBone, airPitch, soldierLegs, soldierUpper, steadyHead, mountHand, seatUpright, climbArms, climbW, carryClear, eyePoint, reachFeel, triggerFinger, wristGive, gunEase, handsEase, reloadHands, reloadProps, reloadState, headLevel, gunRecoil, burstClimb, shotCycle, shotSeen } from '../hub.js';
+import { swimClip, swimPose } from '../hub.js';   // SWIM 1 (game/swim.js)
 
 const _v = new THREE.Vector3(), _a = new THREE.Vector3(), _b = new THREE.Vector3(), _d = new THREE.Vector3(), _up = new THREE.Vector3(), _x = new THREE.Vector3(), _y = new THREE.Vector3(), _z = new THREE.Vector3();
 const _q = new THREE.Quaternion(), _qp = new THREE.Quaternion(), _qd = new THREE.Quaternion(), _m = new THREE.Matrix4(), _mi = new THREE.Matrix4(), _s = new THREE.Vector3();
@@ -379,6 +380,7 @@ function poseRealCav(CV, dt, P){
   else if(fv < C.gaitAt[0]){ if(R.ownLegs && R.ownLegs.on){ ok = 'Aim_Stand'; freeze = 0; } else { ok = 'Walk_Forward_While_Shooting'; ts = clamp(fv / C.footV.walk, 0.6, 1.8); } }   // (Z339 walking, his legs are his own: the rifle held steady over them)
   else if(fv < C.gaitAt[1]){ ok = 'Run_and_Shoot'; ts = clamp(fv / C.footV.run, 0.7, 1.6); }   // (Z304 thresholds for a man's real walk / run / sprint)
   else { ok = 'Rifle_Charge'; ts = clamp(fv / C.footV.charge, 0.7, 1.4); }
+  { const SWc = swimClip(CV, R, dt, P, mounted); if(SWc){ ok = SWc; ts = R.swm.ts; freeze = null; } }   // SWIM 1 afloat: treading water / the stroke (game/swim.js)
   const BL = bladeClip(CV, R, G, dt, P, mounted);   // BLADE 2 the blade in his hands: his body plays the blade's own clips (actors/blade.js), the rifle's fade out
   blend(R.OA, BL ? '' : ok, ts, dt, freeze);
   if(R.HIT){ if(P.hit && !R.wasHit && !P.dead){ R.HIT.reset(); R.HIT.play(); R.hitW = 1; } R.wasHit = !!P.hit; R.hitW = Math.max(0, R.hitW - dt / C.hitT); R.HIT.setEffectiveWeight(R.hitW * C.hitK); }   // the flinch fades back into the clip
@@ -431,6 +433,7 @@ function poseRealCav(CV, dt, P){
   else if(R.pup && !P.dead) soldierLegs(R, G, dt, P, mounted);   // Z339 his feet planted, stepping the way he goes (actors/soldier-legs.js)
   if(R.pup && !P.dead) soldierUpper(R, G, dt, P, mounted);   // Z343 shoulders, trunk, head and the rifle's weight in time with the legs (actors/soldier-upper.js)
   holdGun(R, G);   // Z295 the hand weapon for the gun in use
+  if(R.pup && !P.dead && swimPose(CV, R, G, dt, P)){ steadyHead(R, dt); return; }   // SWIM 1 swimming: his arms are the stroke's, the rifle on his back (game/swim.js)
   const cw = R.pup && !P.dead ? climbW() : 0;   // Z451 on a wall: the rifle slung across his back, his hands on the face — eased off his hold and back into it
   if(cw >= 0.999 && climbArms(R, G, 1)){ steadyHead(R, dt); return; }
   if(R.pup && !P.dead && holdReal(R, G, dt, P)){ carryAfter(R, G, dt, P); bladeHold(CV, R, G, dt, P);   /* BLADE 2 the blade worn / in his fist, over the rifle's layers */ if(cw > 0.001) climbArms(R, G, cw); mountHand(R); steadyHead(R, dt); return; }   // (Z342 climbing on / off, the left hand takes hold of the ride · Z343 the head held steady)   // Z297 the special-forces soldier holds his weapon for real

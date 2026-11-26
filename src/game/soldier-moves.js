@@ -6,14 +6,15 @@
 import * as THREE from 'three';
 import { CAV } from '../../config.js';
 import { CV, S, afxLand, blockTop, blocksNear, graphRolls, heightAt, inBlock, sfx, soleAt, spawnPart } from '../hub.js';
+import { swimNoMove } from '../hub.js';   // SWIM 1 (game/swim.js)
 
 const M = () => CAV.moves;
 const _near = [], _ax = new THREE.Vector3();
 // Space on foot: up
-export function soldierJump(){ const p = S.player, now = performance.now() / 1000; if(!p || !p.cav || CV.mounted || CV.trans || CV.roll || CV.jump || CV.stance === 'prone' || CV.climb && CV.climb.ph !== 'top') return;   // (Z451 not on the face of a wall)
+export function soldierJump(){ const p = S.player, now = performance.now() / 1000; if(!p || !p.cav || CV.mounted || CV.trans || CV.roll || CV.jump || CV.stance === 'prone' || CV.climb && CV.climb.ph !== 'top' || swimNoMove()) return;   // (Z451 not on the face of a wall)
   CV.jump = { vy:M().jump.vy, y:0, t:0 }; CV.cover = null; sfx('whoosh', p.pos, 0.35); }
 // Alt / L on foot: over the shoulder, the way he is pushing (or ahead)
-export function soldierRoll(){ const p = S.player, now = performance.now() / 1000; if(!p || !p.cav || CV.mounted || CV.trans || CV.roll || CV.jump || now < (CV.rollCd || 0) || CV.climb && CV.climb.ph !== 'top') return;
+export function soldierRoll(){ const p = S.player, now = performance.now() / 1000; if(!p || !p.cav || CV.mounted || CV.trans || CV.roll || CV.jump || now < (CV.rollCd || 0) || CV.climb && CV.climb.ph !== 'top' || swimNoMove()) return;
   const C = M().roll, mv = Math.hypot(p.vel.x, p.vel.z), a = mv > 0.6 ? Math.atan2(p.vel.x, p.vel.z) : p.facing;
   CV.roll = { t:0, a, from:CV.stance }; CV.rollCd = now + C.cd / (p.loadK || 1);   /* SUPPLY 2 a heavy load: the roll comes back a little later (game/logistics.js) */ CV.cover = null; if(CV.stance === 'prone') CV.stance = CV.want = 'crouch';
   for(let n = 0; n < 5; n++) spawnPart(p.pos.x, heightAt(p.pos.x, p.pos.z) + 0.1, p.pos.z, (Math.random() - 0.5) * 1.5, 0.4 + Math.random() * 0.6, (Math.random() - 0.5) * 1.5, { color:0xb8a888, size:0.5, life:0.6, smoke:true, grav:-0.5, drag:2, op:0.35 }); sfx('thud', p.pos, 0.4); }

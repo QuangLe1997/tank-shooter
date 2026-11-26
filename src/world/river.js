@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RIVERS } from '../../config.js';
 import { cosmetic, ARENA, HF, MODEL_FILES, MOBILE, RIVER, RIVER_FMAX, WET_U, WTIME, _heightToNormal, arena, depthTex, fieldDepth, loadGLTF, propTex, wadeAt } from '../hub.js';
+import { swimPools } from '../hub.js';   // SWIM 1 (game/swim.js)
 
 const smooth = (a, b, v) => { const t = Math.max(0, Math.min(1, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
 // where a polyline is at share u of its points: position, the downstream direction
@@ -49,6 +50,7 @@ export function carveRivers(h, b){ GEN++;   // (Z417 the way-round grid is laid 
     if(kind === 'ford'){ ford(h, L, u, M); continue; }
     const p = lineAt(L.pts, u), ang = Math.atan2(p.tz, p.tx) + Math.PI / 2;   // the deck runs across the channel, bank to bank
     RIVER.bridges.push({ x:p.x, z:p.z, ang, ca:Math.cos(ang), sa:Math.sin(ang), hw:B.hw, hl:L.w * 1.5 + B.over, y:B.deckY }); RIVER.top = Math.max(RIVER.top, B.deckY + 0.01); }
+  swimPools(h, lines);   // SWIM 1 a pool to swim in, dug into the main channel clear of the crossings (game/swim.js)
   RIVER.mark = M; riverMeshes(C);
 }
 

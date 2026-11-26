@@ -809,6 +809,28 @@ export const RIVERS = {
     // Z415 the enemy's way over (world/river.js riverWay): looked at every s, sampled every step m, a waypoint reached within reach m, margin m onto dry land past a crossing · fenceGap: the fence stops where its line is under water + this m
   bridge:{ model:null, len:0, yaw:0, deckAt:0.5, keepDeck:false, deckY:0.14, hw:3.6, over:2.5 },
   ice:{ col:[0.34, 0.46, 0.52], deep:[0.07, 0.15, 0.2], snow:0.6, crack:0.32 } };
+// SWIM 1 THE SOLDIER IN THE RIVER (game/swim.js): the water's depth at his feet (RIVER.y − the ground there, a bridge or the ice dry) sets what he can do.
+//   bands  depth (m) where each band starts: ankle (splashes), knee (a wade: slower, a splash a step, a wake), waist (slow, the rifle kept at his shoulder,
+//          turns slower), chest — deep: deeper than deep[0] he leaves the bed and swims (out again under deep[1]: no flicker on the edge)
+//   speed  [depth, × his pace] wading (between the points: straight lines) · turn rad/s his body turns at most in a waist-deep wade
+//   crouch / prone  the deepest water he may kneel / lie down in (deeper: he stands) · jump: no jump or roll deeper than this
+//   swim   v m/s a stroke (the library's underwater stroke, at the surface) · head m his head over the surface · bob [m, rad/s] · yRate how fast his height follows
+//          defK what reaches him of a round (only his head and shoulders show) · fireMsg s between "no firing while swimming" notes · slingT s for the rifle to go on his back first
+//          clips: tread (still) / stroke (moving, faster than moveV) · ts the stroke's pace [min, max] · strokeRate the clip's strokes a cycle (splash + sound each)
+//   dive   holding C (crouch) while swimming ducks him under: depth m his head under the surface (never nearer the bed than floor m) · v m/s · breath s held
+//          · back s/s it comes back at the surface · defK a round's leftover energy after ~1 m of water · tint the blue over the screen · lp Hz the world heard under
+//   wade   defLoss: a round that would strike under the waterline is spent in it — his defK × (1 − defLoss × depth / deep[0])
+//   fx     step splash particles, a wake puff every wake s (wakeOp), a ripple ring every ring s (ringR m wide, ringT s, ringOp at its start), the ring pool's size
+//   pool   SWIM 1 the rivers as carved were 0.85 m deep mid-channel (1.27 m at the deepest in MEADOW): no stretch to swim in. A pool is dug into the main
+//          channel's middle (u: share of its half width), deep m deeper, kept gap m off every bridge and ford and eased in over ramp m — the crossings stay as they were
+//   foe    enemy infantry and the fireteam do not swim with their kit: a man does not step on into water deeper than maxD (he wades up to it); look m ahead
+export const SWIM = { on:true, bands:[0.03, 0.25, 0.6, 0.95], deep:[1.35, 1.2], speed:[[0, 1], [0.25, 0.92], [0.6, 0.66], [0.95, 0.46], [1.35, 0.36]], turn:4.2, crouch:0.7, prone:0.18, jump:0.62,
+  swim:{ v:1.05, head:0.14, bob:[0.035, 2.1], yRate:3.2, defK:0.45, fireMsg:3, slingT:0.38, tread:'social-tread-water', stroke:'social-swim-underwater', moveV:0.35, ts:[0.75, 1.5], strokeRate:2, armRate:[5, 40], armT:0.7, breathT:2.4 },
+  dive:{ depth:0.85, floor:0.35, v:0.9, breath:14, back:2.5, defK:0.06, tint:'rgba(18,84,104,0.42)', lp:420, msgAt:0.25 },
+  wade:{ defLoss:0.55 },
+  fx:{ step:[3, 6], wake:0.11, wakeOp:0.28, ring:0.6, ringR:[0.3, 1.9], ringT:1.6, ringOp:0.2, rings:8, col:0xe8f2f4 },
+  pool:{ on:true, u:0.55, deep:1.05, gap:12, ramp:10 },
+  foe:{ maxD:1.15, look:0.9 } };
 
 // LOOT (Z93) — engine & armour pickups, stacking rules and where the good stuff hides.
 // STACKING: picking a buff you already have EXTENDS it by `extendShare` of its duration (never past `maxDurMul`× a full timer) —
