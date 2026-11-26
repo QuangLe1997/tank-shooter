@@ -21,12 +21,12 @@
 //   Nothing allocates per frame.
 import * as THREE from 'three';
 import { BLADE, CAV, REALCAV } from '../../config.js';
-import { CV, MOBILE, PROFILE, RDRAG, S, animClip, animInfo, animRootAt, bloodSpurt, blocksNear, climbing, curlHand, damageBlock, damageEnemy, enemies, floatText, fpvFlying, heightAt, heldAction, ik2, lineClear, loadAnimGroup, loadGLTF, saveProfile, scene, selectGun, sfx, spawnPart } from '../hub.js';
+import { hangState, hangStep, CV, MOBILE, PROFILE, RDRAG, S, animClip, animInfo, animRootAt, bloodSpurt, blocksNear, climbing, curlHand, damageBlock, damageEnemy, enemies, floatText, fpvFlying, heightAt, heldAction, ik2, lineClear, loadAnimGroup, loadGLTF, saveProfile, scene, selectGun, sfx, spawnPart, updateGunHUD } from '../hub.js';
 
 const V3 = () => new THREE.Vector3(), Q4 = () => new THREE.Quaternion(), clamp = (v, a, b) => Math.max(a, Math.min(b, v)), smooth = k => { k = clamp(k, 0, 1); return k * k * (3 - 2 * k); }, wrapA = a => Math.atan2(Math.sin(a), Math.cos(a)), D2R = Math.PI / 180;
 const _a = V3(), _b = V3(), _c = V3(), _d = V3(), _k = V3(), _m = V3(), _n = V3(), _x = V3(), _y = V3(), _z = V3(), _p = V3(), _t = V3(), _u = V3(), _r = V3(), _bk = V3(), _ws = V3(), _one = V3();
 const _hp = V3(), _hz = V3(), _hy = V3(), _wp = V3(), _op = V3(), _pl = V3(), _tip = V3(), _mid = V3(), _q = Q4(), _q2 = Q4(), _hq = Q4(), _wq = Q4(), _oq = Q4(), _mat = new THREE.Matrix4(), _mi = new THREE.Matrix4(), _root = [0, 0, 0], _root0 = [0, 0, 0], _bn = [];
-const _tg = new Float32Array(8);
+const _tg = new Float32Array(8), UP = new THREE.Vector3(0, 1, 0);
 
 // ---- the page's own soldier: what he is doing with it ----
 //   held: the blade is (to be) in his hands · auto: AUTO drew it · sw: 0 on his back … 1 in his hands (the rig's weight, mirrored) · act: the move in hand
@@ -43,20 +43,33 @@ function load(k){ const B = BLADEST; if(B.ready[k] !== undefined) return; B.read
 
 // ---- a rig's own state (the other player's soldier has his): the mesh, its weight, the clips' actions, the pose kept, the worn slot ----
 function rigState(R){ const k = R.cvBlade || bladeKind(); let L = R.bl; if(L && L.k === k) return L; if(L){ for(const a of L.A.values()) if(a) a.setEffectiveWeight(0); if(L.m && L.m.parent) L.m.parent.remove(L.m); }
-  const S0 = BLADE.kinds[k].set; L = R.bl = { k, K:BLADE.kinds[k], m:null, w:0, bw:0, A:new Map(), ph:0, ids:null, zl:V3(), zOk:false, ey:V3(), tp:V3(), tpOk:false, bwt:new Float32Array(8), mv:[{ id:null, t:0, w:0 }, { id:null, t:0, w:0 }], yaw:0, bones:null, snap:null, hips:V3(), seated:false, pr:-1, sp:V3(), sq:Q4(), sk:1, }; L.ids = [S0.idle, S0.guard, S0.walk[0], S0.walk[1], S0.walk[2], S0.walk[3], S0.run[0], S0.run[1]]; load(k); return L; }
+  const S0 = BLADE.kinds[k].set; L = R.bl = { k, K:BLADE.kinds[k], m:null, w:0, bw:0, A:new Map(), ph:0, ids:null, zl:V3(), zOk:false, ey:V3(), tp:V3(), tpOk:false, bwt:new Float32Array(8), mv:[{ id:null, t:0, w:0 }, { id:null, t:0, w:0 }], yaw:0, bones:null, snap:null, hips:V3(), seated:false, fr:false, pw:0, lw:0, gs:0, swing:0, down:1, hg:hangState(), ul:V3(), rl:V3(), bl:V3(), cx:V3(), zR:0, zL:0, sl:0, rk:0, gk:0, eR:0, eL:0, tp2:V3(), tp2Ok:false }; L.ids = [S0.idle, S0.guard, S0.walk[0], S0.walk[1], S0.walk[2], S0.walk[3], S0.run[0], S0.run[1]]; load(k); return L; }
 function mesh(R, L){ if(L.m) return true; const gl = BLADEST.ready[L.k]; if(!gl) return false; const m = gl.scene.clone(true); m.name = 'blade_' + L.k; m.traverse(o => { if(o.isMesh){ o.castShadow = true; o.frustumCulled = false; } }); L.m = m;
   const D = R.pup.D; L.bones = Object.values(D).filter(b => b && b.isBone); L.snap = new Float32Array(L.bones.length * 4); return true; }
 function action(R, L, id){ let a = L.A.get(id); if(a !== undefined) return a; const clip = animClip(id); a = clip ? R.om.clipAction(clip) : null; if(a){ a.enabled = true; a.setEffectiveWeight(0); a.timeScale = 0; a.play(); } L.A.set(id, a); return a; }
 
-// the weapon worn: hung on Spine1 in the back's own frame (as CARRY builds it: origin at the Spine2 joint, up = Spine1 → Spine2, his right = collar bone → collar bone at
-//   rest, their cross out of his back); worked out when it changes — nothing a frame
-function seat(R, L, prone){ const D = R.pup.D, b = D.Spine1, W = L.K.worn, q2 = R.pup.rest && R.pup.rest.get(D.Spine2) || D.Spine2.quaternion, ks = bodyK(); if(!b || !D.Spine2 || !D.RightShoulder || !D.LeftShoulder) return;
-  _u.copy(D.Spine2.position).normalize(); _r.copy(D.RightShoulder.position).sub(D.LeftShoulder.position).applyQuaternion(q2); _r.addScaledVector(_u, -_r.dot(_u)).normalize(); _bk.crossVectors(_r, _u);
-  b.getWorldScale(_ws); const un = ks / (_ws.x || 1), tl = (prone ? W.prone[1] : W.tilt) * D2R, dz = W.at[2] + (prone ? W.prone[0] : 0);
-  _z.copy(_u).multiplyScalar(Math.cos(tl)).addScaledVector(_r, Math.sin(tl)).multiplyScalar(W.tip); _x.copy(_bk).multiplyScalar(W.flat); _y.crossVectors(_z, _x);
-  L.sq.setFromRotationMatrix(_mat.makeBasis(_x, _y, _z)); L.sp.copy(D.Spine2.position).addScaledVector(_r, W.at[0] * un).addScaledVector(_u, W.at[1] * un).addScaledVector(_bk, dz * un).addScaledVector(_z, -W.zAt * un); L.sk = un;
-  if(L.m.parent !== b) b.add(L.m); L.m.position.copy(L.sp); L.m.quaternion.copy(L.sq); L.m.scale.setScalar(un); L.m.visible = true; L.m.updateMatrixWorld(true); L.seated = true; L.pr = prone ? 1 : 0; }
-function wornWorld(R, L, op, oq){ const b = R.pup.D.Spine1; _mat.compose(L.sp, L.sq, _one.setScalar(L.sk)).premultiply(b.matrixWorld); _mat.decompose(op, oq, _ws); }
+// the weapon worn: hung from the frog at his right shoulder, BLADE DOWN, in the back's own frame (as CARRY builds it: origin at the Spine2 joint, up = Spine1 → Spine2, his right =
+//   collar bone → collar bone at rest, their cross out of his back) — the frame and the frog's place in the Spine1 bone's own space worked out once
+function seat(R, L){ const D = R.pup.D, b = D.Spine1, W = L.K.worn, q2 = R.pup.rest && R.pup.rest.get(D.Spine2) || D.Spine2.quaternion, ks = bodyK(); if(!b || !D.Spine2 || !D.RightShoulder || !D.LeftShoulder) return;
+  L.ul.copy(D.Spine2.position).normalize(); L.rl.copy(D.RightShoulder.position).sub(D.LeftShoulder.position).applyQuaternion(q2); L.rl.addScaledVector(L.ul, -L.rl.dot(L.ul)).normalize(); L.bl.crossVectors(L.rl, L.ul);
+  b.getWorldScale(_ws); const un = ks / (_ws.x || 1); L.cx.copy(D.Spine2.position).addScaledVector(L.rl, W.at[0] * un).addScaledVector(L.ul, W.at[1] * un).addScaledVector(L.bl, W.at[2] * un);
+  if(L.m.parent !== b) b.add(L.m); L.m.visible = true; L.seated = true; L.fr = true; }
+// where it hangs now (the world): → op, oq. It lies ON his back (it turns only in the back's plane) and HANGS from the frog (actors/hang.js): the lower end leans to stay hanging
+//   as he leans, nudges with his steps, swings on after a stop; crouched it rides up and leans over, lying prone it lies level along his spine; its lower end never nearer the ground
+//   than W.clear (it rides up through the frog)
+function worn(R, L, D, dt, P, ks, op, oq){ const b = D.Spine1, K = L.K, W = K.worn; if(!L.fr) seat(R, L); b.getWorldQuaternion(_q); _u.copy(L.ul).applyQuaternion(_q); _r.copy(L.rl).applyQuaternion(_q); _H0.copy(L.cx); b.localToWorld(_H0);
+  const st = P && !P.trans && !P.dead ? P.stance : 'stand'; L.lw += ((st === 'crouch' ? 1 : 0) - L.lw) * Math.min(1, dt * 6); L.pw += ((st === 'prone' ? 1 : 0) - L.pw) * Math.min(1, dt * 5);
+  if(L.pw > 0.002){ _t.copy(_u); _t.y *= 1 - L.pw; if(_t.lengthSq() > 1e-4) _u.copy(_t).normalize(); _r.addScaledVector(_u, -_r.dot(_u)).normalize(); } _bk.crossVectors(_r, _u);
+  const a0 = ((W.tilt + (W.low[1] - W.tilt) * L.lw) * (1 - L.pw) + W.prone * L.pw) * D2R, lowZ = W.tip < 0 ? K.tip : K.butt, len = Math.abs(lowZ - W.zAt) * ks, o = hangStep(L.hg, dt, a0, _H0, _r, _u, len), a = a0 + o; L.swing = o;
+  _wz.copy(_u).multiplyScalar(Math.cos(a)).addScaledVector(_r, Math.sin(a)); _z.copy(_wz).multiplyScalar(W.tip); _x.copy(_bk).multiplyScalar(W.flat); _y.crossVectors(_z, _x); oq.setFromRotationMatrix(_mat.makeBasis(_x, _y, _z));
+  op.copy(_H0).addScaledVector(_z, -W.zAt * ks).addScaledVector(_wz, W.low[0] * L.lw * ks);
+  _t.copy(op).addScaledVector(_z, lowZ * ks); const need = heightAt(_t.x, _t.z) + W.clear * ks - _t.y, want = need > 0 && _wz.y > 0.12 ? Math.min(W.shiftMax * ks, need / _wz.y) : 0; L.gs += (want - L.gs) * Math.min(1, dt * 12); op.addScaledVector(_wz, L.gs);
+  // his hips and legs under it: where they come through the back's plane (a stride, a knee) the lower end is turned out about the frog to lie ON them, not in them
+  { const n = capsules(D, ks, _bk), M = BLADE.body.margin * ks; for(let it = 0; it < 2 && n > 4; it++){ let best = 0, lev = 0; _s1.copy(op).addScaledVector(_z, W.zAt * ks); _s2.copy(op).addScaledVector(_z, lowZ * ks);
+      for(let i = 4; i < n; i++){ const c = CAP[i], d = Math.sqrt(segSeg(_s1, _s2, c.a, c.b, _c1, _c2)), need = c.r + K.r * ks + M - d; if(need > best && d > 1e-4){ best = need; _pn.subVectors(_c1, _c2).divideScalar(d); lev = _c1.distanceTo(_s1); } }
+      if(best <= 0 || lev < 0.15) break; _t.copy(_s2).sub(_s1).normalize().multiplyScalar(lev).addScaledVector(_pn, best).normalize(); _q2.setFromUnitVectors(_c.copy(_s2).sub(_s1).normalize(), _t); oq.premultiply(_q2); _z.set(0, 0, 1).applyQuaternion(oq); op.copy(_s1).addScaledVector(_z, -W.zAt * ks); } }
+  L.down = -_z.y; }
+function wornPlace(R, L, D, op, oq, ks){ const b = D.Spine1; if(L.m.parent !== b){ b.add(L.m); L.seated = true; } _mat.compose(op, oq, _one.setScalar(ks)); _mi.copy(b.matrixWorld).invert(); _mat.premultiply(_mi); _mat.decompose(L.m.position, L.m.quaternion, L.m.scale); L.m.updateMatrixWorld(true); }
 
 // ---- BEFORE THE MIXER: which clips, how much (real-cav poseRealCav). true: the rifle's own clips fade out ----
 export function bladeClip(cv, R, G, dt, P, mounted){ if(!BLADE.on || !R.pup || !R.om) return false; const L = rigState(R); if(!mesh(R, L)) return false;
@@ -94,43 +107,99 @@ function grip(D, s, K, ks, out){ fist(D, s, out); return out.addScaledVector(_n,
 function setWorldQ(b, q){ b.parent.getWorldQuaternion(_q2); b.quaternion.copy(_q2.invert().multiply(q)); b.updateMatrixWorld(true); }
 function turnTo(b, from, to, w){ _tq.setFromUnitVectors(from, to); if(w < 1) _tq.slerp(_tw.identity(), 1 - w); b.getWorldQuaternion(_tw).premultiply(_tq); setWorldQ(b, _tw); }
 
-// ---- AFTER THE CARRY: the clip's pose laid back by the blade's weight, the weapon in his fist, the other hand on it (real-cav) ----
-export function bladeHold(cv, R, G, dt, P){ const L = R.bl; if(!L || !L.m) return; const D = R.pup.D, K = L.K, prone = P.stance === 'prone' && !P.trans ? 1 : 0;
-  if(L.w <= 0){ if(!L.seated || L.pr !== prone) seat(R, L, !!prone); return; }
-  const bw = L.bw, ks = bodyK(), H = BLADE.hand, mine = cv === CV;
+// ---- HIS BODY AS THE WEAPON MUST CLEAR IT: eight capsules on the seen soldier's own joints (BLADE.body, his metres) — chest, the pack behind it, head, hips, thighs, shins ----
+const CAP = Array.from({ length:8 }, () => ({ a:V3(), b:V3(), r:0 })), _s1 = V3(), _s2 = V3(), _c1 = V3(), _c2 = V3(), _pn = V3(), _sd1 = V3(), _sd2 = V3(), _sr = V3(), _res = V3(), _fq2 = Q4();
+function cap(i, ba, bb, r){ const c = CAP[i]; ba.getWorldPosition(c.a); bb.getWorldPosition(c.b); c.r = r; return c; }
+function capsules(D, ks, f){ const C = BLADE.body; let n = 0;
+  if(D.Spine && D.Neck && D.Spine2){ cap(n++, D.Spine, D.Neck, C.chest * ks); const c = cap(n++, D.Spine, D.Spine2, C.pack[1] * ks); c.a.addScaledVector(f, -C.pack[0] * ks); c.b.addScaledVector(f, -C.pack[0] * ks); }
+  if(D.Head && D.HeadTop_End) cap(n++, D.Head, D.HeadTop_End, C.head * ks); if(D.LeftUpLeg && D.RightUpLeg) cap(n++, D.LeftUpLeg, D.RightUpLeg, C.hips * ks);
+  if(D.LeftUpLeg && D.LeftLeg && D.LeftFoot){ cap(n++, D.LeftUpLeg, D.LeftLeg, C.thigh * ks); cap(n++, D.LeftLeg, D.LeftFoot, C.shin * ks); } if(D.RightUpLeg && D.RightLeg && D.RightFoot){ cap(n++, D.RightUpLeg, D.RightLeg, C.thigh * ks); cap(n++, D.RightLeg, D.RightFoot, C.shin * ks); } return n; }
+// the nearest points of two segments (→ c1, c2), their distance squared
+function segSeg(p1, q1, p2, q2, c1, c2){ _sd1.subVectors(q1, p1); _sd2.subVectors(q2, p2); _sr.subVectors(p1, p2); const a = _sd1.dot(_sd1), e = _sd2.dot(_sd2), f = _sd2.dot(_sr); let s = 0, t = 0;
+  if(a > 1e-9 && e > 1e-9){ const c = _sd1.dot(_sr), b = _sd1.dot(_sd2), den = a * e - b * b; s = den > 1e-9 ? clamp((b * f - c * e) / den, 0, 1) : 0; t = (b * s + f) / e; if(t < 0){ t = 0; s = clamp(-c / a, 0, 1); } else if(t > 1){ t = 1; s = clamp((b - c) / a, 0, 1); } }
+  else if(e > 1e-9) t = clamp(f / e, 0, 1); else if(a > 1e-9) s = clamp(-_sd1.dot(_sr) / a, 0, 1);
+  c1.copy(p1).addScaledVector(_sd1, s); c2.copy(p2).addScaledVector(_sd2, t); return c1.distanceToSquared(c2); }
+// the weapon (its shaft / hilt a thin rod, its blade a rod as thick as the blade is wide) moved bodily out of whatever capsule it is in: the deepest first, three times. k scales the radii (0: nothing)
+function pushOut(o, z, y, K, ks, n, k){ if(k <= 0) return; const M = BLADE.body.margin * ks, yc = (K.edge + K.back) / 2 * ks, rb = (K.edge - K.back) / 2 * ks;
+  for(let it = 0; it < 3; it++){ let best = 0; for(let g = 0; g < 2; g++){ _s1.copy(o).addScaledVector(z, (g ? K.root : K.butt) * ks); _s2.copy(o).addScaledVector(z, (g ? K.tip : K.root) * ks); if(g){ _s1.addScaledVector(y, yc); _s2.addScaledVector(y, yc); } const rw = g ? rb : K.r * ks;
+      for(let i = 0; i < n; i++){ const c = CAP[i], d = Math.sqrt(segSeg(_s1, _s2, c.a, c.b, _c1, _c2)), need = (c.r + rw + M) * k - d; if(need > best && d > 1e-4){ best = need; _pn.subVectors(_c1, _c2).divideScalar(d); } } }
+    if(best <= 0) return; o.addScaledVector(_pn, best); } }
+// a fist put on the weapon: turned round the handle, then the wrist put where that fist's palm lies on the point, the fist kept as it was turned — exact while the arm reaches.
+//   → _res: what is left (the point − where the fist came to)
+function fistTo(D, s, K, ks, tgt, z, w, pole){ const h = D[s + 'Hand'], f = D[s + 'ForeArm']; fist(D, s, _p); turnTo(h, _k, _b.copy(z).multiplyScalar(_k.dot(z) >= 0 ? 1 : -1), w); h.getWorldQuaternion(_fq2);
+  grip(D, s, K, ks, _p); h.getWorldPosition(_a); _t.copy(tgt).sub(_p).multiplyScalar(w).add(_a); if(pole) _pl.copy(pole); else f.getWorldPosition(_pl); ik2(D[s + 'Arm'], f, h, _t, _pl); setWorldQ(h, _fq2); grip(D, s, K, ks, _p); return _res.copy(tgt).sub(_p); }
+const _f = V3(), _rt = V3(), _hc = V3(), _As = V3(), _Bs = V3(), _Am = V3(), _Bm = V3(), _H0 = V3(), _H2 = V3(), _via = V3(), _wz = V3();
+// a point of his body's frame [his right, up from the hips, ahead] (his metres), blended guard → carry by rk → block by gk
+function spot(out, g, c, b, rk, gk, ks){ const x = (g[0] + (c[0] - g[0]) * rk) * (1 - gk) + b[0] * gk, y = (g[1] + (c[1] - g[1]) * rk) * (1 - gk) + b[1] * gk, z = (g[2] + (c[2] - g[2]) * rk) * (1 - gk) + b[2] * gk; return out.copy(_hc).addScaledVector(_rt, x * ks).addScaledVector(UP, y * ks).addScaledVector(_f, z * ks); }
+
+// ---- AFTER THE CARRY: the clip's pose laid back by the blade's weight, the weapon where this kind holds it, both hands put on it (real-cav) ----
+//   THE DADAO lies rigid in his right fist as the clip holds it (the handle along the knuckle line, blade out of the thumb side); his left closes on the hilt under it.
+//   THE GUANDAO's line is its own: standing and moving, a line through two points of his body's frame (BLADE.kinds.guandao.pose — the forward guard: the rear hand low by the hip, the
+//   lead hand out at chest height, the shaft rising to the enemy; at a run the trailing carry: the blade low behind him; the block across him); in a move, the line through the clip's two
+//   hands (the axe pack's arcs: the blade beyond his right hand), blended in with the move. On that line BOTH hands are put by IK on their own grip points, spread[0] m apart; through a
+//   cut's extension they slide toward the butt (the move's sl: the lead hand slips down the shaft to the rear one) and the blade runs out to its full reach.
+//   BOTH: the edge lies down / as his fist has it at rest and is rolled to lead the cut; the weapon is pushed bodily out of his trunk, pack, head and legs (pushOut) before the hands go
+//   on; DRAW / SHEATH: the right hand goes to it where it hangs, then carries it round the OUTSIDE of his shoulder (BLADE.path.via) to the hold — never through him.
+export function bladeHold(cv, R, G, dt, P){ const L = R.bl; if(!L || !L.m) return; const D = R.pup.D, K = L.K, ks = bodyK();
+  if(L.w <= 0){ worn(R, L, D, dt, P, ks, _wp, _wq); wornPlace(R, L, D, _wp, _wq, ks); L.tpOk = L.tp2Ok = false; return; }
+  const bw = L.bw, H = BLADE.hand, mine = cv === CV, B0 = BLADEST, PT = BLADE.path;
   { const B = L.bones, s = L.snap; if(bw >= 0.999) for(let i = 0; i < B.length; i++) B[i].quaternion.fromArray(s, i * 4); else for(let i = 0; i < B.length; i++) B[i].quaternion.slerp(_q.fromArray(s, i * 4), bw);
     if(D.Hips) D.Hips.position.lerp(L.hips, bw); R.pup.dst.updateMatrixWorld(true); }
-  // where it hangs (the world), lifted off his back as the hand takes it
-  wornWorld(R, L, _wp, _wq); const a = 0.3, reach = smooth(L.w / a) * (1 - smooth((L.w - a) / (1 - a))), inHand = L.w >= a, hq = smooth((L.w - a) / (1 - a) * 1.5);
-  // DRAW / SHEATH: the right hand goes over the shoulder to the grip where it hangs
-  _z.set(0, 0, 1).applyQuaternion(_wq); const slide = clamp(K.worn.grab - 0, K.butt + 0.1, K.root - 0.1); _wp.addScaledVector(_z, slide * ks);   // (where his hand can take it: `grab` m along it from the grip; it slides to the grip as it comes to hand)
-  if(reach > 0.001){ grip(D, 'Right', K, ks, _hp); D.RightHand.getWorldPosition(_a); D.RightHand.getWorldQuaternion(_hq); _t.copy(_wp).sub(_hp).multiplyScalar(reach).add(_a);
-    D.RightArm.getWorldPosition(_pl).addScaledVector(_y.set(0, 1, 0), 0.35); G.getWorldQuaternion(_q); _pl.addScaledVector(_x.set(-1, 0, 0).applyQuaternion(_q), 0.3); ik2(D.RightArm, D.RightForeArm, D.RightHand, _t, _pl); setWorldQ(D.RightHand, _hq); }
-  // THE WEAPON IN THE MAIN FIST: along the knuckle line (a pole: along the line through both palms), the edge the way the knuckles face
+  G.getWorldQuaternion(_q); _f.set(0, 0, 1).applyQuaternion(_q); _f.y = 0; _f.normalize(); _rt.set(-_f.z, 0, _f.x); D.Hips.getWorldPosition(_hc);
+  // WHERE THIS KIND HOLDS IT → the grip's place _hp, its line _hz, the edge at rest _hy, each hand's point along it (L.zR, L.zL)
   grip(D, 'Right', K, ks, _hp); _hz.copy(_k); _hy.copy(_m);
-  if(K.two && D.LeftHand){ grip(D, 'Left', K, ks, _p); _d.subVectors(_p, _hp).multiplyScalar(K.off[0] >= 0 ? 1 : -1); const d = _d.length() / ks, w2 = d < 1.6 ? smooth((d - 0.3) / 0.14) : 0; D.RightHand.getWorldQuaternion(_q);   // (the pole runs from his left palm, the butt hand,
-    if(w2 > 0.999){ _hz.copy(_d).normalize(); L.zl.copy(_hz).applyQuaternion(_q2.copy(_q).invert()); L.zOk = true; }                                                                     //   through his right up by the blade — the axe pack's hold. As his hands come together
-    else if(L.zOk){ _hz.copy(L.zl).applyQuaternion(_q); if(w2 > 0) _hz.lerp(_d.normalize(), w2).normalize(); } else if(w2 > 0) _hz.copy(_d).normalize(); }                                     //   the line is too short to trust: it stays as it lay in his right fist)
+  if(K.two && D.LeftHand){ const PS = K.pose, v = P.footV || 0, A = mine && B0.act ? ACT : null, mw = mine ? Math.min(1, L.mv[0].w + L.mv[1].w) : 0;
+    L.rk += (smooth((v - K.set.runV + 0.4) / 0.8) - L.rk) * Math.min(1, dt * 7); L.gk += ((mine && B0.guard ? 1 : 0) - L.gk) * Math.min(1, dt * 10); spot(_As, PS.guard[0], PS.carry[0], PS.block[0], L.rk, L.gk, ks); spot(_Bs, PS.guard[1], PS.carry[1], PS.block[1], L.rk, L.gk, ks);
+    // the clip's own line (kept as it lay in his right fist while his hands are too close together to give one)
+    _Am.copy(_hp); grip(D, 'Left', K, ks, _p); _d.subVectors(_Am, _p); const d = _d.length() / ks, w2 = d < 1.6 ? smooth((d - 0.3) / 0.14) : 0; D.RightHand.getWorldQuaternion(_q);
+    if(w2 > 0.999){ _hz.copy(_d).normalize(); L.zl.copy(_hz).applyQuaternion(_q2.copy(_q).invert()); L.zOk = true; } else if(L.zOk){ _hz.copy(L.zl).applyQuaternion(_q); if(w2 > 0) _hz.lerp(_d.normalize(), w2).normalize(); } else if(w2 > 0) _hz.copy(_d).normalize();
+    // the slide toward the butt through the cut's extension, the hands closing up as they go
+    let st = 0; if(A && A.mv.sl){ const s = A.mv.sl, t = A.t; st = (t <= s[0] ? 0 : t < s[1] ? smooth((t - s[0]) / (s[1] - s[0])) : t <= s[2] ? 1 : t < s[3] ? 1 - smooth((t - s[2]) / (s[3] - s[2])) : 0) * s[4]; }
+    L.sl += clamp(st - L.sl, -dt * K.slideV, dt * K.slideV); const sp = K.spread[0] + (K.spread[1] - K.spread[0]) * clamp(L.sl / K.slide, 0, 1);
+    if(A && A.mv.ext) _Am.addScaledVector(_hz, A.mv.ext * ks * clamp(L.sl / K.slide, 0, 1)); _Bm.copy(_Am).addScaledVector(_hz, -sp * ks); _As.lerp(_Am, mw); _Bs.lerp(_Bm, mw); _d.subVectors(_As, _Bs); if(_d.lengthSq() > 1e-6) _hz.copy(_d).normalize();
+    L.zR = -L.sl; L.zL = Math.max(K.butt + 0.05, L.zR - sp); _hp.copy(_As).addScaledVector(_hz, -L.zR * ks); _hy.copy(UP).negate(); if(Math.abs(_hy.dot(_hz)) > 0.97) _hy.copy(_f); }
+  else { L.zR = 0; if(D.LeftHand){ grip(D, 'Left', K, ks, _p); L.zL = clamp(_p.sub(_hp).dot(_hz) / ks, K.off[0], K.off[1]); } }   // (the hilt where his left hand already is, within its own stretch of it)
   _hy.addScaledVector(_hz, -_hy.dot(_hz)).normalize(); if(K.roll) _hy.applyAxisAngle(_hz, K.roll * D2R);
-  // THE EDGE LEADS THE CUT: at rest it lies as his fist has it; as the tip gathers speed across the weapon's line the edge is rolled (at a wrist's pace) to face the way it travels
-  { const E = BLADE.edge; _tip.copy(_hp).addScaledVector(_hz, K.tip * ks); if(E.on && L.tpOk && dt > 0 && inHand){ _t.copy(_tip).sub(L.tp).divideScalar(dt); _t.addScaledVector(_hz, -_t.dot(_hz)); const sp = _t.length(), w = smooth((sp - E.v[0]) / (E.v[1] - E.v[0]));
+  // THE EDGE LEADS THE CUT: as the tip gathers speed across the weapon's line the edge is rolled (at a wrist's pace) to face the way it travels
+  { const E = BLADE.edge, inHand = L.w >= 1; _tip.copy(_hp).addScaledVector(_hz, K.tip * ks); if(E.on && L.tpOk && dt > 0 && inHand){ _t.copy(_tip).sub(L.tp).divideScalar(dt); _t.addScaledVector(_hz, -_t.dot(_hz)); const sp = _t.length(), w = smooth((sp - E.v[0]) / (E.v[1] - E.v[0]));
       if(w > 0){ _t.divideScalar(sp); _b.copy(_hy).lerp(_t, w); if(_b.lengthSq() < 0.01) _b.copy(_t); _b.addScaledVector(_hz, -_b.dot(_hz)).normalize(); } else _b.copy(_hy);
       _a.copy(L.ey).addScaledVector(_hz, -L.ey.dot(_hz)); if(_a.lengthSq() < 1e-6) _a.copy(_hy); _a.normalize(); const ang = Math.atan2(_c.crossVectors(_a, _b).dot(_hz), _a.dot(_b)), st = E.rate * dt; _hy.copy(_a).applyAxisAngle(_hz, clamp(ang, -st, st)); }
     L.ey.copy(_hy); L.tp.copy(_tip); L.tpOk = inHand; }
   _x.crossVectors(_hy, _hz); _hq.setFromRotationMatrix(_mat.makeBasis(_x, _hy, _hz));
-  if(inHand){ _oq.copy(_wq).slerp(_hq, hq); _op.copy(_hp).addScaledVector(_z.set(0, 0, 1).applyQuaternion(_oq), -slide * ks * (1 - hq)); } else { _op.copy(_wp).addScaledVector(_z, -slide * ks); _oq.copy(_wq); }
-  // THE OTHER HAND on its stretch of the handle: the fist turned round the shaft, then two-bone IK
-  const ho = smooth((L.w - 0.55) / 0.45); _z.set(0, 0, 1).applyQuaternion(_oq);
-  if(ho > 0.001 && D.LeftHand && D.LeftArm && D.LeftForeArm){ grip(D, 'Left', K, ks, _p); _tip.copy(_op).addScaledVector(_z, clamp(_p.sub(_op).dot(_z) / ks, K.off[0], K.off[1]) * ks);   // (where along the handle his hand already is, kept on its own stretch of it: the hand closes on the shaft, it is not dragged along it)
-    fist(D, 'Left', _p); turnTo(D.LeftHand, _k, _b.copy(_z).multiplyScalar(_k.dot(_z) >= 0 ? 1 : -1), ho); D.LeftHand.getWorldQuaternion(_hq);   // (the fist round the shaft first; the wrist then put where that fist's palm lies on the grip, the fist kept as it was turned: exact)
-    grip(D, 'Left', K, ks, _p); D.LeftHand.getWorldPosition(_a); _t.copy(_tip).sub(_p).multiplyScalar(ho).add(_a); D.LeftForeArm.getWorldPosition(_pl); ik2(D.LeftArm, D.LeftForeArm, D.LeftHand, _t, _pl); setWorldQ(D.LeftHand, _hq);
-    // his arm could not bring the hand all the way (the clips were made on longer arms): the weapon comes the rest of the way to it — the right wrist moved by what is left, its fist kept as it lay
-    grip(D, 'Left', K, ks, _p); _d.copy(_tip).sub(_p).multiplyScalar(ho); if(inHand && _d.lengthSq() > 4e-6){ D.RightHand.getWorldPosition(_a); D.RightHand.getWorldQuaternion(_hq); _t.copy(_a).sub(_d); D.RightForeArm.getWorldPosition(_pl);
-      ik2(D.RightArm, D.RightForeArm, D.RightHand, _t, _pl); setWorldQ(D.RightHand, _hq); D.RightHand.getWorldPosition(_b).sub(_a); _op.add(_b); _tip.add(_b); } }
-  if(inHand){ curlHand(D, 'Right', H.curl * hq, _op); if(ho > 0.3) curlHand(D, 'Left', H.curl * ho, _tip); }
+  // DRAW / SHEATH: on his back while the hand goes to it (w < a), then round the outside of his shoulder to the hold; in his hands (w = 1) it is where the hold has it
+  let zh = L.zR, hw = 1, pk = 1, pole = null; _op.copy(_hp); _oq.copy(_hq);
+  if(L.w < 1){ worn(R, L, D, dt, P, ks, _wp, _wq); _wz.set(0, 0, 1).applyQuaternion(_wq); const a = PT.a, gz = K.worn.grab; D.RightArm.getWorldPosition(_via).addScaledVector(_rt, PT.via[0] * ks).addScaledVector(UP, PT.via[1] * ks).addScaledVector(_f, PT.via[2] * ks); pole = _via;
+    if(L.w < a){ _op.copy(_wp); _oq.copy(_wq); zh = gz; hw = smooth(L.w / a); pk = 0; }
+    else { const u = smooth((L.w - a) / (1 - a)), u1 = 1 - u; _oq.copy(_wq).slerp(_hq, u * u); _z.set(0, 0, 1).applyQuaternion(_oq); zh = gz + (L.zR - gz) * u;   // (it comes off his back and out round the shoulder first, and turns to the hold as it arrives) _H0.copy(_wp).addScaledVector(_wz, gz * ks); _H2.copy(_hp).addScaledVector(_hz, L.zR * ks);
+      _op.copy(_H0).multiplyScalar(u1 * u1).addScaledVector(_via, 2 * u * u1).addScaledVector(_H2, u * u).addScaledVector(_z, -zh * ks); pk = smooth(u / PT.clear); } }
+  _z.set(0, 0, 1).applyQuaternion(_oq); _y.set(0, 1, 0).applyQuaternion(_oq);
+  // out of his body, then the hands: the right on its point (what its arm cannot reach, the weapon comes to), the left on its own
+  const nc = capsules(D, ks, _f); pushOut(_op, _z, _y, K, ks, nc, pk);
+  _tip.copy(_op).addScaledVector(_z, zh * ks); fistTo(D, 'Right', K, ks, _tip, _z, hw, pole); if(pk > 0 && _res.lengthSq() > 4e-6) _op.sub(_res); L.eR = pk > 0 ? 0 : _res.length(); L.eL = 0;   // (his hand stays on it before all else)
+  const ho = smooth((L.w - 0.6) / 0.4);
+  if(ho > 0.001 && D.LeftHand && D.LeftArm && D.LeftForeArm){ _mid.copy(_op).addScaledVector(_z, L.zL * ks); fistTo(D, 'Left', K, ks, _mid, _z, ho, null);
+    if(ho > 0.99 && _res.lengthSq() > 4e-6){ // short of it: his hand takes the handle where it can (within its stretch); what is still left, the weapon comes to (the right wrist moved, its fist kept)
+      const lo = K.two ? K.butt + 0.05 : K.off[0], hi = K.two ? zh - K.spread[1] : K.off[1], z2 = clamp(L.zL - _res.dot(_z) / ks, lo, hi); if(Math.abs(z2 - L.zL) > 1e-3){ L.zL = z2; _mid.copy(_op).addScaledVector(_z, z2 * ks); fistTo(D, 'Left', K, ks, _mid, _z, 1, null); }
+      if(_res.lengthSq() > 4e-6){ _d.copy(_res); D.RightHand.getWorldPosition(_a); D.RightHand.getWorldQuaternion(_fq2); _t.copy(_a).sub(_d); D.RightForeArm.getWorldPosition(_pl); ik2(D.RightArm, D.RightForeArm, D.RightHand, _t, _pl); setWorldQ(D.RightHand, _fq2); D.RightHand.getWorldPosition(_b).sub(_a); _op.add(_b); _mid.add(_b); _res.set(0, 0, 0); } } L.eL = _res.length(); }
+  if(hw > 0.5){ _tip.copy(_op).addScaledVector(_z, zh * ks); curlHand(D, 'Right', H.curl * hw, _tip); if(ho > 0.3) curlHand(D, 'Left', H.curl * ho, _mid); }
   // laid under the rig group (his own size in the world)
   if(L.seated){ L.seated = false; G.add(L.m); } _mat.compose(_op, _oq, _one.setScalar(ks)); _mi.copy(G.matrixWorld).invert(); _mat.premultiply(_mi); _mat.decompose(L.m.position, L.m.quaternion, L.m.scale); L.m.updateMatrixWorld(true);
-  if(mine){ _tip.copy(_op).addScaledVector(_z, K.tip * ks); _mid.copy(_op).addScaledVector(_z, (K.root + K.tip) / 2 * ks); trail(dt, !!(BLADEST.act && ACT.wi >= 0)); } }
+  if(mine){ _tip.copy(_op).addScaledVector(_z, K.tip * ks); _mid.copy(_op).addScaledVector(_z, (K.root + K.tip) / 2 * ks); B0.tipR = Math.hypot(_tip.x - _hc.x, _tip.z - _hc.z); winStat(L, D, K, ks, dt, zh); trail(dt, !!(B0.act && ACT.wi >= 0)); } }
+// ---- THE PROOF A PROBE CAN READ (bladeProbe): through each hit window of the page's own soldier — where his palms are on the handle (0 the butt … 1 the blade's root) and how far
+//   off it (cm), how much further from his chest the tip is than his hands, how far ahead of him it is at its fastest, how squarely the edge leads its travel, its speed ----
+const WS = { on:false, id:'', n:0, gR:0, gL:0, pR:0, pL:0, tipOut:9, front:0, lead:0, leadMin:1, v:0 }, WINS = {};
+function winStat(L, D, K, ks, dt, zh){ const B = BLADEST, on = !!(B.act && ACT.wi >= 0);
+  if(on && dt > 0){ if(!WS.on){ WS.on = true; WS.id = ACT.mv.id; WS.n = 0; WS.gR = WS.gL = WS.pR = WS.pL = WS.lead = WS.v = WS.front = 0; WS.tipOut = 9; WS.leadMin = 1; }
+    D.Spine2.getWorldPosition(_c); D.RightHand.getWorldPosition(_a); D.LeftHand.getWorldPosition(_b); const hz = K.root - K.butt, out = _tip.distanceTo(_c) - Math.max(_a.distanceTo(_c), _b.distanceTo(_c));
+    WS.n++; WS.gR += (zh - K.butt) / hz; WS.gL += (L.zL - K.butt) / hz; WS.pR = Math.max(WS.pR, L.eR * 100); WS.pL = Math.max(WS.pL, L.eL * 100); WS.tipOut = Math.min(WS.tipOut, out);
+    if(L.tp2Ok){ _t.copy(_tip).sub(L.tp2).divideScalar(dt); const sp = _t.length(), cs = sp > 0.5 ? _t.dot(_y) / sp : 1; WS.lead += cs; WS.leadMin = Math.min(WS.leadMin, cs); if(sp > WS.v){ WS.v = sp; WS.front = (_tip.x - _c.x) * Math.sin(ACT.f0) + (_tip.z - _c.z) * Math.cos(ACT.f0); } } else WS.lead += 1; }
+  else if(WS.on){ WS.on = false; const n = WS.n || 1, o = WINS[WS.id] || (WINS[WS.id] = {}); o.grip = [+(WS.gR / n).toFixed(2), +(WS.gL / n).toFixed(2)]; o.palmCm = [+WS.pR.toFixed(1), +WS.pL.toFixed(1)]; o.tipOut = +WS.tipOut.toFixed(2); o.front = +WS.front.toFixed(2); o.edgeLead = [+WS.leadMin.toFixed(2), +(WS.lead / n).toFixed(2)]; o.tipSpeed = +WS.v.toFixed(1); o.frames = WS.n; }
+  L.tp2.copy(_tip); L.tp2Ok = true; }
+// how near a thing on his back lies to it: a rod p0 → p1 of radius rad against the trunk's capsules (chest and pack), sampled along the stretch beside them → [least, most] cm (his kit's
+//   real surface is measured off line; this is the same model the push-out uses). For the worn blade and the slung rifle (gun-carry carryProbe)
+export function backGap(D, p0, p1, rad){ const ks = bodyK(), R = CV.real, G = R && CV.G; if(!D || !D.Spine || !D.Neck || !G) return null; G.getWorldQuaternion(_q); _f.set(0, 0, 1).applyQuaternion(_q); _f.y = 0; _f.normalize(); capsules(D, ks, _f);
+  D.Spine.getWorldPosition(_a); D.Spine2.getWorldPosition(_b); let lo = 1e9, hi = -1e9; for(let i = 0; i <= 8; i++){ _t.copy(p0).lerp(p1, i / 8); if(_t.y < _a.y - 0.05 || _t.y > _b.y + 0.12) continue; let d = 1e9; for(let c = 0; c < 2; c++){ const cp = CAP[c]; d = Math.min(d, Math.sqrt(segSeg(_t, _t, cp.a, cp.b, _c1, _c2)) - cp.r); } d -= rad; lo = Math.min(lo, d); hi = Math.max(hi, d); }
+  return lo > 1e8 ? null : [+(lo * 100).toFixed(1), +(hi * 100).toFixed(1)]; }
 
 // ---- THE RIBBON: n pairs (mid-blade, tip), the newest first, fading; one mesh, one draw call ----
 const TR = { mesh:null, pos:null, col:null, n:0, k:0, live:0, lt:V3(), lm:V3() };
@@ -212,7 +281,8 @@ export function bladeTick(p, dt, now){ const B = BLADEST; B.frame++; if(!BLADE.o
   if(down && !B.down){ B.pressT = now; B.heavied = false; ask(B.guard ? 'counter' : sprint ? 'run' : 'light', now); }
   if(down && !B.heavied && now - B.pressT >= BLADE.hold){ B.heavied = true; if(B.act && ACT.what === 'light' && ACT.wi < 0 && ACT.t < ACT.mv.win[0][0] && B.st >= K.moves.heavy.st){ B.chain = 0; begin('heavy', now); } else ask('heavy', now); }
   if(!down && B.down) B.pressT = 0; B.down = down;
-  B.guard = B.sw > 0.9 && !B.act && !B.buf && (heldAction('reload') || !!(RDRAG && RDRAG.down));
+  B.guard = B.sw > 0.9 && !B.act && !B.buf && (heldAction('reload') || !!(RDRAG && RDRAG.down) || !!B.tGuard);
+  if(B.act && ACT.what === 'flourish' && (Math.hypot(p.vel.x, p.vel.z) > BLADE.flourish.moveV || heldAction('reload') || heldAction('sprint') || B.tGuard)) B.act = null;   // (the flourish gives way to anything he asks: a step, the guard — a cut takes over through the buffer)
   // the move in hand
   if(B.act){ const A = ACT, mv = A.mv; A.t += dt * A.rate; if(mv.win.length) windows(p, K, A, now);
     if(B.buf && (A.what === 'flourish' || A.t >= mv.next)){ begin(B.buf, now); } else if(A.t >= mv.to){ B.act = null; B.chainAt = now; } }
@@ -223,17 +293,22 @@ export function bladeTick(p, dt, now){ const B = BLADEST; B.frame++; if(!BLADE.o
   if(!B.flDone && !B.act && !B.buf && !down && now - B.killAt > BLADE.flourish.wait && B.sw >= 1){ if(now - B.killAt > 3 || nearest(p, BLADE.flourish.r, 180, 0, false)) B.flDone = true; else begin('flourish', now); }
   if(B.frame % 6 === 0) hud(); }
 
-// ---- what he sees of it: a pill with the kind, the stamina and the special's cooldown (only while it is in his hands); phones get a round button ----
-let _hud = null, _btn = null, _hs = '';
-function hud(){ if(typeof document === 'undefined') return; const B = BLADEST, K = BLADE.kinds[B.kind || bladeKind()], now = S.timeNow || performance.now() / 1000, on = B.held && S.mode === 'playing';
-  if(MOBILE && !_btn && S.mode === 'playing'){ _btn = document.createElement('div'); _btn.id = 'bladeBtn'; _btn.style.cssText = 'position:fixed;right:' + BLADE.btn[0] + 'px;bottom:' + BLADE.btn[1] + 'px;z-index:40;width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:700 12px/1 system-ui,sans-serif;letter-spacing:.04em;color:#f3ead2;background:rgba(40,44,34,.72);border:1px solid rgba(255,207,90,.6);touch-action:none;user-select:none';
-    _btn.addEventListener('pointerdown', ev => { ev.stopPropagation(); ev.preventDefault(); bladeToggle(); }); document.body.appendChild(_btn); }
-  if(_btn){ _btn.style.display = S.mode === 'playing' && afoot() ? 'flex' : 'none'; const t = B.held ? 'SÚNG' : 'ĐAO'; if(_btn.textContent !== t) _btn.textContent = t; }
-  if(!on){ if(_hud && _hs){ _hud.style.display = 'none'; _hs = ''; } return; }
-  if(!_hud){ _hud = document.createElement('div'); _hud.id = 'bladeHud'; _hud.style.cssText = 'position:fixed;left:50%;bottom:92px;transform:translateX(-50%);z-index:30;display:none;padding:6px 14px 8px;border-radius:10px;font:700 12px/1.2 system-ui,sans-serif;letter-spacing:.05em;color:#f3ead2;background:rgba(30,33,26,.66);border:1px solid rgba(255,207,90,.45);pointer-events:none;text-align:center;min-width:150px';
-    _hud.innerHTML = '<div id="bladeNm"></div><div style="height:4px;margin-top:5px;border-radius:2px;background:rgba(255,255,255,.16)"><div id="bladeSt" style="height:4px;border-radius:2px;background:#9be04a;width:100%"></div></div>'; document.body.appendChild(_hud); }
-  const cd = Math.max(0, B.spAt - now), st = Math.round(B.st / BLADE.stamina.max * 20), sig = K.name + '|' + st + '|' + Math.ceil(cd) + (B.guard ? 'g' : '') + (B.auto ? 'a' : ''); if(sig === _hs) return; _hs = sig; _hud.style.display = 'block';
-  _hud.firstChild.textContent = '⚔ ' + K.name + (B.auto ? ' · TỰ ĐỘNG' : '') + (B.guard ? ' · THỦ' : '') + (cd > 0 ? ' · chiêu ' + Math.ceil(cd) + ' s' : ' · chiêu sẵn sàng'); const bar = _hud.lastChild.firstChild; bar.style.width = st * 5 + '%'; bar.style.background = st < 5 ? '#ff6a4a' : '#9be04a'; }
+// ---- what he sees of it: in his hands the blade takes the weapon slot as a gun does (its silhouette, its name, IM LẶNG — the quiet weapon —, stamina or the special's cooldown);
+//   phones get a round blade ⇄ rifle button and, with the blade out, a guard button to hold ----
+const ICON = { guandao:'M3 21L15.5 8.5M14 10c1.5-5 5-7.5 8-8-.3 3.8-2.4 7.2-6.6 8.4z', dadao:'M3 21l3.4-3.4M5.2 17.2l1.6 1.6M6.4 17.6L17.5 5.2c1.6-1.8 3.4-2.4 4.5-2.4.1 2.6-.9 4.9-2.7 6.4L8 18.6z' };
+let _btn = null, _gbtn = null;
+function pill(id, pos, txt){ const b = document.createElement('div'); b.id = id; b.textContent = txt; b.style.cssText = 'position:fixed;right:' + pos[0] + 'px;bottom:' + pos[1] + 'px;z-index:40;width:54px;height:54px;border-radius:50%;display:none;align-items:center;justify-content:center;font:700 12px/1 system-ui,sans-serif;letter-spacing:.04em;color:#f3ead2;background:rgba(40,44,34,.72);border:1px solid rgba(255,207,90,.6);touch-action:none;user-select:none'; document.body.appendChild(b); return b; }
+// ui/briefing.js updateGunHUD: true = the chip is the blade's (drawn here)
+export function bladeChip(c){ const B = BLADEST; if(!BLADE.on || !B.held || !c || typeof document === 'undefined') return false; const K = BLADE.kinds[B.kind || bladeKind()], key = 'blade:' + K.file, now = S.timeNow || performance.now() / 1000;
+  if(c._key !== key){ c._key = key; const NS = 'http://www.w3.org/2000/svg', ic = document.createElement('span'), sv = document.createElementNS(NS, 'svg'), pa = document.createElementNS(NS, 'path'), nm = document.createElement('span'), tg = document.createElement('span'), am = document.createElement('span');
+    ic.className = 'gunpic wc-ic'; sv.setAttribute('viewBox', '0 0 24 24'); sv.setAttribute('width', '34'); sv.setAttribute('height', '34'); pa.setAttribute('d', ICON[B.kind] || ICON.dadao); pa.setAttribute('fill', 'none'); pa.setAttribute('stroke', 'currentColor'); pa.setAttribute('stroke-width', '1.6'); pa.setAttribute('stroke-linejoin', 'round'); sv.appendChild(pa); ic.appendChild(sv);
+    nm.className = 'wc-nm'; nm.textContent = K.name; tg.className = 'wc-ty'; tg.textContent = 'IM LẶNG'; tg.title = 'Đao không gây tiếng động: không lộ vị trí như tiếng súng'; nm.appendChild(tg); am.className = 'wc-am'; c._am = am; c._amT = null; c._rl = null; c.replaceChildren(ic, nm, am); c.classList.remove('reloading'); }
+  const cd = Math.max(0, B.spAt - now), t = (B.guard ? 'THỦ · ' : B.auto ? 'TỰ ĐỘNG · ' : '') + (cd > 0 ? 'chiêu ' + Math.ceil(cd) + 's' : Math.round(B.st / BLADE.stamina.max * 100) + '%'); if(c._amT !== t){ c._amT = t; c._am.textContent = t; } return true; }
+function hud(){ if(typeof document === 'undefined') return; const B = BLADEST, play = S.mode === 'playing';
+  if(MOBILE && play && !_btn){ _btn = pill('bladeBtn', BLADE.btn, 'ĐAO'); _btn.addEventListener('pointerdown', ev => { ev.stopPropagation(); ev.preventDefault(); bladeToggle(); }); _gbtn = pill('bladeGuardBtn', BLADE.gbtn, 'THỦ');
+    const up = ev => { ev.stopPropagation(); B.tGuard = false; }; _gbtn.addEventListener('pointerdown', ev => { ev.stopPropagation(); ev.preventDefault(); B.tGuard = true; }); _gbtn.addEventListener('pointerup', up); _gbtn.addEventListener('pointercancel', up); _gbtn.addEventListener('pointerleave', up); }
+  if(_btn){ _btn.style.display = play && afoot() ? 'flex' : 'none'; const t = B.held ? 'SÚNG' : 'ĐAO'; if(_btn.textContent !== t) _btn.textContent = t; _gbtn.style.display = play && B.held ? 'flex' : 'none'; if(!B.held) B.tGuard = false; }
+  if(B.held && play) bladeChip(document.getElementById('weaponchip')); else if(B.chipOn) updateGunHUD(); B.chipOn = B.held && play; }
 // the middle button TAPPED (a drag still turns the view) and the mouse's side buttons: blade ⇄ rifle
 if(typeof addEventListener === 'function' && typeof document !== 'undefined'){ let mt = 0, mx = 0, my = 0;
   addEventListener('mousedown', e => { if(e.button === 1){ mt = performance.now(); mx = e.clientX; my = e.clientY; } else if((e.button === 3 || e.button === 4) && S.mode === 'playing'){ e.preventDefault(); bladeToggle(); } });
@@ -241,5 +316,7 @@ if(typeof addEventListener === 'function' && typeof document !== 'undefined'){ l
 // the loadout screen's picker and anything else that changes his blade
 export function bladePick(k){ if(!BLADE.kinds[k]) return false; PROFILE.blade = k; try{ saveProfile(); }catch(e){} return true; }
 // numbers for a probe / the pose studio
+function wornProbe(R, L){ if(!L || !L.m || !R.pup) return null; const K = L.K, m = L.m, ks = bodyK(); m.updateWorldMatrix(true, false); _z.set(0, 0, 1).transformDirection(m.matrixWorld); _x.set(0, 0, K.butt).applyMatrix4(m.matrixWorld); _y.set(0, 0, K.tip).applyMatrix4(m.matrixWorld);
+  return { bladeDown:+(-_z.y).toFixed(2), tipY:+(_y.y - heightAt(_y.x, _y.z)).toFixed(2), gapCm:BLADEST.sw > 0 ? null : backGap(R.pup.D, _x, _y, K.r * ks), swingDeg:+(L.swing * 180 / Math.PI).toFixed(2) }; }
 export function bladeProbe(){ const B = BLADEST, R = CV.real, L = R && R.bl; return { kind:B.kind, held:B.held, auto:B.auto, sw:+B.sw.toFixed(3), act:B.act ? ACT.mv.id : null, t:B.act ? +ACT.t.toFixed(3) : 0, win:B.act ? ACT.wi : -1, buf:B.buf, chain:B.chain, st:+B.st.toFixed(1), guard:B.guard, hits:B.hits, kills:B.kills, swings:B.swings,
-    ready:!!B.ready[B.kind], mesh:!!(L && L.m), seated:!!(L && L.seated), cd:+Math.max(0, B.spAt - (S.timeNow || performance.now() / 1000)).toFixed(2) }; }
+    ready:!!B.ready[B.kind], mesh:!!(L && L.m), seated:!!(L && L.seated), tipR:+(B.tipR || 0).toFixed(2), wins:WINS, worn:wornProbe(R, L), cd:+Math.max(0, B.spAt - (S.timeNow || performance.now() / 1000)).toFixed(2) }; }

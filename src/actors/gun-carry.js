@@ -29,7 +29,7 @@
 //   climbArms calls carryBack. Nothing allocates per frame. GUNCARRY.on false / ?oldcarry: none of it runs.
 import * as THREE from 'three';
 import { GUNCARRY, GUNFEEL, GUNHOLD, INFGUN, LOGISTICS, REALCAV } from '../../config.js';
-import { bladeHeld, CV, FIT, LEGKIT, MATE, QUIET, S, climbW, fpvFlying, graphOwned, graphState, headLevel } from '../hub.js';
+import { backGap, hangState, hangStep, bladeHeld, CV, FIT, LEGKIT, MATE, QUIET, S, climbW, fpvFlying, graphOwned, graphState, headLevel } from '../hub.js';
 
 const V3 = () => new THREE.Vector3(), Q4 = () => new THREE.Quaternion(), clamp = (v, a, b) => Math.max(a, Math.min(b, v)), smooth = k => { k = clamp(k, 0, 1); return k * k * (3 - 2 * k); }, seg = (u, a, b) => clamp((u - a) / (b - a), 0, 1);
 const SIDE = ['Right', 'Left'], FING = ['Thumb', 'Index', 'Middle', 'Ring', 'Pinky'], UP = new THREE.Vector3(0, 1, 0), NP = 10;
@@ -226,9 +226,9 @@ export function carryAfter(R, G, dt, P){ const C = GUNCARRY, D = R.pup && R.pup.
   cy.s = back ? Math.min(1, cy.s + dt / (fast ? K.t[2] : K.t[0])) : Math.max(0, cy.s - dt / (fast ? K.t[2] : K.t[1])); if(wy === 'climb') cy.s = Math.max(cy.s, climbW());
   cy.h = front ? Math.min(1, cy.h + dt / C.hang.t) : Math.max(0, cy.h - dt / C.hang.t); if(cy.s <= 0 && cy.h <= 0 && !wy) cy.why = '';
   const tIn = swap ? 1 - seg(cy.sw, C.swap.in, 1) : 0, tN = Math.max(cy.s, tIn), tO = swap ? seg(cy.sw, 0, C.swap.out) : 1; cy.tN = tN;
-  // the rock of what hangs on him: a spring toward the stride's sway and the chest's sideways shove
-  { const U = R.upper, sp = Math.min(1, (P && P.footV || 0) / 3), to = SL.sway * sp * Math.sin(stride(R, cv)) + (U ? clamp(-U.a.dot(_r) * SL.lag, -SL.max, SL.max) : 0);
-    cy.angV += (-SL.k * (cy.ang - to) - 2 * SL.z * Math.sqrt(SL.k) * cy.angV) * dt; cy.ang = clamp(cy.ang + cy.angV * dt, -SL.max * 2, SL.max * 2); }
+  // HANG 1 what hangs on him HANGS: the pendulum the worn blade shares (actors/hang.js) — from the sling's upper end, in the back's plane: gravity and the shoulder's own
+  //   acceleration swing its muzzle end, the strap brings it back (it was a spring toward the stride's sway: stiff standing still, blind to a lean or a stop)
+  { const a0 = clamp(Math.acos(Math.min(1, SL.drop / len)), SL.tilt, SL.tiltMax); pt(_t, cy.sg * SL.at[0], SL.at[1] + len * 0.3, Z); cy.ang = hangStep(cy.hg || (cy.hg = hangState()), dt, (a0 + (SL.prone[0] - a0) * cy.pw) * cy.sg, _t, _cr, _cu, len * 0.8); }
   // the gun in his hands as the hold left it, in the world; kept in the back's frame for a swap
   met.matrixWorld.decompose(_hp, _hq, _hs);
   if(tN < 1e-4 && cy.h < 1e-4 && !swap){ _t.copy(_hp).sub(_co); cy.hrp.set(_t.dot(_cr), _t.dot(_cu), _t.dot(_cb)); cy.hrq.copy(_cq).invert().multiply(_hq); cy.hOk = true; _q.copy(_hq).invert();
@@ -271,4 +271,6 @@ export function carryBack(R, G){ const C = GUNCARRY, D = R.pup && R.pup.D, M = R
 // ---- co-op (game/coop-glue.js myState): is this page's soldier's rifle on his back? One bit of the stance byte carries it to the other page ----
 export function carrySlung(){ const R = CV.real, cy = R && R.cy; return !!(GUNCARRY.on && cy && cy.s > 0.5 && !CV.mounted); }
 // dev: what the carry is doing (a probe, the pose studio)
-export function carryProbe(){ const R = CV.real, cy = R && R.cy; return cy ? { s:+cy.s.toFixed(3), hang:+cy.h.toFixed(3), why:cy.why, run:+(cy.runW || 0).toFixed(3), swap:+cy.sw.toFixed(3), back:cy.wK, diag:cy.sg, backDiag:+cy.bs.toFixed(2), hands:[+cy.w[0].toFixed(3), +cy.w[1].toFixed(3)], quiet:+cy.quiet.toFixed(1) } : null; }
+export function carryProbe(){ const R = CV.real, cy = R && R.cy, m = cy && R.arms._metric && R.arms._metric[R.armK]; let hung = null; if(m && cy.s > 0.5){ m.updateWorldMatrix(true, false); const L = m.userData.len, a = new THREE.Vector3(L / 2, 0, 0).applyMatrix4(m.matrixWorld), b = new THREE.Vector3(-L / 2, 0, 0).applyMatrix4(m.matrixWorld);   // (a probe's own vectors: not the frame's)
+    hung = { muzzleDown:+((a.y - b.y) / a.distanceTo(b)).toFixed(2), gapCm:backGap(R.pup.D, a, b, 0.03), swingDeg:+(cy.ang * 180 / Math.PI).toFixed(2) }; }
+  return cy ? { hung, s:+cy.s.toFixed(3), hang:+cy.h.toFixed(3), why:cy.why, run:+(cy.runW || 0).toFixed(3), swap:+cy.sw.toFixed(3), back:cy.wK, diag:cy.sg, backDiag:+cy.bs.toFixed(2), hands:[+cy.w[0].toFixed(3), +cy.w[1].toFixed(3)], quiet:+cy.quiet.toFixed(1) } : null; }

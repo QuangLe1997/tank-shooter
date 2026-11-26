@@ -260,6 +260,7 @@ export * from './actors/gun-feel.js';   // GUN 3 the feel of a shot: a burst tha
 export * from './actors/gun-reload.js';   // GUN 2 the reload as real steps per weapon family: the plan, the hands, what they hold, no teleporting
 export * from './actors/gun-hands.js';   // GUN 1 the hands held to a man's joints: trigger finger, wrists, the support arm's reach, the eye
 export * from './actors/gun-carry.js';   // CARRY 1 the slung rifle, the second weapon on his back, the swap, the run carry
+export * from './actors/hang.js';    // HANG 1 what he wears on his back hangs: the pendulum the slung rifle and the worn blade share
 export * from './actors/blade.js';   // BLADE 2 the wuxia blade: worn on his back, drawn, the stance and the moves, the cuts
 export * from './actors/gun-fit.js';   // Z360 each hand weapon's hold read off its own model (grip, palm, butt, sight, bore)
 export * from './actors/real-troops.js';
