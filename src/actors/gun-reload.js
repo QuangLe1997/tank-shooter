@@ -16,6 +16,7 @@
 import * as THREE from 'three';
 import { GUNFEEL, GUNHOLD } from '../../config.js';
 import { heightAt, ik2, scene, sfx } from '../hub.js';
+import { BODYFULL } from '../../config.js';   // BODY 10 the B41's rockets carried on his chest, by the tube
 
 const V3 = () => new THREE.Vector3(), clamp = (v, a, b) => Math.max(a, Math.min(b, v)), smooth = k => { k = clamp(k, 0, 1); return k * k * (3 - 2 * k); };
 const seg = (u, a, b) => clamp((u - a) / (b - a), 0, 1);
@@ -56,7 +57,7 @@ const topAt = (g, x) => { if(!g.rows) return (g.bore ?? 0.02) + 0.05; const N = 
 function points(D, g, len, wl, fam){ const H = GUNHOLD, A = GUNFEEL.reload.at, m = g.mag || H.mag, L = g.load;
   P.hg.copy(wl);
   if(fam === 'tube' && L){ pt(P.t, m, len); P.out.copy(P.t).addScaledVector(F.x, -L.ahead[0]); P.mag.copy(P.t).addScaledVector(F.x, -L.ahead[1]);   // (ahead of the muzzle: along the bore, −x)
-    D.Spine2.getWorldPosition(P.pouch).addScaledVector(F.r, -L.pouch[0]).addScaledVector(F.u, L.pouch[1]).addScaledVector(F.f, L.pouch[2]); return; }
+    const pc = (BODYFULL.tube && BODYFULL.tube.pouch) || L.pouch; D.Spine2.getWorldPosition(P.pouch).addScaledVector(F.r, -pc[0]).addScaledVector(F.u, pc[1]).addScaledVector(F.f, pc[2]); return; }
   pt(P.mag, m, len).addScaledVector(F.y, -0.04); P.out.copy(P.mag).addScaledVector(F.y, -(clamp(g.magSize || 0.14, 0.1, 0.24) * 0.6 + A.clear));
   pt(P.port, m, len).addScaledVector(F.y, -0.035);
   pt(P.bolt, g.bolt || H.bolt, len).addScaledVector(F.y, 0.03); P.back.copy(P.bolt).addScaledVector(F.x, A.rack);

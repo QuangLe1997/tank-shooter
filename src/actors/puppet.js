@@ -32,10 +32,14 @@
 // flip from +180° to −180°), no more than `max` of it is laid along the forearm (a man's ±85°; the rest stays at the wrist), and after the gun hold an
 // arm whose hand is rolled past `swivel.lim` on its forearm (or whose upper arm is rolled past `swivel.root` at the shoulder) has its ELBOW swung round
 // the shoulder → wrist line (at most `swivel.max`) until the two carry the same share of what each can take: neither the shoulder nor the hand moves.
+// BODY 10 COUNTER-TWIST JOINTS ON THE UPPER ARMS (BODYFULL.twist.upper; <Arm>Twist1…n — tools/skin-repair.mjs, counter): the upper arm's roll on its
+// shoulder (from rest) wrung the sleeve at the shoulder — the bone carries all of it right up to the collar. Joint i is turned BACK by (n − i + 1)/n of
+// the roll (less `keep`): the shoulder's end of the sleeve rolls only `keep` of it, the elbow's end all of it. The bone itself is left as it is (the
+// hold, the IK and the forearm under it read it unchanged).
 // BODY 4 read on from the last frame only up to BODYMEND.wrap (a little past 180°): read on further, a roll that went round in a reload stayed "+219°"
 // when the hand was back on the gun at −141°, and the swivel swung the elbow the wrong way — both hands rolled 140–160° until the next stance change.
 import * as THREE from 'three';
-import { BODYFIX, BODYMEND, PUPPET } from '../../config.js';
+import { BODYFIX, BODYFULL, BODYMEND, PUPPET } from '../../config.js';
 
 // [bone, the child it points at] — parents before children
 const CHAINS = [['Spine','Spine1'],['Spine1','Spine2'],['Spine2','Neck'],['Neck','Head'],
@@ -125,7 +129,8 @@ function fullSetup(S, D, src){ const need = ['Hips', 'Spine', 'LeftUpLeg', 'Left
   const limbs = []; for(const s of ['Left', 'Right']) for(const [un, ln, en, pn] of LIMBS){ const u = D[s + un], l = D[s + ln], e = D[s + en], p = u.parent, arm = un === 'Arm', du = dir(D, s + un, s + ln), dl = dir(D, s + ln, s + en);
     const a = arm ? V().crossVectors(du, fwd) : V().crossVectors(fwd, du); if(a.lengthSq() < 1e-6) return null; a.normalize(); const al = a.clone().addScaledVector(dl, -a.dot(dl)).normalize();
     const tj = []; for(let i = 1; D[s + ln + 'Twist' + i] && D[s + ln + 'Twist' + i].parent === l; i++) tj.push(D[s + ln + 'Twist' + i]);   // BODY 1 (none in a file without them: the roll is shared as before)
-    limbs.push({ u, l, e, p, arm, au:a.applyQuaternion(wq(u).invert()), al:al.applyQuaternion(wq(l).invert()), relU:wq(p).invert().multiply(wq(u)).invert(), relE:wq(l).invert().multiply(wq(e)).invert(), iu:at[s + un], il:at[s + ln], ie:at[s + en], tj:tj.length ? tj : null, ta:e.position.clone().normalize(), tm:0, sw:0, hm:0, hd:arm && D[s + 'HandMiddle1'] ? dir(D, s + 'Hand', s + 'HandMiddle1').applyQuaternion(wq(e).invert()) : null }); }   // (BODY 5 hd: the hand's own pointing — to the middle finger's root — in its frame)
+    const tu = []; for(let i = 1; D[s + un + 'Twist' + i] && D[s + un + 'Twist' + i].parent === u; i++) tu.push(D[s + un + 'Twist' + i]);   // BODY 10 (the upper arm's counter joints)
+    limbs.push({ u, l, e, p, arm, au:a.applyQuaternion(wq(u).invert()), al:al.applyQuaternion(wq(l).invert()), relU:wq(p).invert().multiply(wq(u)).invert(), relE:wq(l).invert().multiply(wq(e)).invert(), iu:at[s + un], il:at[s + ln], ie:at[s + en], tj:tj.length ? tj : null, ta:e.position.clone().normalize(), tm:0, tu:tu.length ? tu : null, tua:l.position.clone().normalize(), um:0, sw:0, hm:0, hd:arm && D[s + 'HandMiddle1'] ? dir(D, s + 'Hand', s + 'HandMiddle1').applyQuaternion(wq(e).invert()) : null }); }   // (BODY 5 hd: the hand's own pointing — to the middle finger's root — in its frame)
   // where each foot joint rests over the ground (the parent frame's up), in the world's metres; the operator's hips over his feet
   const P0 = src.parent || src, k = V().setFromMatrixColumn(P0.matrixWorld, 1).length(), hy = (B, n) => P0.worldToLocal(wp(B[n])).y * k, feet = [];
   for(const s of ['Left', 'Right']){ const J = ENDS.map(e => s + e).filter(n => S[n] && D[n]); feet.push({ s:J.map(n => S[n]), d:J.map(n => D[n]), rs:J.map(n => hy(S, n)), rd:J.map(n => hy(D, n)), it:at[s + 'UpLeg'], is:at[s + 'Leg'], ik:at[s + 'Foot'], au:limbs[s === 'Left' ? 1 : 3].au }); }
@@ -202,7 +207,11 @@ function limbs(F, clip){ const HG = PUPPET.hinge, TW = PUPPET.twist, BT = BODYFI
     if(L.tj){ if(!clip){ if(tw - L.tm > Math.PI) tw -= 2 * Math.PI; else if(tw - L.tm < -Math.PI) tw += 2 * Math.PI; if(Math.abs(tw) > BODYMEND.wrap) tw = twistOf(_qr, _v); L.tm = tw; }   // (read on from last frame: a hand right round does not flip the forearm)
       tw = Math.max(-BT.max, Math.min(BT.max, tw)); const J = L.tj, nj = J.length; for(let k = 0; k < nj; k++) J[k].quaternion.setFromAxisAngle(L.ta, tw * (k + 1) / nj); }   // BODY 1 the roll laid along the bone's twist joints; the bone keeps its hinge
     else { const te = Math.max(-TW.max, Math.min(TW.max, tw)) * (L.arm ? TW.fore : TW.shin); if(Math.abs(te) > 1e-5) _ql.premultiply(_q.setFromAxisAngle(_v, te)); }
-    u.quaternion.copy(_qp).invert().multiply(_qu); l.quaternion.copy(_qu).invert().multiply(_ql); e.quaternion.copy(_ql).invert().multiply(_qe); u.updateMatrixWorld(true); } }
+    u.quaternion.copy(_qp).invert().multiply(_qu); l.quaternion.copy(_qu).invert().multiply(_ql); e.quaternion.copy(_ql).invert().multiply(_qe);
+    if(L.tu){ const UT = BODYFULL.twist.upper; _qr.copy(_qu).multiply(L.relU).multiply(_q0.copy(_qp).invert()); let ru = twistOf(_qr, _u);   // BODY 10 the upper arm's roll on its shoulder, countered along it
+      if(!clip){ if(ru - L.um > Math.PI) ru -= 2 * Math.PI; else if(ru - L.um < -Math.PI) ru += 2 * Math.PI; if(Math.abs(ru) > BODYMEND.wrap) ru = twistOf(_qr, _u); L.um = ru; }
+      const c = Math.max(-UT.max, Math.min(UT.max, ru * (1 - UT.keep))), J = L.tu, nj = J.length; for(let k = 0; k < nj; k++) J[k].quaternion.setFromAxisAngle(L.tua, -c * (nj - k) / nj); }
+    u.updateMatrixWorld(true); } }
 // a foot that has just been pointed (actors/soldier-legs.js): its sole's side edge laid level — turned about ankle → ball until what is up at rest is up
 //   again as far as that line allows (pointing a bone says nothing of its roll: a sole stood tipped up to 17° on its edge)
 export function footLevel(P, foot, toe){ const F = P && P.F, up = PUPPET.full && F && !F.same && F.foot && F.foot.up.get(foot); if(!up || !toe) return;

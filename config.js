@@ -3283,3 +3283,27 @@ export const BODYMEND = {
   swivelWrist:0.96,
   collar:0.1,
   rideWrist:true };
+// BODY 10 THE SOLDIER WHOLE IN EVERY POSE: NO SKIN THROUGH THE SLEEVE, NO PAD OR POUCH LIFTED OFF HIM, THE UPPER ARM ROLLED ALONG ITS LENGTH, THE EYE ON
+//   THE SIGHTS IN THE SADDLE, THE SUPPORT HAND ON THE B41 AS IT IS LOADED (tools/skin-repair.mjs addTwist / followBase — soldier2.glb; src/actors/puppet.js,
+//   src/actors/real-cav.js, src/actors/gun-reload.js).
+//   rig.limbs = twist joints laid as BODYFIX.rig.limbs lays the forearms', here on the upper arms; counter = the joints turn AGAINST the bone's roll (the
+//     first, at `from` of its length, by all of it; none at `to`): the shoulder's end of the sleeve stays where the shoulder is, the elbow's end goes with it
+//   follow = what lies on the body moves with it. The body layer = the pieces rays from the bones meet first; gear = the rest (pieces of up to `rigid`
+//     points, mostly ruled by `bones`): each of its points takes the weights of the nearest point of the body on its outer side within `gear` mm — only the
+//     bones of the part it sits on (trunk / each arm / each leg: the part whose bones' line is nearest its middle, `girth` × his height each; the thigh's
+//     line from legFrom down it) — evened out over the piece in `even` passes. Skin of the arm (`cover` bones) under another piece of the body within
+//     `reach` mm (the forearm in the rolled sleeve; facing it by cos ≥ face) takes the cover's weights, eased out over `smooth` rings. collar = a body piece
+//     whose middle is within r × his height of the neck joint hands k of its collar-bone weight to the chest. waist = the body's (and the liner's) points
+//     from waist[0] to waist[1] × his height above the hip joints hand their thigh weight to the pelvis, eased in (the trousers' waist under the belt)
+//   twist.upper = the upper arm's roll on its shoulder (from rest) laid along its counter joints: `keep` of it stays at the shoulder's end, the elbow's end
+//     takes all of it; no more than max rad is countered; read on from the last frame as BODYMEND.wrap
+//   ride = on the horse and the pillion the cheek is laid on the stock as on foot (actors/real-cav.js: the head bowed / tilted within his range, then the gun
+//     brought the rest of the way, GUNFEEL.hold.cheek): the eye stood 10–11 cm off the sight line
+//   tube = loading the B41: the left hand takes the rocket at `pouch` [his left, up, ahead] of his chest (m) — by the tube — instead of GUNHOLD's own (by
+//     his belt, 30 cm off the tube); palm = the palm, not the wrist, is put on each point of the reload (it stood a hand's length short of the muzzle)
+export const BODYFULL = {
+  rig:{ limbs:[{ bone:'Arm', end:'ForeArm', n:3, from:0.08, to:0.9, counter:true }],
+    follow:{ reach:22, gear:40, even:6, girth:{ trunk:0.09, arm:0.035, leg:0.06, legFrom:0.25 }, rigid:1500, smooth:2, face:0, bones:['Spine', 'Spine1', 'Spine2', 'Shoulder', 'Arm', 'ForeArm', 'Hips', 'UpLeg'], cover:['Arm', 'ForeArm'], collar:{ r:0.07, k:0.8 }, waist:[0.02, 0.05] } },
+  twist:{ upper:{ keep:0.25, max:1.4 } },
+  ride:true,
+  tube:{ pouch:[0.0, -0.05, 0.22], palm:true } };
