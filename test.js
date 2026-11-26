@@ -1883,6 +1883,14 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(F.jet.life[1] < 1 && F.jet.patchEvery >= 0.15 && F.jet.n >= 2 && F.kinds.jet.stretch > 0 && F.ramps.jet[F.ramps.jet.length - 2][3] <= 0.2 && /if\(fireFxOn\(\)\) flameJet\(nx, y \?\? heightAt\(x,z\)\+1\.3, nz, ang, range, now\);/.test(rd('src/combat/flame.js')) && /if\(fireFxOn\(\)\) lobTrail\(r, tx, ty, tz\);/.test(rd('src/combat/flame.js'))
     && /if\(fireFxOn\(\)\)\{ lobLaunchFX\(/.test(rd('src/combat/siege-rocket.js')) && /dustRing\(x, z, Math\.min\(1\.8,k\)/.test(rd('src/fx/realwar.js')),
     'fire fx flamethrower / lobbed rounds: the jet is fuel drawn out along its flight that ends in soot and leaves the ground burning, from the nozzle\'s real height; a grenade in the air trails no fire'); }
+// FIRE 4 tracers, the aftermath, the budget of the worst case
+{ const C = await import('./config.js'), fs = await import('node:fs'), rd = f => fs.readFileSync(f, 'utf8'), F = C.FIREFX, H = F.heat, bl = rd('src/fx/blasts.js');
+  const blast = k => 2 + (H.ring.n + H.dirt.n + H.dirt.clods + H.column.n + H.ball.n + H.sparks.n + H.frags.n + H.wisps.n + H.embers.n) * k + (k < 1 ? 0 : H.frags.n * H.frags.puffs), three = (k, step) => 3 * (blast(k) + 40 / step);
+  ok(three(1, F.rpg.step) < F.max * F.thin[0] && three(F.tierMobile, F.rpg.stepMobile) < F.maxMobile * F.thin[0],
+    'fire fx worst case: three B41s landing together (each its burst, its aftermath and 40 m of trail) stay under the load where thinning starts — on a desktop and on a phone');
+  ok(/if\(b\.trc\) tracerHit\(b\.x, _gy\+0\.1, b\.z\);/.test(rd('src/combat/lock-on.js')) && /trc:o\.tr===1/.test(rd('src/combat/lock-on.js')) && /export function tracerHit\(/.test(bl) && /function aftermath\(/.test(bl) && /decalAsh\(x, z, 2 \+ s \* 1\.7, 0\.5\); decalScorch\(/.test(bl)
+    && F.heat.wisps.life[0] >= 2 && F.he.wisps.born[1] >= 5 && F.kinds.wisp.prio === 0 && F.kinds.ember.prio === 0,
+    'fire fx aftermath: a tracer burns on for a moment where it went in; a burst leaves ash under its scorch and crater, wisps for seconds after (the first thing dropped under load)'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

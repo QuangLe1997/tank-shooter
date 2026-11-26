@@ -103,7 +103,8 @@ export function rpgLaunchFX(x, y, z, a){ const C = F.rpg, fx = Math.sin(a), fz =
 // ---- a rocket in flight (round b at x, y, z this frame): nothing until the sustainer lights, then the flame point and the corkscrew trail ----
 export function rocketFlight(b, x, y, z){ const C = F.rpg, sp = Math.hypot(b.vx, b.vz) || 1, ux = b.vx / sp, uz = b.vz / sp, nx = x - ux * 0.7, nz = z - uz * 0.7;
   if(b._tx == null){ b._tx = nx; b._ty = y; b._tz = nz; b._td = 0; b._ig = false; }
-  if(b.bk === 'r' && b.bt < C.ign){ b._tx = nx; b._ty = y; b._tz = nz; return; }                                 // still on the booster's shove
+  const rk = b.mesh.userData.rk, gs = rk && rk.userData.glow;
+  if(b.bk === 'r' && b.bt < C.ign){ b._tx = nx; b._ty = y; b._tz = nz; if(gs) gs.scale.setScalar(0.12); return; }   // still on the booster's shove: no motor, no glow at its tail yet
   if(!b._ig){ b._ig = true; fxp('flash', nx, y, nz, 0, 0, 0, 1.6, 0.05, 0); for(let i = 0; i < 3; i++) fxp('back', nx, y, nz, -ux * R(3, 7) + R(-1, 1), R(-0.5, 0.8), -uz * R(3, 7) + R(-1, 1), 0.9, R(0.5, 0.8), 0, 0xe6e2da, 0.7); }   // the sustainer lights
   fxp('motor', nx, y, nz, -ux * 6, 0, -uz * 6, R(0.42, 0.62), 0.05, 0);
   const dx = nx - b._tx, dy = y - b._ty, dz = nz - b._tz, L = Math.hypot(dx, dy, dz), step = MOBILE ? C.stepMobile : C.step;
@@ -111,7 +112,7 @@ export function rocketFlight(b, x, y, z){ const C = F.rpg, sp = Math.hypot(b.vx,
     for(let i = 1; i <= n; i++){ const f = i * step / L, ph = (b._td + i * step) * H[1], cs = Math.cos(ph), sn = Math.sin(ph);
       fxp('trail', b._tx + dx * f + uz * cs * H[0], b._ty + dy * f + sn * H[0], b._tz + dz * f - ux * cs * H[0], uz * cs * H[2] - ux * 0.6, sn * H[2] + 0.1, -ux * cs * H[2] - uz * 0.6, C.trail.size * R(0.85, 1.2), RR(C.trail.life), 0, null, 1, gy); }
     if(L / step > 28){ b._tx = nx; b._ty = y; b._tz = nz; } else { const f = n * step / L; b._tx += dx * f; b._ty += dy * f; b._tz += dz * f; } b._td += n * step; }
-  const rk = b.mesh.userData.rk, gs = rk && rk.userData.glow; if(gs) gs.scale.setScalar(0.5 + Math.random() * 0.35); }
+  if(gs) gs.scale.setScalar(0.5 + Math.random() * 0.35); }
 // a lobbed round (the M79's grenade, a mortar shell) in the air: a body, not a flame — only a breath of grey behind it
 export function lobTrail(r, x, y, z){ if((r._lt = (r._lt || 0) + 1) % 3) return; fxp('wisp', x, y, z, 0, 0.1, 0, 0.5, R(0.5, 0.8), 0, 0xbdb9b2, 0.8); }
 // a tube's thump (the M79, a mortar): a small flash and grey gas out along the bore

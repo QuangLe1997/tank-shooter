@@ -2,7 +2,7 @@
 //   (no-tanks: the tank's lock-on missile gun — its seeker, reticles, smart mini-missiles, homing — is gone; the file keeps its name)
 import * as THREE from 'three';
 import { LETHAL, SQUAD, FORT, TREEFALL, AIRAIM, LINE, GUNFX, GUNFEEL } from '../../config.js';
-import { hitConfirm, wrapAngle, ARC_G, ARENA, BVIS, DW, droneShot, FT, GLOW, MOBILE, S, UGRID, UNDER, _hot, addTrail, armorOf, ballisticInit, ballisticStep, ballisticTrailK, bloodSpurt, bulletFalloff, bulletPool, bullets, core, damageAlly, damageBlock, damageCore, damageEnemy, damagePlayer, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, fortIntactCross, fortWallCross, groundHit, heightAt, impactFX, lightning, nearMiss, orientShell, ringPulse, rocketExhaust, shellStretch, shellTrail, shootGuard, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, sweepPoint, tunnelBlast, typeMul, unitsNear, vaporWake, shotTree, trafficShot, dodgeShot, stealthShot, lineHit, inShape, dressRound, sandProof, bulletImpact, hitMat, climbPerch, fireFxOn } from '../hub.js';
+import { hitConfirm, wrapAngle, ARC_G, ARENA, BVIS, DW, droneShot, FT, GLOW, MOBILE, S, UGRID, UNDER, _hot, addTrail, armorOf, ballisticInit, ballisticStep, ballisticTrailK, bloodSpurt, bulletFalloff, bulletPool, bullets, core, damageAlly, damageBlock, damageCore, damageEnemy, damagePlayer, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, fortIntactCross, fortWallCross, groundHit, heightAt, impactFX, lightning, nearMiss, orientShell, ringPulse, rocketExhaust, shellStretch, shellTrail, shootGuard, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, sweepPoint, tunnelBlast, typeMul, unitsNear, vaporWake, shotTree, trafficShot, dodgeShot, stealthShot, lineHit, inShape, dressRound, sandProof, bulletImpact, hitMat, climbPerch, tracerHit, fireFxOn } from '../hub.js';
 
 // Z238 how high a block stands (world y of its top), measured once from its mesh and again after it has been damaged
 const _tb=new THREE.Box3();
@@ -59,7 +59,7 @@ export function spawnBullet(x, z, angle, o={}){
   const B0={ mesh:m, x, z, ox:x, oz:z, vx:Math.sin(angle)*sp, vz:Math.cos(angle)*sp,
     owner:o.owner||'p', dmg:o.dmg||20, r:o.r||0.45, life:o.life||2.2, pierce:o.pierce||0,
     homing:o.homing||0, angle, aoe:o.aoe||0, aoeDmg:o.aoeDmg||0, maxDist:o.maxDist||0, color:col, _py:null, _tx:null,
-    airAim:o.airAim||null, line:lineRound, wy0, slope, by:y0, vy, arc:(vy>0.5), vyl:(o.dropTo!=null && (o.dropDist||D)>0.5 ? (o.dropTo-y0)/((o.dropDist||D)/sp) : 0), ignore:o.ignore||null, type:o.type||null, reach:o.reach||0, fall:o.fall??1, chain:o.chain||0, chainR:o.chainR||0, knock:o.knock||1, fx:o.fx||'spark', inf:!!o.inf, tk:o.trailK||1, sa, dark };
+    airAim:o.airAim||null, line:lineRound, wy0, slope, by:y0, vy, arc:(vy>0.5), vyl:(o.dropTo!=null && (o.dropDist||D)>0.5 ? (o.dropTo-y0)/((o.dropDist||D)/sp) : 0), ignore:o.ignore||null, type:o.type||null, reach:o.reach||0, fall:o.fall??1, chain:o.chain||0, chainR:o.chainR||0, knock:o.knock||1, fx:o.fx||'spark', inf:!!o.inf, tk:o.trailK||1, sa, dark, trc:o.tr===1 };
   if(o.owner==='p' && o.reach!=null && !dark){ B0._lx=x; B0._ly=wy0; B0._lz=z; }   // GUN 3 its tracer starts AT the muzzle: fired after the frame's bullet step it was first drawn a frame's flight (1.5–3 m) out, nothing behind it
   bullets.push(B0);
   { const v=ballisticInit(B0, o, sp); if(B0.bk){ B0.vx=Math.sin(angle)*v; B0.vz=Math.cos(angle)*v; if(!m.userData.rk) m.userData.core.scale.z=shellStretch(v)*(sa?1.25:1); } }   // Z228b the round's velocity curve (fast out of the muzzle / booster kick)
@@ -154,7 +154,7 @@ export function updateBullets(dt, now){
     if(hit && b.aoe){ detonate(b); recycleBullet(i); }
     else if(hit && b.pierce<=0) recycleBullet(i);
     else if(wb){ strikeBlock(b, wb); recycleBullet(i); }   // Z380 nobody in front of it: the round strikes the wall / house / cover it reached
-    else if(landed && !hit){ if(b.owner==='p'&&b.aoe) detonate(b); else { groundHit(b.x,b.z,b.r||0.45); if(!b.inf && b.dmg>=30) dirtGeyser(b.x, b.z, Math.min(1.6, 0.7+b.dmg/120)); } recycleBullet(i); }   // shell lands: burst / dirt + scar
+    else if(landed && !hit){ if(b.owner==='p'&&b.aoe) detonate(b); else { groundHit(b.x,b.z,b.r||0.45); if(b.trc) tracerHit(b.x, _gy+0.1, b.z);   /* FIRE 4 a tracer's compound burns on for a moment where it went in */ if(!b.inf && b.dmg>=30) dirtGeyser(b.x, b.z, Math.min(1.6, 0.7+b.dmg/120)); } recycleBullet(i); }   // shell lands: burst / dirt + scar
   }
 }
 
