@@ -2032,11 +2032,14 @@ export const GROUNDED = { on:true, lift:0.025, spread:1.6, nightK:0.85, capShade
 //     the view| below edge[0], faded in by edge[1]) is not drawn (squeezed into a pixel or two its stems stand as bars; three crossed cards a clump:
 //     one always faces the lens). Knee + edge took the meadow's noon yellow-pixel share 17.8 % → 11.5 % — thin bright bars still remain (not the sun,
 //     the shadows, the mips, alpha-to-coverage or the sharpening: measured, cause open)
+//   dome (LOOK 2, actors/core.js): the Core shield dome's idle shimmer is gone with the lens `in` m inside its radius, whole `out` m outside (from
+//     inside, its far wall laid hex lines over the base's sand); the emergency shield still glows from inside
 //   (phones keep CAM_ROOM.yard rKMobile / arenaKMobile 1: ×1.4 forts fit only on a ×1.2 field, which cost +3.1 ms median / +3.3 ms p95 a frame — measured)
 export const LOOK = { kick:{ on:true, sizeK:1.7, opK:1.2, lifeK:1.3, near:6, distK:0.06, max:1.8, core:{ n:[1, 1.4, 2, 2.5], size:0.8, op:1.4, up:0.45, life:1.15, sp:0.12 } },
   tone:{ DESERT:{ tint:[0.82, 0.68, 0.45], all:{ sh:[-0.006, 0, 0.012], hi:[0.035, 0.018, -0.022], sky:[0xe6dccb, 0.5], bounce:1.25 },
     sunset:{ sh:[0.004, 0.006, -0.002], hi:[0.03, 0.024, -0.012], sky:[0xe8dcc8, 0.45], expK:1.3, satK:0.9 }, fog:{ fog:[0xc8b494, 0.6], satK:1.06 } } },
-  cards:[[402, 4, 598, 262], [1201, 20, 499, 196], [61, 254, 351, 216], [474, 272, 549, 212], [1181, 248, 436, 255]], edge:[0.1, 0.32], knee:[0.13, 0.3, 0.35] };
+  cards:[[402, 4, 598, 262], [1201, 20, 499, 196], [61, 254, 351, 216], [474, 272, 549, 212], [1181, 248, 436, 255]], edge:[0.1, 0.32], knee:[0.13, 0.3, 0.35],
+  dome:{ on:true, in:1.5, out:0.5 } };
 // Z318 BATTLEFIELD LIGHT (fx/battle-light.js): the palette every gameplay light uses (danger red, alert amber, threat orange, our systems cyan,
 //   allies / objectives green, loot gold, rarities, ice, arcane); gain = HDR multiple a ring's core line burns at (above ~1 it blooms); pulse
 //   rates (Hz) per urgency — idle breathing → notice → warn → alert → critical — and the floor a pulse never drops below (never fully dark);

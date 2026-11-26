@@ -2547,6 +2547,11 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   ok(/CARDS = LOOK\.cards \|\| GRASS\.cards/.test(gc) && /LOOK_KNEE/.test(gc) && /LOOK_EDGE/.test(gc) && /\(LOOK\.cards\|\|GRASS\.cards\)/.test(fl) && /LOOK_KNEE/.test(fl) && /o\.userData\.forest/.test(st),
     'the carpet and the tufts use the trimmed cards and the knee; the woods past the fence are cut away like the rest');
   ok(C.CAM_ROOM.yard.rKMobile === 1 && C.CAM_ROOM.yard.arenaKMobile === 1, 'phones keep their forts and field (×1.4 forts need a ×1.2 field: +3 ms a frame, measured)'); }
+// LOOK 2 the Core shield dome is not drawn from inside (its far wall laid hex lines over the base's sand); from outside, and its emergency shield, as before
+{ const fs=await import('node:fs'), C=await import('./config.js'), D=C.LOOK.dome, co=fs.readFileSync('src/actors/core.js','utf8');
+  ok(D && D.on === true && D.in > 0.5 && D.in <= 3 && D.out >= 0 && D.out <= 2, 'the dome fades over '+(D.in+D.out)+' m round its wall: gone '+D.in+' m inside, whole '+D.out+' m out');
+  ok(/\(0\.05 \+ Math\.sin\(now\*1\.1\)\*0\.025\)\*domeSeen\(c\)/.test(co) && /function domeSeen\(c\)/.test(co) && co.indexOf('domeSeen(c); c.dome.material.map') < co.indexOf("if((c.shieldUntil||0)>now){ c.dome.material.opacity=Math.max(0.22"),
+    'only the idle shimmer fades; the emergency shield sets its glow after it (seen from inside too)'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

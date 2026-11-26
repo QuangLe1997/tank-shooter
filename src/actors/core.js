@@ -1,9 +1,9 @@
 // actors/core.js — CORE (base to defend)
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { CORE_DEF, WORLD_FLAGS } from '../../config.js';
+import { CORE_DEF, LOOK, WORLD_FLAGS } from '../../config.js';
 import { REALCAMP } from '../../config.js';
-import { GLOW, NIGHT, loadGLTF, _canvasTex, _mergeColored, bigExplode, flameFX, gameOver, makeFlag, propTex, radio, ringPulse, scene, sfx, showBanner, spawnPart, unwave, updateHUD, vnTex, farLOD } from '../hub.js';
+import { GLOW, NIGHT, camera, loadGLTF, _canvasTex, _mergeColored, bigExplode, flameFX, gameOver, makeFlag, propTex, radio, ringPulse, scene, sfx, showBanner, spawnPart, unwave, updateHUD, vnTex, farLOD } from '../hub.js';
 
 // ----------------------------- CORE (base to defend) -----------------------------
 export let core=null;
@@ -124,6 +124,11 @@ export function damageCore(dmg){
   updateHUD();
   if(c.hp<=0){ c.hp=0; bigExplode(c.pos, c.theme.crystal, 3); gameOver('LÕI ĐÃ BỊ PHÁ HUỶ'); }
 }
+// LOOK 2 seen from inside, the dome's far wall laid a net of hex lines over the base's sand: its idle shimmer fades out as the lens crosses in
+//   (LOOK.dome: fully gone `in` m inside its radius, whole `out` m outside it, smooth between)
+const _dw = new THREE.Vector3();
+function domeSeen(c){ const D = LOOK.dome; if(!D || !D.on) return 1; c.dome.getWorldPosition(_dw); const R = 5.6 * c.dome.scale.x, d = camera.position.distanceTo(_dw), a = R - D.in, b = R + D.out;
+  const t = Math.min(1, Math.max(0, (d - a) / (b - a))); return t * t * (3 - 2 * t); }
 export function updateCore(dt, now){
   if(!core) return; const c=core;
   c.cu.time.value = now%1000; c.cu.dmg.value = 1 - Math.max(0,c.hp)/c.maxHp;
@@ -133,7 +138,7 @@ export function updateCore(dt, now){
   const pulse = 0.82 + Math.sin(now*2.2)*0.22;
   c.glow.material.opacity = 0.42*pulse; c.glow.position.y = c.crystal.position.y;
   c.beam.material.opacity = 0.16 + Math.sin(now*1.6)*0.05; c.beam.material.map.offset.y = -(now*0.35)%1;
-  c.dome.material.opacity = 0.05 + Math.sin(now*1.1)*0.025; c.dome.material.map.offset.x += dt*0.02;
+  c.dome.material.opacity = (0.05 + Math.sin(now*1.1)*0.025)*domeSeen(c); c.dome.material.map.offset.x += dt*0.02;   // LOOK 2 not from inside (the emergency shield below still glows)
   c.halo.material.opacity = 0.28 + 0.1*pulse;
   c.light.intensity = (NIGHT.k>0.5 ? 3.2 : 1.6)*pulse;                                       // the Core lights up its surroundings at night
   for(const r of c.rings) r.mesh.rotateOnAxis(r.ax, dt*r.spd);
