@@ -17,8 +17,8 @@
 //     knees on landing;
 //   · behind cover: kneeling or crouched behind it at exactly the height that lays the rifle on its top.
 import * as THREE from 'three';
-import { CAV, GUNFEEL, SOLDIER_LEGS } from '../../config.js';
-import { CV, afxFoot, climbBody, climbPh, climbing, ik2, mountOwn, mountPose, soleAt } from '../hub.js';
+import { CAV, GUNFEEL, PUPPET, SOLDIER_LEGS } from '../../config.js';
+import { CV, afxFoot, climbBody, climbPh, climbing, footLevel, ik2, mountOwn, mountPose, soleAt } from '../hub.js';
 const heightAt = soleAt;   // Z451 up on what he climbed his soles go down on its top (game/soldier-climb.js); on the ground it is the ground
 
 const V3 = () => new THREE.Vector3();
@@ -61,9 +61,11 @@ export function soldierLegs(R, G, dt, P, mounted){ const D = R.pup && R.pup.D; i
   if(!mode && L.w < 0.03){ L.w = 0; L.on = false; L.mode = null; L.tr = null; return; }
   const M = A[L.mode || 'stand']; L.t += dt;
   for(const n of BONES){ const b = D[n]; if(!b) continue; let q = L.snap.get(b); if(!q) L.snap.set(b, q = new THREE.Quaternion()); q.copy(b.quaternion); } L.hp.copy(D.Hips.position);   // (the clip's legs, to ease against)
-  const len = lens(D, L), slope = A.slope, ankleH = A.toeH - len.fl * Math.sin(slope);
+  // POSE 1 HIS OWN FLAT FOOT: slope / toeH were the hidden operator's (ankle → ball 51° down, his ankle 16 cm up) — on the soldier that is seen, whose foot
+  //   runs 37° down, it stood him 15° on his toes, the ball of the foot 2 cm in the ground. With the whole-turn copy (actors/puppet.js) his own rest foot is used
+  const FT = PUPPET.full && R.pup.F && !R.pup.F.same && R.pup.F.foot, len = lens(D, L), slope = FT ? FT.slope : A.slope, toeH = FT ? FT.toeH : A.toeH, ankleH = toeH - len.fl * Math.sin(slope); L.slope = slope; L.toeH = toeH;
   G.getWorldQuaternion(_q); _a.set(0, 0, 1).applyQuaternion(_q); const psi = Math.atan2(_a.x, _a.z);
-  if(L.mode === 'kneel'){ kneelPose(D, L, A, psi, len, ankleH, MV); return finish(D, L, dt); }
+  if(L.mode === 'kneel'){ kneelPose(D, L, A, psi, len, ankleH, MV, R.pup); return finish(D, L, dt); }
   if(L.mode === 'prone'){ pronePose(D, L, A, psi, len, dt, s); return finish(D, L, dt); }
   if(L.mode === 'air'){ airPose(D, L, A, psi, len, slope); return finish(D, L, dt); }
   if(L.mode === 'mount'){ mountPose(D, len, ankleH, slope); return finish(D, L, dt); }
@@ -134,7 +136,7 @@ export function soldierLegs(R, G, dt, P, mounted){ const D = R.pup && R.pup.D; i
   for(const [L1, sd] of SIDES){ const i = sd < 0 ? 0 : 1, f = L.feet[i]; FF.set(Math.sin(f.yaw), 0, Math.cos(f.yaw));
     _d.copy(ank[i]).addScaledVector(FF, 0.7).addScaledVector(UP, 0.45).addScaledVector(R2, sd * 0.06);
     ik2(D[L1 + 'UpLeg'], D[L1 + 'Leg'], D[L1 + 'Foot'], ank[i], _d);
-    const sl = slope - f.ph + (f.gs || 0) * (1 - Math.min(1, (f.lift || 0) / GUNFEEL.feet.slope.clear)); aim(D[L1 + 'Foot'], D[L1 + 'ToeBase'], _e.copy(FF).multiplyScalar(Math.cos(sl)).addScaledVector(UP, Math.sin(sl)));
+    const sl = slope - f.ph + (f.gs || 0) * (1 - Math.min(1, (f.lift || 0) / GUNFEEL.feet.slope.clear)); aim(D[L1 + 'Foot'], D[L1 + 'ToeBase'], _e.copy(FF).multiplyScalar(Math.cos(sl)).addScaledVector(UP, Math.sin(sl))); footLevel(R.pup, D[L1 + 'Foot'], D[L1 + 'ToeBase']);   // (POSE 1 and its sole level, side to side)
     if(f.ph > 0.05 && D[L1 + 'Toe_End']) aim(D[L1 + 'ToeBase'], D[L1 + 'Toe_End'], _e.copy(FF).multiplyScalar(Math.cos(A.toeFlat)).addScaledVector(UP, Math.sin(A.toeFlat))); }   // (heel up: the toes stay on the ground)
   finish(D, L, dt); }
 // the end of every frame: a change of position eased from the last pose; the whole eased against the clip's own legs; this pose kept for the next change
@@ -174,7 +176,7 @@ const frames = (psi, yaw) => { FA.set(Math.sin(psi), 0, Math.cos(psi)); RA.set(-
 
 // ---- Z341 kneeling: the right knee down, the right foot up on its toes behind it, the left foot flat in front with the shin upright; hips turned a
 //   little right, leaning in; behind low cover, as high or low on the knee as lays the rifle on its top ----
-function kneelPose(D, L, A, psi, len, ankleH, MV){ const K = A.kneel, yk = psi - K.turn; frames(psi, yk);
+function kneelPose(D, L, A, psi, len, ankleH, MV, pup){ const K = A.kneel, yk = psi - K.turn; frames(psi, yk);
   const bx = L.prev.x, bz = L.prev.z, gy = heightAt(bx, bz), kY = gy + K.kneeH, top = kY + len.th * 0.97;
   let hk = kY + len.th * K.hipK; if(MV && MV.cover != null) hk = clamp(MV.cover + A.coverRest - A.pocket * Math.cos(K.torso), kY + K.low, top);
   _a.set(bx, hk, bz).addScaledVector(FK, K.hipF).addScaledVector(RK, K.hipR);
@@ -182,7 +184,7 @@ function kneelPose(D, L, A, psi, len, ankleH, MV){ const K = A.kneel, yk = psi -
   // the right knee on the ground, under (or, sat back low, ahead of) the hip; the ankle behind it over the ball of the foot
   wp(D.RightUpLeg, _a); const dy = _a.y - kY, d = Math.sqrt(Math.max(0, len.th * len.th - dy * dy)) * 0.98;
   _b.set(_a.x, kY, _a.z).addScaledVector(FK, d);
-  const aY = gy + A.toeH + len.fl * 0.96, sy = aY - kY; _c.copy(_b).addScaledVector(FK, -Math.sqrt(Math.max(0, len.sh * len.sh - sy * sy)) * 0.98); _c.y = aY;
+  const aY = gy + L.toeH + len.fl * 0.96, sy = aY - kY; _c.copy(_b).addScaledVector(FK, -Math.sqrt(Math.max(0, len.sh * len.sh - sy * sy)) * 0.98); _c.y = aY;
   ik2(D.RightUpLeg, D.RightLeg, D.RightFoot, _c, _d.copy(_b).addScaledVector(FK, 0.3).addScaledVector(UP, -0.15));
   aim(D.RightFoot, D.RightToeBase, _e.copy(FK).multiplyScalar(0.28).addScaledVector(UP, -1));   // (up on the toes, the sole to the back)
   if(D.RightToe_End) aim(D.RightToeBase, D.RightToe_End, _e.copy(FK));   // (the toes bent flat on the ground)
@@ -190,7 +192,7 @@ function kneelPose(D, L, A, psi, len, ankleH, MV){ const K = A.kneel, yk = psi -
   wp(D.LeftUpLeg, _a); const kLy = gy + ankleH + len.sh, dl = Math.sqrt(Math.max(0, len.th * len.th - (kLy - _a.y) ** 2)) * 0.97;
   const yawL = yk + K.footYaw; FF.set(Math.sin(yawL), 0, Math.cos(yawL)); _b.set(_a.x, 0, _a.z).addScaledVector(FK, dl).addScaledVector(RK, -K.footOut); _b.y = heightAt(_b.x, _b.z) + ankleH;
   ik2(D.LeftUpLeg, D.LeftLeg, D.LeftFoot, _b, _d.copy(_b).addScaledVector(FF, 0.4).addScaledVector(UP, 0.8).addScaledVector(RK, -0.1));
-  aim(D.LeftFoot, D.LeftToeBase, _e.copy(FF).multiplyScalar(Math.cos(A.slope)).addScaledVector(UP, Math.sin(A.slope)));
+  aim(D.LeftFoot, D.LeftToeBase, _e.copy(FF).multiplyScalar(Math.cos(L.slope)).addScaledVector(UP, Math.sin(L.slope))); footLevel(pup, D.LeftFoot, D.LeftToeBase);
   // up from the hips, leaning into the rifle, the shoulders square to the aim
   torso(D, _e.copy(UP).multiplyScalar(Math.cos(K.torso)).addScaledVector(FA, Math.sin(K.torso)), psi); }
 

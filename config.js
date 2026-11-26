@@ -1771,6 +1771,20 @@ export const STIRRUP = { top:[0.31, 1.6, -0.06], iron:[0.46, 1.03, 0.0], w:0.035
   leather:0x3b2a1c, steel:0xbcbcbc };
 export const REALCAV = { s2:{ on:true, yaw:-Math.PI / 2, k:1.06 }, opH:1.84, seat:[0, 1.80, -0.15], seatBone:'spine_04', carbine:{ len:0.86, grip:[0.205, -0.07, 0], muzzle:[-0.476, 0.045, 0] },
   horseV:{ Walk:1.6, Canter:6.0, Sprint:13.2 }, footV:{ walk:1.2, run:2.1, charge:6.5, crouch:1.6 }, fade:0.22, twistMax:1.3, seatTurn:[0.75, 1.05, 2.6, 7], aimRate:2.6, flip:0.55, sit:{ lean:0, k:0.95 }, overDrv:{ up:0.05, fw:[0.25, 0.75] }, cv:{ rest:0.08, restMax:0.3 }, ready:[1.0, 0.35], gaitAt:[2.3, 4.0], carryAt:5.4, twistRate:2.8, hipRate:1.6, standTurn:[0, 1.05, 1.3, 0.42], sway:{ acc:0.022, lat:0.016, heave:0.35, max:0.4, k:42, z:0.32 }, pitch:[0.06, 0.3], proneDrop:0.15, hitT:0.7, hitK:0.85 };   // Z254 hitT / hitK = how long the upper-body flinch of a hit lasts (s) and how much of it shows
+// POSE 1 THE SEEN SOLDIER TAKES THE OPERATOR'S WHOLE TURN (actors/puppet.js): full = the new copy (trunk / head / feet: the operator's turn away from his
+//   rest over the soldier's own rest; limbs: the operator's direction + the roll from the plane the limb folds in; hands by the knuckle line) — `?oldpuppet`
+//   in the address = the old direction-only copy, for comparison. head = the share of the clip's own turn [of the neck on the chest, of the head on the
+//   neck] that is copied — on his feet (the clips keep the face on the target over a bladed body), sat on a ride (the riding clips look about: none;
+//   his head is then kept within `level` = [bowed, tilted, thrown back] rad of upright after the hold, as GUNFEEL.hold.cheek.head does on foot). hinge: bend = [rad the limb must be folded before its plane counts, rad at which it
+//   rules alone] (straighter: the copied roll), flip = [from, to] rad the plane may lie off the copied hinge before a clip's limb is taken as bent the
+//   wrong way and keeps the copied roll. twist (no twist bones in either rig): fore / shin = the share of the wrist's / ankle's twist the forearm / shin
+//   takes (the rest stays at the joint), max = the most twist read at a joint (rad); upper / thigh = a shoulder / hip may be twisted `free` rad from rest
+//   before `share` of the excess is handed to the elbow / knee (`cap` rad at most: the hinge stays near its plane). feet (on his feet): each foot to the operator's height off the ground — lead = how fast
+//   the straighter leg takes charge of the hips (per unit of stretch difference), max = the most a leg is corrected (m), reach / soft = a leg is never
+//   asked past reach × its length and closes on that softly over the last `soft`, upright = [from, to] hips height over the feet (share of standing)
+//   between which he counts as on his feet (lower: lying — the lowest foot joint sets the hips, as before)
+export const PUPPET = { full:!(typeof location !== 'undefined' && /[?&]oldpuppet\b/.test(location.search)), head:{ foot:[1, 0.5], sat:[0, 0], level:[0.2, 0.17, -0.08] }, hinge:{ bend:[0.1, 0.35], flip:[1.75, 2.45] },
+  twist:{ fore:0.5, shin:0.3, max:2.2, upper:{ free:0.9, share:0.5, cap:0.2 }, thigh:{ free:0.7, share:0.5, cap:0.2 } }, feet:{ on:true, lead:6, max:0.08, reach:0.99, soft:0.04, upright:[0.25, 0.45] } };
 // Z340 TURNED ROUND IN THE SADDLE (actors/real-cav.js, combat/soldier-fire.js): sat on the horse or a pillion his hips and chest together turn up to `max`
 //   either way from the mount's heading (rad, ~170°: nearly all the way round, never right round); hip = how far the hips swing on the horse's saddle
 //   (the chest twists the rest; a pillion keeps REALCAV.seatTurn[1]); flip = how far past straight behind the aim must be before he swings back the

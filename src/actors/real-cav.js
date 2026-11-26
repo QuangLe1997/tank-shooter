@@ -1,8 +1,8 @@
 // actors/real-cav.js — Z248 THE REAL CAVALRY: the Meshy-generated war horse, operator and carbine dressed over the procedural horse and general. The procedural rigs keep running unseen (gait engine, hoof falls, positions, aim, recoil) and drive the real ones: the horse plays its library gaits (idle / walk / canter / sprint) blended by gait and paced by speed; the rider sits on the real horse's back bone and plays the riding clips (Text-to-Motion) or, on foot, rifle walk / run / charge / crouch-walk and frozen aim / kneel / prone frames, his torso twisting toward the aim; the carbine is laid between his hands every frame (grip in the right palm, barrel through the left hand) and carries the muzzle point. Nothing changes until every file has loaded; if one fails the procedural models stay.
 import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
-import { ANIMGRAPH, GUNFIT, GUNHOLD, HUMAN_SCALE, INFGUN, REALCAV, RIDEFEEL, XEOM, AIRAIM, AIRPOSE, RIDER_TURN, XHAIR, GUNFEEL } from '../../config.js';
-import { ANIMGRAPH_STAT, graphFeet, graphHipYaw, graphOwned, graphPose, XH, FIT, GUNKICK, GUNS, LEGKIT, PROFILE, S, curlHand, stirrupFeet, fitHold, sideProfile, underAt, drivePuppet, heightAt, ik2, loadGLTF, asShipped, nearShape, makePuppet, rollHand, sfx, spawnPart, turnBone, airPitch, soldierLegs, soldierUpper, steadyHead, mountHand, seatUpright, climbArms, climbW, carryClear, eyePoint, reachFeel, triggerFinger, wristGive, gunEase, handsEase, reloadHands, reloadProps, reloadState, headLevel, gunRecoil, burstClimb, shotCycle, shotSeen } from '../hub.js';
+import { ANIMGRAPH, GUNFIT, GUNHOLD, HUMAN_SCALE, INFGUN, PUPPET, REALCAV, RIDEFEEL, XEOM, AIRAIM, AIRPOSE, RIDER_TURN, XHAIR, GUNFEEL } from '../../config.js';
+import { ANIMGRAPH_STAT, graphFeet, graphHipYaw, graphOwned, graphPose, XH, FIT, GUNKICK, GUNS, LEGKIT, PROFILE, S, curlHand, stirrupFeet, fitHold, sideProfile, underAt, drivePuppet, limbTwist, heightAt, ik2, loadGLTF, asShipped, nearShape, makePuppet, rollHand, sfx, spawnPart, turnBone, airPitch, soldierLegs, soldierUpper, steadyHead, mountHand, seatUpright, climbArms, climbW, carryClear, eyePoint, reachFeel, triggerFinger, wristGive, gunEase, handsEase, reloadHands, reloadProps, reloadState, headLevel, gunRecoil, burstClimb, shotCycle, shotSeen } from '../hub.js';
 
 const _v = new THREE.Vector3(), _a = new THREE.Vector3(), _b = new THREE.Vector3(), _d = new THREE.Vector3(), _up = new THREE.Vector3(), _x = new THREE.Vector3(), _y = new THREE.Vector3(), _z = new THREE.Vector3();
 const _q = new THREE.Quaternion(), _qp = new THREE.Quaternion(), _qd = new THREE.Quaternion(), _m = new THREE.Matrix4(), _mi = new THREE.Matrix4(), _s = new THREE.Vector3();
@@ -328,7 +328,15 @@ export function fitRealCav(CV){
     return true; })); }
 
 // P = { twist (aim − facing, rad), footV (m/s on foot), stance ('stand' | 'crouch' | 'prone'), trans (getting on / off), hit (he was just struck), dead }
-export function updateRealCav(CV, dt, P){
+// POSE 1 after everything that lays him on his gun, his seat and the ground (two-bone IK turns a bone the short way: its roll falls where it may), the
+//   seen soldier's elbows and knees are hinged on the plane each limb folds in and the twist shared along it (actors/puppet.js) — no joint or hand moves
+//   · sat on a ride his head is brought back near upright: his shoulders are his own now (they were shrugged 9 cm up), the saddle's cheek weld bowed him 35° to the sights
+const _lf = new THREE.Vector3(), _lr = new THREE.Vector3(), _lu = new THREE.Vector3(), _lq = new THREE.Quaternion();
+export function updateRealCav(CV, dt, P){ const R = CV.real; if(!R || !dt) return; poseRealCav(CV, dt, P); const U = R.pup; if(!U) return;
+  if(PUPPET.full && U.F && !U.F.same && R.sat && R.gunYaw != null && U.D.Head && U.D.Neck){ CV.G.getWorldQuaternion(_lq); _lu.set(0, 1, 0).applyQuaternion(_lq); const y = R.gunYaw;
+    headLevel(U.D, _lu, _lf.set(Math.sin(y), 0, Math.cos(y)), _lr.set(-Math.cos(y), 0, Math.sin(y)), PUPPET.head.level, 1); }
+  limbTwist(U); }
+function poseRealCav(CV, dt, P){
   const R = CV.real; if(!R || !dt) return; const H = CV.H, G = CV.G, C = REALCAV;
   // the horse
   const g = H.gait, v = Math.abs(H.v || 0), leap = H.air && H.air.y > 0.02 && R.HA && R.HA.Jump_Sprint, hk = leap ? 'Jump_Sprint' : g === 'idle' ? 'Idle' : g === 'walk' ? 'Walk' : (g === 'trot' || g === 'canter') ? 'Canter' : 'Sprint';   // (Z321 in mid-leap it jumps)

@@ -2138,6 +2138,25 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(G.slope.on === true && G.slope.vmax > C.CAV.foot.sprint * Math.tan(20 * Math.PI / 180) && G.slope.max > 0.3 && G.slope.max <= 0.6 && G.slope.fade > 0.05 && G.slope.rate > 2
     && /soleAt\(/.test(ag) && /GUNFEEL\.feet\.slope/.test(ag) && /SOLDIER_LEGS\.maxDrop/.test(ag) && C.GUNFEEL.feet.slope.max > 0.26 && C.SOLDIER_LEGS.maxDrop > 0,
     'the ground under each foot: read where the game reads it (soleAt), fast enough to follow a 20° slope at a sprint, a 0.3 m kerb within reach; the foot\'s pitch and the hips\' drop keep the old legs\' numbers'); }
+// POSE 1 the seen soldier takes the operator's whole turn (actors/puppet.js)
+grp('POSE 1 the puppet: the whole turn, the hinge from the fold, the twist shared, feet at the operator\'s height');
+{ const C = await import('./config.js'), fs = await import('node:fs'), rd = f => fs.readFileSync(f, 'utf8'), U = C.PUPPET, pu = rd('src/actors/puppet.js'), rc = rd('src/actors/real-cav.js'), sl = rd('src/actors/soldier-legs.js');
+  ok(U.full === true && /\[\?&\]oldpuppet/.test(rd('config.js')) && /if\(PUPPET\.full && P\.F\) return driveFull\(P\);/.test(pu) && /export function limbTwist\(P\)\{ if\(P && P\.F && PUPPET\.full && !P\.F\.same\)/.test(pu),
+    'PUPPET: the whole-turn copy is on unless the address says ?oldpuppet; off, drivePuppet runs the old direction-only copy untouched and limbTwist does nothing');
+  ok(U.head.foot.length === 2 && U.head.sat.length === 2 && [...U.head.foot, ...U.head.sat].every(k => k >= 0 && k <= 1) && U.head.sat[1] <= U.head.foot[1] && U.head.level.length === 3 && U.head.level[0] > 0 && U.head.level[0] < 0.5 && U.head.level[1] > 0 && U.head.level[2] < 0,
+    'the head takes a share (0…1) of the clip\'s own turn, less sat on a ride than on his feet, and sat it is held within a few degrees of upright');
+  ok(U.hinge.bend[0] > 0 && U.hinge.bend[0] < U.hinge.bend[1] && U.hinge.bend[1] <= 0.6 && U.hinge.flip[0] > Math.PI / 2 && U.hinge.flip[0] < U.hinge.flip[1] && U.hinge.flip[1] < Math.PI,
+    'the fold rules a limb\'s roll only once the limb is really folded (eased in over a few degrees); a clip\'s limb found past a quarter turn off its hinge is taken as bent the wrong way');
+  const T = U.twist; ok(T.fore > 0 && T.fore <= 0.6 && T.shin >= 0 && T.shin <= 0.5 && T.max > 1.5 && T.max <= Math.PI && [T.upper, T.thigh].every(R => R.free > 0.3 && R.free < 1.6 && R.share >= 0 && R.share <= 1 && R.cap > 0 && R.cap <= 0.21),
+    'the forearm takes at most a little over half of the wrist\'s twist (the shin less of the ankle\'s); a shoulder or hip hands down at most 12° (the elbow and knee stay on their plane: the roll target)');
+  const F = U.feet; ok(F.on === true && F.lead > 1 && F.max > 0.02 && F.max <= 0.12 && F.reach > 0.95 && F.reach < 1 && F.soft > 0.01 && F.soft < 0.1 && F.upright[0] > 0.1 && F.upright[0] < F.upright[1] && F.upright[1] < 0.7,
+    'a leg is corrected a few centimetres at most, less and less as it nears its full length (no knee snapped straight), and only while he is on his feet');
+  ok(!/\.clone\(\)|new THREE\./.test(pu.slice(pu.indexOf('function driveFull'), pu.indexOf('// a foot that has just been pointed'))) && !/\.clone\(\)|new THREE\./.test(pu.slice(pu.indexOf('export function footLevel'))) && !/for\(const \[/.test(pu.slice(pu.indexOf('function driveFull'))),
+    'nothing is made per frame in the copy, the planting of the feet, the limbs\' rolls or the sole\'s levelling (no clone, no new vector, no pair handed out by a Map)');
+  ok(/poseRealCav\(CV, dt, P\); const U = R\.pup; if\(!U\) return;\n[^\n]*\n\s*headLevel\(U\.D,[^\n]*\n\s*limbTwist\(U\); \}/.test(rc) && /function poseRealCav\(CV, dt, P\)\{/.test(rc) && /R\.sat && R\.gunYaw != null/.test(rc),
+    'wired once, after everything that lays him on his gun, seat and ground: the limbs\' rolls re-seated last (no joint moves), his head levelled only sat on a ride');
+  ok(/const FT = PUPPET\.full && R\.pup\.F && !R\.pup\.F\.same && R\.pup\.F\.foot/.test(sl) && /slope = FT \? FT\.slope : A\.slope, toeH = FT \? FT\.toeH : A\.toeH/.test(sl) && (sl.match(/footLevel\(/g) || []).length === 2 && /export function footLevel\(P, foot, toe\)/.test(pu),
+    'his own legs stand him on his own flat foot (the slope and ball height of his rest pose, not the hidden operator\'s) with the sole level side to side; the old copy keeps SOLDIER_LEGS.slope / toeH'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
