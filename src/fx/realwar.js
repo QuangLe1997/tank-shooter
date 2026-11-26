@@ -4,7 +4,7 @@
 //   · spent brass flicks out of the ejection port and a wisp of smoke hangs at the muzzle (only near the player, cheap)
 //   · a big shell sends a skirt of dust racing out along the ground — the blast wave you can see
 import { REAL } from '../../config.js';
-import { BIOME, MOBILE, S, burst, ejectBrass, heightAt, poseSoldier, spawnPart } from '../hub.js';
+import { BIOME, MOBILE, S, burst, dustRing, ejectBrass, fireFxOn, heightAt, poseSoldier, spawnPart } from '../hub.js';
 
 export const rndIn = a => a[0]+Math.random()*(a[1]-a[0]);
 
@@ -27,6 +27,7 @@ export function rifleFX(x, y, z, ang, heavy, noSmoke){ const p=S.player; if(!p |
 
 // a big blast: a ring of dust thrown out along the ground (the visible blast wave)
 export function dustSkirt(x, z, k){ if(!(k>=REAL.shock.minScale)) return; const gy=heightAt(x,z), n=Math.round((MOBILE?8:16)*Math.min(1.6,k)), dc=BIOME.ground;
+  if(fireFxOn()){ dustRing(x, z, Math.min(1.8,k), n, [8,13], [0.8,1.3], gy); return; }   // FIRE 3 the earth's own colour (not the grass's), shaped puffs
   for(let i=0;i<n;i++){ const a=i/n*6.283+Math.random()*0.3, c=Math.cos(a), s=Math.sin(a), sp=(8+Math.random()*5)*Math.min(1.8,k);
     spawnPart(x+c*0.8, gy+0.35, z+s*0.8, c*sp, 0.5+Math.random()*0.6, s*sp, { color:dc, size:(1.1+Math.random()*0.8)*Math.min(1.6,k), life:0.8+Math.random()*0.5, smoke:true, grav:0.15, drag:2.6, grow:1.9, op:0.42 }); } }
 

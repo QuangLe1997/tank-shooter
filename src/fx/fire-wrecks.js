@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
-import { BIOME, PL_SMOKE, heightAt, makePartLayer, spawnPart } from '../hub.js';
+import { BIOME, PL_SMOKE, fireFxOn, fuelBurst, heightAt, makePartLayer, spawnPart } from '../hub.js';
 
 export function fireTex(){ const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d');   // billowing flame puff: hot core, ragged licks, soft edge
   for(let i=0;i<14;i++){ const a=Math.random()*6.283, r=Math.random()*26, cx=64+Math.cos(a)*r, cy=64+Math.sin(a)*r, R=18+Math.random()*26;
@@ -22,7 +22,8 @@ export function smokeTex2(){ const c=document.createElement('canvas'); c.width=c
 export const PL_FIRE = makePartLayer(fireTex(), true, 7), PL_FLASH = makePartLayer(flashTex(), true, 8);
 PL_SMOKE.mesh.material.uniforms.map.value=smokeTex2();   // denser, lumpier smoke
 // rolling fireball: white-hot core → orange → deep red, expanding and lifting, followed by a dark mushrooming smoke column
-export function fireball(pos, scale, y){ y=y||1.2;
+export function fireball(pos, scale, y){ if(fireFxOn()){ fuelBurst(pos.x, y, pos.z, scale); return; }   // FIRE 3 burning fuel: the fireball that rolls, soots over and rises into a black mushroom; the ground left burning (fx/blasts.js)
+  y=y||1.2;
   spawnPart(pos.x, y+0.4*scale, pos.z, 0,1,0, {tex:'flash', color:0xfff2d0, size:5.5*scale, life:0.09, grav:0, drag:0});
   for(let i=0;i<Math.round(10*scale);i++){ const a=Math.random()*6.283, el=Math.random()*1.2, sp=(2+Math.random()*6)*Math.sqrt(scale);
     spawnPart(pos.x, y+Math.random()*scale, pos.z, Math.cos(a)*Math.cos(el)*sp, Math.sin(el)*sp+2.5, Math.sin(a)*Math.cos(el)*sp,

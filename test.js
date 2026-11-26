@@ -1872,6 +1872,17 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
     'fire fx launch / flight / feel: the sustainer lights a moment after the booster, the trail\'s puffs touch from birth (a line, not beads) on a thin corkscrew that hangs for seconds, the back-blast is a cone; the kick and shake fall off with distance and a far blast\'s shake comes with its sound');
   ok(/if\(fireFxOn\(\)\)\{ \(kind==='heat' \? heatBlast : heBlast\)/.test(rd('src/fx/explosions.js')) && /b\.mesh\.userData\.rk \? 'heat' : 'he'/.test(rd('src/combat/spells.js')) && /if\(g\.rocket && fireFxOn\(\)\) rpgLaunchFX\(/.test(rd('src/combat/soldier-fire.js'))
     && /if\(fireFxOn\(\)\)\{ rocketFlight\(b, x, y, z\); return; \}/.test(rd('src/fx/hitfx.js')), 'fire fx wiring: a rocket bursts as HEAT and everything else as HE; his B41 has its back-blast, its flight its motor and trail'); }
+// FIRE 3 high explosive, fuel, the flamethrower, burning ground
+{ const C = await import('./config.js'), fs = await import('node:fs'), rd = f => fs.readFileSync(f, 'utf8'), F = C.FIREFX, H = F.heat, E = F.he, U = F.fuel, bl = rd('src/fx/blasts.js'), inc = (a, lo) => a.length === 2 && a[0] >= (lo ?? 0) && a[1] >= a[0];
+  ok(E.flash <= 0.12 && E.core.life[1] < H.ball.life[0] && E.core.n < H.ball.n * 0.5 && E.core.size < H.ball.size && E.dirt.n > E.core.n * 2 && E.dirt.up[1] > 10 && E.hang.life[1] >= 4 && E.dirt.life[0] >= 1 && /function heBlast[\s\S]{0,1200}dirtSpout\(x, z, s, N\(C\.dirt\.n \* s\)/.test(bl) && /smokeRoll\('grey'/.test(bl)
+    && /_c\.g > _c\.r \* 1\.04 && _c\.g > _c\.b\) _c\.setHex\(/.test(bl),
+    'fire fx HE: earth first — a blink of fire (shorter, smaller and a fraction of a HEAT ball), a column of soil that grows with the charge, dust that hangs, grey smoke; under grass the earth thrown is soil, not green');
+  ok(U.ball.life[0] >= H.ball.life[1] && inc(U.smoke.born) && U.smoke.born[0] < U.ball.life[0] && U.smoke.life[0] >= 4 && inc(U.patches, 1) && inc(F.patch.life, 4) && F.patch.max >= 4 && F.patch.gap > 1 && U.light[2] > H.light[2] && /smokeRoll\('black'/.test(bl) && /burnPatch\(/.test(bl)
+    && /fuelBurst\(pos\.x, y, pos\.z, scale\)/.test(rd('src/fx/fire-wrecks.js')),
+    'fire fx fuel: the fireball outlasts a warhead\'s, black smoke starts before it is out and hangs for seconds, patches of ground burn on (a few at once, apart)');
+  ok(F.jet.life[1] < 1 && F.jet.patchEvery >= 0.15 && F.jet.n >= 2 && F.kinds.jet.stretch > 0 && F.ramps.jet[F.ramps.jet.length - 2][3] <= 0.2 && /if\(fireFxOn\(\)\) flameJet\(nx, y \?\? heightAt\(x,z\)\+1\.3, nz, ang, range, now\);/.test(rd('src/combat/flame.js')) && /if\(fireFxOn\(\)\) lobTrail\(r, tx, ty, tz\);/.test(rd('src/combat/flame.js'))
+    && /if\(fireFxOn\(\)\)\{ lobLaunchFX\(/.test(rd('src/combat/siege-rocket.js')) && /dustRing\(x, z, Math\.min\(1\.8,k\)/.test(rd('src/fx/realwar.js')),
+    'fire fx flamethrower / lobbed rounds: the jet is fuel drawn out along its flight that ends in soot and leaves the ground burning, from the nozzle\'s real height; a grenade in the air trails no fire'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
