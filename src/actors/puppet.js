@@ -94,6 +94,7 @@ function chestTwist(S, D){ if(!S.LeftArm || !S.RightArm || !D.LeftArm || !D.Righ
 const TRUNK = ['Hips', 'Spine', 'Spine1', 'Spine2', 'Neck', 'Head', 'LeftShoulder', 'RightShoulder'], LIMBS = [['Arm', 'ForeArm', 'Hand', 'Shoulder'], ['UpLeg', 'Leg', 'Foot', null]], ENDS = ['Foot', 'ToeBase'];
 const _mr = new THREE.Matrix4(), _u = new THREE.Vector3(), _v = new THREE.Vector3(), _h = new THREE.Vector3(), _x = new THREE.Vector3(), _y = new THREE.Vector3(), _pa = new THREE.Vector3(), _pb = new THREE.Vector3(), _pc = new THREE.Vector3(), _pt = new THREE.Vector3(), _kn = new THREE.Vector3();
 const _sv = new THREE.Vector3(), _sh2 = new THREE.Vector3();   // BODY 5 the swing's wrist check
+const swingBend = a => Math.acos(Math.max(-1, Math.min(1, _sv.copy(_v).applyAxisAngle(_x, a).dot(_sh2))));   // (the forearm _v swung by a about _x, against the hand's pointing _sh2)
 const _qu = new THREE.Quaternion(), _ql = new THREE.Quaternion(), _qe = new THREE.Quaternion(), _qr = new THREE.Quaternion(), _q0 = new THREE.Quaternion(), _ps = [new THREE.Vector3(), new THREE.Vector3()], _sh = [0, 0], _ex = [0, 0];
 const smooth = k => (k = k < 0 ? 0 : k > 1 ? 1 : k, k * k * (3 - 2 * k)), wpos = (o, out) => out.setFromMatrixPosition(o.matrixWorld);
 // a node's world turn off its world matrix (its scale taken out; no parent walked, nothing allocated)
@@ -187,8 +188,8 @@ function limbs(F, clip){ const HG = PUPPET.hinge, TW = PUPPET.twist, BT = BODYFI
       if(k > 1){ _x.subVectors(_pc, _pa).normalize(); const a = Math.max(0.35, _x.dot(_v)), b = Math.max(0.2, _x.dot(_u)); want = Math.max(-SW.max, Math.min(SW.max, (r * SW.root - s * SW.lim) / (a * SW.root + b * SW.lim))) * smooth((k - 1) / SW.soft); }
       // BODY 5 swinging the elbow turns the forearm under a hand that stays put: the wrist bends by it. The swing is cut back (halved toward 0) until the
       //   wrist bends no more than BODYMEND.swivelWrist, or no more than it already did — the right hand on an AK's grip had its wrist bent 65–73°
-      if(Math.abs(want) > 1e-4 && L.hd && BODYMEND.swivelWrist){ _x.subVectors(_pc, _pa).normalize(); _sh2.copy(L.hd).applyQuaternion(_qe); const bend = a => Math.acos(Math.max(-1, Math.min(1, _sv.copy(_v).applyAxisAngle(_x, a).dot(_sh2)))), lim = Math.max(BODYMEND.swivelWrist, bend(0));
-        if(bend(want) > lim){ let lo = 0, hi = want; for(let it = 0; it < 8; it++){ const mid = (lo + hi) / 2; if(bend(mid) > lim) hi = mid; else lo = mid; } want = lo; } }
+      if(Math.abs(want) > 1e-4 && L.hd && BODYMEND.swivelWrist){ _x.subVectors(_pc, _pa).normalize(); _sh2.copy(L.hd).applyQuaternion(_qe); const lim = Math.max(BODYMEND.swivelWrist, swingBend(0));
+        if(swingBend(want) > lim){ let lo = 0, hi = want; for(let it = 0; it < 8; it++){ const mid = (lo + hi) / 2; if(swingBend(mid) > lim) hi = mid; else lo = mid; } want = lo; } }
       L.sw = want; if(Math.abs(want) > 1e-4){ _x.subVectors(_pc, _pa).normalize(); _q.setFromAxisAngle(_x, want); _qu.premultiply(_q); _ql.premultiply(_q); _u.applyQuaternion(_q); _v.applyQuaternion(_q); } }
     _kn.crossVectors(_u, _v); const sn = _kn.length(); let w = smooth((Math.atan2(sn, _u.dot(_v)) - HG.bend[0]) / (HG.bend[1] - HG.bend[0])), tu = 0, tl = 0;
     if(w > 0){ _kn.divideScalar(sn); tu = about(_pt.copy(L.au).applyQuaternion(_qu), _kn, _u); tl = about(_pt.copy(L.al).applyQuaternion(_ql), _kn, _v);
