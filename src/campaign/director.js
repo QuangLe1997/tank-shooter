@@ -98,6 +98,7 @@ function escalate(now){ const B = D.build, st = DIR.stats; DIR.escAt = now + B.c
 function think(now, dt){ const hi = thrHi(), t = now - DIR.phaseAt, crit = DIR.hp < D.thr.crit, st = DIR.stats;
   if(DIR.cue && now >= DIR.cue.at){ dirSay(now, DIR.cue.side, true); DIR.cue = null; }
   if(DIR.heldAt) st.held += dt;
+  if(S.awaitingUpgrade) return;                                                                                    // the stage is won: nothing more is sent at him
   if(duelOn()){ if(DIR.fin !== -1){ if(DIR.phase !== 'finale') setPhase('finale', now, 'the general'); else DIR.phaseAt = now; DIR.fin = -1; DIR.flank = null; ground(now, D.finale.ground); } return; }   // (fin: 0 none · > 0 the last lull, until then · −1 the duel is on)
   if(DIR.phase === 'finale'){ if(DIR.fin === -1){ DIR.fin = 0; setPhase('build', now, 'the duel is over'); } return; }   // (fin > 0: waves.js asks dirFinale when he may come)
   if(DIR.phase === 'build'){ const busy = DIR.P >= D.build.meter * DIR.ease; if(busy) DIR.bore = 0;   // (little to do: the clock runs in full; something but not much: at midK; busy: it runs back)
@@ -125,8 +126,8 @@ export function dirWaveHold(now){ if(!DIR.on) return false; const ph = DIR.phase
   if(!DIR.heldAt) DIR.heldAt = now;
   if(ph !== 'peak' && ph !== 'release' && now - DIR.heldAt > B.holdMax){ DIR.pass = B.group; DIR.heldAt = 0; DIR.stats.trickle++; note(now, 'trickle', 'held ' + B.holdMax + ' s'); return false; }
   return true; }
-// may the next wave begin? (not in a peak, not in a lull)
-export function dirWaveGo(now){ return !DIR.on || DIR.phase === 'build'; }
+// may the next wave begin — or, the last one done, may waves.js ask for the general (dirFinale)? (not in a peak, not in a lull; the last lull itself is asked about)
+export function dirWaveGo(now){ return !DIR.on || DIR.phase === 'build' || DIR.phase === 'finale' && DIR.fin > 0; }
 // may a fortress send a squad out of its gate now? (world/fortress.js: its sallies ran on a clock of their own) — only in a build-up with room for more
 export function dirSallyOk(now){ return !DIR.on || now < DIR.sallyPass || DIR.phase === 'build' && DIR.P < D.build.meter * DIR.ease; }
 // in a lull every rifleman's rests between bursts are this much longer (actors/infantry.js): the fire slackens for as long as the lull lasts
