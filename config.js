@@ -3021,12 +3021,14 @@ export const BLADE = { on:!(typeof location !== 'undefined' && /[?&]noblade\b/.t
 //     slides him off line (the cut waits for it); auto: with the RIFLE in his hands, sprint (or low cover) + fire with an unaware man within dashR draws and dashes.
 //   body: a body is found only with a clear line from the finder's eyes (eyeY) to it (los) — never through a wall; a man cut apart lies as ONE body, to be found for as long as he lies (BLADE.sever.life).
 //   squad: while the blade is out and nobody within the eye's reach is alerted his own men hold their fire and an enemy who does not know does not pick them out either (hold) — the first alerted man ends it. say: what he reads. net: a co-op guest's cut is a
-//     report with weapon index w (no gun's); the host judges it — reach m + slack, at most maxDmg, the ambush decided on the HOST's knowledge of the man.
+//     report with weapon number w in its low 6 bits (no gun's) that carries a move's code and the place he claims — never damage. The host judges it on its OWN facts:
+//     perS cuts a second (burst at once: a sweep through several men spends one each), the claim within posTol m of the host's place for him, the man within the move's
+//     reach × reachK + the dash-in + slack m of that place, the blade's stance bit up for BLADE.draw s, the damage from the host's own move table.
 export const AMBUSH = { on:true,
   noise:{ stepR:5, touch:[5, 2], shoutDazed:false }, see:{ rear:0.05 }, witness:{ r:26, side:0.5, near:3, night:0.5, bodyY:1.0, err:3 }, flat:0.3,
   dash:{ stop:0.6, over:0.2, auto:true }, body:{ los:true, eyeY:1.6, y:0.4 }, squad:{ hold:true },
   say:{ seen:'BỊ NHÌN THẤY!', quiet:'ĐAO IM LẶNG — ĐỊCH KHÔNG NGHE THẤY', tip:['mute', 'Đao là vũ khí im lặng', 'Đao <b>không gây tiếng động</b>: chém không làm lộ vị trí như tiếng súng. Nấp sau đá hay công-ten-nơ, giữ <b>chạy nhanh</b> rồi <b>bắn</b> khi địch chưa hay biết ở trong tầm vài mét — anh <b>lao ra, một nhát hạ gục</b>, rồi lùi về chỗ nấp. Chỉ kẻ <b>nhìn thấy</b> nhát chém hoặc cái xác mới báo động.'] },
-  net:{ w:63, slack:3, maxDmg:140 } };
+  net:{ w:63, perS:3, burst:4, posTol:6, reachK:1.2, slack:3 } };
 // SKIN 1 the soldier's body mended offline (tools/skin-repair.mjs — not read by the game). Every length is in millimetres of a 1.8 m soldier.
 //   snap / crack: a border point this close to another shell's surface is laid on it / two border points this close are welded · sealed: "resting on another shell" for the counters
 //   holePerim / holeMax: closed border loops up to this round (and this many edges) are capped · fin*: non-manifold fans removed when hidden (≤ finHidden triangles) or tiny (≤ finTris, ≤ finArea mm²)

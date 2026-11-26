@@ -1,6 +1,6 @@
 // net/rules.js — COOP 4 THE RULES BOTH PAGES MUST AGREE ON, AS PLAIN FUNCTIONS (they run in Node: tools/coop-test.mjs): the cue codes, whether two machines can
 // build the same battlefield, the seed in the address, a hit report's parameter, which of the two players an enemy regards, and going down / being stood up again
-import { AMBUSH, COOP, COOP2, LOGISTICS } from '../../config.js';
+import { AMBUSH, BLADE, COOP, COOP2, LOGISTICS } from '../../config.js';
 import { NET_EV } from './protocol.js';
 
 export const NET_CUE = COOP.cue;
@@ -69,21 +69,38 @@ export function coopJudgeHit(TR, q, out){ const T = COOP.trust; out = out || {};
   if(heavy && !q.gunHeavy){ if(TR.heavyTok >= 1) TR.heavyTok -= 1; else heavy = false; }   // (a grenade, the knife, a trample: a few a second, no more)
   if(heavy) cap = Math.max(cap, T.heavyDmg); let dmg = q.dmg; if(dmg > cap){ dmg = cap; TR.clamped++; }
   out.ok = true; out.dmg = dmg; out.heavy = heavy; TR.ok++; return out; }
-// ---- AMBUSH 1 the host's judgment of a guest's BLADE cut: a HIT report whose weapon index is AMBUSH.net.w (coopBladeW — no gun's). The same gate, the blade's rules:
-//   q = { now, dmg, enemyAlive, enemyHp, dist (m: where he last said he was → the man), bladeOut (his state's stance says the blade is in his hands), reach (m: the
-//   host's own table — the longest cut + the dash-in), guestDown, unaware (the HOST's man does not know: alert < 2), outside (the guest stands outside that man's
-//   front), big (a general / commander / elite: never one cut) } → out { ok, dmg, why ('down' 'no-enemy' 'no-damage' 'weapon' 'range' 'rate'), ambush (unaware +
-//   outside + not big: this one cut kills), hush (he dies without a sound: he did not know and the cut kills), heavy:false }. The damage is the report's, cut to
-//   net.maxDmg; the ambush and the silence are decided by what the HOST knows of the man — a guest cannot claim them.
+// ---- AMBUSH 1–2 A GUEST'S BLADE CUT. Nothing the guest says decides anything: his report names a man and a move and says where he stood — no damage, no "he did not
+//   see me", no health. THE REPORT (a HIT from the guest, through coopEventAllowed like any hit): a = his id, b = the man, x / z = where he says he stood,
+//   y = (AMBUSH.net.w + 64 × the move's code) / 100 — the weapon number's low 6 bits are the blade's (no gun's), p = the way the cut throws the man (0–65535 a turn; looks only).
+//   The move's code = the kind's place in BLADE.kinds × 8 + its slot (0–2 the lights, 3 heavy, 4 run, 5 special, 6 counter) + 32 when it was struck tired.
+//   THE FACTS are the HOST's (coopBladeFacts): man = its own record of the enemy { alive, hp, maxHp, x, z, facing, alert (undefined: no soldier's awareness), general,
+//   commander, elite, hitCap }, mate = its own record of the guest { x, z (his last smoothed, authoritative place), bladeAt (s: when the host first saw the blade's stance
+//   bit of this draw, < 0: not up), down }, claim = { x, z } from the report → q { now, code, enemyAlive, enemyHp, enemyMaxHp, guestDown, dist (the HOST's place for him →
+//   the man), claimOff (m between what he claims and the host's record), bladeFor (s the bit has been up), unaware, outside (his front, by the HOST's place for him), big, capped }.
+//   THE JUDGMENT (coopJudgeBlade) → out { ok, dmg, why, ambush, hush, sever }: dropped ('down' · 'no-enemy' · 'move' an unknown code · 'weapon' the bit not up for
+//   BLADE.draw s · 'position' the claim further than net.posTol from the host's record · 'range' further than the move reaches × reachK + the dash-in + slack · 'rate'
+//   the blade's own bucket: net.perS a second, net.burst at once — not the rifle's 40); else dmg = that move's damage in the HOST's table (× tiredDmg), cut to
+//   BLADE.hit.gen × his most for a general / a capped man; ambush (the one cut kills) only for a man who does not know, struck from outside his front, neither big nor capped.
 export const coopBladeW = () => AMBUSH.net.w;
-export function coopJudgeBlade(TR, q, out){ const T = COOP.trust, N = AMBUSH.net; out = out || {}; out.ok = false; out.dmg = 0; out.heavy = false; out.why = ''; out.ambush = false; out.hush = false;
-  if(TR.at >= 0){ const dt = Math.max(0, Math.min(5, q.now - TR.at)); TR.tok = Math.min(T.hitsPerS, TR.tok + dt * T.hitsPerS); TR.heavyTok = Math.min(T.heavyBurst, TR.heavyTok + dt * T.heavyPerS); } TR.at = q.now;
-  let why = ''; if(q.guestDown) why = 'down'; else if(!q.enemyAlive) why = 'no-enemy'; else if(!(q.dmg > 0) || !isFinite(q.dmg)) why = 'no-damage'; else if(!q.bladeOut) why = 'weapon';
-  else if(!(q.dist <= (q.reach || 0) + N.slack)) why = 'range'; else if(TR.tok < 1) why = 'rate';
-  if(why){ TR.dropped++; TR.why = out.why = why; return out; } TR.tok -= 1;
-  let dmg = q.dmg; if(dmg > N.maxDmg){ dmg = N.maxDmg; TR.clamped++; }
-  out.ambush = !!(q.unaware && q.outside && !q.big); if(out.ambush) dmg = Math.max(dmg, (q.enemyHp || 0) + 1); out.hush = !!(q.unaware && dmg >= (q.enemyHp || 0));
-  out.ok = true; out.dmg = dmg; TR.ok++; return out; }
+const B_KINDS = Object.keys(BLADE.kinds), B_SLOT = ['light', 'light', 'light', 'heavy', 'run', 'special', 'counter'], _bm = {}, wrapPi = a => Math.atan2(Math.sin(a), Math.cos(a));
+export function coopBladeY(code){ return (AMBUSH.net.w + 64 * (code & 63)) / 100; }
+export function coopBladeCode(wy){ return Number.isInteger(wy) && wy >= 0 && wy < 4096 && (wy & 63) === AMBUSH.net.w ? wy >> 6 : -1; }   // (−1: not the blade's)
+export function coopBladeCodeOf(kind, mv, tired){ const ki = B_KINDS.indexOf(kind), M = ki >= 0 && ki < 4 ? BLADE.kinds[kind].moves : null; if(!M || !mv) return -1; let s = M.light.indexOf(mv); if(s > 2) return -1;
+  if(s < 0) s = mv === M.heavy ? 3 : mv === M.run ? 4 : mv === M.special ? 5 : mv === M.counter ? 6 : -1; return s < 0 ? -1 : ki * 8 + s + (tired ? 32 : 0); }
+export function coopBladeMove(code, out){ out = out || {}; out.mv = null; if(!Number.isInteger(code) || code < 0 || code > 63) return null; const K = BLADE.kinds[B_KINDS[(code & 31) >> 3]], s = code & 7; if(!K || s > 6) return null;
+  const mv = s < 3 ? K.moves.light[s] : K.moves[B_SLOT[s]]; if(!mv || !(mv.dmg > 0)) return null; out.mv = mv; out.kind = K; out.tired = !!(code & 32); return out; }
+export function coopBladeFacts(q, now, code, man, mate, claim){ q.now = now; q.code = code; q.enemyAlive = !!(man && man.alive); q.enemyHp = man ? +man.hp || 0 : 0; q.enemyMaxHp = man ? +man.maxHp || q.enemyHp : 0; q.guestDown = !mate || !!mate.down;
+  q.dist = man && mate ? Math.hypot(man.x - mate.x, man.z - mate.z) : NaN; q.claimOff = mate && claim ? Math.hypot(claim.x - mate.x, claim.z - mate.z) : NaN; q.bladeFor = mate && mate.bladeAt >= 0 ? now - mate.bladeAt : -1;
+  q.unaware = !!(man && man.alert !== undefined && man.alert < 2); q.outside = !!(man && mate) && Math.abs(wrapPi(Math.atan2(mate.x - man.x, mate.z - man.z) - (+man.facing || 0))) > LOGISTICS.quiet.knife.front;
+  q.big = !!(man && (man.general || man.commander || man.elite)); q.capped = !!(man && (man.general || man.hitCap)); return q; }
+export function coopJudgeBlade(TR, q, out){ const N = AMBUSH.net, BQ = BLADE.quiet; out = out || {}; out.ok = false; out.dmg = 0; out.heavy = false; out.why = ''; out.ambush = false; out.hush = false; out.sever = '';
+  const Bk = TR.blade || (TR.blade = makeCoopBucket(N.perS, N.burst)), M = coopBladeMove(q.code, _bm); let why = '';
+  if(q.guestDown) why = 'down'; else if(!q.enemyAlive) why = 'no-enemy'; else if(!M) why = 'move'; else if(!(q.bladeFor >= BLADE.draw)) why = 'weapon'; else if(!(q.claimOff <= N.posTol)) why = 'position';
+  else if(!(q.dist <= (M.mv.reach || M.kind.reach) * N.reachK + BQ.dashR + N.slack)) why = 'range'; else if(!coopBucketTake(Bk, q.now)) why = 'rate';
+  if(why){ TR.dropped++; TR.why = out.why = why; return out; }
+  let dmg = M.mv.dmg * (M.tired ? BLADE.stamina.tiredDmg : 1); if(q.capped) dmg = Math.min(dmg, (q.enemyMaxHp || q.enemyHp || 0) * BLADE.hit.gen);
+  out.ambush = !!(AMBUSH.on && BQ.on && BQ.ambush && q.unaware && q.outside && !q.big && !q.capped); if(out.ambush) dmg = Math.max(dmg, (q.enemyHp || 0) + 1); out.hush = !!(AMBUSH.on && BQ.on && q.unaware && dmg >= (q.enemyHp || 0));
+  out.ok = true; out.dmg = dmg; out.sever = M.mv.sever || 'waist'; TR.ok++; return out; }
 // ---- the host's own ledger of the guest's health (he is DOWN when the HOST says so). led = the ledger, rep = what his state reports, max = his most
 //   (already cut to COOP.trust.hpMax): it falls with his report at once (he may hurt himself: a fall, lava) and rises no faster than healPerS; hold = inside the
 //   syncS after the host hurt him or stood him up, when a report may still be the staler one → the ledger does not move

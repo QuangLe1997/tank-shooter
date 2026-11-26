@@ -11,8 +11,8 @@
 //   · CO-OP: the guest's cut is a HIT report with the blade's weapon index; the host judges it by the same rules against ITS knowledge of the man
 //     (net/rules.js coopJudgeBlade → ambushGuestCut) and the kill's witnesses are told where the GUEST stood.
 //   Nothing here runs per enemy per frame: every sight line is asked at an event (a kill, a body looked at on the bodies' own 0.5 s pass, a swing's window).
-import { AMBUSH, AWARE, BLADE, LOGISTICS } from '../../config.js';
-import { BLADEST, CV, MATE, NIGHT, QUIET, S, UGRID, alertEnemy, coopJudgeBlade, enemies, floatText, heightAt, inShape, lineClear, ringPulse, suspectEnemy, tip, unitsNear, wrapAngle } from '../hub.js';
+import { AMBUSH, AWARE, BLADE } from '../../config.js';
+import { BLADEST, CV, MATE, NIGHT, QUIET, S, UGRID, alertEnemy, coopBladeFacts, coopJudgeBlade, enemies, floatText, heightAt, inShape, lineClear, ringPulse, suspectEnemy, tip, unitsNear, wrapAngle } from '../hub.js';
 
 const M = AMBUSH, D2R = Math.PI / 180, _nb = [], _j = {}, _q = {};
 // seenBy: how many saw the last blade kill · the counts are for the probes (ambushProbe)
@@ -58,16 +58,16 @@ export function ambushSaySeen(p, n){ floatText(M.say.seen + (n > 1 ? ' ×' + n :
 export function ambushTick(now){ if(!M.on) return; if(MATE.on && MATE.firing && !(MATE.RC && MATE.RC.blade)) AMBST.mateShotAt = now;
   if(!BLADE.on || !BLADEST.held || QUIET.eye !== 0) return; const key = (S.loop || 0) + ':' + (S.stage || 1); if(key === AMBST.saidKey) return; const p = S.player;
   for(let i = 0; i < enemies.length; i++){ const e = enemies[i]; if(!e.def.inf || !(e.hp > 0) || (e.pos.x - p.pos.x) ** 2 + (e.pos.z - p.pos.z) ** 2 > 1600) continue; AMBST.saidKey = key; floatText(M.say.quiet, '#9be04a', p.pos, 15); tip('blade'); return; } }
-// ---- co-op, on the HOST: the guest reports a cut on e (game/coop-glue.js, a HIT whose weapon index is AMBUSH.net.w). Judged by net/rules.js coopJudgeBlade against
-//   what the host knows — his state's blade bit, where he said he stood, the host's own reach, whether the man knew and which way he faced. A cut that kills
-//   marks the man as the blade's (the quiet death, the witnesses told where the GUEST stood, cut apart); one that does not: his cry. → { ok, dmg, why, ambush, hush }
-let _reach = 0;
-export function ambushGuestCut(TR, e, dmg, now, guestDown){ if(!_reach){ for(const k in BLADE.kinds){ const K = BLADE.kinds[k]; let r = K.reach; for(const m of [].concat(K.moves.light, K.moves.heavy, K.moves.run, K.moves.special, K.moves.counter)) if(m && m.reach > r) r = m.reach; if(r > _reach) _reach = r; } }
-  const inf = !!(e && e.def && e.def.inf), q = _q; q.now = now; q.dmg = dmg; q.enemyAlive = !!(e && e.hp > 0); q.enemyHp = e ? e.hp : 0; q.dist = e ? Math.hypot(e.pos.x - MATE.x, e.pos.z - MATE.z) : 0; q.bladeOut = !!(MATE.RC && MATE.RC.blade);
-  q.reach = _reach * 1.2 + BLADE.quiet.dashR; q.guestDown = !!guestDown; q.unaware = inf && BLADE.quiet.on && M.on && e.alert !== undefined && e.alert < 2;
-  q.outside = inf && Math.abs(wrapAngle(Math.atan2(MATE.x - e.pos.x, MATE.z - e.pos.z) - (e.facing || 0))) > LOGISTICS.quiet.knife.front; q.big = !!(e && (e.general || e.commander || e.elite || e.hitCap)) || !BLADE.quiet.ambush;
-  const j = coopJudgeBlade(TR, q, _j); if(!j.ok) return j; AMBST.mateCuts++; if(j.ambush) AMBST.mateAmbush++;
-  if(inf && j.dmg >= e.hp){ e._blade = true; e._by = { x:MATE.x, z:MATE.z }; if(j.hush) e._knife = true; if(BLADE.sever.on) e._bladeCut = 'waist';
+// ---- co-op, on the HOST: the guest reports a cut on e (game/coop-glue.js, a HIT whose weapon number is the blade's): code = the move, (cx, cz) = where he claims he
+//   stood. Judged by net/rules.js coopJudgeBlade on the HOST's own facts — its record of the man (health, alert, facing, rank) and of the guest (its smoothed place for
+//   him, how long it has seen the blade's stance bit up); the damage is the host's table's. A cut that kills marks the man as the blade's (the quiet death, the
+//   witnesses told where the HOST has the guest, cut apart along the move's cut); one that does not: his cry. → { ok, dmg, why, ambush, hush, sever }
+const _man = {}, _mate = {}, _claim = {};
+export function ambushGuestCut(TR, e, code, cx, cz, now, guestDown){ const inf = !!(e && e.def && e.def.inf);
+  _man.alive = !!(e && e.hp > 0); _man.hp = e.hp; _man.maxHp = e.maxHp || e.hp; _man.x = e.pos.x; _man.z = e.pos.z; _man.facing = e.facing || 0; _man.alert = inf ? e.alert : undefined; _man.general = !!e.general; _man.commander = !!e.commander; _man.elite = !!e.elite; _man.hitCap = !!e.hitCap;
+  _mate.x = MATE.x; _mate.z = MATE.z; _mate.bladeAt = MATE.on && MATE.RC && MATE.RC.blade && MATE.bladeAt >= 0 ? MATE.bladeAt : -1; _mate.down = !!guestDown; _claim.x = cx; _claim.z = cz;   // (the HOST's own records — the report gives only the move and the place he claims)
+  const j = coopJudgeBlade(TR, coopBladeFacts(_q, now, code, _man, _mate, _claim), _j); if(!j.ok) return j; AMBST.mateCuts++; if(j.ambush) AMBST.mateAmbush++;
+  if(inf && j.dmg >= e.hp){ e._blade = true; e._by = { x:MATE.x, z:MATE.z }; if(j.hush) e._knife = true; if(BLADE.sever.on && j.sever !== 'none') e._bladeCut = j.sever;
     const seen = ambushDeath(e, now); e._ambDone = true; e._mateSilent = j.hush && !seen; }   // (the witnesses now, so the death's event can tell the guest whether it went unseen)
   else if(inf && BLADE.quiet.on){ const r = BLADE.quiet.cryR, ex = e.pos.x, ez = e.pos.z; for(const o of unitsNear(UGRID.inf, ex, ez, r, _nb)){ if(o !== e && o.hp > 0 && (o.pos.x - ex) ** 2 + (o.pos.z - ez) ** 2 < r * r) suspectEnemy(o, now, ex, ez, 'cry'); } }
   return j; }

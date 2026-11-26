@@ -144,6 +144,7 @@ body:not(.touch) #hud .ability .k{font-family:var(--m-mono);letter-spacing:.5px;
 #instr.sold.warn .in-bar i{background:#e0a63a;} #instr.sold.crit .in-bar i{background:#d4463a;}
 #instr.sold.warn .in-a b{color:#f2d79a;} #instr.sold.crit .in-a b{color:#ff8c7e;animation:none;}
 body.m-soldier #weaponchip .wc-ty{display:none;}
+body.m-soldier #weaponchip .wc-ty.wc-quiet{display:inline-block;color:#9be04a!important;border-color:rgba(155,224,74,.6);}   /* AMBUSH 2 the blade's IM LẶNG tag: the soldier's chip hides a gun's damage class — this one says the weapon is silent, so it shows */
 body.m-soldier #weaponchip .wc-am{font-size:1.35em;letter-spacing:.5px;}
 
 /* ---------- menus: the hero button is painted signal-yellow steel with a stencilled order, not gold glass ---------- */
