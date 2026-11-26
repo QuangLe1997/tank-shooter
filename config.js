@@ -2976,22 +2976,22 @@ export const BLADE = { on:!(typeof location !== 'undefined' && /[?&]noblade\b/.t
   trail:{ on:true, n:14, life:0.16, color:0xdfe9ff, op:0.55 }, edge:{ on:true, v:[2.5, 7], rate:30 },
   body:{ chest:0.185, pack:[0.1, 0.17], head:0.14, hips:0.19, thigh:0.115, shin:0.085, margin:0.012 }, path:{ a:0.25, via:[0.42, 0.22, -0.02], clear:0.15 }, hand:{ palm:0.62, out:0.012, curl:0.9 }, runAt:3.6, flourish:{ r:6, wait:0.4, moveV:0.7 }, quiet:{ on:true, ambush:true, cryR:10, clangR:10, dashR:5.5, dashT:0.25, dashV:16 }, btn:[18, 250], gbtn:[18, 316],
   kinds:{
-    guandao:{ name:'ĐẠI ĐAO (Quan đao)', file:'blade_guandao', len:2.048, butt:-1.049, tip:0.998, root:0.313, edge:0.051, back:-0.085, com:0.157, off:[-1.0, -0.2], two:true, reach:2.55, r:0.019, spread:[0.62, 0.25], slide:0.74, slideV:5,
+    guandao:{ name:'ĐẠI ĐAO (Quan đao)', file:'blade_guandao', len:2.048, butt:-1.049, tip:0.998, root:0.313, edge:0.051, back:-0.085, com:0.157, off:[-1.0, -0.2], two:true, reach:2.55, r:0.019, spread:[0.62, 0.2], slide:0.8, slideV:5.5,
       pose:{ guard:[[0.0, 0.34, 0.40], [-0.29, -0.04, -0.03]], carry:[[0.36, 0.06, -0.08], [-0.10, 0.28, 0.34]], block:[[0.28, 0.46, 0.32], [-0.26, 0.12, 0.36]] },
-      roll:0, worn:{ at:[0.2, 0.02, 0.2], zAt:-0.35, grab:-0.43, tilt:20, tip:-1, flat:1, low:[0.15, 50], prone:6, clear:0.14, shiftMax:0.6 },
+      roll:0, worn:{ at:[0.25, 0.02, 0.2], zAt:-0.35, grab:-0.43, tilt:23, tip:-1, flat:1, low:[0.15, 50], prone:6, clear:0.14, shiftMax:0.6 },
       set:{ idle:'blade-axe-idle', guard:'blade-axe-block-idle', walk:['blade-axe-walk-forward', 'blade-axe-walk-back', 'blade-axe-walk-left', 'blade-axe-walk-right'], run:['blade-axe-run-forward', 'blade-axe-run-back'], runV:2.6, rate:[0.7, 2.2] },
       moves:{
         light:[
-          { id:'sweep', sl:[0.5, 0.76, 1.08, 1.45, 0.74], ext:0.16, clip:'blade-axe-attack-horizontal', rate:1.35, from:0.38, to:1.55, win:[[0.77, 1.05]], arc:[-105, 70], y:[-0.6, 1.3], dmg:70, push:5.5, daze:0.7, st:22, next:1.2, move:0.35, lunge:0.9 },
+          { id:'sweep', sl:[0.5, 0.76, 1.08, 1.45, 0.8], ext:0.16, clip:'blade-axe-attack-horizontal', rate:1.35, from:0.38, to:1.55, win:[[0.77, 1.05]], arc:[-105, 70], y:[-0.6, 1.3], dmg:70, push:5.5, daze:0.7, st:22, next:1.2, move:0.35, lunge:0.9 },
           { id:'rise', sl:[0.66, 0.9, 1.22, 1.6, 0.6], ext:0.08, clip:'blade-axe-attack-backhand', rate:1.45, from:0.5, to:1.75, win:[[0.92, 1.2]], arc:[-78, 20], y:[-0.6, 1.5], dmg:78, push:6, daze:0.75, st:24, next:1.35, move:0.35, lunge:0.8 },
-          { id:'chop', sl:[0.46, 0.74, 1.0, 1.35, 0.74], clip:'blade-axe-attack-downward', rate:1.3, from:0.3, to:1.55, win:[[0.76, 0.98]], arc:[0, 0], tol:24, y:[-1.2, 1.8], dmg:120, push:3, daze:1.0, st:28, next:1.15, move:0.25, lunge:1.0 } ],
-        heavy:{ id:'spin', sl:[0.58, 0.82, 1.3, 1.75, 0.74], ext:0.16, clip:'blade-axe-attack-360-high', rate:1.55, from:0.45, to:2.0, win:[[0.83, 1.27]], arc:[-140, -395], y:[-0.6, 1.4], dmg:105, push:8, daze:1.1, st:42, next:1.6, move:0.3, lunge:0.5 },
+          { id:'chop', sl:[0.46, 0.74, 1.0, 1.35, 0.8], clip:'blade-axe-attack-downward', rate:1.3, from:0.3, to:1.55, win:[[0.76, 0.98]], arc:[0, 0], tol:24, y:[-1.2, 1.8], dmg:120, push:3, daze:1.0, st:28, next:1.15, move:0.25, lunge:1.0 } ],
+        heavy:{ id:'spin', sl:[0.58, 0.82, 1.3, 1.75, 0.8], ext:0.16, clip:'blade-axe-attack-360-high', rate:1.55, from:0.45, to:2.0, win:[[0.83, 1.27]], arc:[-140, -395], y:[-0.6, 1.4], dmg:105, push:8, daze:1.1, st:42, next:1.6, move:0.3, lunge:0.5 },
         run:{ id:'leap', sl:[1.2, 1.5, 1.85, 2.3, 0.7], clip:'blade-axe-run-jump-attack', rate:1.6, from:0.95, to:2.7, win:[[1.53, 1.82]], arc:[0, 0], tol:32, reach:2.1, y:[-1.5, 1.8], dmg:135, push:5, daze:1.1, st:36, next:2.2, move:0, root:true },
         special:{ id:'whirl', sl:[0.42, 0.64, 1.18, 1.55, 0.7], clip:'blade-axe-attack-360-low', rate:1.5, from:0.3, to:1.8, win:[[0.65, 1.15]], arc:[-172, -372], reach:2.0, y:[-0.9, 1.1], dmg:90, push:9, daze:1.5, st:30, cd:9, next:1.45, move:0.2 },
         counter:{ id:'strike', sl:[0.62, 0.84, 1.17, 1.6, 0.55], clip:'blade-misc-smash', rate:1.7, from:0.5, to:1.95, win:[[0.85, 1.15]], arc:[-105, 12], y:[-0.6, 1.5], dmg:60, push:7, daze:1.3, st:14, next:1.4, move:0.3, lunge:0.4 },
         flourish:{ id:'mua', clip:'blade-misc-spinning', rate:1.5, from:0, to:1.7, win:[], move:0.2 } } },
     dadao:{ name:'ĐAO HAI TAY (Đại đao)', file:'blade_dadao', len:1.05, butt:-0.275, tip:0.775, root:0.077, edge:0.039, back:-0.124, com:0.303, off:[-0.2, -0.1], two:false, reach:1.45, r:0.022,
-      roll:0, worn:{ at:[0.13, 0.13, 0.26], zAt:0.02, grab:0, tilt:32, tip:-1, flat:1, low:[0, 36], prone:8, clear:0.14, shiftMax:0.2 },
+      roll:0, worn:{ at:[0.14, 0.0, 0.22], zAt:-0.12, grab:-0.02, tilt:30, tip:-1, flat:1, low:[0, 36], prone:8, clear:0.14, shiftMax:0.2 },
       set:{ idle:'blade-gs-idle', guard:'blade-gs-blocking-2', walk:['blade-gs-walk', 'blade-gs-walk-2', 'blade-gs-strafe', 'blade-gs-strafe-2'], run:['blade-gs-run-2', 'blade-gs-run'], runV:2.6, rate:[0.7, 1.9] },
       moves:{
         light:[
