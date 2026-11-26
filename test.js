@@ -2569,6 +2569,12 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   ok(/fortBossWake\(f, now\)/.test(fo) && /!f\.duel && !FORTBOSS\.on/.test(fo) && /if\(f\.tier!==3 && !FORTBOSS\.on\)/.test(fo) && /export function fortTake\(f, guest\)/.test(fo) && /if\(e\.fortBoss\) dmg=fortBossDmg\(e, dmg\)/.test(dm) && /updateFortBoss\(gdt, now\)/.test(lp) && /fortBossGuest\(gdt, now\)/.test(pu) && /fortBossCue\(p, a, b, x, z\)/.test(gl)
     && /export function fortBossLook\(e, def\)/.test(rd('src/actors/fort-boss-look.js')) && /bossStageWon\(NOW\(\), def\.bdef\)/.test(fb) && /spawnGift\(/.test(fb),
     'wired: the fort wakes its boss once its first force is dead (no commander, no walk-in duel), his hits go through his armour, his death takes the fort (the capital\'s wins the stage) and drops the gift crate; the guest\'s page draws him'); }
+// LOOK 3 the grade's contrast no longer clips the shadows to flat black: below its pivot a power toe (same slope at the pivot, 0 stays 0)
+{ const fs=await import('node:fs'), C=await import('./config.js'), G=C.LOOK.grade, rr=fs.readFileSync('src/render/renderer.js','utf8');
+  const lin=(c,k)=>Math.max(0,(c-0.45)*k+0.45), toe=(c,k)=>0.45*Math.pow(c/0.45,k), k=1.4;
+  ok(G && G.toe >= 0 && G.toe <= 1 && lin(0.12, k) === 0 && toe(0.12, k) > 0.06 && Math.abs((toe(0.4501, k) - toe(0.4499, k)) / 0.0002 - k) < 0.01,
+    'at contrast '+k+' a shadow at 0.12 came out '+lin(0.12, k)+', now '+toe(0.12, k).toFixed(3)+' (the pivot\'s slope kept)');
+  ok(/toe:\{value:LOOK\.grade\.toe\}/.test(rr) && /cl=mix\(cl, 0\.45\*pow\(max\(c,vec3\(0\.0\)\)\/0\.45, vec3\(contrast\)\), toe\*\(1\.0-step\(0\.45,c\)\)\)/.test(rr), 'the grade shader applies the toe under the pivot'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

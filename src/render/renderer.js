@@ -9,7 +9,7 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { GROUNDED, LIGHT, SHAFTS } from '../../config.js';
+import { GROUNDED, LIGHT, LOOK, SHAFTS } from '../../config.js';
 import { ARENA, BIOME, MOBILE, MSAA, NATIVE, S, SHADOW_MAP, arena, beamMat, makeShaftPass, releaseModels, shadowLOD } from '../hub.js';
    // Z83: a standing COMMAND BUNKER also buffs enemy damage
 
@@ -60,9 +60,9 @@ camera.lookAt(0,0,0);
 export const GradeShader = {
   uniforms:{ tDiffuse:{value:null}, time:{value:0}, vig:{value:0.34}, grain:{value:MOBILE?0.012:0.018}, sharp:{value:MOBILE?0.22:LIGHT.sharp}, sat:{value:0.9}, contrast:{value:1.08},
     lift:{value:new THREE.Vector3(0,0.008,0.02)}, gain:{value:new THREE.Vector3(1.03,1.0,0.94)}, aberr:{value:0}, flash:{value:0},
-    shTint:{value:new THREE.Vector3(-0.015,0.0,0.025)}, hiTint:{value:new THREE.Vector3(0.025,0.01,-0.02)}, vib:{value:0.25} },   // Z190 film split-tone + vibrance
+    shTint:{value:new THREE.Vector3(-0.015,0.0,0.025)}, hiTint:{value:new THREE.Vector3(0.025,0.01,-0.02)}, vib:{value:0.25}, toe:{value:LOOK.grade.toe} },   // Z190 film split-tone + vibrance · LOOK 3 toe
   vertexShader:'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
-  fragmentShader:`uniform sampler2D tDiffuse; uniform float time,vig,grain,sharp,sat,contrast,aberr,flash,vib; uniform vec3 lift,gain,shTint,hiTint; varying vec2 vUv;
+  fragmentShader:`uniform sampler2D tDiffuse; uniform float time,vig,grain,sharp,sat,contrast,aberr,flash,vib,toe; uniform vec3 lift,gain,shTint,hiTint; varying vec2 vUv;
     void main(){
       vec2 d=vUv-0.5; vec3 c;
       if(aberr>0.0002){ vec2 o=d*aberr; c=vec3(texture2D(tDiffuse,vUv+o).r, texture2D(tDiffuse,vUv).g, texture2D(tDiffuse,vUv-o).b); }
@@ -73,7 +73,9 @@ export const GradeShader = {
       float l=dot(c,vec3(0.2126,0.7152,0.0722));
       float s0=max(c.r,max(c.g,c.b))-min(c.r,min(c.g,c.b));
       c=mix(vec3(l),c,sat*(1.0+vib*(1.0-s0)));                       // Z190 vibrance: dull colours gain more than already-rich ones
-      c=(c-0.45)*contrast+0.45;                                       // pivot a touch below mid-grey: deeper shadows, highlights kept
+      { vec3 cl=(c-0.45)*contrast+0.45;                               // pivot a touch below mid-grey: deeper shadows, highlights kept
+        if(toe>0.0) cl=mix(cl, 0.45*pow(max(c,vec3(0.0))/0.45, vec3(contrast)), toe*(1.0-step(0.45,c)));   // LOOK 3 below the pivot a power toe: the same slope at the pivot, 0 stays 0 — the straight line sent everything under 0.45·(1 − 1/contrast) (~0.13 at contrast 1.4) to flat black
+        c=cl; }
       c=mix(c, 0.8+(c-0.8)/(1.0+(c-0.8)*5.0), step(0.8,c));           // Z190 film shoulder: whites roll off instead of clipping flat
       float l2=clamp(dot(c,vec3(0.2126,0.7152,0.0722)),0.0,1.0);
       c+=shTint*(1.0-smoothstep(0.0,0.55,l2)) + hiTint*smoothstep(0.4,1.0,l2);   // Z190 split-tone: cool shadows, warm light (per battlefield)
