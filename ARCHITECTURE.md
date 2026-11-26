@@ -53,7 +53,7 @@ tools/
 test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 ```
 
-### 2.1 Danh mục module (282 module theo thứ tự hub · 29.095 dòng)
+### 2.1 Danh mục module (282 module theo thứ tự hub · 29.100 dòng)
 
 <!-- MODULES:BEGIN (npm run modmap) -->
 | # | Module | Dòng | Nội dung |
@@ -255,7 +255,7 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 258 | `src/actors/gun-hands.js` | 79 | GUN 1 THE HANDS ON THE GUN, HELD TO A MAN'S OWN JOINTS (config GUNFEEL.hold; the soldier on his feet — actor… |
 | 259 | `src/actors/gun-carry.js` | 277 | CARRY 1 HOW A RIFLEMAN CARRIES HIS WEAPONS WHEN HE IS NOT AIMING THEM (config GUNCARRY; the soldier that is … |
 | 260 | `src/actors/hang.js` | 19 | HANG 1 WHAT HE WEARS ON HIS BACK HANGS (config HANG): one damped pendulum in the back's own plane, shared by… |
-| 261 | `src/actors/blade.js` | 364 | BLADE 2 THE WUXIA BLADE (config BLADE; ?noblade: none of it runs). The soldier always owns ONE ancient blade… |
+| 261 | `src/actors/blade.js` | 369 | BLADE 2 THE WUXIA BLADE (config BLADE; ?noblade: none of it runs). The soldier always owns ONE ancient blade… |
 | 262 | `src/actors/gun-fit.js` | 76 | Z360 THE HOLD READ OFF THE GUN ITSELF: no common template — every hand weapon's model is measured once when … |
 | 263 | `src/actors/real-troops.js` | 149 | Z249 REAL INFANTRY at batch cost: one Meshy soldier (Z254: the ~10k-triangle, 2K-texture pass), posed once (… |
 | 264 | `src/actors/troop-skin.js` | 34 | Z344 THE INFANTRY SKINNED ON THE GPU: every man of a side is one InstancedMesh of the whole body (actors/rea… |
