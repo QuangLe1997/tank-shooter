@@ -272,6 +272,14 @@ Khi còn **mortar (spotter)** sống ở **stage ≥ 2**, một "đạo diễn p
 | GIỮ XE TIẾP TẾ | 1 | 85 s | ở trong vòng 12 m cộng đủ 25 s | địch áp sát xe 6 s khi ta ở ngoài | cứu thương + thùng đạn · 800 điểm |
 | GIẢI CỨU TÙ BINH | 2 | 80 s | hạ hết tốp áp giải | một tên áp giải tới lối ra (×) | 3 lính theo tổ · 1000 điểm |
 
+**Sự kiện lớn trên chiến trường** (EVENT 2 · `BIGEVENT` · rút chung mũ bất ngờ, tối đa 3 mỗi màn, cách nhau ≥ 55 s, máu người chơi > 45%):
+| Sự kiện | Từ màn | Trọng số | Báo trước | Hiệu ứng |
+|---|---|---|---|---|
+| ⚠ BOM RẢI THẢM | 2 | 0,45 | 5,5 s (dải đỏ) | 14 quả · bán kính 6 m · 75 ở tâm · trúng cả hai phe |
+| ⚠ MÁY BAY RƠI | 1 | 0,40 | 4,5 s (dải đỏ) | nổ 80 · vệt lửa 30 m · xác chắn đạn, nổ thêm 4–6 lần (45) trong 10 s |
+| ⚠ CHÁY ĐỒNG CỎ | 1 (bãi khô) | 0,45 | 1,2 s + mỗi ô âm ỉ 2,5 s | 12 máu/giây · lan theo gió · ≤ 34 ô · khói che tầm nhìn |
+| ⚠ ĐỊCH GÂY NHIỄU | 2 | 0,40 | 3 s | 20 s mất điện đài, bản đồ nhỏ, bảng tổ |
+
 ## 3c. Hợp đồng màn chơi (STAGE BRIEFING — Z26)
 
 **Trước mỗi màn** (màn 1 sau intro; màn 2-5 sau thẻ nâng cấp) hiện **briefing**: báo boss/biome + cho **chọn 1 trong 3 hợp đồng** = modifier áp **cả màn đó**. Luôn có **STEADY** (an toàn) + 2 ngẫu nhiên. Mỗi cái là **đánh đổi** (risk/reward), giúp người chơi định hướng farm:

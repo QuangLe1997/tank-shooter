@@ -9,7 +9,7 @@
 //   the stage won, a restart, the menu). A life lost ends the mission in hand. One slow tick (SIDEMISSION.tick) does the thinking; a frame only moves what moves.
 import * as THREE from 'three';
 import { ENTRY, OUTPOST, SIDEMISSION, STORY, TROOPS } from '../../config.js';
-import { AMMO, ARENA, POWERUPS, S, UNDER, addScore, animateSoldier, aoeDamage, bigExplode, blocks, buildTransport, burst, callStrike, chute, decalScorch, dirOfferOk, dropPowerup, edgeEntry, enemies, entrySeen, fieldEdgePoint, fireball, floatText, gainXp, hatchEntry, heightAt, holoRing, inCamView, inField, loadGLTF, makeSoldierMesh, radio, ringPulse, scene, sfx, showBanner, soldierKneel, spawnAlly, spawnPart, spawnSquad, squadTypes, storyCue, svgBadgeTex } from '../hub.js';
+import { BIGEV, AMMO, ARENA, POWERUPS, S, UNDER, addScore, animateSoldier, aoeDamage, bigExplode, blocks, buildTransport, burst, callStrike, chute, dirOfferOk, dropPowerup, edgeEntry, enemies, entrySeen, fieldEdgePoint, fireball, floatText, gainXp, hatchEntry, heightAt, holoRing, inCamView, inField, loadGLTF, makeSoldierMesh, radio, ringPulse, scene, sfx, showBanner, soldierKneel, spawnAlly, spawnPart, spawnSquad, squadTypes, storyCue, svgBadgeTex } from '../hub.js';
 
 const C = SIDEMISSION, R2 = a => a[0] + Math.random() * (a[1] - a[0]), _pt = { x:0, y:0, z:0 }, _v = new THREE.Vector3();
 const OFF = typeof location !== 'undefined' && /noevents/.test(location.search + location.hash);
@@ -82,8 +82,8 @@ function pilotFrame(M, dt, now){ const P = M.K, sd = Math.sin(M.dir), cd = Math.
     if(M.pe > 0.035){ M.pe = 0; spawnPart(x, y + 0.6, z, 0, 1.2, 0, O_SMOKE); if(Math.random() < 0.5) spawnPart(x, y, z, (Math.random() - 0.5) * 2, 0.5, (Math.random() - 0.5) * 2, O_FIRE); }
     if(!M.man && al >= -P.past){ const m = makeSoldierMesh(); m.scale.setScalar(TROOPS.look.scale); m.userData.gun.visible = false; M.cy = y - 1.5; m.position.set(M.x, M.cy, M.z); scene.add(m); M.man = m;   // he bails out over his spot
       M.can = chute(); M.can.position.set(M.x, M.cy, M.z); scene.add(M.can); }
-    if(al >= 0){ g.visible = false; M.air = null; _pt.x = M.cx; _pt.z = M.cz; bigExplode(_pt, 0xff7a3d, 2.2); fireball(_pt, 1.6); decalScorch(M.cx, M.cz, 5, 1); aoeDamage(M.cx, M.cz, 6, 60, false, now, 'HE'); sfx('bigexplode', _pt);
-      const d = Math.hypot(S.player.pos.x - M.cx, S.player.pos.z - M.cz); if(d < 90) S.shake = Math.min(3, S.shake + 1.2 * (1 - d / 90)); M.smoke = 30;
+    if(al >= 0){ g.visible = false; M.air = null; _pt.x = M.cx; _pt.z = M.cz; const s0 = S.shake, d = Math.hypot(S.player.pos.x - M.cx, S.player.pos.z - M.cz); bigExplode(_pt, 0xff7a3d, 2.2); aoeDamage(M.cx, M.cz, 6, 60, false, now, 'HE');   // (the blast's look and report: fx/explosions.js)
+      S.shake = d < 90 ? Math.min(3, s0 + 1.2 * (1 - d / 90)) : s0; M.smoke = 30;
       if(!M.sent){ M.sent = true; if(sendTo(M.x, M.z, M.men)) SIDEM.stats.patrols++; } } }
   else if(M.smoke > 0){ M.smoke -= dt; if(M.pe > 0.25){ M.pe = 0; spawnPart(M.cx + (Math.random() - 0.5) * 3, heightAt(M.cx, M.cz) + 1.2, M.cz + (Math.random() - 0.5) * 3, 0.4, 2.4, 0.3, O_SMOKE); } }
   if(M.can){ M.cy -= P.sink * dt; const gy = heightAt(M.x, M.z);
@@ -141,7 +141,7 @@ function truckTick(M, tk, now){ const P = M.K, p = S.player, inC = Math.hypot(p.
       keep(M.g, null, 'drive', M.x, M.z, P.leave); const q = SIDEM.props[SIDEM.props.length - 1]; q.a = M.face; q.sp = P.speed; M.g = null; finish(M, 'won', now, 'ev_truck_ok', 'Xe đã ra · thùng đạn + cứu thương'); }
     return; }
   M.over = foes ? M.over + tk : Math.max(0, M.over - tk * 0.5); M.sub = foes ? 'Địch đang áp sát xe — quay lại vòng tròn!' : 'Vào vòng tròn quanh xe, giữ đủ ' + P.hold + ' giây';
-  if(M.over >= P.overrunT){ _pt.x = M.x; _pt.z = M.z; bigExplode(_pt, 0xff8a3a, 2); fireball(_pt, 1.6); sfx('bigexplode', _pt); decalScorch(M.x, M.z, 5, 1); truckLeft(M, 'smoke'); finish(M, 'lost', now, 'ev_truck_lost', 'Xe tiếp tế bị đốt'); } }
+  if(M.over >= P.overrunT){ _pt.x = M.x; _pt.z = M.z; bigExplode(_pt, 0xff8a3a, 2); fireball(_pt, 1.4); truckLeft(M, 'smoke'); finish(M, 'lost', now, 'ev_truck_lost', 'Xe tiếp tế bị đốt'); } }
 // it stays where it is until the stage ends (burning, or still bogged with its crew): the hulk keeps stopping rounds
 function truckLeft(M, kind){ if(!M.g) return; keep(M.g, M.blk, kind, M.x, M.z, 30); M.g = null; M.blk = null;
   for(let i = 0; i < M.crew.length; i++){ if(kind === 'smoke') scene.remove(M.crew[i]); else keep(M.crew[i]); } M.crew.length = 0; }
@@ -194,7 +194,7 @@ export function updateSideMissions(dt, now){ const p = S.player; if(!SIDEM.on ||
   if(S.awaitingUpgrade){ clearSideMissions(); SIDEM.on = false; return; }                                             // the stage is won: everything of ours leaves the field
   if(SIDEM.props.length) propsFrame(dt);
   const M = SIDEM.cur, died = p.lives < SIDEM.lives; SIDEM.lives = p.lives;
-  if(!M){ if(UNDER.on || S.stage < C.fromStage || SIDEM.done >= C.perStage || (SIDEM.wait -= dt) > 0) return; if(!dirOfferOk(now)){ SIDEM.wait = C.retry; return; } offer(now); return; }
+  if(!M){ if(UNDER.on || S.stage < C.fromStage || SIDEM.done >= C.perStage || (SIDEM.wait -= dt) > 0) return; if(BIGEV.cur || !dirOfferOk(now)){ SIDEM.wait = C.retry; return; } offer(now); return; }
   if(died && M.state === 'go'){ finish(M, 'aborted', now, '', 'Huỷ'); cleanup(M); SIDEM.cur = null; card(null); return; }   // a life lost: the mission in hand is over
   if(M.state !== 'go'){ if(M.strike > 0 && (M.strike -= dt) <= 0 && enemies.length) callStrike(); if((M.endT -= dt) <= 0){ cleanup(M); SIDEM.cur = null; card(null); } return; }
   M.t -= dt; FRAME[M.kind](M, dt, now); markAt(M, now);

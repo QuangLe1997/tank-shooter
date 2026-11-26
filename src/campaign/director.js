@@ -96,7 +96,7 @@ function escalate(now){ const B = D.build, st = DIR.stats; DIR.escAt = now + B.c
     else if(sallyNow(now)){ did += ' sally'; st.sallies++; acts++; } }
   if(did){ st.esc++; note(now, 'escalate', did.slice(1)); } else DIR.escAt = now + 3; }
 function think(now, dt){ const hi = thrHi(), t = now - DIR.phaseAt, crit = DIR.hp < D.thr.crit, st = DIR.stats;
-  if(DIR.cue && now >= DIR.cue.at){ dirSay(now, DIR.cue.side, true); DIR.cue = null; }
+  if(DIR.cue && now >= DIR.cue.at && !radio.jam){ dirSay(now, DIR.cue.side, true); DIR.cue = null; }   // (EVENT 2 the net jammed: the flank's cue is held until it is back)
   if(DIR.heldAt) st.held += dt;
   if(S.awaitingUpgrade) return;                                                                                    // the stage is won: nothing more is sent at him
   if(duelOn()){ if(DIR.fin !== -1){ if(DIR.phase !== 'finale') setPhase('finale', now, 'the general'); else DIR.phaseAt = now; DIR.fin = -1; DIR.flank = null; ground(now, D.finale.ground); } return; }   // (fin: 0 none · > 0 the last lull, until then · −1 the duel is on)
@@ -138,6 +138,9 @@ export function dirSurpriseOk(now){ if(!DIR.on) return true; const hi = thrHi();
 // EVENT 1 may a side mission be offered now (campaign/side-missions.js)? In a build-up with room for more — where a release ends too — never in a peak, a lull,
 //   the last lull or the duel, never while he is nearly dead
 export function dirOfferOk(now){ if(duelOn() || DIR.fin || S.awaitingUpgrade) return false; return !DIR.on || DIR.phase === 'build' && DIR.P < D.build.meter * DIR.ease && DIR.hp >= D.thr.crit; }
+// EVENT 2 may a big battlefield event begin now (campaign/big-events.js)? Only where a surprise may (a build-up under the peak's threshold), never in the last lull
+//   or the duel, never while his health is under hpMin (nearly dead at the least)
+export function dirEventOk(now, hpMin){ if(duelOn() || DIR.fin || S.awaitingUpgrade) return false; return dirSurpriseOk(now) && DIR.hp >= Math.max(hpMin || 0, D.thr.crit); }
 // the last wave is done on a field without a citadel: the general comes after one last lull, announced. true: now
 export function dirFinale(now){ if(!DIR.on) return true;
   if(!(DIR.fin > 0)){ DIR.fin = now + D.finale.lull / DIR.ease; setPhase('finale', now, 'the last lull'); DIR.flank = null; ground(now, D.finale.ground); dirSay(now, 'finale', true); return false; }

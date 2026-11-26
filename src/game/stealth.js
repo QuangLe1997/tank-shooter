@@ -35,8 +35,11 @@ export function playerSeen(x, y, z){ const p = S.player; if(!p) return true; if(
 // AI 1 the bare sight line from a man's eyes to him (no stance rule): ai/awareness.js weighs distance, stance, movement, cover, night and the view cone itself
 // SMOKE 1 the smoke screen hides him from whoever must look THROUGH it, not only while he stands inside it: a sight line that passes within
 //   EQUIP.smoke.radius × sightK of the cloud's centre is shut (a man standing in the cloud sees nothing either) — the enemy loses him and goes searching (ai/awareness.js)
-function smokeShuts(x, z){ const p = S.player; if(!(now_() < (p.smokeUntil || 0))) return false; const R = EQUIP.smoke.radius * EQUIP.smoke.sightK, ax = p.pos.x - x, az = p.pos.z - z, L2 = ax * ax + az * az || 1;
-  let u = ((p.smokeX - x) * ax + (p.smokeZ - z) * az) / L2; u = u < 0 ? 0 : u > 1 ? 1 : u; const dx = x + ax * u - p.smokeX, dz = z + az * u - p.smokeZ; return dx * dx + dz * dz < R * R; }
+// EVENT 2 …and so does any other bank of smoke on the field: VEILS — { x, z, R, until } — a burning field's (campaign/big-events.js), a handful at most
+export const VEILS = [];
+function crosses(x, z, cx, cz, R){ const p = S.player, ax = p.pos.x - x, az = p.pos.z - z, L2 = ax * ax + az * az || 1; let u = ((cx - x) * ax + (cz - z) * az) / L2; u = u < 0 ? 0 : u > 1 ? 1 : u; const dx = x + ax * u - cx, dz = z + az * u - cz; return dx * dx + dz * dz < R * R; }
+function smokeShuts(x, z){ const p = S.player, t = now_(); if(t < (p.smokeUntil || 0) && crosses(x, z, p.smokeX, p.smokeZ, EQUIP.smoke.radius * EQUIP.smoke.sightK)) return true;
+  for(let i = 0; i < VEILS.length; i++){ const v = VEILS[i]; if(t < v.until && crosses(x, z, v.x, v.z, v.R)) return true; } return false; }
 export function playerSight(x, y, z){ const p = S.player; if(!p) return false; if(smokeShuts(x, z)) return false; return p.cav ? inSight(x, y, z) : !tentHides(x, y, z, p.pos.x, heightAt(p.pos.x, p.pos.z) + TENT.eye.mid, p.pos.z); }
 // AI 1 a rifleman made him out lying flat (ai/awareness.js): every gun within alertR knows where he lies for a moment, as when a guard spots him
 export function stealthSpot(why){ const p = S.player; if(p && p.cav && !CV.mounted) spot(p, now_(), STEALTH.keep.near, why); }

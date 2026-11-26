@@ -100,6 +100,7 @@ export * from './campaign/story.js';   // STORY 1 the campaign's story: the cast
 export * from './campaign/director.js';   // DIR 1 the battle's director: pressure round the player → build-up, peak, release; waves, surprises and the finale released by state
 export * from './campaign/entries.js';   // AI 2 how an enemy soldier comes onto the field: over the edge out of the frame, up out of a hatch — never out of thin air
 export * from './campaign/side-missions.js';   // EVENT 1 side missions in the middle of a fight: a downed pilot, a bogged supply truck, prisoners on the move
+export * from './campaign/big-events.js';   // EVENT 2 big battlefield events in the surprises' hat: carpet bombing, an aircraft down, a brush fire, a radio blackout
 export * from './world/tunnels.js';
 export * from './world/underbase.js';
 export * from './actors/paradrop.js';

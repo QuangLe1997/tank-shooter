@@ -55,7 +55,7 @@ function poolKey(ev, data){ let sub = ''; if(typeof data === 'string') sub = dat
   const L = sub ? C.lines[ev + '_' + sub] : null; return L && !(L.first && loopNo() > 0) ? ev + '_' + sub : C.lines[ev] ? ev : ''; }
 function push(it){ const q = STY.q; if(q.length >= C.queueMax){ STY.stats.dropped++; return; } q.push(it); STY.stats.queued++; }
 // the queue: the first line whose time has come and whose voice is on the net, once the radio has been quiet long enough for it
-function flush(now){ const q = STY.q; if(!q.length) return; if(S.awaitingUpgrade){ q.length = 0; return; } const quiet = now - (radio.at ?? FAR);
+function flush(now){ const q = STY.q; if(!q.length || radio.jam) return; if(S.awaitingUpgrade){ q.length = 0; return; } const quiet = now - (radio.at ?? FAR);
   for(let k = 0; k < q.length; k++){ const it = q[k]; if(now > it.until){ q.splice(k--, 1); STY.stats.expired++; continue; }
     if(now < it.from || quiet < it.gap || !onNet(whoOf(it.line))) continue; q.splice(k, 1); speak(it.line, it.key, it, now, 3); return; } }
 // is a queued line due? (a flavour line gives way to it)

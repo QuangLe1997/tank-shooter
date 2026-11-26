@@ -8,7 +8,7 @@ import { ARENA, S, WAVE, _canvasTex, realObjective, addScore, aoeDamage, bigExpl
 export let OBJ=null; export const OBJ_SCALE=1.5;   // objectives read as big, important structures
 export function opFor(stage){ return storyOp((Math.max(1,stage)-1)%OPERATIONS.length); }   // STORY 1 the operation with the cast's names filled in (campaign/story.js)
 export function objMod(key, d){ d=(d===undefined?1:d); return (OBJ && OBJ.alive && OBJ.def.mods[key]!=null) ? OBJ.def.mods[key] : d; }
-export function radio(msg, vkey){ const el=document.getElementById('radio'); if(!el || !msg) return; radio.at=performance.now()/1000; radioType(el, msg);   // Z228 net + frequency header, typed out like a teleprinter · STORY 2 radio.at: when the last line went up, whoever said it (campaign/story.js keeps its own lines clear of it)
+export function radio(msg, vkey){ const el=document.getElementById('radio'); if(!el || !msg || radio.jam) return; radio.at=performance.now()/1000; radioType(el, msg);   // Z228 net + frequency header, typed out like a teleprinter · STORY 2 radio.at: when the last line went up, whoever said it (campaign/story.js keeps its own lines clear of it)
   el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); clearTimeout(radio._t); radio._t=setTimeout(()=>el.classList.remove('show'), 4600); { const vk=vkey || voiceKeyFor(msg); if(!(vk && sayVoice(vk))) sfx('beep'); } }   // Z161 the line is spoken too · Z166 the voice file carries its own squelch + roger beep · Z169 only danger calls and big moments are spoken
 export function buildObjMesh(kind){
   const g=new THREE.Group(), M={}, mat=(k,o)=>M[k]||(M[k]=new THREE.MeshStandardMaterial(o));
