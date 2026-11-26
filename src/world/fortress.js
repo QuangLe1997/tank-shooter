@@ -547,7 +547,7 @@ export function updateFortHud(){ const el=document.getElementById('fortHud'); if
     return '<div class="fh-r'+(f.captured?' done':'')+(f.tier===3?' main':'')+'"><b>'+f.name+'</b>'+st+'</div>'; }).join('');
   const html='<div class="fh-t">ĐẠI BẢN DOANH · '+(FORTS.length-fortsLeft())+'/'+FORTS.length+'</div>'+rows;
   if(html!==_fh){ _fh=html; el.innerHTML=html; el.classList.remove('hidden'); } }
-export function clearForts(){ { const el=document.getElementById('fortHud'); if(el){ el.classList.add('hidden'); _fh=''; } } for(const f of FORTS){ if(f.g){ unwave(f.g); scene.remove(f.g); } for(const g of f.wallGeos||[]) g.dispose(); if(f.wallMat) f.wallMat.dispose(); if(f.bar){ freeEnemyBar(f.bar); f.bar=null; } } FORTS.length=0;
+export function clearForts(){ { const el=document.getElementById('fortHud'); if(el){ el.classList.add('hidden'); _fh=''; } } for(const f of FORTS){ if(f.g){ unwave(f.g); scene.remove(f.g); } for(const g of f.wallGeos||[]) g.dispose(); if(f.wallMat) for(const m of matList(f.wallMat)) m.dispose();   /* SYNC 2 a kit wall's material is a list (cloneMat): .dispose() on it threw and the next battle was never built */ if(f.bar){ freeEnemyBar(f.bar); f.bar=null; } } FORTS.length=0;
   for(let i=blocks.length-1;i>=0;i--) if(blocks[i].kind==='fortwall'||blocks[i].kind==='gate') blocks.splice(i,1); }
 // Z279 COLOSSAL FORTS: each battlefield's forts in their own monumental style (REALFORT: granite citadel, desert kasbah, arctic basalt-and-ice,
 //   volcanic obsidian — Tripo, 4K textures). The wall sections keep their own hit points and fall one by one as before: only the instanced shape
