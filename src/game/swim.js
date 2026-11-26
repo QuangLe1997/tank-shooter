@@ -67,7 +67,7 @@ export function swimPlace(p, dt, now){ const W = SWST; if(W.mode === 'dry' && W.
     if(W.y == null) W.y = bed; W.y += (tgt - W.y) * Math.min(1, dt * SW.yRate); p.mesh.position.y = Math.max(bed, W.y);
     p.defK = (W.under ? D.defK : SW.defK) * CAV.defK.stand; }
   else { if(W.y != null){ W.y += (bed - W.y) * Math.min(1, dt * SWIM.swim.yRate * 1.4); if(W.y - bed < 0.01) W.y = null; else p.mesh.position.y = W.y; }   // (his feet find the bed: he settles onto it, never dropped)
-    if(W.face == null) W.face = p.facing; if(W.band >= 3){ W.face = wrapA(W.face + clamp(wrapA(p.facing - W.face), -SWIM.turn * dt, SWIM.turn * dt)); p.facing = W.face; CV.aimUp = true; } else W.face = p.facing;   // (waist-deep: he turns against the water, the rifle up out of it)
+    if(W.face == null || Math.abs(p.pos.x - (W.px ?? p.pos.x)) + Math.abs(p.pos.z - (W.pz ?? p.pos.z)) > 3) W.face = p.facing; W.px = p.pos.x; W.pz = p.pos.z; /* (a respawn / a jump across the map: his heading as it is, not turned round slowly from where he was) */ if(W.band >= 3){ W.face = wrapA(W.face + clamp(wrapA(p.facing - W.face), -SWIM.turn * dt, SWIM.turn * dt)); p.facing = W.face; CV.aimUp = true; } else W.face = p.facing;   // (waist-deep: he turns against the water, the rifle up out of it)
     if(W.d > 0) p.defK *= 1 - SWIM.wade.defLoss * clamp(W.d / SWIM.deep[0], 0, 1); }
   fx(p, dt, now, v); hud(now); W.ms += performance.now() - t0; W.n++; }
 

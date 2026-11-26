@@ -824,7 +824,7 @@ export const RIVERS = {
 //   pool   SWIM 1 the rivers as carved were 0.85 m deep mid-channel (1.27 m at the deepest in MEADOW): no stretch to swim in. A pool is dug into the main
 //          channel's middle (u: share of its half width), deep m deeper, kept gap m off every bridge and ford and eased in over ramp m — the crossings stay as they were
 //   foe    enemy infantry and the fireteam do not swim with their kit: a man does not step on into water deeper than maxD (he wades up to it); look m ahead
-export const SWIM = { on:true, bands:[0.03, 0.25, 0.6, 0.95], deep:[1.35, 1.2], speed:[[0, 1], [0.25, 0.92], [0.6, 0.66], [0.95, 0.46], [1.35, 0.36]], turn:4.2, crouch:0.7, prone:0.18, jump:0.62,
+export const SWIM = { on:true, bands:[0.03, 0.25, 0.6, 0.95], deep:[1.35, 1.2], speed:[[0, 1], [0.25, 0.9], [0.6, 0.62], [0.95, 0.38], [1.35, 0.3]], turn:4.2, crouch:0.7, prone:0.18, jump:0.62,
   swim:{ v:1.05, head:0.14, bob:[0.035, 2.1], yRate:3.2, defK:0.45, fireMsg:3, slingT:0.38, tread:'social-tread-water', stroke:'social-swim-underwater', moveV:0.35, ts:[0.75, 1.5], strokeRate:2, armRate:[5, 40], armT:0.7, breathT:2.4 },
   dive:{ depth:0.85, floor:0.35, v:0.9, breath:14, back:2.5, defK:0.06, tint:'rgba(18,84,104,0.42)', lp:420, msgAt:0.25 },
   wade:{ defLoss:0.55 },
