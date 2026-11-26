@@ -2127,6 +2127,17 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
     && /if\(CO\.ai && inField\) coopWorldTick\(dt, now\); coopTeamTick\(dt, now\);/.test(rd('src/game/coop-glue.js')) && /if\(!coopEventAllowed\(CO\.host, type, a, b, p\)\)\{ drop\('event ' \+ type \+ '\/' \+ p\); return; \}/.test(rd('src/game/coop-glue.js')),
     'our men, the drones, the director, the ping and the magazine: a puppet cannot be hurt here, an id exists only on a co-op host, the keys return at once without a live room — and every event still passes the one gate first');
   ok(/COOP 9/.test(rd('docs/COOP.md')) && /coop-world\.js/.test(rd('docs/COOP.md')) && rd('docs/COOP.md').split('\n').length<=151, 'docs/COOP.md says what is mirrored now'); }
+// GRAPH 2 the motion graph's second step: the stop clip, the about-turns, the ground under each foot
+{ const C = await import('./config.js'), fs = await import('node:fs'), G = C.ANIMGRAPH, rd = f => fs.readFileSync(f, 'utf8'), J = JSON.parse(rd(C.ANIMLIB.path + C.ANIMLIB.index)), by = new Map(J.clips.map(c => [c.id, c])), ag = rd('src/actors/anim-graph.js');
+  const st = by.get(G.stop.clip);
+  ok(st && st.g === 'loco' && st.travels && !st.loop && G.stop.phase[0] >= 0 && G.stop.phase[1] <= 1 && G.stop.phase[1] - G.stop.phase[0] > 0.1 && G.stop.phase[1] - G.stop.phase[0] < 0.5
+    && G.stop.minV > C.CAV.foot.fire && G.stop.minV < C.CAV.foot.run && G.stop.maxV > C.CAV.foot.run && G.stop.late > 0 && G.stop.late < 0.2 && G.stop.end > 0.5 && G.stop.end <= 1 && G.stop.maxRate >= 1 && /CAV\.foot\.decel/.test(ag) && /CV\.moveT/.test(ag),
+    'pulling up from a run: the library\'s run-to-stop (it travels, it ends stood), only from a run (not from the walk he fires at), only on half the stride, laid on the ground left at the game\'s own braking');
+  ok(Object.values(G.sets).every(S => S.wide.length === 2 && S.wide.every(t => by.get(t) && by.get(t).travels) && by.get(S.wide[0]).yaw > 150 && by.get(S.wide[1]).yaw < -150) && G.turn.wide > G.turn.at && G.turn.wide < Math.PI
+    && G.air.snapV > G.trans.cutV && G.feet.flyT > 0 && G.feet.flyT < 0.5, 'a turn past turn.wide takes an about-turn clip (left turns left, right turns right); a jump landed at a walk\'s pace starts the stride on the feet he lands on');
+  ok(G.slope.on === true && G.slope.vmax > C.CAV.foot.sprint * Math.tan(20 * Math.PI / 180) && G.slope.max > 0.3 && G.slope.max <= 0.6 && G.slope.fade > 0.05 && G.slope.rate > 2
+    && /soleAt\(/.test(ag) && /GUNFEEL\.feet\.slope/.test(ag) && /SOLDIER_LEGS\.maxDrop/.test(ag) && C.GUNFEEL.feet.slope.max > 0.26 && C.SOLDIER_LEGS.maxDrop > 0,
+    'the ground under each foot: read where the game reads it (soleAt), fast enough to follow a 20° slope at a sprint, a 0.3 m kerb within reach; the foot\'s pitch and the hips\' drop keep the old legs\' numbers'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
