@@ -2858,7 +2858,7 @@ export const DAILY = { tz:7, keep:14, level:[2, 5], tod:['day', 'noon', 'sunset'
 //   decode: hips — the clip moves the hips (height, sway; off = turns only) · root — keep the root track of the clips that travel (animRootAt)
 //   · eager — build every clip of a group the moment its file is in (off: each clip the first time it is asked for).
 export const ANIMLIB = { on:true, version:1, path:'assets/anim/', index:'index.json',
-  groups:['loco', 'stance', 'air', 'combat', 'react', 'social'], preload:['loco', 'stance'],
+  groups:['loco', 'stance', 'air', 'combat', 'react', 'social', 'blade'], preload:['loco', 'stance'],
   decode:{ hips:true, root:true, eager:false } };
 // SYNC 1 THE SAME SEED, THE SAME BATTLEFIELD — on a fresh page, on a relaunch, on both co-op pages (core/dice.js). A seeded battle (the daily challenge, a
 //   co-op room, ?seed) draws its LAYOUT from the seeded generator; what is not layout no longer does:

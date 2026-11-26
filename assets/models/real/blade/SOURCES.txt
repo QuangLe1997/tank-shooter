@@ -1,0 +1,12 @@
+XUNG KÍCH — assets/models/real/blade: the soldier's blades (BLADE 1)
+
+Source: Sketchfab models fetched through Objaverse, licence CC BY 4.0 — the author must be credited (the game's credits + this file).
+Packed by tools/blade-pack.mjs: one mesh, one material, real size, in the blade's own frame (origin = the main hand's grip point on the shaft's
+centre line, +Z toward the tip, +Y = the cutting edge's side, +X the flat; metres).
+
+- guandao.glb = "Ancient Chinese Decorative Glaive" by robertursache — Sketchfab https://sketchfab.com/3d-models/74c31353a03244d29119d7c94935ff73 (uid 74c31353a03244d29119d7c94935ff73), CC BY 4.0.
+  Changed: 68 meshes / 9 materials / 139,848 triangles → 1 mesh / 1 material / 8,998 triangles, its maps baked anew onto one atlas (2048 colour, 1536 normal, 1024 roughness-metal), scaled to 2.05 m overall.
+- dadao.glb = "Dadao" by trector — Sketchfab https://sketchfab.com/3d-models/511cfb4bb4ba464e9c6cb294b45f29ff (uid 511cfb4bb4ba464e9c6cb294b45f29ff), CC BY 4.0.
+  Changed: 4 meshes merged into 1 (its own 910 triangles and UVs kept), its three PNG maps re-encoded as 1024 JPEG, scaled to 1.05 m overall (blade 0.70 m).
+
+Rebuild: node tools/blade-pack.mjs --src <dir holding glaive/glaive.glb and dadao/dadao.glb> --deps <dir with meshoptimizer, three, three-mesh-bvh, xatlasjs, sharp>

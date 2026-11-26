@@ -1,0 +1,15 @@
+XUNG KÍCH — assets/anim/blade.bin: the blade motions (BLADE 1)
+
+Source: Mixamo (mixamo.com), downloaded 2026-11-26 with the owner's Adobe account — default X Bot character, FBX binary, 30 fps (the Great Sword pack, the Pro Melee Axe pack,
+the Pro Sword and Shield pack and single sword / staff motions). Licence and treatment: as assets/anim/SOURCE.txt (retargeted to the game's own skeleton, fingers dropped,
+root travel split from the pose, keyframes reduced, packed) — these are not the Mixamo files.
+Rebuild: node tools/mixamo-clips.mjs --group blade --root <folder holding the bundle-* folders>
+
+162 clips. 2 sources dropped as the same motion as one already taken:
+  bundle-sword-misc/Draw A Great Sword 1 - Transition From Standing To Drawing Great Sword.fbx  =  blade-gs-draw-1
+  bundle-sword-misc/Draw A Great Sword 2 - Transition From Standing To Drawing A Great Sword.fbx  =  blade-gs-draw-2
+
+3 files skipped:
+  bundle-great-sword/X Bot.fbx  —  the character file (mesh + T pose), not a motion
+  bundle-melee-axe/X Bot.fbx  —  the character file (mesh + T pose), not a motion
+  bundle-sword-misc/X Bot.fbx  —  the character file (mesh + T pose), not a motion

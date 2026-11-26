@@ -5,6 +5,10 @@
 //
 //   node tools/mixamo-clips.mjs <fbxRoot>                         convert (writes assets/anim/)
 //   node tools/mixamo-clips.mjs <fbxRoot> --verify --three <dir>  the packed clips through the game's own loader and three's mixer against the source rig
+//   node tools/mixamo-clips.mjs --group blade --root <dir>        BLADE 1 ADD one more group (blade.bin) from another folder of bundles: the six files
+//                                                                 above are not touched (byte-identical), index.json gains the group's rows, SOURCE-blade.txt its notes;
+//                                                                 ids blade-gs-… (great sword) · blade-axe-… (melee axe) · blade-ss-… (sword and shield) · blade-misc-…;
+//                                                                 add --verify --three <dir> to check that group alone
 //   options: --out <dir> (instead of assets/anim), --info (the calibration numbers + one line a clip), --fps20 (clips over 4 s outside loco/stance
 //   at 20 fps — also switched on by itself if the 4 MB budget is passed; not needed today: 1.55 MB at 30 fps)
 //
@@ -259,6 +263,41 @@ function convert(fbxRoot, opt){ const op = operatorRig(), src = listSources(fbxR
   console.log(`  keys kept ${B.keys} of ${B.frames} (${(100 * B.keys / B.frames).toFixed(1)}%) · loop ${B.meta.filter(m => m.loop).length} · in place ${B.meta.filter(m => m.dir).length} · root track ${B.meta.filter(m => m.travels).length}`);
   for(const [s, why] of skipped) console.log('  skipped', s.folder + '/' + s.file, '—', why); for(const [s, t, y] of dropped) console.log('  dropped', s.folder + '/' + s.file, '= ' + t.id + (Math.abs(y) > 1 ? ' (facing ' + y.toFixed(0) + '° round)' : ''));
   if(tot > C.budget.all || S.boot > C.budget.boot){ console.error('✗ over the size budget'); process.exitCode = 1; } }
+// ---------- BLADE 1 one more group from its own folder of bundles: <group>.bin + its rows in index.json; nothing else is rewritten ----------
+const GTAG = { 'bundle-great-sword':'gs', 'bundle-melee-axe':'axe' };
+function groupId(g, folder, file){ const base = file.replace(/\.fbx$/i, ''), i = base.indexOf(' - '), pack = i < 0 ? '' : base.slice(0, i), rest = i < 0 ? base : base.slice(i + 3), tag = GTAG[folder] || (/^pro sword and shield$/i.test(pack) ? 'ss' : 'misc');
+  let w = (tag === 'misc' ? pack || rest : rest).toLowerCase().replace(/ver\. ?/g, ' '); if(tag === 'gs') w = w.replace(/\b(a )?great sword\b/g, ' '); if(tag === 'ss') w = w.replace(/\bsword and shield\b/g, ' '); if(tag === 'axe') w = w.replace(/^standing /, '').replace(/\bmelee\b/g, ' '); if(tag === 'misc') w = w.replace(/\b(a|an|the)\b/g, ' ');
+  const words = w.split(/[^a-z0-9]+/).filter(Boolean); return [g, tag, ...(words.length ? words : ['move'])].join('-'); }
+function convertGroup(fbxRoot, opt){ const g = opt.group; if(C.groups.includes(g) || !/^[a-z]+$/.test(g)){ console.error('--group: a new group name (not one of ' + C.groups.join(', ') + ')'); process.exit(2); }
+  const op = operatorRig(), src = listSources(fbxRoot), clips = [], dropped = [], skipped = [], ids = new Map();
+  for(const s of src){ let rig; try{ rig = fbxRig(s.path); }catch(e){ skipped.push([s, 'unreadable: ' + e.message]); continue; }
+    if(rig.meshes || rig.stop - rig.start < 2.5 / C.fps){ skipped.push([s, rig.meshes ? 'the character file (mesh + T pose), not a motion' : 'no motion (under 3 frames)']); continue; }
+    let K; try{ K = retarget(rig, op, C.fps); }catch(e){ skipped.push([s, e.message]); continue; }
+    let turned = null; const twin = clips.find(c => (turned = sameMotion(c.K, K)) !== null); if(twin){ dropped.push([s, twin, turned]); continue; }
+    const id0 = groupId(g, s.folder, s.file), n = (ids.get(id0) || 0) + 1; ids.set(id0, n); clips.push({ id: n > 1 ? id0 + '-' + n : id0, group: g, src: s.folder + '/' + s.file, K }); }
+  if(opt.info) info(op, clips[0].K.T, clips);
+  const parts = [Buffer.alloc(8)], meta = []; let at = 8, keys = 0, frames = 0;
+  for(const c of clips){ const K = opt.fps20 && c.K.dur > C.fps20 ? resample(c.K, 20) : c.K, P = packClip(K); keys += P.keys; frames += K.N * (C.bones.length + 1);
+    const m = { id: c.id, g, src: c.src, dur: +K.dur.toFixed(4), fps: K.fps, frames: K.N, loop: K.loop, speed: +K.speed.toFixed(3), travels: K.mode === 'root' };
+    if(K.dir) m.dir = K.dir.map(v => +v.toFixed(3)); if(K.yaw) m.yaw = +K.yaw.toFixed(1); if(K.climb) m.rise = +K.rise.toFixed(3); if(K.tail) m.tail = K.tail;
+    if(K.root){ const e = K.root[K.N - 1]; m.end = [+e[0].toFixed(3), +e[1].toFixed(3)]; }   // where a travelling clip's root ends (x, z metres on his scale): the length of a lunge without decoding it
+    m.o = at; m.b = P.buf.length; parts.push(P.buf); at += P.buf.length; meta.push(m); }
+  const bin = Buffer.concat(parts); bin.write('XKA1', 0, 'latin1'); bin.writeUInt16LE(meta.length, 4); bin.writeUInt16LE(C.bones.length, 6);
+  const out = path.resolve(ROOT, opt.out || C.out), ixf = path.join(out, 'index.json'); if(!fs.existsSync(ixf)){ console.error('--group adds to an existing library: no ' + ixf); process.exit(2); }
+  const index = JSON.parse(fs.readFileSync(ixf, 'utf8')); index.clips = index.clips.filter(c => c.g !== g).concat(meta);
+  index.groups[g] = { file: g + '.bin', bytes: bin.length, clips: meta.length, sha: crypto.createHash('sha1').update(bin).digest('hex').slice(0, 12) };
+  const J = JSON.stringify(index).replace(/\{"id"/g, '\n{"id"').replace(/\],"groups"/, '],\n"groups"').replace(/\]\}$/, '\n]}\n'); fs.writeFileSync(path.join(out, g + '.bin'), bin); fs.writeFileSync(ixf, J);
+  fs.writeFileSync(path.join(out, 'SOURCE-' + g + '.txt'), ['XUNG KÍCH — assets/anim/' + g + '.bin: the ' + g + ' motions (BLADE 1)', '',
+    'Source: Mixamo (mixamo.com), downloaded 2026-11-26 with the owner\'s Adobe account — default X Bot character, FBX binary, 30 fps (the Great Sword pack, the Pro Melee Axe pack,',
+    'the Pro Sword and Shield pack and single sword / staff motions). Licence and treatment: as assets/anim/SOURCE.txt (retargeted to the game\'s own skeleton, fingers dropped,',
+    'root travel split from the pose, keyframes reduced, packed) — these are not the Mixamo files.', 'Rebuild: node tools/mixamo-clips.mjs --group ' + g + ' --root <folder holding the bundle-* folders>', '',
+    clips.length + ' clips. ' + dropped.length + ' sources dropped as the same motion as one already taken:', ...dropped.map(([s, t, y]) => '  ' + s.folder + '/' + s.file + '  =  ' + t.id + (Math.abs(y) > 1 ? '  (facing ' + y.toFixed(0) + '° round)' : '')), '',
+    skipped.length + ' files skipped:', ...skipped.map(([s, why]) => '  ' + s.folder + '/' + s.file + '  —  ' + why), ''].join('\n'));
+  let all = J.length; for(const k in index.groups) all += index.groups[k].bytes;
+  console.log(`group ${g}: sources ${src.length} → clips ${clips.length} (dropped as the same motion ${dropped.length}, skipped ${skipped.length}) · ${g}.bin ${bin.length} bytes · index.json ${J.length} bytes · the whole library ${all} bytes (budget ${C.budget.all})`);
+  console.log(`  keys kept ${keys} of ${frames} (${(100 * keys / frames).toFixed(1)}%) · loop ${meta.filter(m => m.loop).length} · in place ${meta.filter(m => m.dir).length} · root track ${meta.filter(m => m.travels).length}`);
+  for(const [s, why] of skipped) console.log('  skipped', s.folder + '/' + s.file, '—', why); for(const [s, t, y] of dropped) console.log('  dropped', s.folder + '/' + s.file, '= ' + t.id);
+  if(all > C.budget.all){ console.error('✗ over the size budget'); process.exitCode = 1; } }
 function sourceTxt(clips, dropped, skipped, fps20){ return [
   'XUNG KÍCH — assets/anim: the soldier\'s motion library', '',
   'Source: Mixamo (mixamo.com), downloaded 2026-11-26 with the owner\'s Adobe account — default X Bot character, FBX binary, 30 fps, keyframe reduction off',
@@ -278,6 +317,8 @@ function info(op, T, clips){ console.log('scale: legs', T.kLeg.toFixed(4), 'hip 
 // ---------- verify: the packed clips through the game's loader + three's mixer, against the source rig ----------
 const PICK = [['run forward', /^loco-rifle-run-forward$/], ['strafe left', /^loco-rifle-walk-left$|strafe-left/], ['crouch walk', /^loco-rifle-walk-crouch-forward$/], ['prone forward', /^stance-prone-forward/], ['grenade throw', /^combat-grenade-throw/], ['death', /^react-death-front/],
   ['climb', /^air-climb-up-wall/], ['hit reaction', /^react-hit-react/], ['kneel to prone', /kneel-to-prone/], ['rifle idle', /^stance-rifle-idle/], ['reload', /^combat-reload/], ['vault', /^air-vault/]];
+const GPICK = [['sword idle', /-gs-idle$/], ['sword slash', /-gs-slash$/], ['sword run', /-gs-run$/], ['sword jump attack', /-gs-jump-attack$/], ['sword draw', /-gs-draw-1$/], ['axe idle', /-axe-idle$/], ['axe horizontal', /-axe-attack-horizontal$/], ['axe 360 high', /-axe-attack-360-high$/],
+  ['axe run', /-axe-run-forward$/], ['axe combo', /-axe-combo-attack-1$/], ['one-hand slash', /-ss-slash$/], ['sheath', /-misc-sheath-sword-1$/]];
 const SEG = { 'upper arm': ['Arm', 'ForeArm'], forearm: ['ForeArm', 'Hand'], hand: ['Hand', 'HandMiddle1'], thigh: ['UpLeg', 'Leg'], shin: ['Leg', 'Foot'] }, COLS = ['upper arm', 'forearm', 'hand', 'thigh', 'shin', 'foot', 'spine', 'head'];
 async function verify(fbxRoot, opt){ const out = path.resolve(ROOT, opt.out || C.out);
   if(opt.three){ const url = pathToFileURL(path.join(path.resolve(opt.three), 'build/three.module.js')).href; register('data:text/javascript,' + encodeURIComponent(`export function resolve(s, c, n){ return s === 'three' ? { url: ${JSON.stringify(url)}, shortCircuit: true } : n(s, c); }`)); }
@@ -289,9 +330,9 @@ async function verify(fbxRoot, opt){ const out = path.resolve(ROOT, opt.out || C
   j.nodes.forEach((n, i) => (n.children || []).forEach(c => nodes[i].add(nodes[c]))); const scene = new THREE.Group(), rootG = new THREE.Group(); scene.add(rootG); for(const i of j.scenes[0].nodes) rootG.add(nodes[i]);
   const bone = n => nodes.find(o => o.name === C.prefix + n), wp = n => bone(n).getWorldPosition(new THREE.Vector3()).toArray(), wq = n => bone(n).getWorldQuaternion(new THREE.Quaternion()).toArray();
   const warns = []; const cw = console.warn, ce = console.error; console.warn = console.error = (...a) => warns.push(a.join(' '));
-  const ok = await Promise.all(C.groups.map(g => LIB.loadAnimGroup(g))); console.warn = cw; console.error = ce; if(ok.some(v => !v)){ console.error('✗ a group did not load:', C.groups.filter((g, i) => !ok[i]).join(', '), warns.join(' | ')); process.exit(1); }
+  const GR = opt.group ? [opt.group] : C.groups, ok = await Promise.all(GR.map(g => LIB.loadAnimGroup(g))); console.warn = cw; console.error = ce; if(ok.some(v => !v)){ console.error('✗ a group did not load:', GR.filter((g, i) => !ok[i]).join(', '), warns.join(' | ')); process.exit(1); }
   const op = operatorRig(), index = JSON.parse(fs.readFileSync(path.join(out, 'index.json'), 'utf8')), mixer = new THREE.AnimationMixer(rootG), rootAt = [0, 0, 0], rigs = new Map();
-  const picks = PICK.map(([label, re]) => [label, index.clips.find(c => re.test(c.id))]); for(const [label, c] of picks) if(!c) console.log('  (no clip for "' + label + '")');
+  const ALL = index.clips.filter(c => !opt.group || c.g === opt.group), picks = (opt.group ? GPICK : PICK).map(([label, re]) => [label, ALL.find(c => re.test(c.id))]); for(const [label, c] of picks) if(!c) console.log('  (no clip for "' + label + '")');
   const measure = (m, fracs) => { const clip = LIB.animClip(m.id), info = LIB.animInfo(m.id); if(!clip || !info || info.id !== m.id || clip.userData !== info) throw new Error('animClip / animInfo gave nothing for ' + m.id);
     let rig = rigs.get(m.src); if(!rig){ rig = fbxRig(path.join(fbxRoot, m.src)); rigs.set(m.src, rig); } const T = reference(op, fbxPose(rig, SRC, 'T'), rig.unit), last = m.frames - 1 - (m.tail || 0);
     const act = mixer.clipAction(clip); act.setLoop(THREE.LoopOnce); act.clampWhenFinished = true; act.play(); const R = { limb: [], trunk: [], sole: [], srcSole: [], low: Infinity, bound: clip.tracks.length };
@@ -312,15 +353,16 @@ async function verify(fbxRoot, opt){ const out = path.resolve(ROOT, opt.out || C
   const A = stat([...all.limb, ...all.trunk]); console.log('the 12 clips: mean ' + A[0].toFixed(2) + '°, max ' + A[1].toFixed(2) + '° (target: mean ≤ 3°, max ≤ 8°)'); if(A[0] > 3 || A[1] > 8) fail++;
   // every clip, 9 frames each: the same errors; the feet of the locomotion group against the source's own clearance; no foot under the ground anywhere
   const F9 = [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1], E = [], worst = [], feet = { lo: Infinity, hi: -Infinity, d: 0, id: '' }, under = { y: Infinity, id: '' }; let tracks = 0, tails = 0;
-  for(const m of index.clips){ const R = measure(m, F9), e = [...R.limb, ...R.trunk].map(x => x[1]); E.push(...e); worst.push([Math.max(...e), m.id]); tracks += R.bound; if(m.tail) tails++; if(R.low < under.y){ under.y = R.low; under.id = m.id; }
-    if(m.g === 'loco') R.sole.forEach((v, i) => { feet.lo = Math.min(feet.lo, v); feet.hi = Math.max(feet.hi, v); const d = Math.abs(v - R.srcSole[i]); if(d > feet.d){ feet.d = d; feet.id = m.id; } }); }
+  for(const m of ALL){ const R = measure(m, F9), e = [...R.limb, ...R.trunk].map(x => x[1]); E.push(...e); worst.push([Math.max(...e), m.id]); tracks += R.bound; if(m.tail) tails++; if(R.low < under.y){ under.y = R.low; under.id = m.id; }
+    if(m.g === 'loco' || (opt.group && m.loop && m.speed > 0.5)) R.sole.forEach((v, i) => { feet.lo = Math.min(feet.lo, v); feet.hi = Math.max(feet.hi, v); const d = Math.abs(v - R.srcSole[i]); if(d > feet.d){ feet.d = d; feet.id = m.id; } }); }
   const AA = stat(E); worst.sort((a, b) => b[0] - a[0]);
-  console.log(`all ${index.clips.length} clips × 9 frames (${tails} loops had their last 1–4 frames rebuilt to close: those frames are not compared): mean ${AA[0].toFixed(2)}°, max ${AA[1].toFixed(2)}° · worst: ${worst.slice(0, 4).map(w => w[1] + ' ' + w[0].toFixed(1) + '°').join(', ')}`);
+  console.log(`all ${ALL.length} clips × 9 frames (${tails} loops had their last 1–4 frames rebuilt to close: those frames are not compared): mean ${AA[0].toFixed(2)}°, max ${AA[1].toFixed(2)}° · worst: ${worst.slice(0, 4).map(w => w[1] + ' ' + w[0].toFixed(1) + '°').join(', ')}`);
   console.log(`loco: the lowest foot joint against the height it stands at: ${(feet.lo * 100).toFixed(1)} … ${(feet.hi * 100).toFixed(1)} cm · furthest from the source's own (scaled) clearance ${(feet.d * 100).toFixed(1)} cm (${feet.id}) · lowest foot joint in any clip: ${(under.y * 100).toFixed(1)} cm over the ground (${under.id})`);
   console.log(`tracks ${tracks}, all bound to operator bones by three (PropertyBinding warnings: ${warns.length})${warns.length ? ' — ' + warns.slice(0, 3).join(' | ') : ''}`);
   if(AA[0] > 3 || AA[1] > 8 || warns.length || feet.d > 0.08 || under.y < -0.05) fail++; console.log(fail ? '✗ verify: outside the targets' : '✓ verify: retarget within the targets'); process.exitCode = fail ? 1 : 0; }
 
 // ---------- main ----------
-const argv = process.argv.slice(2), opt = {}, rest = []; for(let i = 0; i < argv.length; i++){ const a = argv[i]; if(a === '--three' || a === '--out') opt[a.slice(2)] = argv[++i]; else if(a.startsWith('--')) opt[a.slice(2)] = true; else rest.push(a); }
-if(!rest[0] || !fs.existsSync(rest[0])){ console.error('usage: node tools/mixamo-clips.mjs <fbxRoot> [--verify --three <three module dir>] [--out <dir>] [--info] [--fps20]'); process.exit(2); }
-if(opt.verify) await verify(path.resolve(rest[0]), opt); else convert(path.resolve(rest[0]), opt);
+const argv = process.argv.slice(2), opt = {}, rest = []; for(let i = 0; i < argv.length; i++){ const a = argv[i]; if(a === '--three' || a === '--out' || a === '--group' || a === '--root') opt[a.slice(2)] = argv[++i]; else if(a.startsWith('--')) opt[a.slice(2)] = true; else rest.push(a); }
+if(opt.root && !rest[0]) rest[0] = opt.root;
+if(!rest[0] || !fs.existsSync(rest[0])){ console.error('usage: node tools/mixamo-clips.mjs <fbxRoot> [--verify --three <three module dir>] [--out <dir>] [--info] [--fps20] · add a group: --group <name> --root <dir>'); process.exit(2); }
+if(opt.verify) await verify(path.resolve(rest[0]), opt); else if(opt.group) convertGroup(path.resolve(rest[0]), opt); else convert(path.resolve(rest[0]), opt);
