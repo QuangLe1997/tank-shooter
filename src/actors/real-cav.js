@@ -1,8 +1,8 @@
 // actors/real-cav.js — Z248 THE REAL CAVALRY: the Meshy-generated war horse, operator and carbine dressed over the procedural horse and general. The procedural rigs keep running unseen (gait engine, hoof falls, positions, aim, recoil) and drive the real ones: the horse plays its library gaits (idle / walk / canter / sprint) blended by gait and paced by speed; the rider sits on the real horse's back bone and plays the riding clips (Text-to-Motion) or, on foot, rifle walk / run / charge / crouch-walk and frozen aim / kneel / prone frames, his torso twisting toward the aim; the carbine is laid between his hands every frame (grip in the right palm, barrel through the left hand) and carries the muzzle point. Nothing changes until every file has loaded; if one fails the procedural models stay.
 import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
-import { GUNFIT, GUNHOLD, HUMAN_SCALE, INFGUN, REALCAV, RIDEFEEL, XEOM, AIRAIM, AIRPOSE, RIDER_TURN, XHAIR, GUNFEEL } from '../../config.js';
-import { XH, FIT, GUNKICK, GUNS, LEGKIT, PROFILE, S, curlHand, stirrupFeet, fitHold, sideProfile, underAt, drivePuppet, heightAt, ik2, loadGLTF, asShipped, nearShape, makePuppet, rollHand, sfx, spawnPart, turnBone, airPitch, soldierLegs, soldierUpper, steadyHead, mountHand, seatUpright, climbArms, climbW, carryClear, eyePoint, reachFeel, triggerFinger, wristGive, gunEase, handsEase, reloadHands, reloadProps, reloadState, headLevel, gunRecoil, burstClimb, shotCycle, shotSeen } from '../hub.js';
+import { ANIMGRAPH, GUNFIT, GUNHOLD, HUMAN_SCALE, INFGUN, REALCAV, RIDEFEEL, XEOM, AIRAIM, AIRPOSE, RIDER_TURN, XHAIR, GUNFEEL } from '../../config.js';
+import { ANIMGRAPH_STAT, graphFeet, graphHipYaw, graphOwned, graphPose, XH, FIT, GUNKICK, GUNS, LEGKIT, PROFILE, S, curlHand, stirrupFeet, fitHold, sideProfile, underAt, drivePuppet, heightAt, ik2, loadGLTF, asShipped, nearShape, makePuppet, rollHand, sfx, spawnPart, turnBone, airPitch, soldierLegs, soldierUpper, steadyHead, mountHand, seatUpright, climbArms, climbW, carryClear, eyePoint, reachFeel, triggerFinger, wristGive, gunEase, handsEase, reloadHands, reloadProps, reloadState, headLevel, gunRecoil, burstClimb, shotCycle, shotSeen } from '../hub.js';
 
 const _v = new THREE.Vector3(), _a = new THREE.Vector3(), _b = new THREE.Vector3(), _d = new THREE.Vector3(), _up = new THREE.Vector3(), _x = new THREE.Vector3(), _y = new THREE.Vector3(), _z = new THREE.Vector3();
 const _q = new THREE.Quaternion(), _qp = new THREE.Quaternion(), _qd = new THREE.Quaternion(), _m = new THREE.Matrix4(), _mi = new THREE.Matrix4(), _s = new THREE.Vector3();
@@ -363,7 +363,10 @@ export function updateRealCav(CV, dt, P){
   else { ok = 'Rifle_Charge'; ts = clamp(fv / C.footV.charge, 0.7, 1.4); }
   blend(R.OA, ok, ts, dt, freeze);
   if(R.HIT){ if(P.hit && !R.wasHit && !P.dead){ R.HIT.reset(); R.HIT.play(); R.hitW = 1; } R.wasHit = !!P.hit; R.hitW = Math.max(0, R.hitW - dt / C.hitT); R.HIT.setEffectiveWeight(R.hitW * C.hitK); }   // the flinch fades back into the clip
-  R.om.update(dt);
+  // GRAPH 1 the player's soldier on his feet (ANIMGRAPH.on / ?animgraph): the motion graph has his hips and legs — it runs this mixer itself (the clip chosen above still
+  //   poses his upper body), then lays its own over (actors/anim-graph.js). Off, or anyone else's soldier: the line below, as ever
+  const GA = (ANIMGRAPH.on || ANIMGRAPH_STAT.live) && graphPose(CV, R, G, dt, P, mounted, ok);
+  if(!GA) R.om.update(dt);
   // hips onto the seat (the riding clips carry their own hip height); feet on the ground on foot
   // Z299 sat on a ride, past a quarter turn he swings his hips round on the seat (slower than his shoulders) to bring the gun to bear behind him
   // Z303 WHERE HE LOOKS, CALMLY: the aim relative to the ride is unwrapped (no snapping from +180° to −180° as the target passes behind — he stays on the
@@ -386,10 +389,11 @@ export function updateRealCav(CV, dt, P){
     if(R.step){ R.step.t = Math.min(1, R.step.t + dt / C.standTurn[3]); R.hy = R.step.from + (R.step.to - R.step.from) * smooth(R.step.t); if(R.step.t >= 1) R.step = null; } }
   else { R.step = null; const hipMax = sat ? (bike ? C.seatTurn[1] : RT.hip) : 0, hyT = sat ? clamp(Math.sign(twAll) * Math.max(0, Math.abs(twAll) - C.seatTurn[0]), -hipMax, hipMax) : 0;
     R.hy = (R.hy || 0) + clamp((hyT - (R.hy || 0)) * Math.min(1, dt * C.seatTurn[2]), -C.hipRate * dt, C.hipRate * dt); }
+  if(GA) R.hy = graphHipYaw(CV, R.hy);   // GRAPH 1 stood still his legs stay planted while the body turns over them (the chest's twist below takes it back)
   R.op.rotation.y = R.opRY + R.hy;
   R.op.position.set(0, 0, 0); G.updateWorldMatrix(true, false); R.op.updateMatrixWorld(true);
   if(mounted && !stand){ R.hips.getWorldPosition(_v); G.worldToLocal(_v); R.op.position.sub(_v); R.op.updateMatrixWorld(true); }
-  else if(s === 'prone' && !P.trans){ R.op.position.y = -C.proneDrop / HUMAN_SCALE; R.op.updateMatrixWorld(true); }   // the clip lies a hand's breadth above the ground
+  else if(s === 'prone' && !P.trans){ R.op.position.y = -(GA && graphOwned(CV) ? ANIMGRAPH.prone.drop : C.proneDrop) / HUMAN_SCALE; R.op.updateMatrixWorld(true); }   // the clip lies a hand's breadth above the ground
   // the torso turns toward the aim (spread over three spine bones, about the body's up)
   const twLim = sat ? RT.max - (bike ? C.seatTurn[1] : RT.hip) : C.twistMax;   // (Z340 sat: the chest takes the rest of the turn)
   R.tw = (R.tw || 0) + clamp((clamp(twAll - R.hy, -twLim, twLim) - (R.tw || 0)) * Math.min(1, dt * C.seatTurn[3]), -C.twistRate * dt, C.twistRate * dt); const tw = R.tw;   // the shoulders follow the eyes, the hips follow the shoulders
@@ -404,7 +408,8 @@ export function updateRealCav(CV, dt, P){
   if(R.pup && !P.dead && bike) seatFeet(R, H, dt, mounted && !stand && !P.trans);   // Z302 his feet on the passenger pegs   // Z299 thrown forward under the brakes, back on the throttle, out in the bend, jolted by the road   // Z294 the second soldier takes the operator's pose (before the gun is put in his hands)
   if(R.pup && !P.dead && !bike && mounted && !P.trans) stirrupFeet(R, H);   // Z371 his feet in the stirrups, his legs out of the horse's barrel (actors/soldier-stirrups.js)
   R.H = H; R.seated = seated && !P.trans; R.sat = sat && !P.trans && !P.dead; R.bed = braced && !P.trans && !P.dead; if(!R.sat && !R.bed) R.gunYaw = null;   // (Z335 for the hold: the ride and its driver · Z340 in the saddle · Z391 standing in a bed: the trigger waits for the bore there too)
-  if(R.pup && !P.dead) soldierLegs(R, G, dt, P, mounted);   // Z339 his feet planted, stepping the way he goes (actors/soldier-legs.js)
+  if(GA && R.pup && !P.dead && graphFeet(CV, R, G, dt, P)){ /* GRAPH 1 the graph has his legs: its own foot lock, in place of the line below (actors/anim-graph.js) */ }
+  else if(R.pup && !P.dead) soldierLegs(R, G, dt, P, mounted);   // Z339 his feet planted, stepping the way he goes (actors/soldier-legs.js)
   if(R.pup && !P.dead) soldierUpper(R, G, dt, P, mounted);   // Z343 shoulders, trunk, head and the rifle's weight in time with the legs (actors/soldier-upper.js)
   holdGun(R, G);   // Z295 the hand weapon for the gun in use
   const cw = R.pup && !P.dead ? climbW() : 0;   // Z451 on a wall: the rifle slung across his back, his hands on the face — eased off his hold and back into it

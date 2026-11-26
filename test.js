@@ -2055,6 +2055,32 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
     && /S\.mode !== 'playing' \|\| DICE\.building \|\| UNDER\.on/.test(rd('src/campaign/entries.js')) && (rd('src/game/flow.js').match(/modeSeed\((16|17|18|19|20)\);/g) || []).length === 5 && (rd('src/loot/upgrades.js').match(/modeSeed\((16|17|18|19|20)\);/g) || []).length === 5 && (rd('src/game/coop-glue.js').match(/modeSeed\((16|17|18|19|20)\);/g) || []).length === 5,
     'a size read off a model does not decide a seeded layout: the real cover is waited for (bounded, seeded battles only), a giant\'s trunk takes its real girth after the build, the tracks go round the layout\'s shapes; the last four builders have their own step');
   ok(/if\(f\.wallMat\) for\(const m of matList\(f\.wallMat\)\) m\.dispose\(\);/.test(rd('src/world/fortress.js')) && !/f\.wallMat\.dispose\(\)/.test(rd('src/world/fortress.js')), 'SYNC 2 clearForts: a kit wall\'s material may be a list — each one is disposed (the call on the list threw and left the next battle half built)'); }
+// GRAPH 1 the soldier's motion graph: the switch off by default, every clip it names is in the library, its numbers hold together, the wiring
+{ const C = await import('./config.js'), fs = await import('node:fs'), G = C.ANIMGRAPH, rd = f => fs.readFileSync(f, 'utf8'), J = JSON.parse(rd(C.ANIMLIB.path + C.ANIMLIB.index)), by = new Map(J.clips.map(c => [c.id, c])), ag = rd('src/actors/anim-graph.js'), rc = rd('src/actors/real-cav.js');
+  ok(G.on === false && /\[\?&\]animgraph/.test(rd('config.js')) && G.groups.every(g => C.ANIMLIB.groups.includes(g)) && G.groups.includes('loco') && G.groups.includes('stance'),
+    'ANIMGRAPH: off unless the address says ?animgraph; it fetches only groups the library has (the walking and standing ones among them)');
+  const sets = Object.values(G.sets), stride = sets.flatMap(S => S.gaits.flatMap(p => G.dirs.map(d => p + d)));
+  ok(G.dirs.length === 8 && new Set(G.dirs).size === 8 && sets.length === 2 && stride.every(id => { const c = by.get(id); return c && c.g === 'loco' && c.loop && !c.travels && c.speed > 0.5 && c.dir; })
+    && G.dirs.every((d, i) => { const c = by.get(G.sets.stand.gaits[0] + d), a = Math.atan2(c.dir[0], c.dir[1]), w = i * Math.PI / 4; return Math.abs(Math.atan2(Math.sin(a - w), Math.cos(a - w))) < 0.02; })
+    && G.sets.stand.gaits.every((p, i, a) => !i || by.get(p + 'forward').speed > by.get(a[i - 1] + 'forward').speed),
+    'the blend space: two sets × eight bearings, every stride clip a loop pinned in place with its speed and heading, the bearings in turning order (45° apart from ahead round by his left), the gaits slowest first');
+  ok(sets.every(S => by.get(S.idle) && by.get(S.idle).loop && S.turn.length === 2 && S.turn.every(t => by.get(t) && by.get(t).travels) && by.get(S.turn[0]).yaw > 1 && by.get(S.turn[1]).yaw < -1)
+    && [G.kneel.idle, G.prone.idle, G.prone.crawl, G.air.loop].every(id => by.get(id) && by.get(id).loop)
+    && Object.values(G.trans).filter(Array.isArray).every(t => { const c = by.get(t[0]); return c && !c.loop && t[1] >= 0 && t[2] > t[1] && t[2] <= c.dur + 1e-3 && t[3] > 0.5 && t[3] <= 3; })
+    && by.get(G.air.up[0]) && G.air.up[2] <= by.get(G.air.up[0]).dur + 1e-3 && G.air.up[1] < G.air.up[2] && by.get(G.air.down[0]) && G.air.down[1] < G.air.down[2] && G.air.down[2] < G.air.down[3] && G.air.down[3] <= by.get(G.air.down[0]).dur + 1e-3,
+    'idles, turn-on-the-spot clips (left turns left, right turns right), the knee, the belly and the crawl, the stance changes and the jump: all in the library, every window inside its clip');
+  ok(G.band[0] > 0 && G.band[0] < 0.5 && G.band[1] > 0 && G.band[1] < 0.5 && G.bandMin > 0 && G.slowAt > 0 && G.slowAt <= 1 && G.slowExp > 0 && G.slowExp <= 1 && G.startW > 0 && G.startW < 1
+    && G.rate[0] > 0.2 && G.rate[0] < 1 && G.rate[1] > 1 && G.rate[1] <= 2 && G.velHalf > 0 && G.velHalf < 0.2 && G.maxClips >= 2 && G.maxClips <= 5 && G.phoneClips === 2
+    && G.spine.length === 3 && G.spine.every(k => k >= 0 && k <= 1) && G.spine[0] >= G.spine[2] && G.inert.half > 0.02 && G.inert.half <= G.inert.stance && G.inert.stance < 0.4 && G.inert.jump > 0 && G.inert.jump < 0.5,
+    'the stride\'s play rate stays near its own (a slowed or hurried clip, not a stretched one), phones blend two clips at most, the spine is shared (more of the hips\' clip low down, more of the aim high up), a cut dies away in a fraction of a second');
+  const F = G.feet;
+  ok(F.hOn > 0.01 && F.hOn < F.hOff && F.hOff < 0.15 && F.retro > 0 && F.retro <= 0.15 && F.vOn[0] < F.vOff[0] && F.vLand[1] > F.vOn[1] && F.slowV > 0 && F.slowV < F.landV && F.half > 0.01 && F.half < 0.2 && F.stretch > 0.9 && F.stretch < 1
+    && F.rest > 0.03 && F.restT > 0.1 && F.liftMax > 0 && F.liftMax < 0.2 && G.turn.at > 0.5 && G.turn.at < 1.15 && G.turn.max >= Math.PI / 2 && G.kneel.wait >= 0 && G.prone.drop >= 0 && G.prone.drop <= C.REALCAV.proneDrop && G.trans.cutV > 0,
+    'the foot lock takes a foot a little above the ground and lets it go higher (no flutter), never stretches a leg past its length; the planted legs turn before the gun\'s reach over them runs out (1.15 rad in the hold)');
+  ok(/export function graphPose\(cv, R, G, dt, P, mounted, ok\)/.test(ag) && /if\(!C\.on && !A\.live\) return false;/.test(ag) && /cv !== CV/.test(ag) && /export function graphFeet\(/.test(ag) && /export function graphPlay\(id, opts\)/.test(ag) && /export function graphStop\(/.test(ag)
+    && !/requestAnimationFrame|setInterval|setTimeout|addEventListener/.test(ag) && /export \* from '\.\/actors\/anim-graph\.js';/.test(rd('src/hub.js'))
+    && /const GA = \(ANIMGRAPH\.on \|\| ANIMGRAPH_STAT\.live\) && graphPose\(CV, R, G, dt, P, mounted, ok\);\n\s*if\(!GA\) R\.om\.update\(dt\);/.test(rc) && /if\(GA\) R\.hy = graphHipYaw\(CV, R\.hy\);/.test(rc) && /GA && R\.pup && !P\.dead && graphFeet\(CV, R, G, dt, P\)/.test(rc),
+    'wired at the one place the operator\'s clip is chosen: off, the old mixer line runs and nothing of the graph does; only the player\'s own soldier is ever the graph\'s; it starts nothing by itself'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

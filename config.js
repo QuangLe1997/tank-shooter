@@ -2782,3 +2782,46 @@ export const FIELD_SYNC = { uuid:true, uuidBuf:true, cosmetic:true, trace:false,
     5:'landmarks (buildLandmarks)', 6:'the enemy defence (buildDefense)', 7:'cover scatter', 8:'watchtowers, hedgehogs, rock outcrops (buildTowers)', 9:'containers + wrecks (placeLone)', 10:'ridges + brick walls (buildRidges, buildBrickWalls)',
     11:'supply, camps, caches (buildSupply, buildCamps, placeCaches)', 12:'zones + forts built (buildZones)', 13:'scenery (buildScenery)', 14:'garrisons (garrisonSupply, garrisonDefense)', 15:'(end of buildBlocks)',
     16:'objective (buildObjective)', 17:'lava (buildLava)', 18:'underground (buildUnderground)', 19:'trails (buildTrails)' } };
+// GRAPH 1 THE SOLDIER'S MOTION GRAPH (src/actors/anim-graph.js; the PLAYER'S soldier on his feet). on = the switch: off by default, ?animgraph in
+//   the address turns it on (off: nothing is fetched, built or run — the game is exactly as before). groups = the library files it fetches.
+//   THE BLEND SPACE: dirs = the eight bearings in the order they turn (from ahead round by his left; a clip's name = a gait's prefix + a bearing);
+//   sets = for standing and for crouched: the idle, the gaits slowest first, the two turn-on-the-spot clips [left, right]. band = a gait is played
+//   alone (only its rate changes) from [0] of its own speed under it to [1] over it, blended with the next in between (never over less than
+//   bandMin m/s: run and sprint are close) — so the game's own paces (walk 1.5, run 4.8, sprint 6.2, crouch 1.6 m/s) are each ONE clip · slowAt, slowExp = under a walk the idle is
+//   mixed in: the walk's share = (speed / (slowAt × the walk's low edge))^slowExp, whole from slowAt on (real steps early; the foot lock takes up the rest); startW =
+//   once the stride's share has been under 0.6 × this, it starts again (at the phase nearest his standing feet) as it comes back over this · rate = the stride's play-rate limits ·
+//   velHalf = half-life (s) of the smoothing on the velocity that picks the clips · calib = each clip's ground speed measured from its own planted
+//   foot (off: the index's) · maxClips / phoneClips = the most clips blended at once (phones: 2).
+//   LAYERS: spine = how much of Spine / Spine1 / Spine2 is the graph's (0 = the game's pose as today, 1 = the locomotion clip's) — the neck, head
+//   and arms are never the graph's · sync = the game's own stride clips whose upper body keeps the graph's stride phase.
+//   CUTS: inert.half / .stance = half-life (s) of the offset left by a cut (an ordinary one / a change of stance or of who poses him) · jump = a
+//   clip whose weight moved more than this in one frame counts as a cut · vmax = the most turn rate (rad/s) carried across one.
+//   turn = stood still: the legs stay planted until the body has turned `at` rad over them, then a turn clip at `rate` (cut at `end` of its
+//   length, turning him `max` rad at most — a wider turn takes a second one); on the move they come back under him at `settle` /s · kneel = crouched and still for `wait` s (under stillV m/s) he goes onto a knee ·
+//   prone = idle + crawl by speed (crawlV = full crawl; rate limits; drop = how far the operator is sunk lying down: REALCAV.proneDrop is for the
+//   old clip) · trans = the stance clips [id, from s, to s, rate] (fast = × on the first leg of stand → prone; cutV = setting off faster than this
+//   ends one early) · air = take-off [id, from, to] over upT s, the tucked loop, the landing [id, from, the moment the feet touch, end] (landRate; coming
+//   down faster than trans.cutV he goes straight back into his stride) · feet = the foot lock: a foot is held once the clip has it within hOn m of its standing
+//   height and its ball slower over the ground than vOn[0] + vOn[1]·speed (or, going faster than landV, under vLand and braking harder than `brake` m/s²: a
+//   run's foot lands still skidding in the clip), let go above hOff or once it is carried off faster than vOff[0] + vOff[1]·speed and speeding up (under slowV m/s a foot
+//   the clip has down is simply held, and steps — lifted — when the leg runs out of reach); half =
+//   half-life (s) of what it was held back by; peel = the most speed (m/s) it is released with; stretch = the leg's reach (× its length);
+//   retro = it is held where it was shown the frame before it landed, at most this far back (m: at a low frame
+//   rate a foot travels far in a frame) ·
+//   heel = the ankle must be this much lower than the ball to count (m: a heel
+//   comes down toes-up); rest / restT / stepHalf / lift / liftMax = stood still restT s (on a knee or changing stance: at once) on feet left
+//   more than `rest` m from where the clip stands them, the further one steps there (half-life stepHalf s), lifted lift × the distance (liftMax at most); stepV / stepGap = a footfall is heard above this speed, no two from one
+//   foot closer than this (s) · shot = graphPlay's defaults.
+export const ANIMGRAPH = { on:typeof location !== 'undefined' && /[?&]animgraph\b/.test(location.search), groups:['loco', 'stance', 'air'],
+  dirs:['forward', 'forward-left', 'left', 'backward-left', 'backward', 'backward-right', 'right', 'forward-right'],
+  sets:{ stand:{ idle:'stance-rifle-idle-aim', gaits:['loco-rifle-walk-', 'loco-rifle-run-', 'loco-rifle-sprint-'], turn:['loco-rifle-turn-90-left', 'loco-rifle-turn-90-right'] },
+    crouch:{ idle:'stance-idle-crouch-aim', gaits:['loco-rifle-walk-crouch-'], turn:['loco-rifle-crouch-turn-90-left', 'loco-rifle-crouch-turn-90-right'] } },
+  band:[0.24, 0.12], bandMin:0.4, slowAt:0.45, slowExp:0.6, startW:0.3, rate:[0.55, 1.5], velHalf:0.035, calib:true, maxClips:4, phoneClips:2,
+  spine:[1, 0.7, 0.4], sync:{ Run_and_Shoot:1, Rifle_Charge:1, Walk_Forward_While_Shooting:1, Cautious_Crouch_Walk_Forward:1 },
+  inert:{ half:0.08, stance:0.13, jump:0.15, vmax:25 },
+  turn:{ at:1.0, max:1.75, rate:1.5, end:0.95, moveV:0.3, settle:9 }, kneel:{ idle:'stance-rifle-kneel-idle', stillV:0.25, wait:0.2 },
+  prone:{ idle:'stance-prone-idle', crawl:'stance-prone-forward', crawlV:0.3, rate:[0.6, 1.8], drop:0 },
+  trans:{ standKneel:['stance-pistol-stand-to-kneel', 0.12, 0.75, 1.4], kneelStand:['stance-rifle-kneel-to-stand', 0.1, 0.95, 1.5], kneelProne:['stance-rifle-kneel-to-prone', 0.1, 1.95, 1.6], proneKneel:['stance-rifle-prone-to-kneel', 0, 1.85, 1.6], fast:1.6, cutV:1.0 },
+  air:{ up:['air-jump-up', 0.27, 0.533], loop:'air-jump-loop', down:['air-jump-down', 0.07, 0.33, 0.66], upT:0.22, landRate:1.3 },
+  feet:{ on:true, hOn:0.05, hOff:0.065, retro:0.12, heel:0.02, rest:0.12, restT:0.35, stepHalf:0.09, lift:0.45, liftMax:0.07, vOn:[0.5, 0.6], slowV:1.0, landV:3, vLand:[1.5, 1.2], brake:8, vOff:[1.8, 0.9], half:0.05, peel:3, stretch:0.985, stepV:0.4, stepGap:0.16 },
+  shot:{ half:0.1, rate:1 } };
