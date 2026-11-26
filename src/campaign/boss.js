@@ -2,7 +2,7 @@
 //   the commander of the stage waits in his citadel and meets the soldier on foot with his bodyguards (campaign/general-duel.js); his fall wins the stage —
 //   the payout, the citadel falls, the next stage opens, the pick of rewards — and the last one wins the campaign
 
-import { dirWin, reportRun, ARENA, BOSS_ALT, BOSS_DEFS, BOSS_NEW, PROFILE, S, campaignCleared, celebrate, duelOn, fortBossDown, generalStart, openUpgrade, recordRun, refreshStartUI, saveProfile, saveProgress, show, showBanner, sfx, updateHUD } from '../hub.js';
+import { dirWin, reportRun, ARENA, BOSS_ALT, BOSS_DEFS, BOSS_NEW, PROFILE, S, campaignCleared, celebrate, duelOn, fortBossDown, generalStart, openUpgrade, recordRun, refreshStartUI, saveProfile, saveProgress, show, showBanner, sfx, storyEpilogue, updateHUD } from '../hub.js';
 
 export function bossForStage(st){ const alt=(S.loop||0)%2===1 && BOSS_ALT[st]; return (alt && BOSS_NEW.find(b=>b.id===alt)) || BOSS_DEFS[Math.min(st-1, BOSS_DEFS.length-1)]; }   // Z161 odd NG+ loops bring the new generals
 // the general takes the field: in the citadel f (its yard), else (a field without forts) at the far end of the field
@@ -28,6 +28,7 @@ export function victory(){
   if(!(S.run && S.run.mode==='custom')){ PROFILE.save={ loop:nl, stage:1, score:S.score }; saveProfile(); } else S.runCfg={ ...S.run, level:nl*5+1 }; refreshStartUI();   // custom: the next loop keeps your map/hour/weather   // advance the campaign into the next NG+ loop
   const nb=document.getElementById('ngplusT'); if(nb) nb.textContent='Vào vòng '+(nl+1);
   const vs=document.getElementById('vicSub'); if(vs) vs.textContent='Vòng '+(nl+1)+' đang chờ: cùng các chiến trường, quân địch mạnh hơn và điểm cao hơn.';
+  { const ve=document.getElementById('vicEpi'); if(ve) ve.textContent=storyEpilogue(BOSS_DEFS.length).join(' '); }   // STORY 3 how the campaign ends: the victory and what it cost
   document.body.classList.remove('corelow');
   show('victory'); sfx('levelup');
 }

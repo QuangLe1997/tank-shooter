@@ -493,7 +493,7 @@ export const OBJ_REWARD = { score:1500 };
 //   generals: a one-line dossier by general id (the briefing) · heir: the dossier of a man who carries an original's name on an NG+ loop.
 //   stages[i]: act (index into acts) · prev: the briefing's "previously" · loop: the framing on NG+ loops (it replaces prev and the story paragraph) ·
 //     epi: the two lines over the rewards when the stage is won (loopEpi on NG+ loops) · beats: the plot on the radio by wave ('who|text', first time
-//     through only, never in a custom battle) — each waits its turn: beat.first s after the wave begins, beat.next s apart, dropped after beat.hold s.
+//     through only) — each waits its turn: beat.first s after the wave begins, beat.next s apart, dropped after beat.hold s.
 //   lines[event]: p = priority — 4 said at once (it replaces a line the game says at that instant) · 3 must be heard: queued until the radio has been
 //     quiet gapMust s (given up after hold s) · 2 a danger call: said if the radio has been quiet gapDanger s, else dropped · 1 flavour: quiet gap s,
 //     else dropped · cd: s between two of that event · max: a stage · first: only the first time through the campaign · q: queue it (not before q s).
@@ -527,7 +527,7 @@ export const STORY = { on:true, gap:12, gapDanger:6, gapMust:4.6, hold:40, queue
   acts:['Hồi I · Giữ chốt', 'Hồi II · Truy kích', 'Hồi III · Lật ngược'],
   stages:[
     { act:0, prev:'Rạng sáng nay chiến tranh bắt đầu. Chưa ai hiểu vì sao.',
-      loop:'Danh hiệu {boss} đã có người kế vị. {foe} kéo quân về đúng bãi cát cũ.',
+      loop:'{boss} dựng lại cờ {foe} và kéo quân về đúng bãi cát cũ. Chiến tranh chưa xong.',
       epi:['{g1} ngã trên cát. Trong túi áo hắn: sơ đồ hầm {core} và giờ đổi gác của ta.', 'Nét mực còn mới. Có ai đó vừa vẽ nó cho hắn.'],
       beats:{ 1:['intel|Sau đồi cát chỉ có tốp thăm dò. Sườn phải sạch. Xác nhận.'], 2:['mg|Sạch cái gì mà sạch! Tình báo ngủ gật à?'],
         3:['foe|…lấy {core} nguyên vẹn. Nhắc lại: nguyên vẹn. {g5} cần nó còn sống.'], 4:['scout|Chúng mang cáng thép, không mang bộc phá. Tôi bám theo xem chúng đi đâu.'],
@@ -540,13 +540,13 @@ export const STORY = { on:true, gap:12, gapDanger:6, gapMust:4.6, hold:40, queue
         3:['at|Anh {scout} hứa dạy em huýt sáo. Anh ấy đã dạy xong đâu…'], 4:['foe|Nguồn tin vẫn đều. Toạ độ tổ xung kích: đã nhận.'],
         5:['mg|Chúng biết lối ta vào trước cả ta. Ai mách chúng?'] } },
     { act:1, prev:'Trước đó: {scout} mất tích trong thành phố. Địch biết trước từng bước của ta.',
-      loop:'Kẻ mang danh {boss} lên gác băng thay người đã ngã. Radar mới, trực thăng mới, cái lạnh vẫn cũ.',
+      loop:'{boss} lên gác băng thay người đã ngã. Radar mới, trực thăng mới, cái lạnh vẫn cũ.',
       epi:['{g3} nằm lại trên băng, tay vẫn nắm chiếc đèn đi tuần.', '{scout} mất tích trước khi có giờ xuất phát — cậu không thể là kẻ đưa tin. Kẻ đó vẫn ngồi trên sóng.'],
       beats:{ 1:['foe|Nguồn tin báo: chúng rời trại lúc ba giờ. Đúng từng phút.'],
         2:['mg|Thằng {scout} khai rồi! Không nó thì ai biết đường mình đi?', 'medic|{scout} mất tích trước khi có giờ xuất phát. Không phải cậu ấy, {mg}.'],
         4:['intel|Đừng nghi nhau giữa trận. Tôi sẽ rà lại đường dây. Xác nhận.'], 5:['Giờ xuất phát chỉ ba người biết. Tôi là một. Xong trận ta nói tiếp.'] } },
     { act:2, prev:'Trước đó: {g3} ngã trên băng. Kẻ đưa tin chưa lộ mặt, {scout} vẫn chưa về.',
-      loop:'Lò luyện đỏ lửa trở lại dưới tay kẻ kế vị {boss}. Pháo của chúng đã kịp đúc nòng mới.',
+      loop:'Lò luyện đỏ lửa trở lại dưới tay {boss}. Pháo của chúng đã kịp đúc nòng mới.',
       epi:['{g4} ngã cạnh xấp ảnh chưa kịp gửi. {scout} được cáng ra khỏi lò, vẫn huýt sáo.', '{intel} nộp súng. {cmd} không còng tay anh — chỉ đẩy lại chiếc máy điện đài.'],
       beats:{ 1:['scout|{squad}… {scout} đây. Còn sống. Tôi nằm trong lò, nghe hết sóng của chúng.'],
         2:['scout|Kẻ đưa tin dùng mã của Tình Báo. Câu chốt lúc nào cũng là: "xác nhận".'],

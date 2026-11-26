@@ -3,7 +3,7 @@
 //   honest bars (how quick, how tough, how wide he can fire) and what the driver does for him. Every picture is a photo from the game (assets/units).
 //   Also the loadout chips in the footer and the "ĐỘI HÌNH XUẤT KÍCH" strip on the briefing.
 import { TROOPER } from '../../config.js';
-import { GUNS, KIT_GUN, PRIMARY_GUNS, PROFILE, capVi, gunPicEl, saveProfile, sfx, tapEl } from '../hub.js';
+import { GUNS, KIT_GUN, PRIMARY_GUNS, PROFILE, capVi, gunPicEl, saveProfile, sfx, storyMate, tapEl } from '../hub.js';
 
 const PIC = k => 'assets/units/' + k + '.webp';
 export const RIDES = {
@@ -61,4 +61,4 @@ export function briefTeam(){ const host = document.getElementById('br-team'); if
   const tile = (src, html, cls) => { const t = el('div', 'br-tm' + (cls ? ' ' + cls : '')); if(src) t.appendChild(img(src, 'br-tmp')); else t.appendChild(el('div', 'br-tmp', html[1])); t.appendChild(el('div', 'br-tmt', html[0])); host.appendChild(t); };
   const R = RIDES[rideOf()], T = TROOPERS[trooperOf()];
   tile(PIC(trooperOf()), ['<small>Người lính</small><b>' + capVi(T.nm) + '</b>']); tile(PIC(rideOf()), ['<small>' + (R.drv ? 'Bác tài lái' : 'Tự cưỡi') + '</small><b>' + capVi(R.nm) + '</b>']);
-  tile(null, ['<small>Tổ đồng đội</small><b>Xạ thủ máy, y tá</b>', '<span class="br-ic">2</span>'], 'wide'); }
+  tile(null, ['<small>Tổ đồng đội</small><b>' + (storyMate('mg') ? storyMate('mg') + ' ĐL · ' + storyMate('medic') + ' YT' : 'Xạ thủ máy, y tá') + '</b>', '<span class="br-ic">2</span>'], 'wide'); }   // (STORY 3 his two men by name and role, as the squad panel tags them)

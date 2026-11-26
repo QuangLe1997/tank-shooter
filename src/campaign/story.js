@@ -1,4 +1,4 @@
-// campaign/story.js — STORY 1–2 THE CAMPAIGN'S STORY AND THE RADIO THAT FOLLOWS THE FIGHT (config.js STORY: the cast, the five stages' acts, the line pools).
+// campaign/story.js — STORY 1–3 THE CAMPAIGN'S STORY AND THE RADIO THAT FOLLOWS THE FIGHT (config.js STORY: the cast, the five stages' acts, the line pools).
 //   ONE ENTRY POINT: storyCue(event, data, must) — the other modules call it where the event already happens (one short call each); it picks a line of that
 //     event's pool (a voice that is on the net, never the same variant twice running), fills the names in ({cmd}, {boss}, {name} …: a name is written once,
 //     in STORY.cast), and gives it to the radio — or keeps quiet: a flavour line needs STORY.gap s of radio silence (ANY line, whoever said it:
@@ -8,7 +8,9 @@
 //     through the campaign only. storyTick (game/loop.js, STORY.tick s apart) empties the queue and reads the player's own state: nearly dead, back on his
 //     feet, a dry magazine with the enemy near, a squad-mate badly hit.
 //   THE TEXT ROUND A STAGE: storyOp — the operation with its names filled in (campaign/operations.js opFor: the briefing, the deployment order, the wave's
-//     radio line, the objective's). The squad's first man of a role carries the cast's name (actors/squad-mates.js: storyMate, storyNamed).
+//     radio line, the objective's) · storyBrief — the act, the "previously" line (the NG+ framing on a loop), the general's dossier (ui/briefing.js) ·
+//     storyEpilogue — the two lines over the rewards of a stage won (loot/upgrades.js) and on the victory screen (campaign/boss.js).
+//     The squad's first man of a role carries the cast's name (actors/squad-mates.js: storyMate, storyNamed).
 //   Text only: every line goes out with STORY.noVoice, a key audio/voice.js has no file for — the recorded voices stay with the lines they were read from.
 import { OPERATIONS, STORY } from '../../config.js';
 import { BOSS_DEFS, DIR, FT, S, bossForStage, radio, squadList } from '../hub.js';
@@ -58,8 +60,8 @@ function flush(now){ const q = STY.q; if(!q.length) return; if(S.awaitingUpgrade
     if(now < it.from || quiet < it.gap || !onNet(whoOf(it.line))) continue; q.splice(k, 1); speak(it.line, it.key, it, now, 3); return; } }
 // is a queued line due? (a flavour line gives way to it)
 function due(now){ const q = STY.q; for(let k = 0; k < q.length; k++) if(now >= q[k].from && now <= q[k].until) return true; return false; }
-// the stage's plot for this wave (first time through, not in a custom battle): queued, each in its turn
-function beats(now){ if(loopNo() > 0 || S.run && S.run.mode === 'custom') return; const B = C.stages[stageIx(S.stage)].beats[S.wave], T = C.beat; if(!B) return;
+// the stage's plot for this wave (first time through the campaign only): queued, each in its turn
+function beats(now){ if(loopNo() > 0) return; const B = C.stages[stageIx(S.stage)].beats[S.wave], T = C.beat; if(!B) return;
   for(let j = 0; j < B.length; j++) push({ line:B[j], key:'beat', name:'', gap:C.gap, from:now + T.first + j * T.next, until:now + T.hold + j * T.next }); }
 // an enemy has fallen near the player: the first of the stage, then a run of them
 function kill(e, now){ const p = S.player, K = C.streak; if(!p || S.awaitingUpgrade || e && (e.general || e.gaveUp)) return;
@@ -96,3 +98,9 @@ const _ops = {};
 export function storyOp(i){ const o = OPERATIONS[i], k = i + ':' + (loopNo() % 2); if(!o) return o; if(_ops[k]) return _ops[k];
   const f = s => storyText(s, null, i + 1), rd = {}; for(const w in o.radio) rd[w] = f(o.radio[w]);
   return (_ops[k] = { ...o, story:f(o.story), brief:f(o.brief), win:f(o.win), radio:rd }); }
+// the briefing's story lines for a stage: the act (the loop's number on NG+), the "previously" line (the loop's framing on NG+: it stands for the story
+//   paragraph too — loop: true), the general's one-line dossier (a man who carries an original's name on a loop: STORY.heir)
+export function storyBrief(stage){ const i = stageIx(stage), st = C.stages[i], lp = loopNo(), b = general(i + 1), heir = lp > 0 && BOSS_DEFS.includes(b);
+  return { act:lp > 0 ? 'Vòng ' + (lp + 1) : C.acts[st.act], prev:storyText(lp > 0 ? st.loop : st.prev, null, i + 1), loop:lp > 0, dossier:storyText(heir ? C.heir : C.generals[b.id] || '', null, i + 1) }; }
+// the two lines over the rewards of the stage just won
+export function storyEpilogue(stage){ const i = stageIx(stage), e = loopNo() > 0 ? C.loopEpi : C.stages[i].epi; return [storyText(e[0], null, i + 1), storyText(e[1], null, i + 1)]; }
