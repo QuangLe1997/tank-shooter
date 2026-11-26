@@ -2279,7 +2279,12 @@ grp('POSE 1 the puppet: the whole turn, the hinge from the fold, the twist share
   ok(names.length === 65 + want.length && names.slice(65).join() === want.join() && names[0] === 'Hips' && names.indexOf('LeftForeArm') === 16 && names.indexOf('RightHand') === 44 && J.accessors[sk.inverseBindMatrices].count === names.length && sk.joints.slice(65).every((n, k) => n === 67 + k) && J.nodes.length === 67 + want.length && Array.isArray(x.twistJoints) && x.twistJoints.join() === want.join() && x.twistTriangles > 100,
     'soldier2.glb: the file\'s own 65 joints keep their places, the twist joints come after them (nodes, joints, bind matrices), and the file says so');
   ok(want.every(n => { const i = J.nodes.findIndex(nd => nd.name === 'mixamorig:' + n), par = J.nodes.findIndex(nd => (nd.children || []).includes(i)); return i >= 67 && !J.nodes[i].rotation && J.nodes[par].name === 'mixamorig:' + n.replace(/Twist\d$/, ''); }) && J.animations.every(a => a.channels.every(c => c.target.node < 67)),
-    'each twist joint hangs under its own bone with no turn at rest; no clip names one'); }
+    'each twist joint hangs under its own bone with no turn at rest; no clip names one');
+  // BODY 2 a seeded battle: three's uuid draws are still handed back (SYNC 1), but the id itself is drawn afresh on the page's own generator — in a row of
+  //   rewound draws every AnimationClip had ONE uuid, AnimationMixer.clipAction (keyed by it) gave all a file's clips one action, and no clip played
+  const dice = rd('src/core/dice.js'); ok(/const fresh = r => \{ Math\.random = NATIVE; try\{ return THREE\.MathUtils\.generateUUID\(\); \} finally\{ Math\.random = r; \} \};/.test(dice) && /const r = Math\.random, b0 = DICE\.backs;/.test(dice) && /if\(DICE\.backs !== b0\) v = fresh\(r\); Object\.defineProperty\(this, key, \{ value:v,/.test(dice) && C.FIELD_SYNC.uuidOf.includes('AnimationClip'),
+    'core/dice.js: a uuid whose draws were handed back is replaced by one from the page\'s own generator (unique again), the seeded generator untouched');
+}
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

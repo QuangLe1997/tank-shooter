@@ -31,8 +31,13 @@ export function cosmetic(fn, a, b, c, d){ const r = Math.random; if(typeof r.bac
   Math.random = NATIVE; DICE.cos++; try{ return fn(a, b, c, d); } finally{ Math.random = r; } }
 
 // ---- 1. three's uuid draws handed back ----
-const uuidSet = key => function(v){ Object.defineProperty(this, key, { value:v, writable:true, enumerable:true, configurable:true });   // (the own data property the plain write made before: later writes never come here)
-  const r = Math.random; if(typeof r.back === 'function' && FIELD_SYNC.uuid && !DICE.off){ r.back(DICE.uuidDraws); DICE.backs++; } };
+// BODY 2 …and the id itself is then drawn AFRESH on the page's own generator. Rewound, the seeded one gave the next object the very same four draws:
+//   every three object made in a row (no layout draw between) had ONE uuid — and AnimationMixer.clipAction keys its actions by the clip's: all ten of the
+//   operator's clips were a single action, the horse's gaits another. In every seeded battle (the daily challenge, a co-op room, ?seed) no clip played:
+//   the soldier stood, ran and lay in his rest pose (running on straight legs, "prone" bolt upright with his legs laid out behind him)
+const fresh = r => { Math.random = NATIVE; try{ return THREE.MathUtils.generateUUID(); } finally{ Math.random = r; } };
+const uuidSet = key => function(v){ const r = Math.random, b0 = DICE.backs; if(typeof r.back === 'function' && FIELD_SYNC.uuid && !DICE.off){ r.back(DICE.uuidDraws); DICE.backs++; }
+  if(DICE.backs !== b0) v = fresh(r); Object.defineProperty(this, key, { value:v, writable:true, enumerable:true, configurable:true }); };   // (the own data property the plain write made before: later writes never come here)
 const uuidTrap = (P, key) => { if(P && !Object.getOwnPropertyDescriptor(P, key)) Object.defineProperty(P, key, { configurable:true, enumerable:false, get(){ return undefined; }, set:uuidSet(key) }); };
 function uuidHook(){ let n = 0; const r = Math.random;
   Math.random = () => { n++; return 0.5; }; try{ new THREE.BufferGeometry(); } finally{ Math.random = r; }   // what one uuid costs in this three (r169: 4)
