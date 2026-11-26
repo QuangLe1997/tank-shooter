@@ -2680,3 +2680,45 @@ export const NIGHTDEF = { len:480, h0:21, h1:5, clockStep:5, fastK:3, warn:7, lu
       best:'Chuỗi dài nhất: {n} đêm · điểm một đêm cao nhất {s}', newBest:'Kỷ lục mới — ', next:'Đêm tiếp theo', retry:'Thủ lại từ đêm 1', hintWon:'Đêm sau: cùng căn cứ, địch tinh hơn một bậc.', hintLost:'Thủ lại bắt đầu từ đêm thứ nhất.' },
     copy:'Chép kết quả', copied:'Đã chép', copyFail:'Không chép được',
     share:{ head:'XUNG KÍCH — Thủ đêm', where:'{b} · {wx}', rule:'{night} · đợt đẩy lui {k}/{n}', won:'★ {score} điểm · GIỮ VỮNG · Lõi còn {core}%', lost:'✖ {score} điểm · thất thủ lúc {clock}', stats:'Hạ {kills} · chính xác {acc}% · độ khó {diff}', practice:'', by:'— {name}' } } };
+// MODE 2 THE DAILY CHALLENGE — "THỬ THÁCH HÔM NAY" (campaign/daily.js; the generator: data/mode-math.js dailyChallenge) — one battle a day, the same for everyone:
+//   the day is the calendar day in UTC+tz; from its number alone come the battlefield (biomes), the hour (tod), the weather (wx, + wxBiome's own), the size
+//   (space), the enemy level (level: a campaign level, so its stage's general), the seed of the battlefield, the modifier (mods, each once per cycle, never two
+//   days running) and the gun he is issued (guns, + kit). A modifier changes how the day plays through knobs the game already has:
+//     set: [path, op, value] on a config object (op '=' | '*' | '+'; a last segment '*' = every number in it) — put back when the run ends ·
+//     guns (+ strict: nothing else may be carried) · lives (the lives he starts with: 0 = the first death is the last) · tod / wx (the day's hour / weather) ·
+//     spellsOff (skills taken out of the wheel) · lootOff (pickups that do nothing) · general (the stage's general takes the field hunterAt s in) ·
+//     event (a big battlefield event forced every `every` s; busy: again in `retry` s). strictTick: how often a strict loadout is checked. hold: s of cheering
+//     before a win's result card.
+//   One scored attempt a day — spent the moment the fight goes live — then any number of practice attempts, marked as practice. The day's result is kept in the
+//   profile (PROFILE.modes.daily, the last `keep` days). score (data/mode-math.js dailyScore): the battle's score + win + perSec a second under par on a win +
+//   acc × accuracy.
+//   THE BOARD IS LOCAL (the Cloud Functions are not to be changed for this). A shared board would need, server side: (1) the generator run by the server
+//   (functions/: the same dailyChallenge + this object) so the day and its seed are the server's, not the client's clock; (2) a callable `dailyRun({ day, score,
+//   secs, kills, acc, won, runId, name })` that accepts ONE scored run per uid per day (a doc daily/{day}/runs/{uid} written once, a second call refused), holds
+//   the score to what the day's level can be worth (functions/score.js's ceiling × the modifier), and (3) a board collection daily/{day}/top read by
+//   ui/ranking.js. Until then core/score-report.js sends nothing for a mode's run (S.run.offBoard).
+export const DAILY = { tz:7, keep:14, level:[2, 5], tod:['day', 'noon', 'sunset', 'night'], wx:['clear', 'clear', 'rain', 'fog'], wxBiome:{ DESERT:'sand', SAVANNA:'sand', QUARRY:'sand', ARCTIC:'snow', CITADEL:'snow' }, space:['mid', 'wide'],
+  biomes:['DESERT', 'RUINS', 'ARCTIC', 'FOUNDRY', 'CITADEL', 'MEADOW', 'CITY', 'SAVANNA', 'VOLCANO', 'QUARRY'], guns:['carbine', 't_ak', 't_m4', 't_shotgun', 't_lmg', 't_dmr', 't_rust'], kit:['t_rpg'], hunterAt:6, strictTick:0.5, hold:5.4,
+  mods:[
+    { id:'knife',    vi:'Dao và MP5',        ds:'Chỉ dao găm và tiểu liên MP5 bắn đạn súng ngắn — không B41, không nhặt súng khác.', guns:['t_mp5'], strict:true },
+    { id:'nomed',    vi:'Không cứu thương',  ds:'Không băng bó, không túi cứu thương, không dù cứu thương: máu chỉ hồi khi thăng cấp.', spellsOff:['medkit'], lootOff:['heal'], set:[['DIRECTOR.lull.drop.hp', '=', 0]] },
+    { id:'drones',   vi:'Bầy drone',         ds:'Drone địch tới dày gấp đôi, ngay từ màn đầu, và cảm tử luôn đi hai chiếc.', set:[['DRONEWAR.enemy.gap', '*', 0.5], ['DRONEWAR.enemy.w', '*', 2], ['DRONEWAR.enemy.from', '=', 1], ['DRONEWAR.enemy.two', '=', 1]] },
+    { id:'fognight', vi:'Đêm sương mù',      ds:'Đánh trong đêm sương: tầm nhìn và tầm bắn đều ngắn lại.', tod:'night', wx:'fog' },
+    { id:'halfammo', vi:'Đạn giảm nửa',      ds:'Cơ số đạn mang theo chỉ còn một nửa: nhặt túi đạn của địch, về điểm đạn mà tiếp.', set:[['LOGISTICS.start.*', '*', 0.5]] },
+    { id:'onelife',  vi:'Một mạng',          ds:'Không có lượt hồi sinh: ngã một lần là hết trận.', lives:0 },
+    { id:'hunter',   vi:'Tướng săn người',   ds:'Tướng địch rời thành săn anh ngay từ đầu trận, cùng cận vệ. Hạ hắn là thắng.', general:true },
+    { id:'nogive',   vi:'Không ai đầu hàng', ds:'Địch không buông súng: tên cuối cùng của mỗi tốp đánh tới chết.', set:[['DIRECTOR.tactics.surrender.chance.*', '=', 0]] },
+    { id:'triple',   vi:'Nhiệm vụ phụ ×3',   ds:'Nhiệm vụ phụ thưởng gấp ba điểm và đến thêm một lần.', set:[['SIDEMISSION.pilot.score', '*', 3], ['SIDEMISSION.truck.score', '*', 3], ['SIDEMISSION.pows.score', '*', 3], ['SIDEMISSION.perStage', '+', 1]] },
+    { id:'blackout', vi:'Mất liên lạc',      ds:'Cứ hai phút địch lại gây nhiễu: mất bản đồ, mất điện đàm một lúc.', event:{ kind:'jam', every:120, retry:6 } } ],
+  score:{ win:2500, par:600, perSec:4, acc:1000 },
+  say:{ name:'Thử thách hôm nay', homeDone:'Thử thách ✓ {s}', line:'Hôm nay: {b} · {m}', lineOpen:' — chưa đánh', lineDone:' — đã đánh, {s} điểm',
+    ask:{ title:'Thử thách {date}', body:'{b} · {tod} · {wx} · địch cấp {lvl}. Luật hôm nay — {m}: {ds} Súng được phát: {guns}. {state}',
+      scored:'Lượt này TÍNH ĐIỂM — mỗi ngày chỉ một lượt, tính từ lúc nổ súng.', practice:'Lượt tính điểm hôm nay đã dùng ({s} điểm) — lần này là đánh tập.', yes:'Xuất kích', yesP:'Đánh tập', no:'Để sau' },
+    briefOp:'Thử thách {date} — {m}', brief:'{ds} Súng được phát hôm nay: {guns}. Hôm nay ai cũng đánh đúng chiến trường này, đúng luật này. {state}',
+    obj:'Hạ tướng địch giữ thành để hoàn thành. Điểm = điểm trận + thưởng thắng (thắng càng nhanh càng cao) + độ chính xác.',
+    go:'THỬ THÁCH: {m}', goP:'ĐÁNH TẬP: {m}', pause:'Thử thách {date} · {m}{p}', pauseP:' · đánh tập', noMed:'KHÔNG CỨU THƯƠNG HÔM NAY', strict:'HÔM NAY CHỈ DAO VÀ MP5', hunter:'SCH: Hôm nay tướng địch không chờ trong thành — hắn đang tìm anh!', wonBanner:'ĐÃ HẠ {g} — HOÀN THÀNH THỬ THÁCH!',
+    end:{ kick:'Thử thách {date}', kickP:'Thử thách {date} · đánh tập', won:'Hoàn thành', lost:'Gục ngã', why:'{b} · {tod} · {wx} — luật: <b>{m}</b>. {res}',
+      resWon:'Tướng địch đã gục.', resCore:'Lõi căn cứ bị phá.', resDead:'Người lính ngã xuống.', stats:['Điểm', 'Thời gian', 'Hạ địch', 'Chính xác'],
+      best:'Điểm tính của hôm nay: {s}', bestP:'Đánh tập không tính điểm — điểm tính của hôm nay vẫn là {s}', hist:' · {n} ngày gần đây cao nhất {top}', go:'Đánh tập', hint:'Mai có thử thách mới. Đánh tập bao nhiêu lần cũng được.' },
+    copy:'Chép kết quả', copied:'Đã chép', copyFail:'Không chép được',
+    share:{ head:'XUNG KÍCH — Thử thách {date}', where:'{b} · {tod} · {wx}', rule:'Luật: {m}', won:'★ {score} điểm · HOÀN THÀNH · {time}', lost:'✖ {score} điểm · gục ngã · {time}', stats:'Hạ {kills} · chính xác {acc}% · độ khó {diff}', practice:'(đánh tập — không tính điểm)', by:'— {name}' } } };

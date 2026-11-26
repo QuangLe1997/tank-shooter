@@ -1,5 +1,5 @@
 // ui/menus.js — title screen: greeting, the hero (CHƠI NGAY / CHƠI TIẾP), nickname dialog, and the shared tap helpers (tapBtn / tapEl / escapeHtml / capVi).
-import { buildSettings, launchGame, MOBILE, PROFILE, S, BS, biomeVi, buildTerrainPicker, campaignMax, hide, levelInfo, openBattleSetup, queueResize, saveProfile, sfx, show, TOD_LABEL } from '../hub.js';
+import { dailyHome, buildSettings, launchGame, MOBILE, PROFILE, S, BS, biomeVi, buildTerrainPicker, campaignMax, hide, levelInfo, openBattleSetup, queueResize, saveProfile, sfx, show, TOD_LABEL } from '../hub.js';
 
 // ----------------------------- PROFILE UI: nickname · arsenal/loadout · continue · reset -----------------------------
 // XK-UI sentence case for the data written in capitals (battlefields, hours, weather): "SA MẠC" → "Sa mạc"
@@ -22,6 +22,7 @@ export function refreshStartUI(){
   if(hasSave){ const sv=PROFILE.save, lp=sv.loop|0, cs=document.getElementById('contSub'); let I=null; try{ I=levelInfo(lp*5+(sv.stage|0||1)); }catch(e){}
     if(cs) cs.textContent='Màn '+sv.stage+(I ? ' · '+capVi(biomeVi(I.biome.name)) : '')+(lp>0 ? ' · vòng '+(lp+1) : ''); }
   buildTerrainPicker();
+  dailyHome();   // MODE 2 today's challenge and whether it is done (campaign/daily.js)
 }
 // ---- nickname (first launch / editable) ----
 let _nickFrom='start';   // XK-UI the first launch asks from the home screen; Cài đặt → Tài khoản → Đổi mật danh comes back to Settings
