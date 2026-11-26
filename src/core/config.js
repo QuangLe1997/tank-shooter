@@ -1,11 +1,11 @@
 // core/config.js — runtime constants derived from config + device: arena size, MOBILE, the aircraft's draw scale, player range, current BIOME
-import { CLIMB } from '../../config.js';
+import { CAM_ROOM, CLIMB } from '../../config.js';
 import { BIOMES, PLAYER, S, gunReach } from '../hub.js';
 
 performance.mark('boot:module');
 // ----------------------------- CONFIG -----------------------------
 const _TOUCH = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
-export const ARENA = _TOUCH ? 130 : 184;      // Z144 desktop: ×2 the ground (184² vs 130²) — roomier battles; phones keep 130 for speed · half-extent of the bounding square (world units) — Z104 60→84, Z106 →130; the playable field is the irregular outline in world/field.js
+export const ARENA = Math.round((_TOUCH ? 130 : 184)*(_TOUCH ? CAM_ROOM.yard.arenaKMobile : CAM_ROOM.yard.arenaK));      // Z144 desktop: ×2 the ground (184² vs 130²) · CAM 5 × CAM_ROOM.yard.arenaK (the forts' yards doubled) — roomier battles; phones keep 130 for speed · half-extent of the bounding square (world units) — Z104 60→84, Z106 →130; the playable field is the irregular outline in world/field.js
 export const AREA_K = Math.min(4.6, (ARENA/60)**2*0.7);   // Z144 capped: the bigger desktop field gets more open ground, not twice the clutter ·      // Z104 density multiplier (Z106 ×0.7 ≈ the irregular field's share of the bounding square) — scatter scales with real ground
 export const ARC_G = 110;                      // gravity for ballistic shells — far shots lob in a clear arc, point-blank stays flat (fast guns arc less)
 export const MOBILE = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;

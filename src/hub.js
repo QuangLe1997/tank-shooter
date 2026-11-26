@@ -34,6 +34,7 @@ export * from './render/far-lod.js';   // Z328 big static models swap to a simpl
 export * from './render/inst-view.js';   // VIEW 1 a field-wide instanced mesh draws only what is near (its own detail near, a light copy far, nothing past sight)
 export * from './render/near-detail.js';   // Z395 the originals' sharp maps on whatever the camera is close to
 export * from './render/cover-batch.js';   // Z338 cover pieces drawn a few instanced draws at a time
+export * from './render/see-through.js';   // CAM 3 what stands between the lens and him is cut away (a shader hook of render/clouds.js)
 export * from './render/perfhud.js';   // Z240 frame-time probe + F3 HUD
 export * from './world/atmosphere.js';
 export * from './world/sky-photo.js';   // Z255 photographed HDRI skies per hour of the day

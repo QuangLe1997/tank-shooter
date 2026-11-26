@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { FORT, FORT_CMD, COMMAND, HOME_GAP, HUMAN_SCALE, REALFORT, FORT_GAP, BREAKUP, SCENERY, WORLD_FLAGS } from '../../config.js';
+import { CAM_ROOM, FORT, FORT_CMD, COMMAND, HOME_GAP, HUMAN_SCALE, REALFORT, FORT_GAP, BREAKUP, SCENERY, WORLD_FLAGS } from '../../config.js';
 import { cosmetic, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, HF, MOBILE, S, UNDER, ZONES, bigExplode, biomePlace, blocks, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, propTex, radio, rallyFlagTex, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat, loadGLTF, buildOutpost, farLOD, landTone, sceneDims, scenePiece, decalAsh, breakScar, decalScorch, hillCfg, paveYard, raiseFortHills, raiseWard , riseHere, dirSallyOk } from '../hub.js';
 
 export const FORTS=[];
@@ -14,7 +14,7 @@ let _nameI=0, _fhT=0;
 // ---- plan: reserve ground first (called at the top of planZones) — far side + flanks, the biggest one farthest from our spawn ----
 export function planForts(){ clearForts(); const st=Math.min(4, Math.max(0, S.stage-1)), n=(MOBILE?FORT.countMobile:FORT.count)[st];
   const cand=[], NM=(BIOME_PLACE[BIOME.name]||{}).forts||FORT.names; _nameI=(Math.random()*NM.length)|0;   // Z170 real place names of this land
-  for(let t=0;t<600 && cand.length<n;t++){ const tier = cand.length===0 ? 3 : (cand.length===1 && n>=4 ? 2 : (Math.random()<0.35?2:1)), T=FORT.tiers[tier], late=t>=220, R=Math.max(FORT.minR, (late?T.r[0]:R2(T.r))*(MOBILE?FORT.mobileR:1));   // Z234 phones: the small field takes smaller forts (so they stand clear of our citadel)
+  for(let t=0;t<600 && cand.length<n;t++){ const tier = cand.length===0 ? 3 : (cand.length===1 && n>=4 ? 2 : (Math.random()<0.35?2:1)), T=FORT.tiers[tier], late=t>=220, R=Math.max(FORT.minR, (late?T.r[0]:R2(T.r))*(MOBILE?FORT.mobileR*CAM_ROOM.yard.rKMobile:CAM_ROOM.yard.rK));   // CAM 5 twice the yard (CAM_ROOM.yard.rK)   // Z234 phones: the small field takes smaller forts (so they stand clear of our citadel)
     const a=-Math.PI/2+(Math.random()-0.5)*Math.PI*(cand.length===0?(late?1.1:0.7):1.55), FR=fieldR(a), fr=cand.length===0?0.6+Math.random()*0.15:0.45+Math.random()*0.35, hk=t<220?1:t<380?0.85:HOME_GAP.minK;
     const dMin=HOME_GAP.wall+R+(MOBILE?HOME_GAP.gapMobile:HOME_GAP.gap)*hk+1, dMax=FR-R-9; if(dMax<dMin) continue;   // Z234 between our home ground and the fence (big forts keep the whole ring inside it)
     const d=late ? dMin+Math.random()*(dMax-dMin) : Math.max(dMin, Math.min(FR*fr, dMax));   // a crowded / watery field: try the whole band, not only the preferred depth
@@ -206,9 +206,9 @@ export function buildForts(){ mats(); let fi=Math.floor(Math.random()*6);   // Z
       const ball=new THREE.Mesh(new THREE.SphereGeometry(0.28,10,8), new THREE.MeshStandardMaterial({ color:0xc8a040, metalness:0.8, roughness:0.3 })); ball.position.y=PH+0.2; fg.add(ball);
       const fl=makeFlag(campFlagTex(), f.tier===3?5.4:4.4, f.tier===3?3.4:2.8, 1); fl.position.set(0, PH-1.8, 0); fg.add(fl); f.flag=fl; }
     // inner cover: sandbag lines, crates, HESCO and concrete — room to fight, things to duck behind
-    { const nC=Math.round(R2(T.cover)*FORT.coverK*(MOBILE?0.7:1)), kinds=['sandbag','crates','sandbag','hesco'], gA=Math.atan2(f.gz-f.z, f.gx-f.x);   // Z434 fewer, and only what a garrison lays out (no stray concrete lumps or drums)
+    { const Y=CAM_ROOM.yard, nC=Math.round(R2(T.cover)*FORT.coverK*(MOBILE?0.7:1)*Y.coverK), lkx=f.x+(f.keepR ? f.keepX : f.coreX ?? 0), lkz=f.z+(f.keepR ? f.keepZ : f.coreZ ?? 0), kinds=['sandbag','crates','sandbag','hesco'], gA=Math.atan2(f.gz-f.z, f.gx-f.x);   // Z434 fewer, and only what a garrison lays out (no stray concrete lumps or drums)
       for(let k=0,t=0;k<nC && t<nC*8;t++){ const a=Math.random()*Math.PI*2, r=f.R*(0.32+Math.random()*0.46); if(Math.abs(Math.atan2(Math.sin(a-gA),Math.cos(a-gA)))<0.35 && r>f.R*0.5) continue;   // keep the gate lane open
-        const x=f.x+Math.cos(a)*r, z=f.z+Math.sin(a)*r; if(blocks.some(b=>b.fort===f && b.kind==='cover' && Math.hypot(b.x-x,b.z-z)<5)) continue; if(f.keepR && Math.hypot(x-f.x-f.keepX, z-f.z-f.keepZ)<f.keepR+4) continue; if(f.coreR && Math.hypot(x-f.x-f.coreX, z-f.z-f.coreZ)<f.coreR+3) continue;
+        const x=f.x+Math.cos(a)*r, z=f.z+Math.sin(a)*r; if(blocks.some(b=>b.fort===f && b.kind==='cover' && Math.hypot(b.x-x,b.z-z)<5)) continue; if(f.keepR && Math.hypot(x-f.x-f.keepX, z-f.z-f.keepZ)<f.keepR+Y.keepGap) continue; if(_segDist(x, z, f.gx, f.gz, lkx, lkz)<Y.lane) continue;   // CAM 5 room round the keep, the road from the gate to it kept clear if(f.coreR && Math.hypot(x-f.x-f.coreX, z-f.z-f.coreZ)<f.coreR+Y.keepGap) continue;
         const kind=kinds[(Math.random()*kinds.length)|0], steel=kind==='hesco'||kind==='concrete', m=makeCoverMesh(kind, true); m.position.set(x, gy-0.12, z); m.rotation.y=a+Math.PI/2+(Math.random()-0.5)*0.4; scene.add(m);
         const hp=COVER_HP[kind]||70; blocks.push({ mesh:m, x, z, r:1.7, hp, maxHp:hp, steel, heavy:steel, cover:true, loot:Math.random()<0.25, kind, fortCover:f }); k++; } }   // Z193 the yard's HESCO / concrete break too
     f.label=nameSprite(f.name, f.tier===3?'#ffb35a':'#ff8a6a'); f.label.position.set(f.keepX||0, (f.flagH||12)+(f.keepY||0)+3, f.keepZ||0); g.add(f.label);

@@ -1103,6 +1103,24 @@ export const CAM_AUTO = { max:0.6, speedK:0.15, nearR:42, crowd:8, crowdK:0.32, 
 //   turns (yaw rad/s) and tilts (rad/s) the view at full tilt, past dead; an LT let go inside tap s with no look is still LT's own action
 export const CAM_FEEL = { lift:[0,3,6,9,12,16], liftT:0.32, ground:0.22, occIn:9, topIn:6, topHold:1, follow:0.09, lead:0.38, yaw:0.24, zoom:0.2, dash:0.22, dashPull:3.2, resume:0.6, kick:0.55, fovEase:5, orbit:0.0065, tilt:{ min:-0.3, max:0.65, k:0.004, low:0.21, top:1.19, ahead:0.9, lead:0.6 }, rdrag:{ px:6, tap:0.35, zoomK:1.6 }, padLook:{ yaw:2.6, tilt:1.5, dead:0.15, tap:0.3 }, wheelZoom:0.0016,
   ride:{ heave:0.55, buzz:0.012, bank:0.22, pitch:0.5, fovAcc:0.45, ease:6 } };   // Z301 the riding camera (heave share, road buzz m, bank share of the bike's lean, pitch share, FOV ° per m/s² of throttle)
+// CAM 3 ROOM TO FIGHT ("tường thành chật, vào đồn camera bị tường che") — see: what stands between the lens and him (render/see-through.js) is cut
+//   away round him and the ground he aims at (ahead m out): r = the cut's radius on screen (share of half its height; rM on a phone's wide, short screen), soft = its feathered share, far / ramp =
+//   only what is more than far m nearer than him (feathered over ramp m), near = anything this close to the lens goes whole, k = the most cut, sweep =
+//   how often new solids are let in (s), minH / maxW = a solid at least this tall, no wider (m: the ground and field-wide meshes never) ·
+//   fort: inside a fort's walls (within inR m of its inner wall, feathered out to outR m past its outer radius) the lens climbs to pitch ° over him
+//   at distK × its distance, its look-ahead cut by lead × (he stays off the screen's foot), easing at ease 1/s; the walls, towers and keep are cut, not climbed over (no lift for its walls) ·
+//   occ (CAM 4): a building / rock face between them pulls the lens in only after it has blocked for delay s, holds hold s, eases in at inK 1/s; with
+//   no room (his back to it) the lens stays out and rises at most rise m (the old leap to a top view is gone); buildings and rocks lift it at most
+//   liftObj m (fort walls, our walls and a hill's crest still lift it the whole ladder); trees, branches and trunks never move it (they are cut) ·
+//   yard (CAM 5, "không gian trong đồn ×2"): every fort's radius × rK (phones rKMobile, on top of FORT.mobileR: ×1.15 left the capital out of 1 in 4
+//   of the 130 m fields — measured — so they keep their size) — twice the yard — and the desktop
+//   field × arenaK (phones arenaKMobile) so the bigger forts still stand clear of our base, the fence and each other (FORT.count unchanged); the
+//   yard's cover × coverK (the same density over the bigger yard), none within keepGap m of the keep / command post nor lane m of the line from
+//   the gate to it (the assault's road in, the sally's road out)
+export const CAM_ROOM = { see:{ on:true, r:0.5, rM:0.65, ahead:8, soft:0.45, far:0.5, ramp:1.2, near:2.0, k:0.94, sweep:1.5, minH:0.6, maxW:150 },
+  fort:{ pitch:46, distK:1.0, lead:0.45, inR:1, outR:8, ease:1.4 },
+  occ:{ delay:0.18, hold:0.6, inK:2.5, rise:1.6, liftObj:3 },
+  yard:{ rK:1.4, rKMobile:1, arenaK:1.1, arenaKMobile:1, coverK:1.55, keepGap:7, lane:6 } };
 // Z239 SCREEN SHAKE — the player's level (CÀI ĐẶT → RUNG MÀN HÌNH) scales every quake; NHẸ is the default. pos = metres at full trauma,
 //   roll = radians, aberr = chromatic fringe at full trauma
 // Z242 REALISTIC LIGHT — AgX tone mapping (film-like roll-off: highlights desaturate the way a camera does, no neon greens), a stronger sun against a

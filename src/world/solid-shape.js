@@ -105,8 +105,9 @@ function rockBox(o, key){ const sig = o.children.length, had = ROCKBOX.get(o); i
   const box = top - heightAt(_rc.x, _rc.z) < 2.2 ? null : { x:_rc.x, z:_rc.z, f:o.rotation.y, hl:(_rb.max.z - _rb.min.z) / 2 * s.z, hw:(_rb.max.x - _rb.min.x) / 2 * s.x, y0:_rc.y - hy, y1:top, g:null };
   if(box && drawn) box.g = rockGrid(o, box);
   ROCKBOX.set(o, { sig, box }); return box; }
+const TREEISH = /^(tree|palm|oak|pine|birch|cactus|bush|shrub)|_tree|tree_/;   // CAM 4 a tree among the scenery: the camera never moves for it (render/see-through.js cuts it)
 export function camRocks(){ const t = performance.now(); if(t - CAMROCK.at < 2500) return CAMROCK.list; CAMROCK.at = t; const L = CAMROCK.list, at = new Map(); L.length = 0;
-  for(const o of scene.children){ const k = o.userData && o.userData.scene; if(k && o.visible !== false){ const b = rockBox(o, k); if(b){ L.push(b); at.set(spot(o.position.x, o.position.z), b); } } }
+  for(const o of scene.children){ const k = o.userData && o.userData.scene; if(k && o.visible !== false){ const b = rockBox(o, k); if(b){ b.tree = TREEISH.test(k); L.push(b); at.set(spot(o.position.x, o.position.z), b); } } }
   for(const bl of blocks){ if(!ROCKY[bl.kind] || !bl.mesh) continue;
     if(bl.mesh.isMesh){ if(bl.mesh.parent === scene){ const b = rockBox(bl.mesh, null); if(b) L.push(b); } }
     else if(!bl.mesh.children.length){ const b = at.get(spot(bl.x, bl.z)); if(b && b.g) rockSolid(b); } }   // a crag's block stands where its rock is drawn
@@ -143,7 +144,7 @@ export function camRocksStale(){ CAMROCK.at = -1e9; }   // a new field: gather t
 // where the sight line a → b (world) first meets one of those rocks (share 0…1 of the way), or 1 if it meets none — for the follow camera
 export function sightToRocks(ax, ay, az, bx, by, bz, pad = 0.3){ const L = camRocks(); if(!L.length) return 1; let t0 = 1;
   const minX = Math.min(ax, bx), maxX = Math.max(ax, bx), minZ = Math.min(az, bz), maxZ = Math.max(az, bz), len = Math.hypot(bx - ax, bz - az) || 1;
-  for(const R of L){ const e = R.hl + R.hw + pad; if(R.x + e < minX || R.x - e > maxX || R.z + e < minZ || R.z - e > maxZ) continue;
+  for(const R of L){ if(R.tree) continue; const e = R.hl + R.hw + pad; if(R.x + e < minX || R.x - e > maxX || R.z + e < minZ || R.z - e > maxZ) continue;
     const s = Math.sin(R.f), c = Math.cos(R.f), hl = R.hl + pad, hw = R.hw + pad, la = (ax - R.x) * s + (az - R.z) * c, lc = (ax - R.x) * c - (az - R.z) * s, inside = Math.abs(la) <= hl && Math.abs(lc) <= hw;
     const G = R.g; if(inside && !G) continue;   // he stands on it or against it, and its shape is not in yet
     const lb = (bx - R.x) * s + (bz - R.z) * c, ld = (bx - R.x) * c - (bz - R.z) * s; let u0 = 0, u1 = 1, ok = true;

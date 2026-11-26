@@ -1,7 +1,7 @@
 // game/update.js — the camera that follows the soldier, the enemy vehicles' rigs, Vietnamese label helpers (no-tanks: the tank's drive / aim / fire is gone)
 import * as THREE from 'three';
-import { CAM_AUTO, CAM_STYLE, CAM_FEEL, SHAKE, CLIMB } from '../../config.js';
-import { BIOME_VI, FORTS, MOBILE, PLAYER, PROFILE, S, camera, coreBeamBlocked, enemies, fortBeamBlocked, gradePass, heightAt, sightToBuildings, sightToRocks, camRocksStale, underActive, crushables, trunkR, camAimA, steadyCam, climbing } from '../hub.js';
+import { CAM_AUTO, CAM_STYLE, CAM_FEEL, CAM_ROOM, SHAKE, CLIMB } from '../../config.js';
+import { BIOME_VI, CV, FORTS, MOBILE, SEE, seeSweep, PLAYER, PROFILE, S, camera, coreBeamBlocked, enemies, fortBeamBlocked, gradePass, heightAt, sightToBuildings, sightToRocks, camRocksStale, underActive, crushables, trunkR, camAimA, steadyCam, climbing } from '../hub.js';
 
 // ----------------------------- UPDATE -----------------------------
 export function biomeVi(n){ return BIOME_VI[n]||n; }
@@ -47,10 +47,18 @@ function camOffset(zoom, yaw, zk, out){ const k=Math.max(0.26, zoom + S.camZ*zk)
   if(yaw) out.applyAxisAngle(_camUP, yaw); return out; }
 // the settled pose the follow camera is heading for (no shake, no kick) — the intro lands on it exactly, so play starts without a jolt
 // Z241 the lowest extra height (CAM_FEEL.lift) from which the lens at `pos` sees the tank's hull over every wall in the way
-export function camLift(pos, p){ const F=CAM_FEEL, hy=heightAt(p.pos.x, p.pos.z)+(p.lift||0)+(p.cav ? 1.6 : 3.2);
-  for(const L of F.lift){ const y=pos.y+L; if(!fortBeamBlocked(pos.x, y, pos.z, p.pos.x, hy, p.pos.z) && !coreBeamBlocked(pos.x, y, pos.z, p.pos.x, hy, p.pos.z) && sightToBuildings(p.pos.x, hy, p.pos.z, pos.x, y, pos.z) >= 1
-    && sightToGround(p.pos.x, hy, p.pos.z, pos.x, y, pos.z) >= 1 && sightToRocks(p.pos.x, hy, p.pos.z, pos.x, y, pos.z) >= 1) return L; }   // (Z337 a city building too · NO-TANKS 10 a hill's crest, a big rock)
-  return F.lift[F.lift.length-1]; }
+function liftOk(pos, p, hy, L, all, inFort){ const y=pos.y+L; return (inFort || !fortBeamBlocked(pos.x, y, pos.z, p.pos.x, hy, p.pos.z)) && !coreBeamBlocked(pos.x, y, pos.z, p.pos.x, hy, p.pos.z) && sightToGround(p.pos.x, hy, p.pos.z, pos.x, y, pos.z) >= 1
+  && (!all || sightToBuildings(p.pos.x, hy, p.pos.z, pos.x, y, pos.z) >= 1 && sightToRocks(p.pos.x, hy, p.pos.z, pos.x, y, pos.z) >= 1); }   // (Z337 a city building too · NO-TANKS 10 a hill's crest, a big rock)
+export function camLift(pos, p, inFort){ const F=CAM_FEEL, hy=heightAt(p.pos.x, p.pos.z)+(p.lift||0)+(p.cav ? 1.6 : 3.2), LO=CAM_ROOM.occ.liftObj; let L0=F.lift[F.lift.length-1];
+  for(const L of F.lift) if(liftOk(pos, p, hy, L, false, inFort)){ L0=L; break; }   // a fort's wall, our wall, a hill's crest: the whole ladder (CAM 3 inside a fort its own walls are cut, not climbed)
+  if(L0<=LO) for(const L of F.lift){ if(L<L0) continue; if(L>LO) break; if(liftOk(pos, p, hy, L, true, inFort)) return L; }   // CAM 4 a building / rock: only a small lift (liftObj m) — past that it is cut away (render/see-through.js), never climbed
+  return L0; }
+// CAM 3 how far inside a fort's walls he stands (0 outside … 1 within CAM_ROOM.fort.inR of its inner wall) — the lens climbs over him there
+export function camFortIn(p){ const C=CAM_ROOM.fort; let k=0; for(const f of FORTS){ if(!f.g) continue; const d=Math.hypot(f.x-p.pos.x, f.z-p.pos.z), a=(f.Rin||f.R)-C.inR, b=f.R+C.outR; if(d>=b) continue; k=Math.max(k, d<=a ? 1 : 1-(d-a)/(b-a)); } return k; }
+// CAM 3 the offset (lens from the look point) tipped up to CAM_ROOM.fort.pitch and scaled by its distK, by share k
+const _DEG=Math.PI/180;
+export function camFortPose(o, k){ const C=CAM_ROOM.fort, h=Math.hypot(o.x, o.z), r=Math.hypot(h, o.y), a0=Math.atan2(o.y, h), a=a0+Math.max(0, C.pitch*_DEG-a0)*k, r2=r*(1+(C.distK-1)*k), nh=r2*Math.cos(a);
+  if(h>1e-4){ o.x*=nh/h; o.z*=nh/h; } o.y=r2*Math.sin(a); return o; }
 // NO-TANKS 10 the ground under the follow camera: the soldier's own ground, as the lens follows it (none in the base under the field: its floor is the world's)
 export const camGround = p => underActive(p.pos.x) ? 0 : heightAt(p.pos.x, p.pos.z);
 // NO-TANKS 10 a tree right before the lens: up on the hills the lens rides among their trees, and a trunk a metre from it filled half the screen (one
@@ -67,10 +75,10 @@ export function sightToTrunks(ax, ay, az, bx, by, bz){ const dx=bx-ax, dz=bz-az,
 export function sightToGround(ax, ay, az, bx, by, bz){ if(underActive(ax)) return 1; const n=Math.min(28, Math.max(4, Math.ceil(Math.hypot(bx-ax, bz-az)/1.1)));
   for(let i=1; i<=n; i++){ const u=i/n; if(ay+(by-ay)*u < heightAt(ax+(bx-ax)*u, az+(bz-az)*u)+0.3) return (i-1)/n; }
   return 1; }
-export function camRestPose(pos, look){ const p=S.player; if(!p) return false; const CS=applyCamStyle(), ck=p.camK||1, z=S.zoomT??S.zoom??1, zk=Math.min(1,z), y=S.camYawT??S.camYaw??0, ah=CS.ahead*Math.max(0.4,zk)*ck*ck;
+export function camRestPose(pos, look){ const p=S.player; if(!p) return false; const fk=camFortIn(p), CS=applyCamStyle(), ck=p.camK||1, z=S.zoomT??S.zoom??1, zk=Math.min(1,z), y=S.camYawT??S.camYaw??0, ah=CS.ahead*Math.max(0.4,zk)*ck*ck;
   const lx=(Math.sin(p.aim||0)*6+p.vel.x*0.18)*0.45*zk, lz=(Math.cos(p.aim||0)*6+p.vel.z*0.18)*0.45*zk;
-  { const tu=tiltPull(), k=1-CAM_FEEL.tilt.ahead*tu, kl=1-CAM_FEEL.tilt.lead*tu; look.set(p.pos.x+lx*kl-Math.sin(y)*ah*k, (CS.lookY+Math.max(0,0.6-z)*2.2)*ck, p.pos.z+lz*kl-Math.cos(y)*ah*k); }
-  camOffset(z, y, zk, pos); pos.x+=look.x; pos.z+=look.z; { const g=camGround(p); pos.y+=g; look.y+=g; } pos.y+=camLift(pos, p); return CS.fov; }   // (NO-TANKS 10 from his own ground)   // (lifted over a wall in the way, as play will be)
+  { const tu=tiltPull(), fl=1-CAM_ROOM.fort.lead*smoother(fk), k=(1-CAM_FEEL.tilt.ahead*tu)*fl, kl=(1-CAM_FEEL.tilt.lead*tu)*fl; look.set(p.pos.x+lx*kl-Math.sin(y)*ah*k, (CS.lookY+Math.max(0,0.6-z)*2.2)*ck, p.pos.z+lz*kl-Math.cos(y)*ah*k); }
+  camOffset(z, y, zk, pos); if(fk>0.001) camFortPose(pos, smoother(fk)); pos.x+=look.x; pos.z+=look.z; { const g=camGround(p); pos.y+=g; look.y+=g; } pos.y+=camLift(pos, p, fk>0.5); return CS.fov; }   // (CAM 3 inside a fort: over him)   // (NO-TANKS 10 from his own ground)   // (lifted over a wall in the way, as play will be)
 // Z301 RIDING CAMERA: a chase camera that rides with the machine — it rises and settles with the suspension's heave, buzzes with the road at speed,
 //   banks a little with the bike into a bend, dips its nose under the brakes and lifts under the throttle, and the lens widens as the throttle opens;
 //   all scaled by the player's own shake setting (CÀI ĐẶT → RUNG MÀN HÌNH: off is off)
@@ -81,6 +89,16 @@ function rideCam(p, dt, now, g){ const H = p.cav && p.cav.H, I = H && H.inert, U
   RC.roll += ((H.two === false ? 0 : (H.lean || 0)) * U.bank - RC.roll) * e; RC.pitch += ((I.p || 0) * U.pitch - RC.pitch) * e; RC.fov += (Math.max(0, Math.min(8, I.acc)) * U.fovAcc - RC.fov) * e;
   camera.rotateX(RC.pitch * k); camera.rotateZ(RC.roll * k);
   if(RC.fov > 0.02){ camera.fov += RC.fov * k; camera.updateProjectionMatrix(); camera.fov -= RC.fov * k; } }
+// CAM 3 the cut-away's place this frame (render/see-through.js): him and the ground he aims at (CAM_ROOM.see.ahead m out), where they are on screen
+//   and how deep in the view he stands; new solids let in every sweep s (his own kit never)
+const _sv=new THREE.Vector3(), _seeSkip=[null, null, null];
+function seeCam(p){ const C=CAM_ROOM.see, u=SEE.u; SEE.at=performance.now()/1000; if(!C.on){ u.uSeeB.value.w=0; return; }
+  _seeSkip[0]=p.mesh||null; _seeSkip[1]=CV.G||null; _seeSkip[2]=(CV.H && CV.H.root)||null; seeSweep(SEE.at, _seeSkip);
+  camera.updateMatrixWorld(); const asp=camera.aspect, gH=heightAt(p.pos.x, p.pos.z)+(p.lift||0);
+  _sv.set(p.pos.x, gH+1.2, p.pos.z).applyMatrix4(camera.matrixWorldInverse); const dz=-_sv.z; _sv.applyMatrix4(camera.projectionMatrix); const hx=_sv.x*asp, hy=_sv.y;
+  const a=camAimA(p), ax=p.pos.x+Math.sin(a)*C.ahead, az=p.pos.z+Math.cos(a)*C.ahead; let tx=hx, ty=hy;
+  _sv.set(ax, heightAt(ax, az)+1.0, az).applyMatrix4(camera.matrixWorldInverse); if(-_sv.z>0.5){ _sv.applyMatrix4(camera.projectionMatrix); tx=_sv.x*asp; ty=_sv.y; }
+  u.uSeeA.value.set(hx, hy, tx, ty); u.uSeeB.value.set(dz, MOBILE ? C.rM : C.r, C.near, dz>0.5 ? C.k : 0); u.uSeeC.value.set(asp, C.soft, C.far, C.ramp); }
 export function updateCamera(dt, now){
   const p=S.player; if(!p) return;
   const F=CAM_FEEL, CS=applyCamStyle(), st=Math.min(dt, 1/20);
@@ -88,7 +106,7 @@ export function updateCamera(dt, now){
     CAM.blend = CAM.on ? F.resume : 0; CAM.on=true;
     S.zoom=S.zoomT??S.zoom; S.camYaw=S.camYawT??S.camYaw; CAM.zl=Math.log(Math.max(0.05,S.zoom)); CAM.ya=S.camYaw; CAM.ti=S.camTilt=S.camTiltT||0; CAM.tiV=0;
     const zk=Math.min(1,S.zoom); CAM.lx=(Math.sin(p.aim||0)*6+p.vel.x*0.18)*0.45*zk; CAM.lz=(Math.cos(p.aim||0)*6+p.vel.z*0.18)*0.45*zk; CAM.fx=p.pos.x; CAM.fz=p.pos.z;
-    CAM.lxV=CAM.lzV=CAM.fxV=CAM.fzV=CAM.yaV=CAM.zlV=CAM.dashV=0; CAM.dash=0; CAM.kick=0; CAM.liftSnap=true; CAM.gy=camGround(p); CAM.gyV=0; camRocksStale();   // (NO-TANKS 10 a new field: its rocks)
+    CAM.lxV=CAM.lzV=CAM.fxV=CAM.fzV=CAM.yaV=CAM.zlV=CAM.dashV=0; CAM.dash=0; CAM.kick=0; CAM.liftSnap=true; CAM.fk=camFortIn(p); CAM.gy=camGround(p); CAM.gyV=0; camRocksStale();   // (NO-TANKS 10 a new field: its rocks)
     CAM.bp.copy(camera.position); CAM.bq.copy(camera.quaternion); CAM.bf=camera.fov; }
   CAM.t=now;
   sd(CAM, 'zl', Math.log(Math.max(0.05, S.zoomT??S.zoom)), F.zoom, st); S.zoom=Math.exp(CAM.zl);                    // zoom glides
@@ -99,22 +117,26 @@ export function updateCamera(dt, now){
   const la=camAimA(p); sd(CAM, 'lx', (Math.sin(la)*6 + p.vel.x*0.18)*0.45*zk, F.lead, st); sd(CAM, 'lz', (Math.cos(la)*6 + p.vel.z*0.18)*0.45*zk, F.lead, st);   // look-ahead (aim + motion) glides (Z376 the aim as the mouse last laid it: combat/crosshair.js)
   sd(CAM, 'fx', p.pos.x, F.follow, st); sd(CAM, 'fz', p.pos.z, F.follow, st);                                       // the tank itself is held tight
   camLook.set(CAM.lx, 0, CAM.lz);
-  { const tu=tiltPull(), k=1-CAM_FEEL.tilt.ahead*tu, kl=1-CAM_FEEL.tilt.lead*tu; camTarget.set(CAM.fx + CAM.lx*kl - Math.sin(cy)*ah*k, 0, CAM.fz + CAM.lz*kl - Math.cos(cy)*ah*k); }   // CAM 1 tilted up: the lens looks back toward him (he stays in frame)
+  { const tu=tiltPull(), fl=1-CAM_ROOM.fort.lead*smoother(CAM.fk||0), k=(1-CAM_FEEL.tilt.ahead*tu)*fl, kl=(1-CAM_FEEL.tilt.lead*tu)*fl; camTarget.set(CAM.fx + CAM.lx*kl - Math.sin(cy)*ah*k, 0, CAM.fz + CAM.lz*kl - Math.cos(cy)*ah*k); }   // CAM 1 tilted up: the lens looks back toward him (he stays in frame)
   if(now>=_camAutoAt){ _camAutoAt=now+CAM_AUTO.every; _camAutoWant=S.camAuto ? camAutoPull(p) : 0; }   // Z110 auto camera (sampled 4×/s, eased every frame)
   S.camZ += (_camAutoWant - S.camZ) * (1-Math.exp(-dt*CAM_AUTO.ease));
   camOffset(z, cy, zk, _camOff);
   { const k=Math.min(1, dt*CLIMB.cam.rate); CAM.cp=(CAM.cp??1)+(((p.cav && climbing()) ? CLIMB.cam.pull : 1)-(CAM.cp??1))*k; CAM.ly=(CAM.ly??0)+((p.lift||0)-(CAM.ly??0))*Math.min(1, dt*6); if(CAM.cp>1.001) _camOff.multiplyScalar(CAM.cp); }   // Z451 on a wall's face the lens draws back; up on top it rides up with him
+  { const fk=camFortIn(p); CAM.fk=(CAM.fk??fk)+(fk-(CAM.fk??fk))*(1-Math.exp(-dt*CAM_ROOM.fort.ease)); if(CAM.fk>0.001) camFortPose(_camOff, smoother(CAM.fk)); }   // CAM 3 inside a fort the lens climbs over him (its walls, towers and keep are cut away, not climbed)
   sd(CAM, 'dash', (now && now < p.dashUntil) ? F.dashPull : 0, F.dash, st);   // eases back during a dash
   sd(CAM, 'gy', camGround(p), F.ground, st);   // NO-TANKS 10 the lens rides up a hill with him and down again (it held one height: on a 12–17 m crag it sat inside the hill)
   camBase.set(camTarget.x+_camOff.x, _camOff.y+CAM.dash+CAM.ly+CAM.gy, camTarget.z+_camOff.z);
-  if(CAM.liftSnap){ CAM.liftSnap=false; CAM.lift=camLift(camBase, p); CAM.liftV=0; }
-  CAM.lt=camLift(camBase, p); sd(CAM, 'lift', CAM.lt, CAM_FEEL.liftT, st); camBase.y+=CAM.lift;   // Z241 a great wall between the lens and the tank → rise over it, settle back when clear
+  const inF=CAM.fk>0.5; if(CAM.liftSnap){ CAM.liftSnap=false; CAM.lift=camLift(camBase, p, inF); CAM.liftV=0; }
+  CAM.lt=camLift(camBase, p, inF); sd(CAM, 'lift', CAM.lt, CAM_FEEL.liftT, st); camBase.y+=CAM.lift;   // Z241 a great wall between the lens and the tank → rise over it, settle back when clear
   { const hy=heightAt(p.pos.x, p.pos.z)+(p.cav ? 1.6 : 3.2), yt=Math.max(camBase.y, camBase.y-CAM.lift+CAM.lt), hd=Math.hypot(camBase.x-p.pos.x, camBase.z-p.pos.z), o=CAM.occ ?? 1;   // Z337 a building between the lens and you (or the lens
-    const t=Math.min(sightToBuildings(p.pos.x, hy, p.pos.z, camBase.x, yt, camBase.z), sightToRocks(p.pos.x, hy, p.pos.z, camBase.x, yt, camBase.z), sightToGround(p.pos.x, hy, p.pos.z, camBase.x, yt, camBase.z), sightToTrunks(p.pos.x, hy, p.pos.z, camBase.x, camBase.y, camBase.z));   // (NO-TANKS 10 a hill, a rock too — and judged from the height the lens is rising to: what the rise will clear, it does not also dive in for)
-    let want=1, top=0; if(t<1){ const u=t-0.05; if(u*hd>=1.6) want=u; else top=1; } if(top) CAM.topT=now+CAM_FEEL.topHold; else if(now<(CAM.topT||0)) top=1;   // (NO-TANKS 10 held a moment: along a rock face it flicked up and down)   //   inside one): it comes in on its sight line to this side of the wall; with no room for it there (your back to the wall) it goes up over you
-    CAM.occ = o+(want-o)*Math.min(1, dt*(want<o ? CAM_FEEL.occIn : 2.5)); CAM.top = (CAM.top||0)+(top-(CAM.top||0))*Math.min(1, dt*(top>(CAM.top||0) ? CAM_FEEL.topIn : 2));   // (NO-TANKS 10 in fast but gliding — it cut in a frame — and back out slowly)
+    const t=Math.min(sightToBuildings(p.pos.x, hy, p.pos.z, camBase.x, yt, camBase.z), sightToRocks(p.pos.x, hy, p.pos.z, camBase.x, yt, camBase.z), sightToGround(p.pos.x, hy, p.pos.z, camBase.x, yt, camBase.z));   // (NO-TANKS 10 a hill, a rock too — and judged from the height the lens is rising to: what the rise will clear, it does not also dive in for · CAM 4 a tree, its branches and trunk never move it: they are cut away, render/see-through.js)
+    let want=1, top=0; if(t<1){ const u=t-0.05; if(u*hd>=1.6) want=u; else top=1; }   //   inside one): it comes in on its sight line to this side of the wall; with no room for it there (his back to it) it rises a little
+    const O=CAM_ROOM.occ; CAM.blkT=(want<1 || top) ? (CAM.blkT||0)+dt : 0; if(CAM.blkT<O.delay){ want=1; top=0; }   // CAM 4 a corner glimpsed for a moment moves nothing (the cut shows him)
+    if(want<1){ CAM.ow=want; CAM.owT=now+O.hold; } else if(now<(CAM.owT||0)) want=CAM.ow;   // CAM 4 and once in, it holds a moment after the line clears (no in-out-in along a row of posts)
+    if(top) CAM.topT=now+CAM_FEEL.topHold; else if(now<(CAM.topT||0)) top=1;   // (NO-TANKS 10 held a moment: along a rock face it flicked up and down)
+    CAM.occ = o+(want-o)*Math.min(1, dt*(want<o ? O.inK : 2.5)); CAM.top = (CAM.top||0)+(top-(CAM.top||0))*Math.min(1, dt*(top>(CAM.top||0) ? CAM_FEEL.topIn : 2));   // (NO-TANKS 10 in gliding — it cut in a frame — and back out slowly)
     if(CAM.occ<0.999) camBase.set(p.pos.x+(camBase.x-p.pos.x)*CAM.occ, hy+(camBase.y-hy)*CAM.occ, p.pos.z+(camBase.z-p.pos.z)*CAM.occ);
-    if(CAM.top>0.001){ const k=CAM.top, ty=hy+Math.max(9, camBase.y-hy), ux=(camBase.x-p.pos.x)/(hd||1), uz=(camBase.z-p.pos.z)/(hd||1); camBase.set(camBase.x+(p.pos.x-ux*1.8-camBase.x)*k, camBase.y+(ty-camBase.y)*k, camBase.z+(p.pos.z-uz*1.8-camBase.z)*k); } }   //   (high over you, a little out from the wall, looking down past the eaves)
+    if(CAM.top>0.001) camBase.y+=O.rise*CAM.top; }   // CAM 4 his back to it: the lens stays where it is and rises rise m at most — the wall between is cut away (it used to leap to a top view 9 m over him)
   if(!underActive(p.pos.x)){ const g=heightAt(camBase.x, camBase.z)+0.9; if(camBase.y<g) camBase.y=g; }   // NO-TANKS 10 and never under the ground it is over
   camera.position.copy(camBase);
   steadyCam(camBase, camTarget.x, (CS.lookY+Math.max(0, 0.6-z)*2.2)*ck+CAM.ly+CAM.gy, camTarget.z, Math.max(10, camera.fov-Math.min(2, CAM.kick*1.4)*F.kick), camera.aspect, !(CAM.blend>0));   // Z382 the pose before the kick and the shake: the crosshair looks through it (combat/crosshair.js)
@@ -131,5 +153,6 @@ export function updateCamera(dt, now){
   if(t2>0.0004) camera.rotateZ((Math.sin(now*23.7)+Math.sin(now*41.3+0.9)*0.45)*t2*SHAKE.roll);   // roll
   if(p.cav && p.bike) rideCam(p, dt, now, g);   // Z301 on the ride: the camera feels the road
   gradePass.uniforms.aberr.value = t2*SHAKE.aberr;
+  seeCam(p);   // CAM 3 where the cut-away goes this frame
   S.shake = Math.max(0, S.shake - dt*(S.shake*2.6 + 1.2));
 }

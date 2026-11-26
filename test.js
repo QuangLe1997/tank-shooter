@@ -2399,6 +2399,24 @@ grp('GRAPH 5 the motion graph: on by default, lifted feet instead of dragged one
   ok(M.rideWrist === true && /wrists \? wristGive\(D, 'Left', cup/.test(rcv) && /wrists \? wristGive\(D, 'Right', ax0/.test(rcv) && /if\(wrists\) triggerFinger\(D, FR, g, len,/.test(rcv) && /wrists = foot \|\| !!\(BODYMEND\.rideWrist && p && p\.cav && !p\.cav\.trans\)/.test(rcv),
     'BODY 8 on the horse and the pillion the wrists give toward the forearm and the index finger is on the trigger, as on foot (both wrists stood bent 80°)');
 }
+// CAM 3–5 room to fight in a fort: what stands between the lens and him is cut away (render/see-through.js), inside a fort the lens climbs over
+//   him instead of climbing the walls, no leap to a top view past a building / tree / rock, every fort's yard twice the size
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), K=C.CAM_ROOM, see=R('src/render/see-through.js'), up=R('src/game/update.js'), fo=R('src/world/fortress.js'), cc=R('src/core/config.js'), sh=R('src/world/solid-shape.js');
+  ok(K && K.see.on===true && K.see.r>0.2 && K.see.r<0.7 && K.see.k>0.5 && K.see.k<=1 && K.see.far>=0 && K.see.ramp>0 && K.see.near>0 && K.see.near<4 && K.see.sweep>0 && K.see.minH>0 && K.see.maxW>=100 && K.see.ahead>0
+    && /SHADER_HOOKS\.push\(inject\)/.test(see) && /uniform float uSeeOn;/.test(see) && /sh\.uniforms\.uSeeOn = seeU\(m\)/.test(see) && /if\(uSeeOn > 0\.5 && uSeeB\.w > 0\.002\)/.test(see) && /discard;/.test(see) && !/needsUpdate/.test(see)
+    && /seeSweep\(SEE\.at, _seeSkip\)/.test(up) && /u\.uSeeB\.value\.set\(dz, MOBILE \? C\.rM : C\.r, C\.near, dz>0\.5 \? C\.k : 0\)/.test(up) && K.see.rM>=K.see.r && K.see.rM<0.9 && /seeCam\(p\);/.test(up),
+    'see-through: one shared uniform set, a per-material switch (no recompile mid-battle), never the shadow pass; set each frame from him and his aim point');
+  ok(K.fort.pitch>=35 && K.fort.pitch<=60 && K.fort.distK>0.7 && K.fort.distK<=1.3 && K.fort.lead>=0 && K.fort.lead<1 && K.fort.outR>0 && K.fort.ease>0
+    && /export function camFortIn\(p\)/.test(up) && /camFortPose\(_camOff, smoother\(CAM\.fk\)\)/.test(up) && /CAM\.lt=camLift\(camBase, p, inF\)/.test(up) && /\(inFort \|\| !fortBeamBlocked\(/.test(up),
+    'inside a fort the lens climbs to '+K.fort.pitch+'° over him and his own fort\'s walls are cut, not climbed');
+  ok(K.occ.rise>0 && K.occ.rise<=3 && K.occ.liftObj<=3 && K.occ.delay>0 && K.occ.delay<0.5 && K.occ.hold>0 && K.occ.inK>0
+    && !/ty=hy\+Math\.max\(9, camBase\.y-hy\)/.test(up) && /if\(CAM\.top>0\.001\) camBase\.y\+=O\.rise\*CAM\.top;/.test(up) && !/sightToTrunks\(p\.pos\.x, hy/.test(up) && /if\(R\.tree\) continue;/.test(sh) && /b\.tree = TREEISH\.test\(k\)/.test(sh)
+    && /if\(L>LO\) break; if\(liftOk\(pos, p, hy, L, true, inFort\)\) return L;/.test(up),
+    'no leap to a top view: a wall at his back raises the lens '+K.occ.rise+' m at most, a building / rock lifts it '+K.occ.liftObj+' m at most, a tree never moves it');
+  ok(K.yard.rK>=1.3 && K.yard.rK<=1.5 && K.yard.rKMobile>=1 && K.yard.arenaK>=1 && K.yard.arenaK<=1.2 && K.yard.arenaKMobile>=1 && K.yard.coverK>=1 && K.yard.keepGap>=4 && K.yard.lane>=4
+    && /\*\(MOBILE\?FORT\.mobileR\*CAM_ROOM\.yard\.rKMobile:CAM_ROOM\.yard\.rK\)\);/.test(fo) && /\*Y\.coverK\)/.test(fo) && /_segDist\(x, z, f\.gx, f\.gz, lkx, lkz\)<Y\.lane/.test(fo) && /CAM_ROOM\.yard\.arenaK\)\);/.test(cc),
+    'every fort\'s yard ×'+(K.yard.rK*K.yard.rK).toFixed(2)+' (radius ×'+K.yard.rK+', the field ×'+K.yard.arenaK+' to keep them clear), its cover at the same density, the road from the gate to the keep kept clear'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
@@ -2418,7 +2436,7 @@ grp('GRAPH 5 the motion graph: on by default, lifted feet instead of dragged one
   ok(/GIZA/.test(w) && /DJENNÉ/.test(w) && /VẠN LÝ/.test(w) && /MỘT CỘT/.test(w) && /export function buildWonder/.test(w), 'world landmarks per battlefield');
   ok(/'swallow'/.test(r) && /'tent'/.test(r) && /'pagoda'/.test(r) && /'chhatri'/.test(r) && /'toron'/.test(r), 'country-inspired fort caps and roofs');
   ok(/WX\.base/.test(wx) && /applyWeather\(id, k\)/.test(wx), 'weather starts from the base atmosphere each time (no stacking)');
-  ok(/ARENA = _TOUCH \? 130 : 184/.test(cc), 'desktop battlefield has twice the area'); }
+  ok(/ARENA = Math\.round\(\(_TOUCH \? 130 : 184\)\*\(_TOUCH \? CAM_ROOM\.yard\.arenaKMobile : CAM_ROOM\.yard\.arenaK\)\);/.test(cc), 'desktop battlefield has twice the area (CAM 5: × CAM_ROOM.yard.arenaK for the bigger forts)'); }
 
 // Z145 real surfaces, cinematic sky, irregular forts, capital keep, escalade, turret traverse, fictional flag
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const su=R('src/render/surface.js'), cl=R('src/render/clouds.js'), at=R('src/world/atmosphere.js'), fo=R('src/world/fortress.js'), es=R('src/actors/escalade.js'), rd=R('src/render/renderer.js'), up=R('src/game/update.js'), hf=R('src/world/heightfield.js'), ip=R('src/input/input.js');
@@ -3369,9 +3387,9 @@ grp('GRAPH 5 the motion graph: on by default, lifted feet instead of dragged one
     && /CV\.facing=face/.test(pd) && !/p\.pos\.set\(0,0,ARENA\*0\.45\)/.test(pd), 'death: he gets up where he lies, facing as he was — not at the spawn point');
   ok(/sd\(CAM, 'gy', camGround\(p\), F\.ground, st\)/.test(up) && /_camOff\.y\+CAM\.dash\+CAM\.ly\+CAM\.gy/.test(up) && (up.match(/\*ck\+CAM\.ly\+CAM\.gy/g)||[]).length===2
     && /ground:0\.22/.test(cfg) && /pos\.y\+=g; look\.y\+=g;/.test(up), 'the camera follows his ground up and down a hill (the lens, the point it looks at, the rest pose)');
-  ok(/sightToGround\(p\.pos\.x, hy, p\.pos\.z, pos\.x, y, pos\.z\) >= 1 && sightToRocks\(p\.pos\.x, hy, p\.pos\.z, pos\.x, y, pos\.z\) >= 1\) return L;/.test(up)
-    && /const t=Math\.min\(sightToBuildings\([^)]*yt[^)]*\), sightToRocks\([^)]*yt[^)]*\), sightToGround\([^)]*yt[^)]*\), sightToTrunks\([^)]*\)\);/.test(up) && /yt=Math\.max\(camBase\.y, camBase\.y-CAM\.lift\+CAM\.lt\)/.test(up) && /CAM\.occ = o\+\(want-o\)\*Math\.min\(1, dt\*\(want<o \? CAM_FEEL\.occIn : 2\.5\)\); CAM\.top = /.test(up) && /if\(top\) CAM\.topT=now\+CAM_FEEL\.topHold; else if\(now<\(CAM\.topT\|\|0\)\) top=1;/.test(up) && /topIn:6, topHold:1/.test(cfg) && /const g=heightAt\(camBase\.x, camBase\.z\)\+0\.9; if\(camBase\.y<g\) camBase\.y=g;/.test(up),
-    'a hill\'s crest or a big rock between them: the lens rises over it (judged from the height it is rising to), else glides in past it — and never under the ground; a trunk right before the lens it comes in past');
+  ok(/sightToGround\(p\.pos\.x, hy, p\.pos\.z, pos\.x, y, pos\.z\) >= 1/.test(up) && /sightToRocks\(p\.pos\.x, hy, p\.pos\.z, pos\.x, y, pos\.z\) >= 1\); \}/.test(up) && /if\(liftOk\(pos, p, hy, L, true, inFort\)\) return L;/.test(up)
+    && /const t=Math\.min\(sightToBuildings\([^)]*yt[^)]*\), sightToRocks\([^)]*yt[^)]*\), sightToGround\([^)]*yt[^)]*\)\);/.test(up) && /yt=Math\.max\(camBase\.y, camBase\.y-CAM\.lift\+CAM\.lt\)/.test(up) && /CAM\.occ = o\+\(want-o\)\*Math\.min\(1, dt\*\(want<o \? O\.inK : 2\.5\)\); CAM\.top = /.test(up) && /if\(top\) CAM\.topT=now\+CAM_FEEL\.topHold; else if\(now<\(CAM\.topT\|\|0\)\) top=1;/.test(up) && /topIn:6, topHold:1/.test(cfg) && /const g=heightAt\(camBase\.x, camBase\.z\)\+0\.9; if\(camBase\.y<g\) camBase\.y=g;/.test(up),
+    'a hill\'s crest or a big rock between them: the lens rises over it (judged from the height it is rising to), else glides in past it — and never under the ground (CAM 4: a tree never moves it)');
   ok(/export function sightToRocks/.test(sh) && /function rockGrid\(o, R\)/.test(sh) && /y <= \(u \* len < 3 \? G\.raw : G\.top\)\[ia \* G\.nc \+ ic\] \+ pad && y >= R\.y0/.test(sh) && /CAM\.gy=camGround\(p\); CAM\.gyV=0; camRocksStale\(\);/.test(up),
     'the rocks the camera sees past: every big piece of scenery as a box, and inside it the rock\'s own height a metre at a time');
   ok(/export function pushOutRocks\(p, rad, lift = 0\)/.test(sh) && /const ROCKY = \{ crag:1, shard:1 \}/.test(sh) && /G\.raw\[k\] < feet \+ 0\.6/.test(sh)
