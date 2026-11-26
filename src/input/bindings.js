@@ -2,7 +2,7 @@
 //   camera, music, pause, key sheet) has up to 2 keys + 1 pad button, all rebindable from the key sheet (PROFILE.binds).
 //   Also the shared MENU NAVIGATION (focus ring) for keyboard (arrows / Tab / Enter / Esc) and pad (D-pad / A / B / LB-RB / right stick).
 import { ACTIONS } from '../../config.js';
-import { coopGive, coopPing, soldierFire, reloadNow, PROFILE, S, assaultFort, castSpellId, fpvKey, callParadrop, camReset, cavStance, closeKeys, crewPress, crewRelease, cycleGun, cycleSpell, cycleSquadOrder, floatText, keysOpen, musterAll, openKeys, padCfg, playerRange, rotStep, saveProfile, setCamAuto, sfx, toggleMusic, togglePause, tryDash, trySpell, yawReset, zoomPing, zoomReset, zoomStep, soldierRoll, soldierClimb, quietKnife } from '../hub.js';
+import { bladeToggle, coopGive, coopPing, soldierFire, reloadNow, PROFILE, S, assaultFort, castSpellId, fpvKey, callParadrop, camReset, cavStance, closeKeys, crewPress, crewRelease, cycleGun, cycleSpell, cycleSquadOrder, floatText, keysOpen, musterAll, openKeys, padCfg, playerRange, rotStep, saveProfile, setCamAuto, sfx, toggleMusic, togglePause, tryDash, trySpell, yawReset, zoomPing, zoomReset, zoomStep, soldierRoll, soldierClimb, quietKnife } from '../hub.js';
 
 // ---- the table: ACTIONS (config) = [id, label, group, defaultKeys[], defaultPadButton|null, hold?] ----
 export const BIND = { cap:null, map:null };
@@ -33,7 +33,7 @@ export function runAction(id, phase, repeat){ if(phase==='up'){ if(id==='crew') 
     case 'dash': tryDash(); break;  case 'roll': soldierRoll(); break;  case 'knife': quietKnife(); break;   /* SUPPLY 3 */  case 'climb': soldierClimb(); break;   /* Z451 */  case 'skill': trySpell(); break;  case 'skillNext': cycleSpell(1); break;
     case 'droneRecon': castSpellId('reconDrone'); break; case 'droneFpv': castSpellId('fpvDrone'); break; case 'droneJam': castSpellId('jammer'); break;   // DRONE 1 the drones' own keys (combat/drone-skills.js)
     case 'crew': crewPress(); break; case 'autoFire': { const b=document.getElementById('autoBtn'); if(b) b.click(); } break;
-    case 'gunPrev': cycleGun(-1); break; case 'gunNext': cycleGun(1); break; case 'reload': reloadNow(); break;   // GUN 2 R: reload now (combat/guns.js)
+    case 'gunPrev': cycleGun(-1); break; case 'gunNext': cycleGun(1); break; case 'reload': reloadNow(); break;   /* GUN 2 R: reload now (combat/guns.js) */ case 'blade': bladeToggle(); break;   // BLADE 2 blade ⇄ rifle (actors/blade.js; with the blade in his hands R held is the guard — reloadNow lets it be)
     case 'muster': musterAll(); break; case 'sqOrder': cycleSquadOrder(); break; case 'assault': assaultFort(); break; case 'para': callParadrop(); break;
     case 'zoomOut': if(S.zoomT>=2.55 && !repeat) zoomStep(-9); else zoomStep(1); break;   // at the widest it wraps back in (one button can cycle)
     case 'zoomPing': if(S.player && S.player.cav && !S.player.cav.mounted){ cavStance('prone'); break; }   // Z245 Z = go prone on foot

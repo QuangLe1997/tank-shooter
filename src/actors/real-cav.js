@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
 import { ANIMGRAPH, GUNFIT, GUNHOLD, HUMAN_SCALE, INFGUN, PUPPET, REALCAV, RIDEFEEL, XEOM, AIRAIM, AIRPOSE, RIDER_TURN, XHAIR, GUNFEEL } from '../../config.js';
-import { ANIMGRAPH_STAT, graphFeet, graphHipYaw, graphOwned, graphPose, XH, FIT, GUNKICK, GUNS, LEGKIT, PROFILE, S, curlHand, stirrupFeet, fitHold, sideProfile, underAt, drivePuppet, limbTwist, heightAt, ik2, loadGLTF, asShipped, nearShape, makePuppet, rollHand, sfx, spawnPart, turnBone, airPitch, soldierLegs, soldierUpper, steadyHead, mountHand, seatUpright, climbArms, climbW, carryClear, eyePoint, reachFeel, triggerFinger, wristGive, gunEase, handsEase, reloadHands, reloadProps, reloadState, headLevel, gunRecoil, burstClimb, shotCycle, shotSeen } from '../hub.js';
+import { bladeClip, bladeHold, bladePre, ANIMGRAPH_STAT, graphFeet, graphHipYaw, graphOwned, graphPose, XH, FIT, GUNKICK, GUNS, LEGKIT, PROFILE, S, curlHand, stirrupFeet, fitHold, sideProfile, underAt, drivePuppet, limbTwist, heightAt, ik2, loadGLTF, asShipped, nearShape, makePuppet, rollHand, sfx, spawnPart, turnBone, airPitch, soldierLegs, soldierUpper, steadyHead, mountHand, seatUpright, climbArms, climbW, carryClear, eyePoint, reachFeel, triggerFinger, wristGive, gunEase, handsEase, reloadHands, reloadProps, reloadState, headLevel, gunRecoil, burstClimb, shotCycle, shotSeen } from '../hub.js';
 
 const _v = new THREE.Vector3(), _a = new THREE.Vector3(), _b = new THREE.Vector3(), _d = new THREE.Vector3(), _up = new THREE.Vector3(), _x = new THREE.Vector3(), _y = new THREE.Vector3(), _z = new THREE.Vector3();
 const _q = new THREE.Quaternion(), _qp = new THREE.Quaternion(), _qd = new THREE.Quaternion(), _m = new THREE.Matrix4(), _mi = new THREE.Matrix4(), _s = new THREE.Vector3();
@@ -371,7 +371,8 @@ function poseRealCav(CV, dt, P){
   else if(fv < C.gaitAt[0]){ if(R.ownLegs && R.ownLegs.on){ ok = 'Aim_Stand'; freeze = 0; } else { ok = 'Walk_Forward_While_Shooting'; ts = clamp(fv / C.footV.walk, 0.6, 1.8); } }   // (Z339 walking, his legs are his own: the rifle held steady over them)
   else if(fv < C.gaitAt[1]){ ok = 'Run_and_Shoot'; ts = clamp(fv / C.footV.run, 0.7, 1.6); }   // (Z304 thresholds for a man's real walk / run / sprint)
   else { ok = 'Rifle_Charge'; ts = clamp(fv / C.footV.charge, 0.7, 1.4); }
-  blend(R.OA, ok, ts, dt, freeze);
+  const BL = bladeClip(CV, R, G, dt, P, mounted);   // BLADE 2 the blade in his hands: his body plays the blade's own clips (actors/blade.js), the rifle's fade out
+  blend(R.OA, BL ? '' : ok, ts, dt, freeze);
   if(R.HIT){ if(P.hit && !R.wasHit && !P.dead){ R.HIT.reset(); R.HIT.play(); R.hitW = 1; } R.wasHit = !!P.hit; R.hitW = Math.max(0, R.hitW - dt / C.hitT); R.HIT.setEffectiveWeight(R.hitW * C.hitK); }   // the flinch fades back into the clip
   // GRAPH 1 the player's soldier on his feet (ANIMGRAPH.on / ?animgraph): the motion graph has his hips and legs — it runs this mixer itself (the clip chosen above still
   //   poses his upper body), then lays its own over (actors/anim-graph.js). Off, or anyone else's soldier: the line below, as ever
@@ -400,7 +401,7 @@ function poseRealCav(CV, dt, P){
   else { R.step = null; const hipMax = sat ? (bike ? C.seatTurn[1] : RT.hip) : 0, hyT = sat ? clamp(Math.sign(twAll) * Math.max(0, Math.abs(twAll) - C.seatTurn[0]), -hipMax, hipMax) : 0;
     R.hy = (R.hy || 0) + clamp((hyT - (R.hy || 0)) * Math.min(1, dt * C.seatTurn[2]), -C.hipRate * dt, C.hipRate * dt); }
   if(GA) R.hy = graphHipYaw(CV, R.hy);   // GRAPH 1 stood still his legs stay planted while the body turns over them (the chest's twist below takes it back)
-  R.op.rotation.y = R.opRY + R.hy;
+  R.op.rotation.y = R.opRY + R.hy + (R.blYaw || 0);   // (BLADE 2 a spinning cut turns his whole body: the clip's own root yaw)
   R.op.position.set(0, 0, 0); G.updateWorldMatrix(true, false); R.op.updateMatrixWorld(true);
   if(mounted && !stand){ R.hips.getWorldPosition(_v); G.worldToLocal(_v); R.op.position.sub(_v); R.op.updateMatrixWorld(true); }
   else if(s === 'prone' && !P.trans){ R.op.position.y = -(GA && graphOwned(CV) ? ANIMGRAPH.prone.drop : C.proneDrop) / HUMAN_SCALE; R.op.updateMatrixWorld(true); }   // the clip lies a hand's breadth above the ground
@@ -411,7 +412,7 @@ function poseRealCav(CV, dt, P){
     for(const b of R.spine){ if(!b) continue; b.parent.getWorldQuaternion(_qp); _qd.setFromAxisAngle(_up, tw / 3); _q.copy(_qp).invert().multiply(_qd).multiply(_qp); b.quaternion.premultiply(_q); b.updateMatrixWorld(true); } }
   if(sat && !bike && Math.abs(R.hy) > 1e-3){ R.legs = R.legs || ['LeftUpLeg', 'RightUpLeg'].map(n => R.op.getObjectByName('mixamorig' + n)); G.getWorldQuaternion(_q); _up.set(0, 1, 0).applyQuaternion(_q);   // Z340 his hips turn on the saddle, his thighs stay along the horse
     for(const b of R.legs){ if(!b) continue; b.parent.getWorldQuaternion(_qp); _qd.setFromAxisAngle(_up, -R.hy); _q.copy(_qp).invert().multiply(_qd).multiply(_qp); b.quaternion.premultiply(_q); b.updateMatrixWorld(true); } }
-  if(R.pup){ R.pup.ground = !(mounted && !stand); drivePuppet(R.pup); }
+  if(R.pup){ R.pup.ground = !(mounted && !stand); drivePuppet(R.pup); bladePre(R); }   // (BLADE 2 the clip's pose as the puppet took it, kept for bladeHold)
   if(R.pup && !P.dead && mounted && bike && !stand && !P.trans) sitTall(R, G);   // Z304 sat up straight on the seat, not slumped over the gun
   if(R.pup && !P.dead && mounted && !stand && !P.trans) seatUpright(R, G, Math.abs(CV.speed || 0));   // Z348 the back straight, the chest out, on the horse and the pillion alike (actors/soldier-upper.js)
   if(R.pup && !P.dead) rideSway(R, G, dt, mounted ? P.ride : null, H);
@@ -424,7 +425,7 @@ function poseRealCav(CV, dt, P){
   holdGun(R, G);   // Z295 the hand weapon for the gun in use
   const cw = R.pup && !P.dead ? climbW() : 0;   // Z451 on a wall: the rifle slung across his back, his hands on the face — eased off his hold and back into it
   if(cw >= 0.999 && climbArms(R, G, 1)){ steadyHead(R, dt); return; }
-  if(R.pup && !P.dead && holdReal(R, G, dt, P)){ carryAfter(R, G, dt, P); if(cw > 0.001) climbArms(R, G, cw); mountHand(R); steadyHead(R, dt); return; }   // (Z342 climbing on / off, the left hand takes hold of the ride · Z343 the head held steady)   // Z297 the special-forces soldier holds his weapon for real
+  if(R.pup && !P.dead && holdReal(R, G, dt, P)){ carryAfter(R, G, dt, P); bladeHold(CV, R, G, dt, P);   /* BLADE 2 the blade worn / in his fist, over the rifle's layers */ if(cw > 0.001) climbArms(R, G, cw); mountHand(R); steadyHead(R, dt); return; }   // (Z342 climbing on / off, the left hand takes hold of the ride · Z343 the head held steady)   // Z297 the special-forces soldier holds his weapon for real
   // the carbine: grip in the right palm, barrel through the left hand (or straight ahead when the left hand is off the gun), pushed back by the recoil
   R.rh.getWorldPosition(_a); if(R.rhm){ R.rhm.getWorldPosition(_b); _a.lerp(_b, 0.5); }
   (R.lhm || R.lh).getWorldPosition(_b); _d.subVectors(_b, _a); const span = _d.length();

@@ -2,7 +2,7 @@
 //   (selectGun / cycleGun) — no-tanks: the tank's guns, the flame jet, the siege fuses and the gift guns are gone
 import * as THREE from 'three';
 import { BALANCE, REALCITY } from '../../config.js';
-import { S, _RUP, _rdir, armorOf, bigExplode, blocks, damageBlock, damageEnemy, decalScorch, deformCrater, enemies, fortIntactCross, fortShellHit, heightAt, ringPulse, rockets, scene, sfx, spawnPart, typeMul, updateGunHUD, trafficCone, fireFxOn, flameJet, lobTrail } from '../hub.js';
+import { bladeCycle, bladeSelect, S, _RUP, _rdir, armorOf, bigExplode, blocks, damageBlock, damageEnemy, decalScorch, deformCrater, enemies, fortIntactCross, fortShellHit, heightAt, ringPulse, rockets, scene, sfx, spawnPart, typeMul, updateGunHUD, trafficCone, fireFxOn, flameJet, lobTrail } from '../hub.js';
 
 // FLAMETHROWER — short-range cone of fire that sets enemies ALIGHT (a burn DoT applied/refreshed in updateEnemies)
 export function fireFlame(now, g, x, z, ang, k=1, y){
@@ -54,5 +54,5 @@ export function updateRockets(dt, now){
     }
   }
 }
-export function selectGun(i){ const p=S.player; if(i<0||i>=p.guns.length) return; p.gunIdx=i; p.readyUntil=0; p.fireAt=performance.now()/1000+0.1; sfx('click'); updateGunHUD(); }   // keep each gun's own reload running
-export function cycleGun(d=1){ const p=S.player; if(!p.guns.length) return; selectGun((p.gunIdx+d+p.guns.length)%p.guns.length); }
+export function selectGun(i){ const p=S.player; if(bladeSelect(i)) return;   /* BLADE 2 the slot after his guns is the blade (actors/blade.js) */ if(i<0||i>=p.guns.length) return; p.gunIdx=i; p.readyUntil=0; p.fireAt=performance.now()/1000+0.1; sfx('click'); updateGunHUD(); }   // keep each gun's own reload running
+export function cycleGun(d=1){ const p=S.player; if(!p.guns.length) return; if(bladeCycle(d)) return;   /* BLADE 2 one more stop on the cycle: the blade */ selectGun((p.gunIdx+d+p.guns.length)%p.guns.length); }

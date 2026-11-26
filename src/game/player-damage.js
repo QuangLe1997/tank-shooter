@@ -1,7 +1,7 @@
 // game/player-damage.js — PLAYER DAMAGE / DEATH
 import * as THREE from 'three';
 import { CAV, RIDE_ACT } from '../../config.js';
-import { modeOver, reportRun, soldierHitFX, BEST, CV, S, clampField, heightAt, burst, camera, cavDeathStart, cavDeathUpdate, cavRespawn, enemies, floatText, haptic, padHit, recordRun, ringPulse, saveProfile, sayVoice, sfx, show, updateHUD, rideHit, driverBack, driverDone, driverSurrender, dirDeath, nemDeathLine, nemPlayerDied, coopDie, coopGameOver, coopHurtMate } from '../hub.js';
+import { bladeGuardK, modeOver, reportRun, soldierHitFX, BEST, CV, S, clampField, heightAt, burst, camera, cavDeathStart, cavDeathUpdate, cavRespawn, enemies, floatText, haptic, padHit, recordRun, ringPulse, saveProfile, sayVoice, sfx, show, updateHUD, rideHit, driverBack, driverDone, driverSurrender, dirDeath, nemDeathLine, nemPlayerDied, coopDie, coopGameOver, coopHurtMate } from '../hub.js';
 
 // ----------------------------- PLAYER DAMAGE / DEATH -----------------------------
 export function damagePlayer(dmg, now, dx, dz){ if(S.player && S.player.mate){ coopHurtMate(dmg, dx, dz); return; }   // COOP 5 on a co-op host, inside the update of a man who regards the guest: the damage is the guest's
@@ -9,6 +9,7 @@ export function damagePlayer(dmg, now, dx, dz){ if(S.player && S.player.mate){ c
   const p=S.player; if(now < p.invincibleUntil) return;
   dmg *= (1 - (p.armor||0));                 // ARMOR upgrade soaks a fraction of incoming damage
   dmg *= p.defK||1;                          // Z245 plate armour, and lying flat / kneeling makes a smaller target
+  dmg *= bladeGuardK(dx, dz);                // BLADE 2 the blade held across him takes the edge off what comes at his front
   p.hp -= dmg; if(p.cav && p.bike) rideHit(dmg, dx, dz);   // Z296 the driver ducks — a heavy hit may bring the bike down
   if(p.hp > 0 && p.hp < p.maxHp*0.3 && p.hp+dmg >= p.maxHp*0.3) sayVoice('lowhp');
   // HIT REACTION — every hit is FELT: a flinch + shake scaled by the blow + red splash

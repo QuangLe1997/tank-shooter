@@ -2,7 +2,7 @@
 //   weapon shares — AoE damage, a shell bursting on its spot, enemy ground strikes (no-tanks: the tank's equipment — smoke, APS, mines — is gone)
 import * as THREE from 'three';
 import { EQUIP, LETHAL, REAL } from '../../config.js';
-import { TROOPER_SPELLS, COVER_HP, MOBILE, S, fpvDetonate, fpvFlying, armorOf, bigExplode, blastAllies, blocks, burst, cityBlast, concuss, core, damageBlock, damageCore, damageEnemy, damagePlayer, decalScorch, deformCrater, enemies, envDmg, fenceBlast, fortIntactCross, heightAt, ringPulse, sfx, siegeMul, spawnPart, structMul, suppress, tunnelBlast, typeMul, updateSpellHUD, blastTrees, sandBlastProof } from '../hub.js';
+import { bladeSpecial, TROOPER_SPELLS, COVER_HP, MOBILE, S, fpvDetonate, fpvFlying, armorOf, bigExplode, blastAllies, blocks, burst, cityBlast, concuss, core, damageBlock, damageCore, damageEnemy, damagePlayer, decalScorch, deformCrater, enemies, envDmg, fenceBlast, fortIntactCross, heightAt, ringPulse, sfx, siegeMul, spawnPart, structMul, suppress, tunnelBlast, typeMul, updateSpellHUD, blastTrees, sandBlastProof } from '../hub.js';
 
 export function inSmoke(now){ const p=S.player; return !!(p && now<(p.smokeUntil||0) && Math.hypot(p.pos.x-p.smokeX, p.pos.z-p.smokeZ) < EQUIP.smoke.radius); }
 export function updateEquip(dt, now){
@@ -24,7 +24,7 @@ function castSpell(sp){ const p=S.player, now=performance.now()/1000; if(fpvFlyi
   if(sp.own){ if(sp.cast(now)===false) return false; spellHold(sp.id, Math.max(spellReady(sp, p), now + sp.cd * p.spellCdMul)); }
   else { p.spellCdUntil = now + sp.cd * p.spellCdMul; sp.cast(now); }
   sfx('spell'); updateSpellHUD(); return true; }
-export function trySpell(){ if(S.mode!=='playing') return; castSpell(spellNow()); }
+export function trySpell(){ if(S.mode!=='playing') return; if(bladeSpecial()) return;   /* BLADE 2 in blade mode the skill key is the blade's special */ castSpell(spellNow()); }
 // a skill cast by a key of its own, whichever one is in hand (input/bindings.js: the drones' keys)
 export function castSpellId(id){ if(S.mode!=='playing') return; const sp=spellList().find(s=>s.id===id); if(sp) castSpell(sp); }
 export function cycleSpell(d=1){ const n=spellList().length; S.spell=((S.spell%n)+d+n)%n; updateSpellHUD(); sfx('click'); }

@@ -16,7 +16,8 @@
 import fs from 'node:fs'; import path from 'node:path'; import { createRequire } from 'node:module'; import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-// len: overall, metres · grip: the main hand, metres from the butt end · shaft: [from, to] share of the length (from the butt) that is plain shaft / hilt ·
+// len: overall, metres · grip: the main hand, metres from the butt end (the guandao: his right hand is the one by the blade, at the top of the shaft's
+//   wrap — the pole is held as the axe pack holds it, the other hand a metre down by the butt; the dadao: his right hand under the guard) · shaft: [from, to] share of the length (from the butt) that is plain shaft / hilt ·
 // blade: the share of the length (from the butt) where the blade begins · edge: ±1 flips +Y onto the cutting edge · tris: 0 keeps every triangle
 const SPEC = {
   guandao: { src:'glaive/glaive.glb', len:2.05, grip:1.05, shaft:[0.08, 0.5], blade:0.665, edge:-1, tris:9000, px:2048, save:[2048, 1536, 1024], q:[80, 82, 76],

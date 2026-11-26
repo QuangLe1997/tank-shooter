@@ -1,7 +1,7 @@
 // combat/guns.js — ARMS DOCTRINE helpers: damage class × armour, range falloff, battlefield conditions, smart gun pick
 import * as THREE from 'three';
 import { DMG_TYPE, ARMOR, ENV, FORT, GUNHOLD, INFGUN, LOOT } from '../../config.js';
-import { BIOME, CV, GUNS, S, ammoDry, ammoLoad, ammoReserve, reloadPlan, brakeBlast, enemies, floatText, gunFlash, gunLight, heightAt, ringPulse, scene, sfx, spawnPart, updateGunHUD, weatherDef, weatherRange, tentHidesFromPlayer } from '../hub.js';
+import { bladeHeld, BIOME, CV, GUNS, S, ammoDry, ammoLoad, ammoReserve, reloadPlan, brakeBlast, enemies, floatText, gunFlash, gunLight, heightAt, ringPulse, scene, sfx, spawnPart, updateGunHUD, weatherDef, weatherRange, tentHidesFromPlayer } from '../hub.js';
 
 // ---- ARMS DOCTRINE helpers: damage class × armour, range falloff, battlefield conditions ----
 export let ENVMOD = { night:false, fire:1, he:1 };
@@ -48,7 +48,7 @@ export function startReload(now, inst){ const p=S.player; inst=inst||p.guns[p.gu
   const g=GUNS[inst.id], cap=magCap(g), dry=inst.ammo<=0, P=reloadPlan(INFGUN.map[inst.id], dry, 1-Math.max(0,inst.ammo)/cap);
   const r=g.reload*(p.reloadMul||1)*P.k; inst.rD=r; inst.rU=now+r; inst.rDry=dry; inst.rLoad=P.load; inst.rN=Math.max(1, cap-Math.max(0,inst.ammo));
   if(inst===p.guns[p.gunIdx]){ if(!(CV.real && CV.real.pup && r>=GUNHOLD.reload.min)) sfx('reload'); updateGunHUD(); } }
-export function reloadNow(){ const p=S.player; if(!p||!p.guns.length||S.mode!=='playing') return; const inst=p.guns[p.gunIdx]; if(inst.rU||p.infiniteAmmo||inst.ammo>=magCap(GUNS[inst.id])) return; startReload(performance.now()/1000, inst); }   // MASTERY: higher level reloads faster
+export function reloadNow(){ const p=S.player; if(!p||!p.guns.length||S.mode!=='playing') return; if(bladeHeld()) return;   /* BLADE 2 the blade is in his hands: the key held is the guard */ const inst=p.guns[p.gunIdx]; if(inst.rU||p.infiniteAmmo||inst.ammo>=magCap(GUNS[inst.id])) return; startReload(performance.now()/1000, inst); }   // MASTERY: higher level reloads faster
 // ----- reload countdown dial: a glowing circular chart billboarded above the tank, flashes ✓ when ready -----
 export const reloadCanvas=document.createElement('canvas'); reloadCanvas.width=reloadCanvas.height=160;
 export const reloadCtx=reloadCanvas.getContext('2d');

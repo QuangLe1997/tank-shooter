@@ -2110,7 +2110,7 @@ export const FEEL = {
 //   pad buttons = standard mapping by position: 0 A · 1 B · 2 X · 3 Y · 4 LB · 5 RB · 6 LT · 7 RT · 8 View · 9 Menu · 10 L3 · 11 R3 · 12-15 D-pad ↑↓←→
 export const ACTIONS = [
   ['up','Tiến / đi lên','DI CHUYỂN',['w','arrowup'],null,1], ['down','Lùi / đi xuống','DI CHUYỂN',['s','arrowdown'],null,1], ['left','Quay / sang trái','DI CHUYỂN',['a','arrowleft'],null,1], ['right','Quay / sang phải','DI CHUYỂN',['d','arrowright'],null,1],
-  ['fire','Bắn (giữ = liên thanh) · chuột trái','CHIẾN ĐẤU',[],7,1], ['dash','Lướt né · lính đi bộ: nhảy','CHIẾN ĐẤU',[' '],0,0], ['sprint','Lính: chạy nhanh (giữ)','CHIẾN ĐẤU',['shift'],null,1], ['roll','Lính: lăn né đạn','CHIẾN ĐẤU',['alt','l'],null,0], ['knife','Lính: dao găm — áp sát sau lưng / bên sườn địch chưa hay biết: hạ gục lặng lẽ — khi hiện nút HẠ GỤC thì bấm phím lên / xuống xe (G); chưa gán phím riêng (phím I đã là GÂY NHIỄU drone) · còn lại: đâm yếu','CHIẾN ĐẤU',[],null,0], ['climb','Lính: leo lên đá / tường / cổng / container (bấm lại: buông tay · trên cao: tụt xuống)','CHIẾN ĐẤU',['j'],null,0], ['skill','Dùng kỹ năng · bấm chuột phải · bấm nhanh LT (giữ LT = xoay camera)','CHIẾN ĐẤU',['e'],6,0], ['skillNext','Đổi kỹ năng','CHIẾN ĐẤU',['q'],2,0],
+  ['fire','Bắn (giữ = liên thanh) · chuột trái','CHIẾN ĐẤU',[],7,1], ['dash','Lướt né · lính đi bộ: nhảy','CHIẾN ĐẤU',[' '],0,0], ['sprint','Lính: chạy nhanh (giữ)','CHIẾN ĐẤU',['shift'],null,1], ['roll','Lính: lăn né đạn','CHIẾN ĐẤU',['alt','l'],null,0], ['blade','Đao ⇄ súng · bấm chuột giữa (không kéo) / nút cạnh chuột · cuộn chuột','CHIẾN ĐẤU',[],null,0], ['knife','Lính: dao găm — áp sát sau lưng / bên sườn địch chưa hay biết: hạ gục lặng lẽ — khi hiện nút HẠ GỤC thì bấm phím lên / xuống xe (G); chưa gán phím riêng (phím I đã là GÂY NHIỄU drone) · còn lại: đâm yếu','CHIẾN ĐẤU',[],null,0], ['climb','Lính: leo lên đá / tường / cổng / container (bấm lại: buông tay · trên cao: tụt xuống)','CHIẾN ĐẤU',['j'],null,0], ['skill','Dùng kỹ năng · bấm chuột phải · bấm nhanh LT (giữ LT = xoay camera)','CHIẾN ĐẤU',['e'],6,0], ['skillNext','Đổi kỹ năng','CHIẾN ĐẤU',['q'],2,0],
   ['droneRecon','Drone trinh sát: thả lên, đánh dấu địch quanh điểm ngắm (hồi riêng)','CHIẾN ĐẤU',['9'],null,0], ['droneFpv','Drone FPV cảm tử: lái bằng chuột / WASD · BẮN hoặc bấm lại = cho nổ (có hạn mỗi màn)','CHIẾN ĐẤU',['0'],null,0], ['droneJam','Gây nhiễu: drone địch trong 40 m mất lái vài giây (hồi riêng)','CHIẾN ĐẤU',['i'],null,0],
   ['reload','Nạp đạn (băng chưa cạn: thay nhanh, không lên đạn)','CHIẾN ĐẤU',['r'],null,0], ['gunPrev','Súng trước · cuộn chuột','CHIẾN ĐẤU',['o'],4,0], ['gunNext','Súng sau · cuộn chuột','CHIẾN ĐẤU',['f'],5,0], ['autoFire','Bật / tắt tự bắn','CHIẾN ĐẤU',['y'],3,0], ['autoAim','Bật / tắt tự ngắm (nhấn cần phải)','CHIẾN ĐẤU',['k'],11,0],
   ['crew','Lính xuống xe · giữ: gọi về','QUÂN',['g'],1,1], ['muster','Tập kết toàn quân','QUÂN',['t'],12,0], ['assault','Xung phong vào thành (L3)','QUÂN',['x'],10,0], ['para','Gọi lính dù','QUÂN',['b'],13,0], ['sqOrder','Lệnh tổ bộ binh: tự do → giữ vị trí → tiến công → vòng trái → vòng phải','QUÂN',['u'],null,0],
@@ -2932,3 +2932,56 @@ export const ANIMGRAPH = { on:typeof location !== 'undefined' && /[?&]animgraph\
   air:{ up:['air-jump-up', 0.27, 0.533], loop:'air-jump-loop', down:['air-jump-down', 0.07, 0.33, 0.66], upT:0.22, landRate:1.3, snapV:3 },
   feet:{ on:true, hOn:0.05, hOff:0.065, retro:0.12, heel:0.02, rest:0.12, restT:0.35, stepHalf:0.09, lift:0.45, liftMax:0.07, flyT:0.2, vOn:[0.5, 0.6], slowV:1.0, landV:3, vLand:[1.5, 1.2], brake:8, vOff:[1.8, 0.9], half:0.05, peel:3, stretch:0.985, stepV:0.4, stepGap:0.16 },
   slope:{ on:true, rate:14, vmax:3, fade:0.2, max:0.45 }, shot:{ half:0.1, rate:1 } };
+// BLADE 2 THE WUXIA BLADE (actors/blade.js; ?noblade turns it all off). He always owns ONE blade (PROFILE.blade, `def` when unset): worn on his back while the rifle is in
+//   his hands, in his hands while the rifle is slung by CARRY (GUNCARRY's why = 'blade'). Lengths in HIS metres (× scale = his height / 1.8 in the world), angles in degrees,
+//   times in seconds of the CLIP unless said (a move plays `rate` × as fast: its real length is (to − from) / rate).
+//   draw / sheath: seconds to and from a usable guard · cutAt: how far through the draw (0…1) a cut already asked for may start (the blade is in his hand from 0.3: draw and
+//     cut are one motion) · buffer: how long a press waits for the move in hand to let go · hold: the trigger held this long = the heavy · chainT: a light within this many
+//     seconds of the last carries the chain on · assist: a cut is aimed at the man about to be reached when he stands within this many degrees of the crosshair ·
+//   auto: fire with an enemy within r m and inside cone° of his front draws and cuts in one motion; drawn that way he goes back to the rifle when no enemy has been within
+//     back m for wait s, or when he fires with none within keep m · stamina: max, regained /s after delay s, a move started without its cost plays tired × as fast and cuts tiredDmg ×
+//   hit: stop = hit-stop s on a solid hit · shake / kick = camera · chip = damage a cut does to cover in its arc · gen = the cap on one cut into a general (his own hit cap stands too)
+//   guard: front = what frontal damage is multiplied by (inside arc° of his facing), moveK = his pace while guarding · trail: the ribbon (n points, life s, from mid to tip)
+//   edge: the edge leads the cut — as the tip crosses the weapon's line faster than v[0] … v[1] m/s the edge is rolled to face its travel, at most rate rad/s (at rest it lies as his fist has it)
+//   hand: the grip in his fist — palm: how far along wrist → knuckle the handle crosses, out: the palm's skin off the hand bones' plane (the kind's r, the handle's radius, is added), curl: how far the fingers close
+//   A KIND: len / butt / tip / root / edge / back / com are the packed model's own numbers (tools/blade-pack.mjs prints them; z along the weapon from the main hand's grip) ·
+//     off: [from, to] the stretch of the handle the other hand holds, m along the weapon from the main hand's grip (− = toward the butt; the guandao's main hand is the one by the blade,
+//     the other a metre down by the butt: the axe pack's wide hold) — it closes on the shaft where it already is, within that · two: the weapon lies along the line through both palms (a pole) rather
+//     than rigid in the main fist · reach: how far a cut reaches from his centre · worn: on his back, in the back's own frame [his right, up from the shoulder joint, behind] where the
+//     weapon's point zAt sits, its tip `tip` (1 up, −1 down) leaning tilt° toward his right shoulder, [further out, tilt] lying prone, grab: where along it (m from the grip) his hand takes it to draw · roll: the edge turned this many degrees about the weapon from the way his knuckles face · set: the clips he stands, guards and moves by
+//     (speed m/s each was made at comes from the library's index) · moves: light chain, heavy, run (fire at a sprint), special (the skill key, cd s), counter (fire from the
+//     guard), flourish (after a kill with nobody near). A MOVE: clip · rate · from / to: the part played · win: [start, end] of each hit window · arc: [from, to] the bearing
+//     the cut sweeps through in that window (0 = straight ahead, + = his left; from = to: a chop or thrust, tol wide) · reach (m, replaces the kind's) · y: [lo, hi] the height
+//     band against his feet a target's feet must be in · dmg · push (m/s knock-back along the cut) · daze (s he staggers) · st: stamina · next: the earliest a chained move may
+//     take over · move: his pace × during it · lunge: metres of step-in toward the nearest target in front (through his own velocity: collision-safe) when its window opens
+export const BLADE = { on:!(typeof location !== 'undefined' && /[?&]noblade\b/.test(location.search)), def:'guandao', draw:0.3, sheath:0.3, cutAt:0.45, buffer:0.4, hold:0.3, chainT:0.9, assist:38, fade:[0.09, 0.16], locoFade:0.14,
+  auto:{ on:true, r:2.6, cone:75, back:5, wait:2, keep:4.5 }, stamina:{ max:100, regen:28, delay:0.7, tiredRate:0.78, tiredDmg:0.7 },
+  hit:{ stop:[0.06, 0.09], shake:[0.22, 0.5], kick:[0.12, 0.3], chip:14, gen:0.34, sparks:6, tol:14 }, guard:{ front:0.45, arc:120, moveK:0.45 },
+  trail:{ on:true, n:14, life:0.16, color:0xdfe9ff, op:0.55 }, edge:{ on:true, v:[3, 9], rate:24 }, hand:{ palm:0.62, out:0.012, curl:0.9 }, runAt:3.6, flourish:{ r:9, wait:0.5 }, btn:[18, 250],
+  kinds:{
+    guandao:{ name:'ĐẠI ĐAO (Quan đao)', file:'blade_guandao', len:2.048, butt:-1.049, tip:0.998, root:0.313, edge:0.051, back:-0.085, com:0.157, off:[-1.0, -0.72], two:true, reach:1.9, r:0.019,
+      roll:0, worn:{ at:[0.19, 0.04, 0.2], zAt:-0.42, grab:-0.3, tilt:17, tip:1, flat:1, prone:[0.05, 8] },
+      set:{ idle:'blade-axe-idle', guard:'blade-axe-block-idle', walk:['blade-axe-walk-forward', 'blade-axe-walk-back', 'blade-axe-walk-left', 'blade-axe-walk-right'], run:['blade-axe-run-forward', 'blade-axe-run-back'], runV:2.6, rate:[0.7, 2.2] },
+      moves:{
+        light:[
+          { id:'sweep', clip:'blade-axe-attack-horizontal', rate:1.35, from:0.38, to:1.55, win:[[0.77, 1.05]], arc:[-105, 70], y:[-0.6, 1.3], dmg:70, push:5.5, daze:0.7, st:22, next:1.2, move:0.35, lunge:0.9 },
+          { id:'rise', clip:'blade-axe-attack-backhand', rate:1.45, from:0.5, to:1.75, win:[[0.92, 1.2]], arc:[-65, 35], y:[-0.6, 1.5], dmg:78, push:6, daze:0.75, st:24, next:1.35, move:0.35, lunge:0.8 },
+          { id:'chop', clip:'blade-axe-attack-downward', rate:1.3, from:0.3, to:1.55, win:[[0.76, 0.98]], arc:[0, 0], tol:24, y:[-1.2, 1.8], dmg:120, push:3, daze:1.0, st:28, next:1.15, move:0.25, lunge:1.0 } ],
+        heavy:{ id:'spin', clip:'blade-axe-attack-360-high', rate:1.55, from:0.45, to:2.0, win:[[0.83, 1.27]], arc:[115, -245], y:[-0.6, 1.4], dmg:105, push:8, daze:1.1, st:42, next:1.6, move:0.3, lunge:0.5 },
+        run:{ id:'leap', clip:'blade-axe-run-jump-attack', rate:1.6, from:0.95, to:2.7, win:[[1.53, 1.82]], arc:[0, 0], tol:32, reach:2.1, y:[-1.5, 1.8], dmg:135, push:5, daze:1.1, st:36, next:2.2, move:0, root:true },
+        special:{ id:'whirl', clip:'blade-axe-attack-360-low', rate:1.5, from:0.3, to:1.8, win:[[0.65, 1.15]], arc:[100, -200], reach:2.0, y:[-0.9, 1.1], dmg:90, push:9, daze:1.5, st:30, cd:9, next:1.45, move:0.2 },
+        counter:{ id:'strike', clip:'blade-misc-smash', rate:1.7, from:0.5, to:1.95, win:[[0.85, 1.15]], arc:[-105, 12], y:[-0.6, 1.5], dmg:60, push:7, daze:1.3, st:14, next:1.4, move:0.3, lunge:0.4 },
+        flourish:{ id:'mua', clip:'blade-misc-spinning', rate:1.2, from:0, to:1.7, win:[], move:0.2 } } },
+    dadao:{ name:'ĐAO HAI TAY (Đại đao)', file:'blade_dadao', len:1.05, butt:-0.275, tip:0.775, root:0.077, edge:0.039, back:-0.124, com:0.303, off:[-0.2, -0.1], two:false, reach:1.45, r:0.022,
+      roll:0, worn:{ at:[0.13, 0.13, 0.19], zAt:0.02, grab:0, tilt:32, tip:-1, flat:1, prone:[0.05, 10] },
+      set:{ idle:'blade-gs-idle', guard:'blade-gs-blocking-2', walk:['blade-gs-walk', 'blade-gs-walk-2', 'blade-gs-strafe', 'blade-gs-strafe-2'], run:['blade-gs-run-2', 'blade-gs-run'], runV:2.6, rate:[0.7, 1.9] },
+      moves:{
+        light:[
+          { id:'cut1', clip:'blade-gs-slash', rate:1.8, from:0.15, to:1.05, win:[[0.57, 0.77]], arc:[-70, 45], y:[-0.8, 1.4], dmg:46, push:2.2, daze:0.35, st:11, next:0.82, move:0.6, lunge:0.6 },
+          { id:'cut2', clip:'blade-gs-slash-3', rate:1.9, from:0.42, to:1.45, win:[[0.77, 1.1]], arc:[90, -85], y:[-0.6, 1.3], dmg:50, push:2.4, daze:0.35, st:12, next:1.14, move:0.6, lunge:0.5 },
+          { id:'cut3', clip:'blade-gs-slash-5', rate:1.5, from:0.12, to:1.0, win:[[0.37, 0.58]], arc:[-45, 30], y:[-0.6, 1.3], dmg:68, push:3.2, daze:0.55, st:15, next:0.64, move:0.5, lunge:0.6 } ],
+        heavy:{ id:'power', clip:'blade-gs-slash-4', rate:1.5, from:0.25, to:1.45, win:[[0.63, 1.02]], arc:[118, -160], y:[-0.6, 1.4], dmg:92, push:4.5, daze:0.8, st:30, next:1.1, move:0.3, root:true },
+        run:{ id:'slide', clip:'blade-gs-slide-attack', rate:1.6, from:0.5, to:1.95, win:[[1.1, 1.68]], arc:[-80, 256], y:[-1.0, 1.3], dmg:74, push:3.5, daze:0.7, st:24, next:1.75, move:0, root:true },
+        special:{ id:'jump', clip:'blade-gs-jump-attack', rate:1.5, from:0.4, to:2.0, win:[[1.0, 1.48]], arc:[-20, 200], reach:1.6, y:[-1.6, 1.8], dmg:125, push:4.5, daze:1.2, st:28, cd:7, next:1.6, move:0, root:true },
+        counter:{ id:'riposte', clip:'blade-misc-stable-sword-outward-slash', rate:1.7, from:0.55, to:1.5, win:[[0.85, 1.0]], arc:[-45, 38], y:[-0.6, 1.4], dmg:58, push:3, daze:0.6, st:12, next:1.05, move:0.5, lunge:0.4 },
+        flourish:{ id:'pose', clip:'blade-misc-stable-sword-inward-slash', rate:1.5, from:0.7, to:2.0, win:[], move:0.3 } } } } };
