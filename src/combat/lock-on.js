@@ -1,8 +1,8 @@
 // combat/lock-on.js — EVERY ROUND IN FLIGHT: spawning a round, flying it (straight line / lob / rocket), striking men, aircraft, blocks and walls
 //   (no-tanks: the tank's lock-on missile gun — its seeker, reticles, smart mini-missiles, homing — is gone; the file keeps its name)
 import * as THREE from 'three';
-import { LETHAL, SQUAD, FORT, TREEFALL, AIRAIM, LINE, GUNFX } from '../../config.js';
-import { wrapAngle, ARC_G, ARENA, BVIS, DRONE, FT, GLOW, MOBILE, S, UGRID, UNDER, _hot, addTrail, armorOf, ballisticInit, ballisticStep, ballisticTrailK, bloodSpurt, bulletFalloff, bulletPool, bullets, core, damageAlly, damageBlock, damageCore, damageDrone, damageEnemy, damagePlayer, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, fortIntactCross, fortWallCross, groundHit, heightAt, impactFX, lightning, nearMiss, orientShell, ringPulse, rocketExhaust, shellStretch, shellTrail, shootGuard, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, sweepPoint, tunnelBlast, typeMul, unitsNear, vaporWake, shotTree, trafficShot, dodgeShot, stealthShot, lineHit, inShape, dressRound, sandProof, bulletImpact, hitMat, climbPerch } from '../hub.js';
+import { LETHAL, SQUAD, FORT, TREEFALL, AIRAIM, LINE, GUNFX, GUNFEEL } from '../../config.js';
+import { hitConfirm, wrapAngle, ARC_G, ARENA, BVIS, DRONE, FT, GLOW, MOBILE, S, UGRID, UNDER, _hot, addTrail, armorOf, ballisticInit, ballisticStep, ballisticTrailK, bloodSpurt, bulletFalloff, bulletPool, bullets, core, damageAlly, damageBlock, damageCore, damageDrone, damageEnemy, damagePlayer, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, fortIntactCross, fortWallCross, groundHit, heightAt, impactFX, lightning, nearMiss, orientShell, ringPulse, rocketExhaust, shellStretch, shellTrail, shootGuard, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, sweepPoint, tunnelBlast, typeMul, unitsNear, vaporWake, shotTree, trafficShot, dodgeShot, stealthShot, lineHit, inShape, dressRound, sandProof, bulletImpact, hitMat, climbPerch } from '../hub.js';
 
 // Z238 how high a block stands (world y of its top), measured once from its mesh and again after it has been damaged
 const _tb=new THREE.Box3();
@@ -44,7 +44,7 @@ export function spawnBullet(x, z, angle, o={}){
   const tracer = (o.owner==='e') ? 0xff5a24 : col;                          // enemy fire reads as danger-red; player = the gun's colour
   m.userData.core.material.color.setHex(_hot(tracer));                      // bright white-hot core
   m.userData.halo.material.color.setHex(tracer);                           // glowing aura matches the tracer
-  const y0 = o.y!=null ? Math.max(0.6, o.y - heightAt(x,z)) : 1.2;          // launch height ABOVE THE GROUND at the real muzzle
+  const y0 = o.y!=null ? Math.max(o.owner==='p' && o.reach!=null ? GUNFEEL.shot.low : 0.6, o.y - heightAt(x,z)) : 1.2;   // (GUN 3 the soldier's own round from his real muzzle, lying down too — it started 0.6 m up)          // launch height ABOVE THE GROUND at the real muzzle
   if(o.from && y0 < FORT.wallH+0.4 && fortWallCross(o.from.x, o.from.z, x, z)){ x=o.from.x; z=o.from.z; }   // Z111b barrel poking through/over a fortress wall: the round leaves from the hull side → the stone takes it
   m.position.set(x, y0, z);
   const sp = o.speed||60;
@@ -60,6 +60,7 @@ export function spawnBullet(x, z, angle, o={}){
     owner:o.owner||'p', dmg:o.dmg||20, r:o.r||0.45, life:o.life||2.2, pierce:o.pierce||0,
     homing:o.homing||0, angle, aoe:o.aoe||0, aoeDmg:o.aoeDmg||0, maxDist:o.maxDist||0, color:col, _py:null, _tx:null,
     airAim:o.airAim||null, line:lineRound, wy0, slope, by:y0, vy, arc:(vy>0.5), vyl:(o.dropTo!=null && (o.dropDist||D)>0.5 ? (o.dropTo-y0)/((o.dropDist||D)/sp) : 0), ignore:o.ignore||null, type:o.type||null, reach:o.reach||0, fall:o.fall??1, chain:o.chain||0, chainR:o.chainR||0, knock:o.knock||1, fx:o.fx||'spark', inf:!!o.inf, tk:o.trailK||1, sa, dark };
+  if(o.owner==='p' && o.reach!=null && !dark){ B0._lx=x; B0._ly=wy0; B0._lz=z; }   // GUN 3 its tracer starts AT the muzzle: fired after the frame's bullet step it was first drawn a frame's flight (1.5–3 m) out, nothing behind it
   bullets.push(B0);
   { const v=ballisticInit(B0, o, sp); if(B0.bk){ B0.vx=Math.sin(angle)*v; B0.vz=Math.cos(angle)*v; if(!m.userData.rk) m.userData.core.scale.z=shellStretch(v)*(sa?1.25:1); } }   // Z228b the round's velocity curve (fast out of the muzzle / booster kick)
 }
@@ -125,7 +126,7 @@ export function updateBullets(dt, now){
           e._big = !b.inf && (b.aoe>0 || b.dmg>=30); e._blast=null; e._hitK=b.dmg/40; { const L=Math.hypot(b.vx,b.vz)||1; e._hx=b.vx/L; e._hz=b.vz/L; }
           if(e.def.inf) bloodSpurt(e.pos.x, e.pos.z, b.vx, b.vz, b.inf ? 0.7 : 1.4);   // Z113 every hit on a man shows   // Z112 a heavy round throws a soldier; small arms just drop him
           if(e.def.inf && !b.inf && LETHAL.heavyKills) dmg=Math.max(dmg, e.hp+1);   // Z104 a heavy round (AP slug, rocket, grenade) = one dead man
-          damageEnemy(e, dmg);
+          damageEnemy(e, dmg); if(b.reach) hitConfirm(e.hp<=0);   // GUN 3 his own round struck: the mark at the crosshair, the click (actors/gun-feel.js)
           const _bl=Math.hypot(b.vx,b.vz)||1, _imp=Math.min(15, (2.2+b.dmg*0.08)*(b.knock||1))/(e.def.scale||1);   // shove back along the shot; per-gun KNOCK; heavy tanks resist
           e.kbx+=(b.vx/_bl)*_imp; e.kbz+=(b.vz/_bl)*_imp; e.hitT=Math.max(e.hitT,0.16);
           if(b.chain){ let hits=b.chain;                                                                               // TESLA: arc to nearby enemies

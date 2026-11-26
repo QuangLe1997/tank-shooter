@@ -1380,6 +1380,21 @@ export const GUNFEEL = {
     prop:{ mag:[0.045, 0.13, 0.024], belt:[0.15, 0.1, 0.08], shell:[0.065, 0.022], gl:[0.1, 0.04], rocket:[0.55, 0.085], cells:['energy', 'rail'],
       col:{ mag:0x1e1f1c, belt:0x4a5236, shell:0x9c2b22, gl:0x7c8450, rocket:0x4c5a3a, cell:0x3f78c8 }, lie:4, grav:-12 },
     ease:{ v:4, w:20, hand:5, rate:14 } },
+  // GUN 3 THE FEEL OF A SHOT (actors/gun-feel.js): climb = a burst's muzzle climb on top of each shot's own kick — every shot adds per × that gun's climb
+  //   (at most cap rad), it eases off at hold /s while he fires (rest /s once gap s have passed with no shot), and he takes comp of it back after lag s:
+  //   it climbs, then settles; body = how much of it rocks his trunk; shoulder = his right shoulder driven back by the kick (rad per m);
+  //   bloom = the gun's spread × first for a burst's first `tight` rounds, rising to × max by round `full` (a pause of reset s starts a new burst);
+  //   cam = the camera's kick × first for a burst's first `after` rounds, × auto from then on; low = the least height over the ground his own round may
+  //   leave from (lying down: the real muzzle, not 0.6 m); eject = the spent case: none = the guns that throw none, the port `ahead` of the grip when the
+  //   gun has no magazine (else over the magazine well), `up` over the bore, `side` out on its right; thrown v = [right, + random, up, + random] m/s and
+  //   `back`; link = belt guns drop a link too; hit = the mark at the crosshair when his round strikes: ms shown (a kill: killMs, × killK, its own colour),
+  //   no more than one every gap s, size px.
+  // cycle = a gun worked by hand after every shot (INFGUN.guns key): which hand, when it starts and how long it takes (shares of the gun's fire
+  //   interval), when in it the case is thrown, its sound
+  shot:{ climb:{ per:0.55, cap:0.09, hold:2.2, rest:7, gap:0.3, lag:0.28, comp:0.65, body:0.5 }, shoulder:3.2, bloom:{ reset:0.32, tight:3, full:10, first:0.6, max:1.2 }, cam:{ first:1, auto:0.62, after:3 }, low:0.2,
+    eject:{ none:['rpg', 'energy', 'rail', 'flamer', 'gl', 'saw'], ahead:0.1, up:0.012, side:0.03, back:0.6, v:[1.6, 1.4, 2, 1.5], link:['lmg', 'minigun'] },
+    hit:{ ms:120, killMs:260, killK:1.35, gap:0.07, size:28, col:['#ffffff', '#ff5a4a'] } },
+  cycle:{ sniper:{ hand:'R', at:0.14, dur:0.5, eject:0.42, snd:'boltRack' }, shotgun:{ hand:'L', at:0.14, dur:0.5, eject:0.4, snd:'boltRack' } },
 };
 // Z343 HIS UPPER BODY IN TIME WITH HIS LEGS (actors/soldier-upper.js): the chest's speed and acceleration smoothed (/s), the acceleration capped (m/s²),
 //   a jump of more than `reset` m starts it afresh; the lean into a change of pace (rad per m/s² ahead / to the side, at most leanMax, on a spring of
