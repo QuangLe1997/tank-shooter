@@ -27,6 +27,9 @@ export function armsDrop(e){ if(!S.player) return; const D = TROOPER.drop;
   if(e.def.inf){ if(Math.random() < (D[e.type] ?? D.rifle)) id = e.def.rpg ? 't_rpg' : 't_ak'; }   // (Z355 a rifleman's AK-47)
   else if(!e.def.air && Math.random() < D._veh) id = trooperGunPick();
   if(id) dropPowerup(e.pos, 1, wpnDef(id)); }
+// DIR 1 the director's relief when he is badly hurt in a lull: a medkit and an ammunition crate a few metres ahead of him (no new gun — that is a rank's reward)
+export function reliefDrop(){ const p = S.player; if(!p) return; const f = p.facing || 0, at = new THREE.Vector3(p.pos.x + Math.sin(f) * 3.5, 0, p.pos.z + Math.cos(f) * 3.5);
+  dropPowerup(at, 1, POWERUPS.find(u => u.id === 'heal')); dropPowerup(at, 0, AMMO); ringPulse(at, 0xffd86a, 4); floatText('THẢ DÙ CỨU THƯƠNG', '#ffd86a', { x:at.x, y:3, z:at.z }, 20); sfx('whoosh'); }
 // the HQ's supply drop, a few metres ahead of him
 export function supplyDrop(){ const p = S.player; if(!p) return; const f = p.facing || 0, at = new THREE.Vector3(p.pos.x + Math.sin(f) * 4, 0, p.pos.z + Math.cos(f) * 4);
   dropPowerup(at, 2, wpnDef(trooperGunPick())); dropPowerup(at, 1, POWERUPS.find(u => u.id === 'heal')); dropPowerup(at, 0, AMMO);

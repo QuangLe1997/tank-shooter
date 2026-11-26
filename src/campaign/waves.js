@@ -1,7 +1,7 @@
 // campaign/waves.js — WAVES: difficulty / NG+ loop multipliers, wave queue per stage, random wave events, edge spawn points
 import * as THREE from 'three';
 import { BALANCE, ENTRY, INFANTRY } from '../../config.js';
-import { soldierWaveQueue, duelOn, ENEMY_DEFS, FORTS, MOBILE, OBJ, PROFILE, S, UNDER, addScore, applyScriptedWave, cMod, enemies, fieldEdgePoint, fortLaunch, fortSpawnPoint, inField, objMod, opFor, radio, ringPulse, scriptedEvent, sfx, showBanner, spawnEnemy, spawnSquad, startBoss, supplyDmg, tip, trimWaveForSupply, underCut, updateHUD, wetAt, edgeEntry, edgeFrom, entrySeen, entriesPending, hatchEntry, isFoot } from '../hub.js';
+import { soldierWaveQueue, duelOn, ENEMY_DEFS, FORTS, MOBILE, OBJ, PROFILE, S, UNDER, addScore, applyScriptedWave, cMod, enemies, fieldEdgePoint, fortLaunch, fortSpawnPoint, inField, objMod, opFor, radio, ringPulse, scriptedEvent, sfx, showBanner, spawnEnemy, spawnSquad, startBoss, supplyDmg, tip, trimWaveForSupply, underCut, updateHUD, wetAt, edgeEntry, edgeFrom, entrySeen, entriesPending, hatchEntry, isFoot, dirEntry, dirFinale, dirSpawned, dirWaveGo, dirWaveHold } from '../hub.js';
 
 // ----------------------------- WAVES -----------------------------
 export const WAVE = { spawnQueue:[], spawnAt:0, betweenUntil:0, active:false, perStage:BALANCE.wave.perStageCount, event:null, eventBanner:null, eventColor:'#9bb0c0', treasure:false, eliteForce:0, assault:false };
@@ -75,8 +75,8 @@ export function updateWaves(dt, now){
   if(S.awaitingUpgrade) return;                        // boss just died, waiting on upgrade pick
   if(!WAVE.active){
     if(duelOn()) return;                               // the general is on the field → no waves
-    if(now>WAVE.betweenUntil){
-      if(S.wave >= WAVE.perStage && !FORTS.length) startBoss(now);       // final wave done → summon the stage boss (Z107: with fortresses the boss waits inside the citadel)
+    if(now>WAVE.betweenUntil && dirWaveGo(now)){        // DIR 1 the next wave waits out a peak and its lull (campaign/director.js)
+      if(S.wave >= WAVE.perStage && !FORTS.length){ if(dirFinale(now)) startBoss(now); }       // final wave done → summon the stage boss (Z107: with fortresses the boss waits inside the citadel)
       else { S.wave++; startWave(now); }
     }
     return;
@@ -86,9 +86,9 @@ export function updateWaves(dt, now){
   const cap = Math.floor(BALANCE.wave.capBase + S.stage*BALANCE.wave.capPerStage) + (WAVE.assault?BALANCE.wave.assaultCapBonus:0);   // eased: s1=6 … s5=12; ASSAULT crowds the field
   let _nT=0, _nI=0; for(const e of enemies){ if(e.guard || e.fortOf || e.abandoned) continue; if(e.def.inf) _nI++; else _nT++; }   // foot soldiers don't eat the vehicle cap · Z107 nor do fortress garrisons / bodyguards / post guards (they stalled the waves)
   const _nx=WAVE.spawnQueue[0];
-  if(WAVE.spawnQueue.length && now>WAVE.spawnAt && (_nx==='squad' ? _nI < (MOBILE?INFANTRY.squad.maxMobile:INFANTRY.squad.maxOnField) : _nT<cap)){
+  if(WAVE.spawnQueue.length && now>WAVE.spawnAt && !dirWaveHold(now) && (_nx==='squad' ? _nI < (MOBILE?INFANTRY.squad.maxMobile:INFANTRY.squad.maxOnField) : _nT<cap)){
     const t=WAVE.spawnQueue.shift(); if(underCut(t)){ WAVE.spawnAt=now+0.5; return; }   // Z226 its depot under the battlefield was wrecked: this one never comes
-    let sp=(WAVE.plan==='pincer' && pincerPoint()) || edgeSpawnPoint(); const n0=enemies.length;
+    let sp=(WAVE.plan==='pincer' && pincerPoint()) || dirEntry(t) || edgeSpawnPoint(); const n0=enemies.length; dirSpawned(sp);   // DIR 1 the director's flank: the side he is not looking at
     if(t==='squad'){
       spawnSquad(sp); if(sp.fort) fortLaunch(sp.fort, n0, now); WAVE.spawnAt=now+0.6;   // (AI 2 sp.how / sp.hatch: over the edge out of the frame, out of the gate, or up out of a hatch)
       if(WAVE.plan==='probe' && !WAVE.probeHeld){ WAVE.probeHeld=true; WAVE.spawnAt=now+7; }   // the main body waits for the probe to make contact

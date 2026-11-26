@@ -7,7 +7,7 @@
 //   · and sometimes the luck is ours: OUR ARTILLERY drops a fire mission on the thickest knot of enemies
 import * as THREE from 'three';
 import { REAL } from '../../config.js';
-import { FT, S, UNDER, aoeDamage, bigExplode, clampFieldXZ, decalCrater, enemies, enemyGroundStrike, floatText, heightAt, radio, ringPulse, sfx, showBanner, spawnEnemy, spawnPart, spawnSquad, tunnelSquad } from '../hub.js';
+import { FT, S, UNDER, aoeDamage, bigExplode, clampFieldXZ, decalCrater, enemies, enemyGroundStrike, floatText, heightAt, radio, ringPulse, sfx, showBanner, spawnEnemy, spawnPart, spawnSquad, tunnelSquad, dirSurpriseOk } from '../hub.js';
 
 const rnd = a => a[0]+Math.random()*(a[1]-a[0]);
 export const SURP = { next:0, shells:[], last:null, count:0 };
@@ -49,4 +49,5 @@ export function updateSurprises(dt, now){ if(UNDER.on) return;   // Z226
       else enemyGroundStrike(s.x, s.z, s.R, s.dmg, now); } }
   if(S.mode!=='playing' || !S.player) return;
   if(!SURP.next) SURP.next=now+rnd(REAL.surprise.first);
-  if(now<SURP.next) return; SURP.next=now+rnd(REAL.surprise.every); roll(now); }
+  if(now<SURP.next) return; if(!dirSurpriseOk(now)){ SURP.next=now+2; return; }   // DIR 1 never on top of a peak nor in a lull: it waits for the build-up (campaign/director.js)
+  SURP.next=now+rnd(REAL.surprise.every); roll(now); }

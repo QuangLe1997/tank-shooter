@@ -1,7 +1,7 @@
 // actors/infantry.js — Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 import * as THREE from 'three';
 import { AWARE, BALANCE, DEATH_POP, ENV, EQUIP, FIELDCRAFT, INFANTRY, REAL, SQUAD } from '../../config.js';
-import { objMod, BIOME, ENVMOD, FT, MOBILE, S, UGRID, _cv, aiIQ, animateSoldier, atCover, burst, cMod, canThrow, clampField, clearGore, combatDive, coverSpot, dazePose, dazed, decalBlood, diffDmgMul, diffScale, dropSoldierGun, endFall, enemies, enemyPool, fortExitDir, fortWallCross, heightAt, inSmoke, infPushBlocks, kitAttach, launchEnemyMissile, loadGLTF, loopDmgMul, losBlocked, makeSoldierMesh, makeSquad, nadeFlee, nadeTarget, peekMove, poseSoldier, reviveSoldierMesh, rifleFX, ringPulse, scene, sfx, smokeSpreadK, soldierReloading, spawnBullet, spawnEnemy, spawnPart, squadMove, throwNade, tracerNext, unitsNear, wantPeek, wrapAngle, asShipped, nearShape, riverWay, wadeAt, gunFlash, awareTick, PL, hatchEntry, riseStep } from '../hub.js';
+import { objMod, BIOME, ENVMOD, FT, MOBILE, S, UGRID, _cv, aiIQ, animateSoldier, atCover, burst, cMod, canThrow, clampField, clearGore, combatDive, coverSpot, dazePose, dazed, decalBlood, diffDmgMul, diffScale, dropSoldierGun, endFall, enemies, enemyPool, fortExitDir, fortWallCross, heightAt, inSmoke, infPushBlocks, kitAttach, launchEnemyMissile, loadGLTF, loopDmgMul, losBlocked, makeSoldierMesh, makeSquad, nadeFlee, nadeTarget, peekMove, poseSoldier, reviveSoldierMesh, rifleFX, ringPulse, scene, sfx, smokeSpreadK, soldierReloading, spawnBullet, spawnEnemy, spawnPart, squadMove, throwNade, tracerNext, unitsNear, wantPeek, wrapAngle, asShipped, nearShape, riverWay, wadeAt, gunFlash, awareTick, PL, hatchEntry, riseStep, dirFireK } from '../hub.js';
 
 // ===== Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 // …and a tank rolling over them crushes them flat. Lives in enemies[] (def.inf) so every gun, drone, guard & blast already sees them. =====
@@ -69,7 +69,7 @@ function fireRound(e, T, d, now, dmgMul, ds){ const def=e.def, F=AWARE.fire, A=B
   const a=Math.atan2(tx-_cv.x, tz-_cv.z)+(Math.random()-0.5)*w, tr=tracerNext(e.mesh);
   spawnBullet(_cv.x,_cv.z,a,{owner:'e', inf:true, dmg:def.dmg*dmgMul*(you?F.dmgK:1), speed:def.bspeed, color:tr?REAL.tracer.enemy:0xffd06a, r:tr?0.3:0.22, trailK:tr?2.4:1, tr:tr?1:0, life:1.6, maxDist:def.range*(you||T.supp?F.reachK:1)+3, noArc:true, y:_cv.y, dropTo:1.3}); rifleFX(_cv.x, _cv.y, _cv.z, a, false);   // Z223 green tracer every Nth round · brass + smoke
   gunFlash(_cv.x,_cv.y,_cv.z, a, 0.6, 0.34, 0xfff0c0, 0.9);   // Z419 a shaped rifle flash along the bore
-  sfx('rifleShot', e.pos); }
+  sfx('rifleShot', e.pos); e.shotAt=now; }   // (DIR 1 shotAt: the director counts who is firing)
 export function updateInfantry(e, dt, now, edt){
   const def=e.def, p=S.player, u=e.mesh.userData;
   if(dazed(e, now)){ if(e.kbx||e.kbz){ e.pos.x+=e.kbx*edt; e.pos.z+=e.kbz*edt; const kf=Math.max(0,1-dt*6); e.kbx*=kf; e.kbz*=kf; } infPushBlocks(e.pos); clampField(e.pos, 2);   // Z223 knocked flat by a blast: slides, lies there, then gets up
@@ -94,6 +94,7 @@ export function updateInfantry(e, dt, now, edt){
   else if(pd<10 && closing>7){ e.side=e.side||(Math.random()<0.5?-1:1); mx=-puz*e.side; mz=pux*e.side; sp*=1.9; e.aimT=0; it='evade'; }   // SCATTER — dive out of the tank's path
   else if(react){ it='react'; }                                              // AI 1 the moment it dawns on him: he stops dead, swings round on him, shouts — not a shot yet
   else if(e.aimT>0){ }                                                       // kneeling with the launcher up: hold still
+  else if(now<(e.groundUntil||0) && !fb){ it='ground'; }                     // DIR 1 the director's release: the men in contact go to ground for a few seconds — flat, not a shot
   else if((e.supp||0)>0.82 && !fb){ it='pinned'; }                        // Z173 PINNED: rounds cracking overhead — he hugs the ground
   else if(!(e.sq && e.sqNoFire) && peekMove(e, now, _fl)){ mx=_fl.x; mz=_fl.z; sp*=1.25; it='flank'; }   // Z220 wall in the way → edge out to a clear line (AI 1 before the cover: out, fire, back)
   else if(inCv && !push){ const cx=e.cover.x-e.pos.x, cz=e.cover.z-e.pos.z, cd=Math.hypot(cx,cz); if(cd>0.7){ mx=cx/cd; mz=cz/cd; sp*=1.5; it='cover'; } else it=e.sees?'attack':'suppress'; e.inCover=cd<=1.3; }   // Z104 → into cover, shoot from there
@@ -123,7 +124,7 @@ export function updateInfantry(e, dt, now, edt){
   let fired=false; const ds=diffScale(), A=BALANCE.aggro, F=AW.fire;
   const dmgMul = (0.7+0.3*ds)*loopDmgMul()*cMod('enemyDmgMul')*objMod('enemyDmgMul')*diffDmgMul();   // (an objective standing: the command bunker, the battery)
   // AI 1 FIRE: an alerted man with the player in his sights always fires (no coin toss), in BURSTS; out of sight he suppresses the last place he saw him; nothing during the reaction delay
-  const open = S.mode==='playing' && !(e.aimT>0) && !react && (!T.lost || T.supp), rate=(A.rateBase-A.rateDrop*ds)/1.6*(e.sqFireK||1)*(1+(e.supp||0))*(you && PL.v>AW.zero.runV ? F.runRest : 1);   // (AI 3 a running man: longer between bursts)
+  const open = S.mode==='playing' && !(e.aimT>0) && !react && (!T.lost || T.supp) && it!=='ground', rate=(A.rateBase-A.rateDrop*ds)/1.6*(e.sqFireK||1)*(1+(e.supp||0))*(you && PL.v>AW.zero.runV ? F.runRest : 1)*dirFireK();   // (AI 3 a running man: longer between bursts · DIR 1 and everyone in the director's lull)
   if(e.burstLeft>0){ if(!open || !inRange) e.burstLeft=0;
     else if(now>=e.fireAt){ fireRound(e, T, d, now, dmgMul, ds); fired=true; e.fireAt = --e.burstLeft>0 ? now+F.gap : now+(F.rest[0]+Math.random()*(F.rest[1]-F.rest[0]))*rate; } }
   else if(open && inRange && now>e.fireAt && !soldierReloading(e.mesh) && !(e.sqNoFire && moved>0.01)){   // Z172 nobody fires mid-reload · Z173 nor while sprinting to the next cover
@@ -149,7 +150,7 @@ export function updateInfantry(e, dt, now, edt){
   const low = al && (!!thr || (e.supp||0)>0.25 || (e.sq && (e.sqNoFire || e.sq.state==='assault' || e.sq.state==='fm')) || d<def.range*1.15);   // Z223 within reach of the enemy: bent low on the move
   let st = e.aimT>0 ? 'crouch' : (!still ? (low ? 'low' : 'stand') : (e.inCover && thr ? 'crouch' : (settled && d>SQUAD.proneR && !def.rpg ? 'prone' : (settled ? 'crouch' : 'stand'))));
   if(still && e._dash && e.sqNoFire && !(e.aimT>0)){ st=e.inCover?'crouch':'prone'; combatDive(e.mesh, e.pos.x, e.pos.z); } e._dash = !still && !!e.sqNoFire;   // Z223 end of a bound: down at once
-  if(still && !(e.aimT>0)){ if((e.supp||0)>0.55) st='prone'; else if(e.sq && e.sqStance && !e.sqGoal) st=e.sqStance; }
+  if(still && !(e.aimT>0)){ if((e.supp||0)>0.55 || it==='ground') st='prone'; else if(e.sq && e.sqStance && !e.sqGoal) st=e.sqStance; }
   if(still && (react || !al && T.lost) && !((e.supp||0)>0.55)) st='stand';   // AI 1 a man who does not know stands and looks about; the one who has just realised is still on his feet   // Z173 under fire → flat · the covering team kneels / lies to shoot
   poseSoldier(e.mesh, st, dt); e.r = st==='prone' ? 0.34 : 0.55;              // a man lying flat is a smaller target for your gun too
 }

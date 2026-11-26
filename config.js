@@ -882,6 +882,30 @@ export const AWARE = { tick:[0.22, 0.34],
 //   depth m below ground, hold s more before his first shot; the lid opens open s before the first man, one man every gap s; the tunnel network's own hatch
 //   within reuse m is used, else a spider hole opens there and is filled in hole s later; ambush: the scripted ring of holes this far from the player (m).
 export const ENTRY = { minD:45, pad:0.12, tries:12, edgeIn:4, seeD:130, nearD:30, rise:0.8, depth:1.75, hold:0.3, open:0.5, gap:0.45, reuse:7, hole:22, ambush:[17, 23] };
+// DIR 1 THE BATTLE'S DIRECTOR (campaign/director.js) — the fight round the player is read `sample` s apart (never per frame) into one PRESSURE 0…1 and the waves,
+//   the surprises and the general are released by it. on: false (or ?nodirector) = it reads and decides nothing (the old clocks).
+//   The reading: alerted men within nearR m count as near (an aircraft within airR m as two), a man who fired in the last fireT s as firing; the damage he took is
+//   kept as a share of his health fading over tau.hurt s; pressure = w.hurt × that / ref.hurt + w.hp × how low his health is (from 1 − ref.hp[0] down to 1 − ref.hp[1])
+//   + w.near × near / ref.near + w.fire × firing / ref.fire + w.stall × (men near and nobody fallen for ref.stall s) − w.calm × (not hit for ref.calm s), smoothed
+//   over tau.smooth s. thr: under low it is "little to do", over high for hold s a PEAK (gone once under high × off); crit: health under this (hit in the last critT s) = nearly dead.
+//   build: a peak is called no sooner than min s after a lull (never two back to back); the first escalation waits first s; pressure low for escalate s → escalate
+//     (cd s apart): the next flankN entries of the wave come from his left / right / rear (sides: weights; spread rad round the bearing; over the edge when that is
+//     ENTRY.minD…maxD m off and out of the frame, else a hatch hatchD m off), named on the radio cueT s later; else the surprise due more than surMin s away is played
+//     in surLead s (no more often than surCd s); else up to intelN men within intelR m who have not found him are told where he is (to intelErr m; at least intelMin of
+//     them, or it is not worth a radio line); else the nearest fortress within sallyR m sends its next squad out now. meter: over this pressure the wave's queue and
+//     the fortresses' sallies wait — the queue at most holdMax s, then `group` entries pass. peak: min…max s. lull: t s (the long end when he is nearly dead; extra s more while the pressure stays high), the men within contactR m
+//     go to ground for ground s and every rifleman's rests between bursts are × fireK for as long as it lasts, no surprise until `surprise` s after it; drop: a medkit and ammunition when his health is under hp (cd s apart).
+//   finale: on a field without a citadel the general comes lull s after the last wave, announced; the men in contact go to ground for ground s as he comes out; no
+//     reinforcement and no surprise in the duel's first quiet s. radio: the director's own lines gap s apart; a peak is named peakP of the time, a new build-up buildP.
+export const DIRECTOR = { on:true, sample:0.25, nearR:48, airR:70, fireT:1.6, logMax:80,
+  tau:{ hurt:5, smooth:1.2 }, w:{ hurt:0.34, hp:0.22, near:0.14, fire:0.22, stall:0.08, calm:0.12 }, ref:{ hurt:0.3, hp:[0.15, 0.6], near:6, fire:4, calm:10, stall:[10, 30] },
+  thr:{ low:0.18, high:0.58, off:0.8, hold:1.2, crit:0.3, critT:4 },
+  build:{ min:14, first:18, escalate:9, cd:13, meter:0.36, holdMax:18, group:3, flankN:[3, 5], spread:0.7, maxD:95, hatchD:[40, 55], cueT:1.5, sides:{ left:1, right:1, rear:1.2 }, surMin:6, surLead:1.2, surCd:45, intelR:150, intelN:8, intelMin:3, intelErr:5, sallyR:160 },
+  peak:{ min:5, max:16 }, lull:{ t:[10, 20], extra:6, ground:[3, 5], contactR:42, fireK:1.8, surprise:8, drop:{ hp:0.45, cd:90 } }, finale:{ lull:12, ground:[2.5, 4], quiet:25 }, radio:{ gap:14, peakP:0.5, buildP:0.4 },
+  say:{ lull:['SCH: Tạm lắng — nạp đạn đi!', 'SCH: Chúng chững lại rồi — thay băng đạn, băng bó nhanh!', 'SCH: Địch nằm im — tranh thủ nạp đạn, đổi vị trí!'],
+    drop:['SCH: Anh bị thương nặng — đã thả dù cứu thương và đạn ngay trước mặt!'], peak:['SCH: Chúng dồn lên rồi — bám công sự, giữ vững!', 'SCH: Hoả lực địch rất mạnh — đừng đứng một chỗ!'],
+    build:['SCH: Chúng lại lên — vào vị trí!', 'SCH: Hết lặng rồi — địch đang áp sát!'], hunt:['SCH: Địch đã lần ra chỗ anh — chúng đang kéo tới!', 'SCH: Chúng biết anh ở đâu rồi — coi chừng các hướng!'], left:'SCH: Chúng đang vòng sườn trái!', right:'SCH: Chúng đang vòng sườn phải!', rear:'SCH: Địch vòng ra sau lưng — quay lại!',
+    finale:'SCH: Trận địa lặng rồi — tướng địch sắp ra trận. Nạp đạn, băng bó, chuẩn bị!' } };
 // Z245 CAVALRY MODE (game/cavalry.js) — the general in full plate on his armoured charger, or on foot.
 //   horse: walk / cruise (canter) / gallop (surge, dur s, cd s) speeds, back-up, accel/decel m/s², turn rate rad/s low → high speed · foot: run, sprint (dur, cd),
 //   crouch-walk, crawl · radius (collision + hit size) · defK = damage taken × by posture (plate armour + a smaller target) · camK = camera distance × ·
