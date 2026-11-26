@@ -31,7 +31,7 @@ export function runAction(id, phase, repeat){ if(phase==='up'){ if(id==='crew') 
   switch(id){
     case 'fire': if(S.mode==='playing'){ S.firing=true; soldierFire(now, playerRange()); } break;
     case 'dash': tryDash(); break;  case 'roll': soldierRoll(); break;  case 'climb': soldierClimb(); break;   /* Z451 */  case 'skill': trySpell(); break;  case 'skillNext': cycleSpell(1); break;
-    case 'droneRecon': castSpellId('reconDrone'); break; case 'droneFpv': castSpellId('fpvDrone'); break;   // DRONE 1 the drones' own keys (combat/drone-skills.js)
+    case 'droneRecon': castSpellId('reconDrone'); break; case 'droneFpv': castSpellId('fpvDrone'); break; case 'droneJam': castSpellId('jammer'); break;   // DRONE 1 the drones' own keys (combat/drone-skills.js)
     case 'crew': crewPress(); break; case 'autoFire': { const b=document.getElementById('autoBtn'); if(b) b.click(); } break;
     case 'gunPrev': cycleGun(-1); break; case 'gunNext': cycleGun(1); break; case 'reload': reloadNow(); break;   // GUN 2 R: reload now (combat/guns.js)
     case 'muster': musterAll(); break; case 'sqOrder': cycleSquadOrder(); break; case 'assault': assaultFort(); break; case 'para': callParadrop(); break;

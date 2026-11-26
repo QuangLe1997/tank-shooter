@@ -2,7 +2,7 @@
 //   (no-tanks: the tank's lock-on missile gun — its seeker, reticles, smart mini-missiles, homing — is gone; the file keeps its name)
 import * as THREE from 'three';
 import { LETHAL, SQUAD, FORT, TREEFALL, AIRAIM, LINE, GUNFX, GUNFEEL } from '../../config.js';
-import { hitConfirm, wrapAngle, ARC_G, ARENA, BVIS, FT, GLOW, MOBILE, S, UGRID, UNDER, _hot, addTrail, armorOf, ballisticInit, ballisticStep, ballisticTrailK, bloodSpurt, bulletFalloff, bulletPool, bullets, core, damageAlly, damageBlock, damageCore, damageEnemy, damagePlayer, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, fortIntactCross, fortWallCross, groundHit, heightAt, impactFX, lightning, nearMiss, orientShell, ringPulse, rocketExhaust, shellStretch, shellTrail, shootGuard, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, sweepPoint, tunnelBlast, typeMul, unitsNear, vaporWake, shotTree, trafficShot, dodgeShot, stealthShot, lineHit, inShape, dressRound, sandProof, bulletImpact, hitMat, climbPerch } from '../hub.js';
+import { hitConfirm, wrapAngle, ARC_G, ARENA, BVIS, DW, droneShot, FT, GLOW, MOBILE, S, UGRID, UNDER, _hot, addTrail, armorOf, ballisticInit, ballisticStep, ballisticTrailK, bloodSpurt, bulletFalloff, bulletPool, bullets, core, damageAlly, damageBlock, damageCore, damageEnemy, damagePlayer, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, fortIntactCross, fortWallCross, groundHit, heightAt, impactFX, lightning, nearMiss, orientShell, ringPulse, rocketExhaust, shellStretch, shellTrail, shootGuard, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, sweepPoint, tunnelBlast, typeMul, unitsNear, vaporWake, shotTree, trafficShot, dodgeShot, stealthShot, lineHit, inShape, dressRound, sandProof, bulletImpact, hitMat, climbPerch } from '../hub.js';
 
 // Z238 how high a block stands (world y of its top), measured once from its mesh and again after it has been damaged
 const _tb=new THREE.Box3();
@@ -107,6 +107,7 @@ export function updateBullets(dt, now){
       if(wb && wb!==b.ignore){ damageBlock(wb, b.dmg*structMul(b.type, wb)*(b.owner==='p'?siegeMul():1)); surfaceHit(wb, b); blockImpactFX(wb, b); b.x=px; b.z=pz; if(b.owner==='p'&&b.aoe) detonate(b); recycleBullet(i); continue; } }
     // terrain blocks are cover — bullets break bricks / bounce off steel, then stop
     // Z204 any round that strikes something solid goes off against it (flash, fireball for a shell, chips, dust) and leaves its mark — breakable or not
+    if(b.owner==='p' && DW.list.length && droneShot(b, _wy)){ if(b.aoe) detonate(b); recycleBullet(i); continue; }   // DRONE 3 a round through an enemy drone's sphere brings it down (campaign/drone-raid.js)
     if(b.owner==='p' && b.airAim && b.airAim._twr){ const G=b.airAim; if(G.gd.alive && Math.hypot(G.pos.x-b.x, G.pos.z-b.z)<1.4 && Math.abs(_wy-G.pos.y)<1.5){ shootGuard(G.t, G.gd, b.ox, b.oz); if(b.aoe) detonate(b); recycleBullet(i); continue; } }   // Z334 a round laid on a man up on a tower or a wall drops him
     if(b.owner==='p') fenceShot(b);   // Z205 the compound wire takes rounds too
     if(b.owner==='p' && !airborne && !aaHigh && trafficShot(b, dt)){ if(b.aoe) detonate(b); recycleBullet(i); continue; }   // Z306 a round that crosses a car or a scooter strikes it

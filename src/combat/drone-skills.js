@@ -8,7 +8,7 @@
 //   DRONE 2 the FPV strike (fpvDrone) — below, with its own note.
 import * as THREE from 'three';
 import { DRONEWAR } from '../../config.js';
-import { CV, DW, MOBILE, PAD, S, STICK_R, VIEW, XH, aoeDamage, bigExplode, burst, camera, climbing, damageBlock, damageEnemy, droneChip, droneFree, droneHurt, droneKill, droneSay, droneSpawn, droneWhine, enemies, floatText, fpvHud, fpvHudTick, heightAt, heldAction, lineClear, lineHit, move, roofOver, sfx, spawnPart, spellHold, updateSpellHUD } from '../hub.js';
+import { CV, DW, MOBILE, PAD, S, STICK_R, VIEW, XH, aoeDamage, bigExplode, burst, camera, climbing, damageBlock, damageEnemy, droneChip, droneFree, droneHurt, droneKill, droneSay, droneSpawn, droneWhine, enemies, floatText, fpvHud, fpvHudTick, heightAt, heldAction, inShape, lineClear, lineHit, move, roofOver, sfx, spawnPart, spellHold, updateSpellHUD } from '../hub.js';
 
 const D = DRONEWAR, R2 = a => a[0] + Math.random() * (a[1] - a[0]), _pos = { x:0, y:0, z:0 };
 // the recon drone in the air (d: its record, or null), where its circle is centred, and until when anybody is marked (dev / probes read it)
@@ -62,8 +62,9 @@ export function droneMarkK(e){ return e.markUntil > performance.now() / 1000 ? D
 //   soldier stays where he is (on foot, or his ride reined in): no step (core/helpers.js), no aim (input/input.js: the mouse is the stick), no shot (combat/soldier-fire.js), no other action
 //   (input/bindings.js fpvKey) — the risk is the price. Every way out goes through fpvEnd: the impact, the trigger, the battery (it goes off where it is), shot
 //   down, the link lost (too far; he took a hard hit), his death, the end of the stage, the field cleared. A pause holds the flight as it is.
-export const FPV = { on:false, d:null, t:0, v:0, sx:0, sy:0, mx:0, my:0, bank:0, hp0:0, fov0:54, sig:1, stock:0, whAt:0, end:'', cp:new THREE.Vector3(), cq:new THREE.Quaternion(), n:{ flown:0, hit:0, kills:0, lost:0 } };
+export const FPV = { on:false, d:null, t:0, v:0, sx:0, sy:0, mx:0, my:0, bank:0, hp0:0, fov0:54, sig:1, ox:0, oz:0, stock:0, whAt:0, end:'', cp:new THREE.Vector3(), cq:new THREE.Quaternion(), n:{ flown:0, hit:0, kills:0, lost:0 } };
 const _e = new THREE.Euler(0, 0, 0, 'YXZ'), clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const _fskip = bl => !!bl.ours || inShape(bl, FPV.ox, FPV.oz);   // what it does not strike: our own works, and whatever he stood in when he threw it (as a round's line, combat/lock-on.js)
 export function fpvFlying(){ return FPV.on; }
 export function fpvStock(){ return FPV.stock; }
 // the mouse moved (input/input.js): while it flies the pointer is the stick, not the soldier's aim
@@ -78,7 +79,7 @@ function fpvRefuse(txt){ const p = S.player; floatText(txt, '#ffcf5a', p.pos, 14
 export function fpvCast(now){ const p = S.player, F = D.fpv; if(!DW.on || !p) return false; if(FPV.on){ fpvDetonate(); return false; }
   if(FPV.stock <= 0) return fpvRefuse('HẾT DRONE FPV — CHỜ THÙNG DRONE / MÀN SAU'); if(!p.cav || CV.trans || CV.dead || climbing()) return fpvRefuse('ĐỨNG VỮNG ĐÃ MỚI LÁI ĐƯỢC FPV');   // (in the saddle or on the pillion he may: the ride is reined in — no push reaches it while he flies)
   const a = p.aimSmoothed ?? p.facing ?? 0, gy = heightAt(p.pos.x, p.pos.z) + (p.lift || 0) + (CV.mounted ? 0.7 : 0), d = droneSpawn('fpv', p.pos.x + Math.sin(a) * 0.8, gy + 1.8, p.pos.z + Math.cos(a) * 0.8, a); if(!d) return fpvRefuse('TRỜI ĐÃ KÍN DRONE');
-  d.hp = F.hp; d.pitch = 0.32; d.g.visible = false; FPV.on = true; FPV.d = d; FPV.t = 0; FPV.v = F.v0; FPV.bank = 0; FPV.sx = FPV.sy = 0; FPV.hp0 = p.hp; FPV.sig = 1; FPV.end = ''; FPV.stock--; FPV.n.flown++;
+  d.hp = F.hp; d.pitch = 0.32; d.g.visible = false; FPV.on = true; FPV.d = d; FPV.t = 0; FPV.v = F.v0; FPV.bank = 0; FPV.sx = FPV.sy = 0; FPV.hp0 = p.hp; FPV.sig = 1; FPV.ox = p.pos.x; FPV.oz = p.pos.z; FPV.end = ''; FPV.stock--; FPV.n.flown++;
   FPV.mx = XH.mx >= 0 ? XH.mx / VIEW.w * 2 - 1 : 0; FPV.my = XH.my >= 0 ? 1 - XH.my / VIEW.h * 2 : 0; FPV.cp.copy(camera.position); FPV.cq.copy(camera.quaternion); FPV.fov0 = camera.fov;
   S.firing = false; p.vel.set(0, 0, 0); droneChip('fpv', now + F.dur); fpvHud(true); sfx('whoosh'); droneSay('fpv'); updateSpellHUD(); return false; }
 // the one way out: the soldier's camera, lens, HUD and controls as they were; why — hit · boom · time · down · lost · dead · stage
@@ -93,12 +94,12 @@ function fpvBlast(d, direct, now){ const B = D.fpv.blast, gy = heightAt(d.x, d.z
   _pos.x = d.x; _pos.y = d.y; _pos.z = d.z;
   if(k > 0.05){ aoeDamage(d.x, d.z, B.r * (0.5 + 0.5 * k), B.dmg * k, false, now, 'HE', false, B.struct); bigExplode({ x:d.x, y:d.y, z:d.z }, 0xffae5c, B.fx * (0.6 + 0.4 * k)); }
   else { spawnPart(d.x, d.y, d.z, 0, 0, 0, { tex:'flash', color:0xfff2d0, size:5, life:0.09, grav:0, drag:0 }); burst(_pos, 0xffb050, 14, 10, { y:d.y, life:0.4, size:0.8, grav:-6, drag:2.5 }); burst(_pos, 0x2a2420, 6, 4, { y:d.y, life:1, size:2.2, smoke:true, grav:-0.4, drag:1.6, op:0.5 }); sfx('explode', _pos, 0.9); }
-  let paid = !!G && G.hp < g0; const cp = Math.cos(d.pitch), ux = Math.sin(d.yaw) * cp, uy = Math.sin(d.pitch), uz = Math.cos(d.yaw) * cp, ul = Math.hypot(ux, uz) || 1, cc = Math.cos(B.cone);
+  let paid = !!G && G.hp < g0; const cp = Math.cos(d.pitch), ux = Math.sin(d.yaw) * cp, uy = Math.sin(d.pitch), uz = Math.cos(d.yaw) * cp, ul = Math.hypot(ux, uz) || 1, cc = Math.cos(B.cone), jet = B.jet * Math.max(0.35, cp);   // (pointing straight down the jet goes into the ground: little of it runs along it)
   if(direct && direct.hp > 0 && enemies.includes(direct) && !(direct === G && paid)){ if(direct === G) paid = true; direct._fx = 'blast'; damageEnemy(direct, B.direct * (direct.def.air ? B.vehK : 1)); }
-  for(const e of enemies.slice()){ if(e === direct || !(e.hp > 0)) continue; const dx = e.pos.x - d.x, dz = e.pos.z - d.z, dd = Math.hypot(dx, dz); if(dd > B.jet || dd < 0.01 || (dx * ux + dz * uz) / (dd * ul) < cc) continue;
+  for(const e of enemies.slice()){ if(e === direct || !(e.hp > 0)) continue; const dx = e.pos.x - d.x, dz = e.pos.z - d.z, dd = Math.hypot(dx, dz); if(dd > jet || dd < 0.01 || (dx * ux + dz * uz) / (dd * ul) < cc) continue;
     if(e.def.air ? Math.abs((e.pos.y || 0) - d.y - uy * dd) > 3 : h > B.airH[1]) continue; if(e === G){ if(paid) continue; paid = true; }
-    e._fx = 'blast'; damageEnemy(e, B.jetDmg * (e.def.air ? B.vehK : 1) * (1 - 0.5 * dd / B.jet)); }
-  { const hit = lineHit(d.x, d.y, d.z, d.x + ux * B.jet, d.y + uy * B.jet, d.z + uz * B.jet, 0.2, 0, null); if(hit && hit.bl) damageBlock(hit.bl, B.jetDmg * B.struct); }
+    e._fx = 'blast'; damageEnemy(e, B.jetDmg * (e.def.air ? B.vehK : 1) * (1 - 0.5 * dd / jet)); }
+  { const hit = lineHit(d.x, d.y, d.z, d.x + ux * B.jet, d.y + uy * B.jet, d.z + uz * B.jet, 0.2, 0, _fskip); if(hit && hit.bl) damageBlock(hit.bl, B.jetDmg * B.struct); }
   const kills = n0 - enemies.length; FPV.n.hit++; FPV.n.kills += Math.max(0, kills);
   if(kills > 0){ floatText('FPV: HẠ ' + kills, '#ffcf5a', _pos, 18); if(kills >= 2) droneSay('fpvHit'); } }
 export function fpvDetonate(){ const d = FPV.d; if(!FPV.on || !d || FPV.t < D.fpv.arm) return false; fpvBlast(d, null, performance.now() / 1000); fpvEnd('boom'); return true; }
@@ -120,7 +121,7 @@ function fpvFly(dt, now){ const d = FPV.d, p = S.player, F = D.fpv; if(d.dead){ 
   const gy = heightAt(d.x, d.z) + 0.3, armed = FPV.t >= F.arm, far = Math.hypot(d.x - p.pos.x, d.z - p.pos.z); FPV.sig = clamp((F.range - far) / (F.range * 0.35), 0, 1);
   if(far > F.range){ fpvEnd('lost'); return; }
   if(d.y <= gy){ d.y = gy; if(armed){ fpvBlast(d, null, now); fpvEnd('hit'); return; } d.pitch = Math.max(d.pitch, 0.1); }
-  if(armed){ const hit = lineHit(px, py, pz, d.x, d.y, d.z, 0.3, 0, null); if(hit){ d.x = px + (d.x - px) * hit.t; d.y = py + (d.y - py) * hit.t; d.z = pz + (d.z - pz) * hit.t; fpvBlast(d, null, now); fpvEnd('hit'); return; }
+  if(armed){ const hit = lineHit(px, py, pz, d.x, d.y, d.z, 0.3, 0, _fskip); if(hit){ d.x = px + (d.x - px) * hit.t; d.y = py + (d.y - py) * hit.t; d.z = pz + (d.z - pz) * hit.t; fpvBlast(d, null, now); fpvEnd('hit'); return; }
     for(let i = 0; i < enemies.length; i++){ const e = enemies[i]; if(!(e.hp > 0)) continue; const dx = e.pos.x - d.x, dz = e.pos.z - d.z, r = (e.r || 0.6) + 0.7; if(dx * dx + dz * dz > r * r) continue;
       if(e.def.air){ if(Math.abs((e.pos.y || 0) - d.y) > 2.4) continue; } else { const ey = heightAt(e.pos.x, e.pos.z); if(d.y < ey - 0.2 || d.y > ey + 2.4) continue; }
       fpvBlast(d, e, now); fpvEnd('hit'); return; } }
@@ -134,7 +135,8 @@ export function fpvCam(dt, now){ const d = FPV.d; if(!FPV.on || !d) return false
   S.shake = Math.max(0, S.shake - dt * (S.shake * 2.6 + 1.2)); fpvHudTick(now, FPV, F.dur - FPV.t, FPV.v, d.y - heightAt(d.x, d.z)); return true; }
 
 // the DRONE crate (loot/powerups.js — it used to bring the gatling gunship): one more FPV drone, and the recon drone ready at once
-export function droneCrate(){ const p = S.player; if(!p) return; if(p.ownCd) p.ownCd.reconDrone = 0; FPV.stock = Math.min(D.fpv.stockMax, FPV.stock + 1); updateSpellHUD(); floatText('+1 DRONE FPV · TRINH SÁT SẴN SÀNG', '#7fe6ff', p.pos, 15); }
+export function droneCrate(){ const p = S.player; if(!p) return; if(!DW.on){ p.hp = Math.min(p.maxHp, p.hp + 20); return; }   // (?nodrones: a little health instead)
+  if(p.ownCd) p.ownCd.reconDrone = 0; FPV.stock = Math.min(D.fpv.stockMax, FPV.stock + 1); updateSpellHUD(); floatText('+1 DRONE FPV · TRINH SÁT SẴN SÀNG', '#7fe6ff', p.pos, 15); }
 
 // ---- the frame, the stage, the end ----
 export function updateDroneSkills(dt, now){ if(!S.player) return; reconFly(dt, now); if(FPV.on) fpvFly(dt, now); }

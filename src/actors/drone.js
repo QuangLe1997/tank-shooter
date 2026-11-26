@@ -4,12 +4,12 @@
 //   it is in, actors/real-air.js), fpv (ours, a charge slung under it), spot and kami (the enemy's) — their list (DW.list, at most DRONEWAR.max in the air), a
 //   hit on one, its death (a burst in the air, the wreck tumbling down trailing smoke, burning a few seconds where it lands), the BUZZ (synthesised from the
 //   existing tone() calls on a bus of its own: pitch and loudness by how near it is, panned by where it is off the camera's right), the squad's radio lines on
-//   their own clock, and the one frame step that runs the rest (combat/drone-skills.js, campaign/drone-raid.js, ui/drone-hud.js). Nothing is built until the
+//   their own clock, and the one frame step that runs the rest (combat/drone-skills.js his own, campaign/drone-raid.js the enemy's, ui/drone-hud.js). Nothing is built until the
 //   first drone flies; nothing allocates per frame. DRONEWAR.on false / ?nodrones: droneSpawn refuses, so nothing ever flies.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { DRONEWAR } from '../../config.js';
-import { S, audio, blockTop, blocksNear, burst, camera, clearDroneSkills, decalScorch, droneHudOff, droneSkillsIdle, droneSkillsReset, heightAt, inShape, master, muted, radio, realAir, scene, sfx, spawnPart, tone, updateDroneHud, updateDroneSkills } from '../hub.js';
+import { S, audio, blockTop, blocksNear, burst, camera, clearDroneRaid, clearDroneSkills, decalScorch, droneHudOff, droneRaidReset, droneSkillsIdle, droneSkillsReset, heightAt, inShape, master, muted, radio, realAir, scene, sfx, spawnPart, tone, updateDroneHud, updateDroneRaid, updateDroneSkills } from '../hub.js';
 
 const D = DRONEWAR, ARMS = [[0.22, 0.22], [-0.22, 0.22], [0.22, -0.22], [-0.22, -0.22]];
 // what is in the air (dev / probes read it): list — the live drones · wrecks — the ones coming down or burning · n — what happened this stage
@@ -105,12 +105,12 @@ export function droneSay(key, must){ const Y = D.say, L = Y[key], now = performa
   DW.sayAt = now; radio(typeof L === 'string' ? L : L[(Math.random() * L.length) | 0]); return true; }
 
 // ---- the frame, the stage, the end ----
-export function updateDroneWar(dt, now){ if(!DW.on) return; updateDroneSkills(dt, now);
+export function updateDroneWar(dt, now){ if(!DW.on) return; updateDroneSkills(dt, now); updateDroneRaid(dt, now);
   for(let i = DW.list.length - 1; i >= 0; i--) frame(DW.list[i], dt, now);
   if(DW.wrecks.length) wrecks(dt); updateDroneHud(dt, now); }
 // not in play (game/loop.js, every frame of a menu, a pause, the death, a won stage): the pause holds everything as it is; anything else ends what he was flying
 export function droneWarIdle(){ if(DW.on && S.mode !== 'paused'){ droneSkillsIdle(); droneHudOff(); } }
 // the field is cleared (game/flow.js: a new run, back to the menu)
-export function clearDroneWar(){ clearDroneSkills(); while(DW.list.length) droneFree(DW.list[0]); while(DW.wrecks.length) wreckEnd(0); droneHudOff(); }
+export function clearDroneWar(){ clearDroneSkills(); clearDroneRaid(); while(DW.list.length) droneFree(DW.list[0]); while(DW.wrecks.length) wreckEnd(0); droneHudOff(); }
 // a stage begins (ui/briefing.js)
-export function droneWarReset(now){ clearDroneWar(); DW.sayAt = -1e9; DW.n.flown = DW.n.downed = DW.n.lost = 0; droneSkillsReset(now); }
+export function droneWarReset(now){ clearDroneWar(); DW.sayAt = -1e9; DW.n.flown = DW.n.downed = DW.n.lost = 0; droneSkillsReset(now); droneRaidReset(now); }

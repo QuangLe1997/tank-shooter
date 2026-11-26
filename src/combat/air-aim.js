@@ -7,17 +7,17 @@
 //   they flew at chest height above the ground under him); the round climbs to him and drops him off his platform.
 import * as THREE from 'three';
 import { AIRAIM } from '../../config.js';
-import { MOBILE, PAD, S, VIEW, camera, enemies, heightAt, liveGuards, playerRange, scene } from '../hub.js';
+import { MOBILE, PAD, S, VIEW, camera, droneHigh, enemies, heightAt, liveGuards, playerRange, scene } from '../hub.js';
 
 export const AIR = { e:null, mx:-1, my:-1, vx:0, vy:0, vz:0, last:null, ring:null, line:null, dot:null, label:null };
 const _v = new THREE.Vector3(), _q = new THREE.Quaternion();
 export function airMouse(cx, cy){ AIR.mx = cx; AIR.my = cy; }   // (from the mouse ray)
-const alive = e => !!e && (e._twr ? e.gd.alive && !e.t.falling && (mark(e), true) : enemies.includes(e) && e.hp > 0);
+const alive = e => !!e && (e._drn ? !e.d.dead : e._twr ? e.gd.alive && !e.t.falling && (mark(e), true) : enemies.includes(e) && e.hp > 0);   // (DRONE 3 _drn: an enemy drone, campaign/drone-raid.js)
 // a man up on a tower or a wall as a target: where his chest is now
 function mark(o){ o.pos.x = o.gd.wx; o.pos.y = (o.gd.wy || 6) + 0.95; o.pos.z = o.gd.wz; return o; }
 const guardOf = G => G.gd._am || (G.gd._am = mark({ _twr:true, t:G.t, gd:G.gd, pos:{ x:0, y:0, z:0 }, def:{ guard:true, inf:true }, r:0.7, hp:1 }));
 // every target that stands above the ground: aircraft, and the men on the towers and walls
-function* high(){ for(const e of enemies) if(e.def.air && e.hp > 0) yield e; for(const G of liveGuards()) yield mark(guardOf(G)); }
+function* high(){ for(const e of enemies) if(e.def.air && e.hp > 0) yield e; for(const G of liveGuards()) yield mark(guardOf(G)); for(const t of droneHigh()) yield t; }   // DRONE 3 and the enemy's drones
 // every frame: which aircraft the gun is laid on (null = the ground, as before)
 export function updateAirAim(dt){ const p = S.player; if(!p || S.mode !== 'playing'){ lay(null, dt); return; }
   const range = playerRange() * 1.15, C = AIRAIM; let t = null;

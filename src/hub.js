@@ -226,7 +226,8 @@ export * from './core/cloud.js';   // Z162 Firebase cloud save
 export * from './core/score-report.js';   // Z163 the leaderboard's run report (no-tanks: was the server economy client)
 export * from './ui/alarm.js';
 export * from './actors/drone.js';   // DRONE 1 the drone war's airframes, wrecks and buzz (the gatling support drone is retired)
-export * from './combat/drone-skills.js';   // DRONE 1 his own drones: the recon drone and its marks
+export * from './combat/drone-skills.js';   // DRONE 1 his own drones: the recon drone and its marks · DRONE 2 the FPV strike
+export * from './campaign/drone-raid.js';   // DRONE 3 the enemy's drones (a spotter, an FPV kamikaze) and the jammer
 export * from './ui/drone-hud.js';   // DRONE 1 the diamonds over the marked, the scan ring, the map's part
 export * from './loot/beacons.js';
 export * from './actors/soldiers.js';
