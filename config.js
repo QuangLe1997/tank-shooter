@@ -1960,7 +1960,8 @@ export const LIGHT = { tone:'agx', expK:1.0, sunK:1.35, hemiK:0.55, ambient:0.03
 //     npc × the counts for the men round him, npcP = the share of their steps that kick; grass: the grass round his hips parts (r m) and lies down (k);
 //   npc: the men round the camera within r m — body shade (a, len, w), a print every stride / strideRun m (runV m/s) within printR m, side = half the
 //     gait's width; cloth: the uniform's roughness map remapped to lo…1 (the Tripo soldier's 0.26–0.51 made the fabric shine like wet plastic);
-//   fill: the sky / bounce light — hemiK × the day sky fill, desat = share of the sky colour greyed (a clear sky's light is pale, not cobalt), bounce =
+//   night.spotShadows: floodlights that cast shadows (each one more shadow map in every lit shader: four took the ground's past the GPU's 16 texture
+//     units and the whole field went undrawn at night — only the fog colour under the men); fill: the sky / bounce light — hemiK × the day sky fill, desat = share of the sky colour greyed (a clear sky's light is pale, not cobalt), bounce =
 //     the hemisphere's ground colour = the battlefield's ground (ground) lit by the sun's colour × bounce; envK × the sky reflections by day
 export const GROUNDED = { on:true, lift:0.025, spread:1.6, nightK:0.85, capShade:96, capShadeM:40,
   shadow:{ normalBias:0.035, bias:-0.0004 },
@@ -1974,11 +1975,11 @@ export const GROUNDED = { on:true, lift:0.025, spread:1.6, nightK:0.85, capShade
     sprint:{ dust:3, spray:5, clod:5, size:0.9, op:0.85, up:1.15, life:1.4 }, skid:{ dust:5, spray:6, clod:5, size:0.85, op:0.85, up:0.6, life:1.4, throwK:0.4, len:1.9, fromV:4.2, toV:1.2, decay:5 },
     grass:{ r:0.65, k:0.8 },
     surf:{ sand:{ dust:1, spray:1, clod:0.7, size:1, op:1, clodS:0.04, tint:0xd2b48a }, dirt:{ dust:0.9, spray:0.9, clod:0.8, size:0.95, op:0.9, clodS:0.04, tint:0x9a8a70 },
-      grass:{ dust:0.25, spray:0, clod:1, size:0.7, op:0.5, clodS:0.05, clodC:0x5f7a34, fluff:0.6, tint:0x9c8e6a }, snow:{ dust:1.2, spray:1, clod:0.8, size:1.1, op:1, clodS:0.045, tint:0xf4f8ff },
+      grass:{ dust:0.25, spray:0, clod:1, size:0.7, op:0.5, clodS:0.05, clodC:0x5f7a34, fluff:0.6, tint:0x9c8e6a }, snow:{ dust:1, spray:1, clod:0.8, size:0.8, op:0.75, clodS:0.045, tint:0xeef2fa },
       mud:{ dust:0.1, spray:0.5, clod:1.6, size:0.8, op:0.9, clodS:0.05, clodC:0x2e2418, tint:0x4a3a28 }, rock:{ dust:0.3, spray:0, clod:0.3, size:0.6, op:0.6, clodS:0.025, tint:0xb0a89a } },
     biome:{ DESERT:0xd6b88c, SAVANNA:0xc49a68, RUINS:0x9a8a74, MEADOW:0x8a7656, CITY:0x9a958c, QUARRY:0xd0ccc0, VOLCANO:0x5a4a44, FOUNDRY:0x5a5048, CITADEL:0xb89e7a } },
   npc:{ r:32, printR:16, a:0.32, len:0.85, w:0.7, fade:0.6, stride:0.72, strideRun:1.05, runV:3, side:0.11 },
-  cloth:{ on:true, lo:0.55, rimPow:3.0 },
+  cloth:{ on:true, lo:0.55, rimPow:3.0 }, night:{ spotShadows:0 },
   fill:{ on:true, desat:0.55, bounce:1.5, rim:{ day:0.1, noon:0.08, sunset:0.4, night:0.25 }, tod:{ day:{ hemiK:1.2, envK:1.0, expK:1.06 }, noon:{ hemiK:1.2, envK:1.0, expK:1.06 },
     sunset:{ hemiK:1.1, envK:1.0, expK:1.0 }, night:{ hemiK:1.0 } } } };
 // Z318 BATTLEFIELD LIGHT (fx/battle-light.js): the palette every gameplay light uses (danger red, alert amber, threat orange, our systems cyan,

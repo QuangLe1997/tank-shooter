@@ -2465,7 +2465,9 @@ grp('GRAPH 5 the motion graph: on by default, lifted feet instead of dragged one
   ok(G.cloth.on && G.cloth.lo > 0.3 && G.cloth.lo < 0.9 && /roughnessFactor = uClothLo \+ \(1\.0 - uClothLo\) \* roughnessFactor/.test(ff) && G.fill.desat > 0 && G.fill.desat < 1 && G.fill.bounce > 0 && ['day','noon','sunset','night'].every(t => G.fill.tod[t] && G.fill.tod[t].hemiK > 0 && G.fill.rim[t] >= 0),
     'the uniform\'s roughness is lifted to '+G.cloth.lo+'…1 (cloth, not wet plastic); the shade is lit by a sky greyed '+G.fill.desat+' toward the horizon and the ground\'s bounce ×'+G.fill.bounce);
   ok(/updateFootfall\(dt, now\)/.test(lp) && /export \* from '\.\/fx\/footfall\.js'/.test(hub) && /groundedFill\(A\)/.test(at) && /fxp\('dust'/.test(ff) && /fxp\('clod'/.test(ff) && /gPush/.test(fs.readFileSync('src/world/grass-carpet.js','utf8')) && /export function groundedSet/.test(ff),
-    'the shades, prints and dust run once a frame from the game loop; the sky fill is applied with every atmosphere'); }
+    'the shades, prints and dust run once a frame from the game loop; the sky fill is applied with every atmosphere');
+  ok(G.night.spotShadows >= 0 && G.night.spotShadows <= 1 && /i<GROUNDED\.night\.spotShadows/.test(rr),
+    'at most '+G.night.spotShadows+' floodlight shadow maps: four took the ground\'s shader past 16 texture units and the field went undrawn at night'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
