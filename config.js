@@ -3188,7 +3188,9 @@ export const BLADE = { on:!(typeof location !== 'undefined' && /[?&]noblade\b/.t
 //   by its real shape, turned out about the sling's upper end) · worn: the worn blade lies in the plane of his whole back — 'up' the chord from the `from` joint to the neck (× chord;
 //   prone, × line toward the neck → knees line), lying prone it slides slide[kind] m down his back ([guandao, dadao]); crouched low[kind] = [ride up m, tilt°] (instead of
 //   BLADE's own low); its swing × sway[kind]; what his skin pushes it out by is taken at once and given back at release /s (kept in the back's frame)
-export const BLADEMEND = { wrist:{ on:true, grip:[-1, -1], pref:15, hyst:30, lim:60, roll:[55, 90], n:4, kRoll:1, rate:40 }, rifle:{ on:true }, worn:{ on:true, from:'Hips', chord:1, line:1, slide:[0.6, 0], low:[[0.05, 58], [0, 36]], sway:[1, 0.5], release:5 } };
+// BLADE 16 free: the dadao's left hand lets go in a cut when the hilt is farther from its shoulder than
+//   reach × the arm's length or its wrist would bend past bend° (eased in at go /s, back at back /s), and comes to his chest at at [his right, up, ahead] m off Spine2, curled curl
+export const BLADEMEND = { wrist:{ on:true, grip:[-1, -1], pref:15, hyst:30, lim:60, roll:[55, 90], n:4, kRoll:1, rate:40 }, rifle:{ on:true }, free:{ on:true, reach:0.97, bend:95, go:10, back:4, at:[-0.1, -0.1, 0.28], curl:0.6 }, worn:{ on:true, from:'Hips', chord:1, line:1, slide:[0.6, 0], low:[[0.05, 58], [0, 36]], sway:[1, 0.5], release:5 } };
 // AMBUSH 1 THE BLADE DOES NOT GIVE HIM AWAY — HIT AND RUN FROM COVER (game/ambush.js; the blade's own numbers stay in BLADE.quiet). Noise and sight are two rules:
 //   noise: a swing, a cut and a silent kill make NO sound an enemy acts on. What does carry only makes men SUSPICIOUS (they turn and come to look), never alerted:
 //     steel really striking cover (BLADE.quiet.clangR m — and only when the blade's arc truly meets the block: touch = how many bearings × radii of the arc are tried),

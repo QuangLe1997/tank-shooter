@@ -206,7 +206,7 @@ function pushOut(o, z, y, K, ks, n, k){ if(k <= 0) return; const M = BLADE.body.
 //   round kept unless the other is hyst° better, the roll eased at a wrist's pace (rate rad/s). → _tq (the turn to give the fist, world), _fM / _fN (its wrist → knuckles and
 //   palm once turned), the bend (rad)
 const _pk2 = V3(), _pn2 = V3(), _pc1 = V3(), _pc2 = V3(), _pc3 = V3(), _pB = M4(), _pqa = Q4(), _fM = V3(), _fN = V3(), _fK = V3(), _fS = V3(), _fW = V3(), _fE = V3(), _fP = V3(), _fd = V3(), _fx = V3();
-const FW = new WeakMap(), _fwQ = Q4(), _fq3 = Q4(), _fq4 = Q4(); let _fwDt = 0, _fwOff = true, _fwN = 0;
+const FW = new WeakMap(), _fwQ = Q4(), _fq3 = Q4(), _fq4 = Q4(); let _fwDt = 0, _fwOff = true, _fwN = 0, _fwBL = 0;
 // the elbow ik2 would give: shoulder S, wrist W, pole P, the arm's lengths → _fE
 function elbowAt(S, W, P, lu, lf){ _fx.subVectors(W, S); const d = clamp(_fx.length(), Math.abs(lu - lf) + 1e-3, lu + lf - 1e-3), x = (lu * lu - lf * lf + d * d) / (2 * d), h = Math.sqrt(Math.max(0, lu * lu - x * x)); _fx.normalize();
   _fE.subVectors(P, S); _fE.addScaledVector(_fx, -_fE.dot(_fx)); if(_fE.lengthSq() < 1e-8) _fE.set(0, -1, 0); _fE.normalize(); return _fE.multiplyScalar(h).addScaledVector(_fx, x).add(S); }
@@ -240,7 +240,7 @@ function fistPick(D, s, z, pn, tgt, K, ks){ const R1 = s === 'Right', W = BLADEM
 //   pn (unit, across the handle): the way his palm must face (BLADE 14) — the fist turned whole by fistPick, his elbow put straight on from its knuckles. → _res: what is
 //   left (the point − where the fist came to)
 function fistTo(D, s, K, ks, tgt, z, w, pole, pn){ const h = D[s + 'Hand'], f = D[s + 'ForeArm']; fist(D, s, _p);
-  if(pn){ fistPick(D, s, z, pn, tgt, K, ks); h.getWorldQuaternion(_fq2); _fq2.premultiply(_tq.slerp(_tw.identity(), 1 - w)); setWorldQ(h, _fq2); } else turnTo(h, _k, _b.copy(z).multiplyScalar(_k.dot(z) >= 0 ? 1 : -1), w); h.getWorldQuaternion(_fq2);
+  if(pn){ const bd = fistPick(D, s, z, pn, tgt, K, ks); if(s === 'Left') _fwBL = bd; h.getWorldQuaternion(_fq2); _fq2.premultiply(_tq.slerp(_tw.identity(), 1 - w)); setWorldQ(h, _fq2); } else turnTo(h, _k, _b.copy(z).multiplyScalar(_k.dot(z) >= 0 ? 1 : -1), w); h.getWorldQuaternion(_fq2);
   grip(D, s, K, ks, _p); h.getWorldPosition(_a); _t.copy(tgt).sub(_p).multiplyScalar(w).add(_a);
   if(pole) _pl.copy(pole); else if(pn){ f.getWorldPosition(_pl); h.getWorldPosition(_c); _pl.copy(_t).addScaledVector(_m, -_pl.distanceTo(_c)).addScaledVector(_n, -BLADE.palm.under * bodyK()); } else f.getWorldPosition(_pl);   // (_m, _n: the fist as grip() just read it, turned)
   ik2(D[s + 'Arm'], f, h, _t, _pl); setWorldQ(h, _fq2);
@@ -251,7 +251,7 @@ const _f = V3(), _rt = V3(), _hc = V3(), _As = V3(), _Bs = V3(), _Am = V3(), _Bm
 //   right fist at a point of his body's frame [his right, up from the hips, ahead] (his metres), the weapon's line rising toward his front at elev°, turned yaw° to his left:
 //   the guandao in a polearm carry (the right fist at the butt's third by his hip — K.hold.rear —, the left along it at his chest), the dadao in a forward guard; walk → run →
 //   sprint by his pace (BLADE.front.run m/s), → the block by gk. → _HP (the right fist), _HT (the line, unit, toward the blade)
-const _HP = V3(), _HT = V3(), _pX = V3(), _pRv = V3(), _pLv = V3(), _hd = V3(), _pn3 = V3();
+const _HP = V3(), _HT = V3(), _pX = V3(), _pRv = V3(), _pLv = V3(), _hd = V3(), _pn3 = V3(), _gd = V3();
 const HW = [0, 0, 0, 0];   // the weights of stand, run, sprint, block
 function hmix(Hd, i, j){ const a = Hd.stand[i], b = Hd.run[i], c = Hd.sprint[i], d = Hd.block[i]; return j < 0 ? a * HW[0] + b * HW[1] + c * HW[2] + d * HW[3] : a[j] * HW[0] + b[j] * HW[1] + c[j] * HW[2] + d[j] * HW[3]; }
 function holdLine(K, v, gk, ks){ const Hd = K.hold, rk = smooth((v - BLADE.front.run[0]) / 0.8), sk = smooth((v - BLADE.front.run[1]) / 0.8); HW[0] = (1 - rk) * (1 - sk) * (1 - gk); HW[1] = rk * (1 - sk) * (1 - gk); HW[2] = sk * (1 - gk); HW[3] = gk;
@@ -319,14 +319,22 @@ export function bladeHold(cv, R, G, dt, P){ const L = R.bl; if(!L || !L.m) retur
   const PM = BLADE.palm, pon = PM.on && L.w >= PM.from; let pR = null, pL = null; if(pon){ _pX.crossVectors(_y, _z).normalize();
     if(K.two){ pR = _pRv.copy(_y); pL = _pLv.copy(_y).negate(); } else { pR = _pRv.copy(_y).addScaledVector(_pX, -PM.cant).normalize(); pL = _pLv.copy(_y).addScaledVector(_pX, PM.cant).normalize(); } }
   _fwQ.copy(_oq); _fwOff = !(L.w >= 1); _fwN++; _tip.copy(_op).addScaledVector(_z, zh * ks); fistTo(D, 'Right', K, ks, _tip, _z, hw, pole, pR); if(pk > 0 && _res.lengthSq() > 4e-6) _op.sub(_res); L.eR = pk > 0 ? 0 : _res.length(); L.eL = 0;   // (his hand stays on it before all else)
-  const ho = smooth((L.w - 0.6) / 0.4);
-  if(ho > 0.001 && D.LeftHand && D.LeftArm && D.LeftForeArm){ _mid.copy(_op).addScaledVector(_z, L.zL * ks); fistTo(D, 'Left', K, ks, _mid, _z, ho, null, pL);
+  const ho0 = smooth((L.w - 0.6) / 0.4), FR = BLADEMEND.free;
+  // BLADE 16 THE DADAO ONE-HANDED (BLADEMEND.free): through a cut his left hand cannot reach the hilt (the arm straight, the wrist bent back 90–170°) it lets go — the
+  //   cut is carried by the right fist — and comes in to his chest by the guard (free.at, his frame), re-gripping as the move gives the hilt back to it
+  if(!(L.lf >= 0)) L.lf = 0; if(!K.two && FR.on && D.LeftHand && D.LeftArm && D.LeftForeArm){ let want = 0; if(A && mw0 > 0.5){ _mid.copy(_op).addScaledVector(_z, L.zL * ks); D.LeftArm.getWorldPosition(_a); D.LeftForeArm.getWorldPosition(_b); D.LeftHand.getWorldPosition(_c);
+      if(_a.distanceTo(_mid) > FR.reach * (_a.distanceTo(_b) + _b.distanceTo(_c)) || _fwBL > FR.bend * D2R) want = 1; } L.lf += clamp(want - L.lf, -dt * FR.back, dt * FR.go); } else L.lf = 0;
+  const lfw = smooth(L.lf), ho = ho0 * (1 - lfw);
+  if(ho0 > 0.001 && D.LeftHand && D.LeftArm && D.LeftForeArm){ _mid.copy(_op).addScaledVector(_z, L.zL * ks); fistTo(D, 'Left', K, ks, _mid, _z, Math.max(ho, 0.002), null, pL);
     if(ho > 0.99 && _res.lengthSq() > 4e-6){ // short of it: his hand takes the handle where it can (within its stretch); what is still left, the weapon comes to (the right wrist moved, its fist kept)
       const lo = K.two ? (L.lead ? zh + K.spread[1] : K.butt + 0.05) : K.off[0], hi = K.two ? (L.lead ? K.root - 0.03 : zh - K.spread[1]) : K.off[1], z2 = clamp(L.zL - _res.dot(_z) / ks, lo, hi); if(Math.abs(z2 - L.zL) > 1e-3){ L.zL = z2; _mid.copy(_op).addScaledVector(_z, z2 * ks); fistTo(D, 'Left', K, ks, _mid, _z, 1, null, pL); }
       if(_res.lengthSq() > 4e-6){ _hd.copy(_res); if(pon){ fist(D, 'Right', _p); _pl.copy(_m); _pn3.copy(_n); } D.RightHand.getWorldPosition(_a); D.RightHand.getWorldQuaternion(_fq2); _t.copy(_a).sub(_hd);
         if(pon){ const lf = D.RightForeArm.getWorldPosition(_c).distanceTo(_a); _pl.multiplyScalar(-lf).add(_t).addScaledVector(_pn3, -PM.under * ks); } else D.RightForeArm.getWorldPosition(_pl);   // BLADE 15 the elbow put where this fist's forearm lies (straight wrist) — not left where it was: a folded arm then bent the rear wrist back 140–175°
         ik2(D.RightArm, D.RightForeArm, D.RightHand, _t, _pl); setWorldQ(D.RightHand, _fq2); D.RightHand.getWorldPosition(_b).sub(_a); _op.add(_b); _mid.add(_b); _res.set(0, 0, 0); } } L.eL = _res.length(); }
-  if(hw > 0.5){ _tip.copy(_op).addScaledVector(_z, zh * ks); curlHand(D, 'Right', H.curl * hw, _tip); if(ho > 0.3) curlHand(D, 'Left', H.curl * ho, _mid); }
+  if(lfw > 0.001 && D.LeftHand){ const lh = D.LeftHand, lfa = D.LeftForeArm; D.Spine2.getWorldPosition(_gd).addScaledVector(_rt, FR.at[0] * ks).addScaledVector(UP, FR.at[1] * ks).addScaledVector(_f, FR.at[2] * ks); lh.getWorldPosition(_a); _t.copy(_a).lerp(_gd, lfw);
+    lfa.getWorldPosition(_pl); _pl.addScaledVector(UP, -0.25 * ks).addScaledVector(_rt, -0.15 * ks); lh.getWorldQuaternion(_fq2); ik2(D.LeftArm, lfa, lh, _t, _pl); setWorldQ(lh, _fq2);   // (to his chest, the elbow down and out)
+    fist(D, 'Left', _p); lfa.getWorldPosition(_a); lh.getWorldPosition(_b); _d.subVectors(_b, _a).normalize().lerp(_m, 0.25).normalize(); turnTo(lh, _m, _d, lfw); }   // (the free wrist near straight on the forearm)
+  if(hw > 0.5){ _tip.copy(_op).addScaledVector(_z, zh * ks); curlHand(D, 'Right', H.curl * hw, _tip); if(ho > 0.3) curlHand(D, 'Left', H.curl * ho, _mid); else if(lfw > 0.3) curlHand(D, 'Left', FR.curl * lfw, _gd); }
   if(pon) limbTwist(R.pup);   // (BLADE 14 the forearm's roll spread along its twist joints: no wrapped wrist)
   // laid under the rig group (his own size in the world)
   L.seated = false; if(L.m.parent !== G) G.add(L.m); _mat.compose(_op, _oq, _one.setScalar(ks)); _mi.copy(G.matrixWorld).invert(); _mat.premultiply(_mi); _mat.decompose(L.m.position, L.m.quaternion, L.m.scale); L.m.updateMatrixWorld(true);
