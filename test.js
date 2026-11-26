@@ -2382,6 +2382,15 @@ grp('GRAPH 5 the motion graph: on by default, lifted feet instead of dragged one
     'a foot carried fast over the ground by the pose (below '+Ft.drag[3]+' m/s) is lifted '+Ft.drag[2]+' m clear in a few frames, not dragged');
   ok(Ft.stepWin[0] > 0 && Ft.stepWin[0] < Ft.stepWin[1] && Ft.stepWin[1] < 1 && Ft.liftMin >= 0.03 && Ft.liftMin <= Ft.liftMax && Ft.proneLock === true && G.trans.crouchKneel === true && /C\.trans\.crouchKneel/.test(ag),
     'a step travels only in the middle '+Ft.stepWin.join('–')+' of its arc, at least '+Ft.liftMin+' m up; down from a crouch onto the knee by the clip; the feet stay planted getting down to and up from the belly'); }
+// BODY 4 the limbs keep their own skin (weights bled across from the body cleaned off line), the hand's roll read on only a little past 180°
+{ const fs = await import('node:fs'), C = await import('./config.js'), M = C.BODYMEND, rd = f => fs.readFileSync(f, 'utf8'), pu = rd('src/actors/puppet.js'), tool = rd('tools/skin-repair.mjs');
+  grp('BODY 4 — the limbs keep their own skin, the hands are not rolled the wrong way round');
+  ok(Array.isArray(M.bleed) && M.bleed.length >= 1 && M.bleed.every(b => b.t[0] >= 0 && b.t[0] < b.t[1] && b.t[1] <= b.tMax && b.tMax <= 1.2 && b.r > 0.2 && b.r < 0.8 && b.face > 0 && b.face < 0.6 && b.own.length >= 2 && (b.foreign === 'other' || b.foreign.length >= 1))
+    && M.bleed.some(b => b.limb === 'UpLeg' && b.foreign === 'other') && M.shell >= 200 && /function cleanBleed\(D, rig, W0, tol\)/.test(tool) && /cleanBleed\(RA\.M, rig, worldOf\(rig, restPose\(rig\)\)/.test(tool) && /tuneLiner\(RA\.M, rig, poses, RA\.S\.liner\.centers/.test(tool),
+    'BODYMEND.bleed: a thigh\'s skin carrying the other leg\'s weight (an arm\'s carrying the spine\'s) is cleaned by which way it faces, eased in from the groin / shoulder, gear shells (< ' + M.shell + ' points) left alone, the liner pulled in again after');
+  ok(M.wrap > Math.PI && M.wrap < Math.PI + 0.5 && M.wrap < C.BODYFIX.twist.wrap && /if\(Math\.abs\(tw\) > BODYMEND\.wrap\)/.test(pu) && /if\(Math\.abs\(r\) > BODYMEND\.wrap\)/.test(pu) && !/BT\.wrap|BODYFIX\.twist\.wrap/.test(pu),
+    'the hand\'s roll on its forearm read on from the last frame only to ' + M.wrap + ' rad (a little past 180°): a roll that went round in a reload no longer leaves the elbow swung the wrong way');
+}
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

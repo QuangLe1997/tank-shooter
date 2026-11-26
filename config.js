@@ -3119,3 +3119,16 @@ export const BODYFIX = {
   twist:{ max:1.5, wrap:4.6, swivel:{ on:true, lim:1.3, root:1.3, soft:0.3, max:0.6 } },
   hold:{ poleL:[-0.5, 0.35, 0.15], freeRoll:0.6 },
   stance:{ lean:[0.1, 0.16], kneel:0.26, run:0.33, runV:[2.4, 4.4], roll:0.8, gain:1.4, iter:2, rate:6, hips:0.04, tall:0.025 } };
+// BODY 4 THE SOLDIER'S LIMBS KEEP THEIR OWN SKIN (tools/skin-repair.mjs cleanBleed — soldier2.glb; src/actors/puppet.js, src/actors/real-cav.js).
+//   bleed = per limb (both sides) the weights the auto-rigger let run across from the body it rests against at rest: a vertex within r × the bone's
+//     length of limb → end, between t[0] and tMax of its length, carrying `foreign` weight (the spine for the arms, the OTHER leg for a thigh) is sorted
+//     by the way its normal faces: out from the limb's axis (more than `face`) it is the limb's own skin — the foreign weight goes to the limb's bones
+//     (own, in the share they already hold); facing the limb's axis (less than −face) it is the body beside it — the limb's weight goes to the body
+//     (only where the body already holds more). Eased in from t[0] to t[1] (the shoulder / groin keep their blend). The left upper arm carried 0.3–0.4
+//     of the spine on its inner face, the vest beside it 0.3 of the arm; the inner thighs 0.1–0.5 of the other leg
+//   wrap = the hand's roll on its forearm is read on from the last frame only up to this (rad; then afresh): read on to 4.6 rad (BODY 1) a roll that had
+//     gone past 180° in a reload stayed "+219°" when the hand was back on the gun at −141°, and the elbow was swung the wrong way (rolled 140–160°)
+export const BODYMEND = {
+  bleed:[{ limb:'UpLeg', end:'Leg', own:['UpLeg', 'Leg', 'Foot'], foreign:'other', t:[0.06, 0.25], tMax:1.0, r:0.45, face:0.25 }],
+  shell:1500,
+  wrap:3.39 };

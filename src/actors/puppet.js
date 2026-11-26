@@ -32,8 +32,10 @@
 // flip from +180° to −180°), no more than `max` of it is laid along the forearm (a man's ±85°; the rest stays at the wrist), and after the gun hold an
 // arm whose hand is rolled past `swivel.lim` on its forearm (or whose upper arm is rolled past `swivel.root` at the shoulder) has its ELBOW swung round
 // the shoulder → wrist line (at most `swivel.max`) until the two carry the same share of what each can take: neither the shoulder nor the hand moves.
+// BODY 4 read on from the last frame only up to BODYMEND.wrap (a little past 180°): read on further, a roll that went round in a reload stayed "+219°"
+// when the hand was back on the gun at −141°, and the swivel swung the elbow the wrong way — both hands rolled 140–160° until the next stance change.
 import * as THREE from 'three';
-import { BODYFIX, PUPPET } from '../../config.js';
+import { BODYFIX, BODYMEND, PUPPET } from '../../config.js';
 
 // [bone, the child it points at] — parents before children
 const CHAINS = [['Spine','Spine1'],['Spine1','Spine2'],['Spine2','Neck'],['Neck','Head'],
@@ -191,7 +193,7 @@ function limbs(F, clip){ const HG = PUPPET.hinge, TW = PUPPET.twist, BT = BODYFI
     if(over > 0) _qu.premultiply(_q.setFromAxisAngle(_u, -Math.sign(tr) * Math.min(R.cap, over * R.share)));
     // the lower bone: its hinge, then its share of the twist the end (hand / foot) has on it
     _ql.premultiply(_q.setFromAxisAngle(_v, tl)); _qr.copy(_qe).multiply(L.relE).multiply(_q0.copy(_ql).invert()); let tw = twistOf(_qr, _v);
-    if(L.tj){ if(!clip){ if(tw - L.tm > Math.PI) tw -= 2 * Math.PI; else if(tw - L.tm < -Math.PI) tw += 2 * Math.PI; if(Math.abs(tw) > BT.wrap) tw = twistOf(_qr, _v); L.tm = tw; }   // (read on from last frame: a hand right round does not flip the forearm)
+    if(L.tj){ if(!clip){ if(tw - L.tm > Math.PI) tw -= 2 * Math.PI; else if(tw - L.tm < -Math.PI) tw += 2 * Math.PI; if(Math.abs(tw) > BODYMEND.wrap) tw = twistOf(_qr, _v); L.tm = tw; }   // (read on from last frame: a hand right round does not flip the forearm)
       tw = Math.max(-BT.max, Math.min(BT.max, tw)); const J = L.tj, nj = J.length; for(let k = 0; k < nj; k++) J[k].quaternion.setFromAxisAngle(L.ta, tw * (k + 1) / nj); }   // BODY 1 the roll laid along the bone's twist joints; the bone keeps its hinge
     else { const te = Math.max(-TW.max, Math.min(TW.max, tw)) * (L.arm ? TW.fore : TW.shin); if(Math.abs(te) > 1e-5) _ql.premultiply(_q.setFromAxisAngle(_v, te)); }
     u.quaternion.copy(_qp).invert().multiply(_qu); l.quaternion.copy(_qu).invert().multiply(_ql); e.quaternion.copy(_ql).invert().multiply(_qe); u.updateMatrixWorld(true); } }
@@ -205,7 +207,7 @@ export function footLevel(P, foot, toe){ const F = P && P.F, up = PUPPET.full &&
 //   forearm until it is rolled no more than max rad on it — the wrist does not move. side = 'Left' / 'Right'; after that arm's IK
 export function handRoll(P, side, max){ const F = P && P.F; if(!F || !PUPPET.full || F.same) return; const L = F.limbs[side === 'Left' ? 0 : 2], u = L.u, l = L.l, e = L.e; if(!L.arm) return;
   L.p.updateWorldMatrix(true, false); u.updateWorldMatrix(false, true); wpos(u, _pa); wpos(l, _pb); wpos(e, _pc); _u.subVectors(_pb, _pa); _v.subVectors(_pc, _pb); if(_u.lengthSq() < 1e-10 || _v.lengthSq() < 1e-10) return; _u.normalize(); _v.normalize();
-  wquat(l, _ql); wquat(e, _qe); let r = endRoll(L, PUPPET.hinge); if(r - L.hm > Math.PI) r -= 2 * Math.PI; else if(r - L.hm < -Math.PI) r += 2 * Math.PI; if(Math.abs(r) > BODYFIX.twist.wrap) r = endRoll(L, PUPPET.hinge); L.hm = r;
+  wquat(l, _ql); wquat(e, _qe); let r = endRoll(L, PUPPET.hinge); if(r - L.hm > Math.PI) r -= 2 * Math.PI; else if(r - L.hm < -Math.PI) r += 2 * Math.PI; if(Math.abs(r) > BODYMEND.wrap) r = endRoll(L, PUPPET.hinge); L.hm = r;
   const over = r - Math.max(-max, Math.min(max, r)); if(Math.abs(over) < 1e-4) return; _qe.premultiply(_q.setFromAxisAngle(_v, -over)); e.quaternion.copy(_ql).invert().multiply(_qe); e.updateMatrixWorld(true); }
 // after the hold and the leg IK (real-cav.js): the same, on the pose as it stands
 export function limbTwist(P){ if(P && P.F && PUPPET.full && !P.F.same) limbs(P.F, false); }
