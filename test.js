@@ -1492,6 +1492,10 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(F.turnStep>0.25 && F.turnStep<C.SOLDIER_LEGS.yawStep && F.hips>0 && F.hips<=0.6 && F.hipsK>0 && F.hipsK<1 && F.hips>=F.turnStep*F.hipsK-1e-9, 'GUNFEEL.feet: a foot steps round sooner than it did; the pelvis keeps most of the feet\'s lag, up to as much as a foot may be left behind');
   ok(F.slope.k>0 && F.slope.k<=1 && F.slope.max<0.6 && F.slope.ahead>F.slope.back && F.slope.rate>4 && F.slope.clear>0.01, 'a planted foot pitches with the ground from under its heel to under its toes (eased, capped, flat in the air)');
   ok(/L\.ts = \(L\.ts \|\| 0\) \+ clamp\(ts - \(L\.ts \|\| 0\), -A\.turnRate \* dt, A\.turnRate \* dt\)/.test(lg) && /const gyaw = L\.th \+ \(L\.ts \|\| 0\) \+/.test(lg) && /> GUNFEEL\.feet\.turnStep\)\{/.test(lg) && /const lead = wrapA\(hy - A\.toeOut - L\.feet\[0\]\.yaw\) > 0 \? 0 : 1;/.test(lg) && /const sl = slope - f\.ph \+ \(f\.gs \|\| 0\) \*/.test(lg) && /if\(f\.gx !== f\.p\.x \|\| f\.gz !== f\.p\.z \|\| f\.gw !== f\.yaw\)/.test(lg), 'soldier-legs.js: the pelvis lags with the feet stood still, the foot on the side he turns to steps first, the ground under a foot read only when it has moved'); }
+// SMOKE 1 the smoke screen shuts the sight lines that cross it (game/stealth.js playerSight)
+{ const C = await import('./config.js'), fs = await import('node:fs'), st = fs.readFileSync('src/game/stealth.js', 'utf8'), K = C.EQUIP.smoke;
+  ok(K.dur >= 6 && K.dur <= 20 && K.radius >= 5 && K.sightK > 0.4 && K.sightK <= 1 && K.dur < C.CAV.soldier.smoke.cd, 'EQUIP.smoke: a screen that lasts long enough to cross open ground and is gone before the next one');
+  ok(/function smokeShuts\(x, z\)/.test(st) && /if\(smokeShuts\(x, z\)\) return false;/.test(st), 'stealth.js: no enemy sees him through the smoke'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

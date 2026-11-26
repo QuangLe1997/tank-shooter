@@ -482,7 +482,7 @@ export const OBJECTIVES = {
 export const OBJ_REWARD = { score:1500 };
 // EQUIPMENT (Z82) — tank-mounted support kit on the SPELL wheel. Each is a counter to a specific threat.
 export const EQUIP = {
-  smoke:{ dur:7, radius:9, spreadMul:4.5 },       // smoke grenades: enemy aim ×spreadMul, guided missiles lose lock
+  smoke:{ dur:10, radius:9, spreadMul:4.5, sightK:0.8 },       // smoke grenades: enemy aim ×spreadMul, guided missiles lose lock
   aps:  { dur:12, charges:4, radius:7 },          // active protection (hard-kill): shoots down rockets/missiles/shells in radius
   mines:{ count:3, dmg:90, radius:4.2, arm:0.8, life:45 },   // anti-tank mines dropped behind the tank
 };

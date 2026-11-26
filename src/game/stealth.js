@@ -4,7 +4,7 @@
 //   shooter's eyes, so a guard on a tower or a wall top, 6–11 m up, sees him only near its foot; shorter at night), or once he has been spotted: picked out
 //   close by, caught in a searchlight's pool, or given away by his own muzzle flash — then every enemy within STEALTH.alertR knows where he lies for a while.
 //   The combat roll is also a dodge: a round that would hit him while he goes over usually misses (dodgeShot; running fast dodges a few).
-import { STEALTH, TENT } from '../../config.js';
+import { EQUIP, STEALTH, TENT } from '../../config.js';
 import { CV, NIGHT, S, awareNoise, floatText, heightAt, lineClear, tentHides } from '../hub.js';
 
 const now_ = () => performance.now() / 1000;
@@ -33,7 +33,11 @@ export function playerSeen(x, y, z){ const p = S.player; if(!p) return true; if(
   if(d < r){ spot(p, t, C.keep.near, 'BỊ PHÁT HIỆN!'); return true; }
   return false; }
 // AI 1 the bare sight line from a man's eyes to him (no stance rule): ai/awareness.js weighs distance, stance, movement, cover, night and the view cone itself
-export function playerSight(x, y, z){ const p = S.player; if(!p) return false; return p.cav ? inSight(x, y, z) : !tentHides(x, y, z, p.pos.x, heightAt(p.pos.x, p.pos.z) + TENT.eye.mid, p.pos.z); }
+// SMOKE 1 the smoke screen hides him from whoever must look THROUGH it, not only while he stands inside it: a sight line that passes within
+//   EQUIP.smoke.radius × sightK of the cloud's centre is shut (a man standing in the cloud sees nothing either) — the enemy loses him and goes searching (ai/awareness.js)
+function smokeShuts(x, z){ const p = S.player; if(!(now_() < (p.smokeUntil || 0))) return false; const R = EQUIP.smoke.radius * EQUIP.smoke.sightK, ax = p.pos.x - x, az = p.pos.z - z, L2 = ax * ax + az * az || 1;
+  let u = ((p.smokeX - x) * ax + (p.smokeZ - z) * az) / L2; u = u < 0 ? 0 : u > 1 ? 1 : u; const dx = x + ax * u - p.smokeX, dz = z + az * u - p.smokeZ; return dx * dx + dz * dz < R * R; }
+export function playerSight(x, y, z){ const p = S.player; if(!p) return false; if(smokeShuts(x, z)) return false; return p.cav ? inSight(x, y, z) : !tentHides(x, y, z, p.pos.x, heightAt(p.pos.x, p.pos.z) + TENT.eye.mid, p.pos.z); }
 // AI 1 a rifleman made him out lying flat (ai/awareness.js): every gun within alertR knows where he lies for a moment, as when a guard spots him
 export function stealthSpot(why){ const p = S.player; if(p && p.cav && !CV.mounted) spot(p, now_(), STEALTH.keep.near, why); }
 // he fired (combat/lock-on.js, a round of the player's): the flash gives him away — AI 1 and the report alerts every enemy soldier in earshot (on foot or in the saddle)
