@@ -3007,6 +3007,26 @@ export const BLADE = { on:!(typeof location !== 'undefined' && /[?&]noblade\b/.t
         special:{ id:'jump', clip:'blade-gs-jump-attack', rate:1.5, from:0.4, to:2.0, win:[[1.0, 1.48]], arc:[174, 404], reach:1.6, y:[-1.6, 1.8], dmg:125, push:4.5, daze:1.2, st:28, cd:7, next:1.6, move:0, root:true },
         counter:{ id:'riposte', clip:'blade-misc-stable-sword-outward-slash', rate:1.7, from:0.55, to:1.5, win:[[0.85, 1.0]], arc:[-72, 32], y:[-0.6, 1.4], dmg:58, push:3, daze:0.6, st:12, next:1.05, move:0.5, lunge:0.4 },
         flourish:{ id:'pose', clip:'blade-misc-stable-sword-inward-slash', rate:1.5, from:0.7, to:2.0, win:[], move:0.3 } } } } };
+// AMBUSH 1 THE BLADE DOES NOT GIVE HIM AWAY — HIT AND RUN FROM COVER (game/ambush.js; the blade's own numbers stay in BLADE.quiet). Noise and sight are two rules:
+//   noise: a swing, a cut and a silent kill make NO sound an enemy acts on. What does carry only makes men SUSPICIOUS (they turn and come to look), never alerted:
+//     steel really striking cover (BLADE.quiet.clangR m — and only when the blade's arc truly meets the block: touch = how many bearings × radii of the arc are tried),
+//     a wounded man's cry (BLADE.quiet.cryR), the death cry of a man who already knew (cryR again), his own sprint with the blade out (stepR m instead of AWARE.hear.run — under BLADE.quiet.dashR, so a dash-in can
+//     begin before he is heard; the dash-in itself is not heard). A staggered man cannot shout until his daze is over (shoutDazed false).
+//   sight: rear = what an unaware man makes out BEHIND him (× the player's visible range; AWARE.see.rear's 0.16 let a man 6–9 m behind his back be sensed) — now only
+//     AWARE.see.near, the arm's-length sense, works there. witness: who SEES a blade kill is alerted at once — within r m (× night at full dark) in his front cone,
+//     side × r on his flanks, and only with a clear line to the body (bodyY m off the ground); a man within near m who was not looking hears him fall and turns (suspicious). Nobody else knows.
+//   flat: the man an ambush is begun on from outside his front is caught flat-footed — he senses nothing for the dash, the cut's wind-up and flat s more (he cannot
+//     turn in a quarter second), and nobody dives out of the way of a man they do not know is coming.
+//   dash: the dash-in homes on the man and pulls up at stop × the weapon's reach from him (no running through him), may run over s past BLADE.quiet.dashT when a corner
+//     slides him off line (the cut waits for it); auto: with the RIFLE in his hands, sprint (or low cover) + fire with an unaware man within dashR draws and dashes.
+//   body: a body is found only with a clear line from the finder's eyes (eyeY) to it (los) — never through a wall; a man cut apart lies as ONE body, to be found for as long as he lies (BLADE.sever.life).
+//   squad: while the blade is out and nobody within the eye's reach is alerted his own men hold their fire and an enemy who does not know does not pick them out either (hold) — the first alerted man ends it. say: what he reads. net: a co-op guest's cut is a
+//     report with weapon index w (no gun's); the host judges it — reach m + slack, at most maxDmg, the ambush decided on the HOST's knowledge of the man.
+export const AMBUSH = { on:true,
+  noise:{ stepR:5, touch:[5, 2], shoutDazed:false }, see:{ rear:0.05 }, witness:{ r:26, side:0.5, near:3, night:0.5, bodyY:1.0, err:3 }, flat:0.3,
+  dash:{ stop:0.6, over:0.2, auto:true }, body:{ los:true, eyeY:1.6, y:0.4 }, squad:{ hold:true },
+  say:{ seen:'BỊ NHÌN THẤY!', quiet:'ĐAO IM LẶNG — ĐỊCH KHÔNG NGHE THẤY', tip:['mute', 'Đao là vũ khí im lặng', 'Đao <b>không gây tiếng động</b>: chém không làm lộ vị trí như tiếng súng. Nấp sau đá hay công-ten-nơ, giữ <b>chạy nhanh</b> rồi <b>bắn</b> khi địch chưa hay biết ở trong tầm vài mét — anh <b>lao ra, một nhát hạ gục</b>, rồi lùi về chỗ nấp. Chỉ kẻ <b>nhìn thấy</b> nhát chém hoặc cái xác mới báo động.'] },
+  net:{ w:63, slack:3, maxDmg:140 } };
 // SKIN 1 the soldier's body mended offline (tools/skin-repair.mjs — not read by the game). Every length is in millimetres of a 1.8 m soldier.
 //   snap / crack: a border point this close to another shell's surface is laid on it / two border points this close are welded · sealed: "resting on another shell" for the counters
 //   holePerim / holeMax: closed border loops up to this round (and this many edges) are capped · fin*: non-manifold fans removed when hidden (≤ finHidden triangles) or tiny (≤ finTris, ≤ finArea mm²)

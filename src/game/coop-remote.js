@@ -68,7 +68,7 @@ export function mateUpdate(dt, now, st, name){ const M = MATE;
   const p = M.p; p.pos.set(M.x, 0, M.z); p.vel.set(M.vx, 0, M.vz); p.facing = M.heading; p.aim = p.aimSmoothed = M.aim; p.hp = M.hp; p.maxHp = M.hpMax; p.fwdSpeed = M.speed; p.mesh = M.root; p.muzzle = M.G.userData.muzzle;
   p.radius = M.mounted ? CAV.radius.mounted : M.stance === 'prone' ? CAV.radius.prone : CAV.radius.foot; p.guns[0].id = M.gun; p.guns[0].rU = (st.flags & F.RELOADING) ? now + 0.5 : 0; p.invincibleUntil = M.down || M.dead ? Infinity : 0; if(p.hitT > 0) p.hitT -= dt;
   _dt = dt; _now = now; if(dt > 0) asMate(pose);
-  if(M.firing && now >= M.fireAt) shot(now); tracers(dt);
+  if(M.firing && !M.RC.blade && now >= M.fireAt) shot(now); tracers(dt);   // (AMBUSH 1 the blade out: his FIRING flag is a cut — a swing on his rig, no flash, no report)
   M.dist = S.player ? Math.hypot(M.x - S.player.pos.x, M.z - S.player.pos.z) : 0; marks(true, now); }
 // one of his shots as this page draws it: the flash at his muzzle, the report, a tracer along his aim that stops at the first wall — light and sound only
 function shot(now){ const M = MATE, g = GUNS[M.gun] || {}, C = COOP.mate; M.fireAt = now + Math.max(C.fireEvery, g.fireCd || 0); M.shots++;

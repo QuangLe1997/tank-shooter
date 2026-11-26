@@ -8,8 +8,8 @@
 //   alerted too. Alerted men stay in the fight: out of sight they fire on the last place they saw him, then close on it; only after AWARE.keep.alert seconds
 //   without contact do they drop to searching it, and after keep.search more give the search up. The first shot waits a reaction delay (AWARE.react).
 //   The group of an alerted man's bursts (e.zero, 0 wide … 1 tight) closes while the player stands in his sight and opens when he runs or breaks the line.
-import { AWARE, STEALTH } from '../../config.js';
-import { bladeGlimpseK, CV, NIGHT, S, UGRID, aiIQ, clampFieldXZ, crushables, enemies, floatText, heightAt, playerSight, quietDeath, sfx, sneakK, stealthSpot, tierK, unitsNear, wrapAngle } from '../hub.js';
+import { AMBUSH, AWARE, STEALTH } from '../../config.js';
+import { ambushFlat, ambushStepR, bladeGlimpseK, CV, NIGHT, S, UGRID, aiIQ, clampFieldXZ, crushables, enemies, floatText, heightAt, playerSight, quietDeath, sfx, sneakK, stealthSpot, tierK, unitsNear, wrapAngle } from '../hub.js';
 
 const A = AWARE, R2 = a => a[0] + Math.random() * (a[1] - a[0]), mix = (a, k) => a[0] + (a[1] - a[0]) * k;
 // the player as the enemy's eyes get him this moment: r = how far off a man looking his way makes him out
@@ -25,7 +25,7 @@ function playerLook(now){ const p = S.player, C = A.see; PL.at = now + 0.15; if(
     : C.r * (C.stance[st] || 1) * (v < 0.4 ? C.still : v > C.runV ? C.run : 1) * (1 - (1 - C.night) * nk);
   PL.r = r * (PL.cover ? C.cover : 1) * (PL.bush ? C.bush : 1); }
 // where an unaware man is looking: his front in full, his flanks less, behind him next to nothing — and anyone within arm's reach
-function coneK(e, dx, dz){ const C = A.see, a = Math.abs(wrapAngle(Math.atan2(dx, dz) - e.facing)); return a < C.cone[0] ? 1 : a < C.cone[1] ? C.side : C.rear; }
+function coneK(e, dx, dz){ const C = A.see, a = Math.abs(wrapAngle(Math.atan2(dx, dz) - e.facing)); return a < C.cone[0] ? 1 : a < C.cone[1] ? C.side : AMBUSH.on ? AMBUSH.see.rear : C.rear; }   // (AMBUSH 1 behind him: nothing but the arm's-length sense below)
 function bark(e, txt, col, now){ const p = S.player, Y = A.say; if(!p || now - _sayAt < Y.gap || (e.pos.x - p.pos.x) ** 2 + (e.pos.z - p.pos.z) ** 2 > Y.r * Y.r) return;
   _sayAt = now; _pos.x = e.pos.x; _pos.z = e.pos.z; _pos.y = heightAt(e.pos.x, e.pos.z) + 2.3; floatText(txt, col, _pos, Y.size); sfx(txt === '!' ? 'beep' : 'click', e.pos, 0.5); }
 function init(e, now){ const p = S.player, k = e.lk || (e.lk = { x:0, z:0 }), hot = !!(e.alert0 || e.general || e.genGuard || e.relicGuard);   // (an ambush, the general and his guards, the relic's attackers know)
@@ -40,17 +40,18 @@ export function alertEnemy(e, now, why, x, z){ const p = S.player; if(!p || !e.d
   if(why === 'see' || why === 'hit' || why === 'death'){ e.shoutAt = now + A.shout.delay; SHOUTS.push(e); }   // (a shot is heard by all of them at once; a shout does not echo on)
   bark(e, '!', '#ff5a3a', now); }
 // he heard or glimpsed something at (x, z): he stops, turns to it and goes to look (his squad's leader takes the spot as the squad's next search point)
-export function suspectEnemy(e, now, x, z){ if(!e.def || !e.def.inf) return; if(e.alert === undefined) init(e, now); if(e.alert >= 2) return; const k = e.lk; k.x = x; k.z = z; e.lkAt = now; e.srAt = 0;
-  if(e.alert < 1){ e.alert = 1; e.reactAt = now + A.react[1]; e.tgtAt = 0; bark(e, '?', '#ffd86a', now);
+export function suspectEnemy(e, now, x, z, why){ if(!e.def || !e.def.inf) return; if(e.alert === undefined) init(e, now); if(e.alert >= 2) return; const k = e.lk; k.x = x; k.z = z; e.lkAt = now; e.srAt = 0;
+  if(e.alert < 1){ e.alert = 1; e.suWhy = why || 'see';   /* (AMBUSH 1 why: see · hear · clang · cry · thud · body) */ e.reactAt = now + A.react[1]; e.tgtAt = 0; bark(e, '?', '#ffd86a', now);
     const L = e.sq && e.sq.leader; if(L && L !== e && L.alert !== undefined && L.alert < 2){ L.lk.x = x; L.lk.z = z; L.srAt = 0; } } }
 // one man's look (called every frame; does its work on his own staggered tick)
 export function awareTick(e, now){ if(e.alert === undefined) init(e, now); if(now < e.awAt) return;
   const dtk = Math.min(1, now - e.awT), p = S.player; e.awT = now; e.awAt = now + R2(A.tick); if(!p || S.mode !== 'playing' || e.rise){ e.sees = false; return; }
   const dx = p.pos.x - e.pos.x, dz = p.pos.z - e.pos.z, d = Math.hypot(dx, dz) || 1, al = e.alert >= 2, C = A.see, k = e.lk;
-  let R = al ? Math.max(PL.r * C.alertK, PL.spotted ? STEALTH.alertR : 0) : PL.r * coneK(e, dx, dz), vis = 0;
+  let R = al ? Math.max(PL.r * C.alertK, PL.spotted ? STEALTH.alertR : 0) : PL.r * coneK(e, dx, dz), vis = 0; const flat = !al && ambushFlat(e, now);   // AMBUSH 1 the man an ambush is begun on: no time to sense it (game/ambush.js)
   if(al && e.sees) R = Math.max(R, C.r * C.track * (1 - (1 - C.night) * (NIGHT.k || 0)) * (PL.bush ? C.bush : 1));   // a man he is watching does not vanish by dropping flat in the open
   const nr = C.near * sneakK(e, dx, dz);   // SUPPLY 3 (crept up on from behind he senses a man only at arm's length — game/quiet.js)
   if(d < Math.max(R, nr) && playerSight(e.pos.x, heightAt(e.pos.x, e.pos.z) + 1.6, e.pos.z)) vis = d < nr ? 1 : Math.max(0.03, 1 - d / R);
+  if(flat) vis = 0;
   if(vis > 0){
     if(al){ if(!e.sees && e.sq) for(const o of e.sq.m){ if(o !== e && o.alert >= 2 && !o.sees){ o.lk.x = p.pos.x; o.lk.z = p.pos.z; o.lkAt = now; } }   // he has him again: his squad knows (no second shout)
       e.sees = true; k.x = p.pos.x; k.z = p.pos.z; e.lkAt = now; }
@@ -59,8 +60,8 @@ export function awareTick(e, now){ if(e.alert === undefined) init(e, now); if(no
       else if(e.det >= A.spot.sus) suspectEnemy(e, now, p.pos.x, p.pos.z); } }
   else { e.sees = false;
     if(!al){ e.det = Math.max(0, e.det - dtk * A.spot.decay); const H = A.hear;   // his ears: a sprint, hooves, an engine
-      const hr = !p.cav ? 0 : CV.mounted ? (p.bike ? H.bike : H.horse) * Math.min(1, PL.v / H.runV) : (PL.v > H.runV && PL.st === 'stand' ? H.run : 0);
-      if(d < hr) suspectEnemy(e, now, p.pos.x, p.pos.z);
+      const hr = !p.cav ? 0 : CV.mounted ? (p.bike ? H.bike : H.horse) * Math.min(1, PL.v / H.runV) : (PL.v > H.runV && PL.st === 'stand' ? ambushStepR(H.run) : 0);   // (AMBUSH 1 with the blade out his sprint carries a few metres, the dash-in not at all)
+      if(!flat && d < hr) suspectEnemy(e, now, p.pos.x, p.pos.z, 'hear');
       else if(e.alert === 1 && now - e.lkAt > A.keep.search){ e.alert = 0; e.det = 0; } }
     else if(now - e.lkAt > A.keep.alert){ e.alert = 1; e.lkAt = now; e.det = A.spot.sus; e.zero = 0; } }   // a long time without contact: he drops to searching the last place
   if(e.alert >= 2){ const Z = A.zero;   // the group of his bursts closes on a man who stands in his sight, opens on one who runs or breaks the line
@@ -74,7 +75,7 @@ export function awareTick(e, now){ if(e.alert === undefined) init(e, now); if(no
     else e.srAt = 0; } }
 // once a frame, before the men move: how visible the player is, and the shouts that are due
 export function awareFrame(dt, now){ if(now >= PL.at) playerLook(now);
-  for(let i = SHOUTS.length - 1; i >= 0; i--){ const e = SHOUTS[i]; if(now < e.shoutAt) continue; SHOUTS.splice(i, 1); if(e.alert !== 2 || !enemies.includes(e)) continue;
+  for(let i = SHOUTS.length - 1; i >= 0; i--){ const e = SHOUTS[i]; if(now < e.shoutAt || !AMBUSH.noise.shoutDazed && now < (e.dazeUntil || 0) && e.hp > 0) continue;   /* (AMBUSH 1 a staggered man has no breath to shout) */ SHOUTS.splice(i, 1); if(e.alert !== 2 || !enemies.includes(e)) continue;
     const k = e.lk, r = A.shout.r * tierK('shout'), r2 = r * r;
     if(e.sq) for(const o of e.sq.m) if(o !== e && o.hp > 0) alertEnemy(o, now, 'shout', k.x, k.z);
     for(const o of unitsNear(UGRID.inf, e.pos.x, e.pos.z, r, _nb)){ if(o === e || !(o.hp > 0) || (o.pos.x - e.pos.x) ** 2 + (o.pos.z - e.pos.z) ** 2 > r2) continue; alertEnemy(o, now, 'shout', k.x, k.z); } } }

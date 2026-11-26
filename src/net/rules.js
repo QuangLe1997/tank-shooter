@@ -1,6 +1,6 @@
 // net/rules.js — COOP 4 THE RULES BOTH PAGES MUST AGREE ON, AS PLAIN FUNCTIONS (they run in Node: tools/coop-test.mjs): the cue codes, whether two machines can
 // build the same battlefield, the seed in the address, a hit report's parameter, which of the two players an enemy regards, and going down / being stood up again
-import { COOP, COOP2, LOGISTICS } from '../../config.js';
+import { AMBUSH, COOP, COOP2, LOGISTICS } from '../../config.js';
 import { NET_EV } from './protocol.js';
 
 export const NET_CUE = COOP.cue;
@@ -69,6 +69,21 @@ export function coopJudgeHit(TR, q, out){ const T = COOP.trust; out = out || {};
   if(heavy && !q.gunHeavy){ if(TR.heavyTok >= 1) TR.heavyTok -= 1; else heavy = false; }   // (a grenade, the knife, a trample: a few a second, no more)
   if(heavy) cap = Math.max(cap, T.heavyDmg); let dmg = q.dmg; if(dmg > cap){ dmg = cap; TR.clamped++; }
   out.ok = true; out.dmg = dmg; out.heavy = heavy; TR.ok++; return out; }
+// ---- AMBUSH 1 the host's judgment of a guest's BLADE cut: a HIT report whose weapon index is AMBUSH.net.w (coopBladeW — no gun's). The same gate, the blade's rules:
+//   q = { now, dmg, enemyAlive, enemyHp, dist (m: where he last said he was → the man), bladeOut (his state's stance says the blade is in his hands), reach (m: the
+//   host's own table — the longest cut + the dash-in), guestDown, unaware (the HOST's man does not know: alert < 2), outside (the guest stands outside that man's
+//   front), big (a general / commander / elite: never one cut) } → out { ok, dmg, why ('down' 'no-enemy' 'no-damage' 'weapon' 'range' 'rate'), ambush (unaware +
+//   outside + not big: this one cut kills), hush (he dies without a sound: he did not know and the cut kills), heavy:false }. The damage is the report's, cut to
+//   net.maxDmg; the ambush and the silence are decided by what the HOST knows of the man — a guest cannot claim them.
+export const coopBladeW = () => AMBUSH.net.w;
+export function coopJudgeBlade(TR, q, out){ const T = COOP.trust, N = AMBUSH.net; out = out || {}; out.ok = false; out.dmg = 0; out.heavy = false; out.why = ''; out.ambush = false; out.hush = false;
+  if(TR.at >= 0){ const dt = Math.max(0, Math.min(5, q.now - TR.at)); TR.tok = Math.min(T.hitsPerS, TR.tok + dt * T.hitsPerS); TR.heavyTok = Math.min(T.heavyBurst, TR.heavyTok + dt * T.heavyPerS); } TR.at = q.now;
+  let why = ''; if(q.guestDown) why = 'down'; else if(!q.enemyAlive) why = 'no-enemy'; else if(!(q.dmg > 0) || !isFinite(q.dmg)) why = 'no-damage'; else if(!q.bladeOut) why = 'weapon';
+  else if(!(q.dist <= (q.reach || 0) + N.slack)) why = 'range'; else if(TR.tok < 1) why = 'rate';
+  if(why){ TR.dropped++; TR.why = out.why = why; return out; } TR.tok -= 1;
+  let dmg = q.dmg; if(dmg > N.maxDmg){ dmg = N.maxDmg; TR.clamped++; }
+  out.ambush = !!(q.unaware && q.outside && !q.big); if(out.ambush) dmg = Math.max(dmg, (q.enemyHp || 0) + 1); out.hush = !!(q.unaware && dmg >= (q.enemyHp || 0));
+  out.ok = true; out.dmg = dmg; TR.ok++; return out; }
 // ---- the host's own ledger of the guest's health (he is DOWN when the HOST says so). led = the ledger, rep = what his state reports, max = his most
 //   (already cut to COOP.trust.hpMax): it falls with his report at once (he may hurt himself: a fall, lava) and rises no faster than healPerS; hold = inside the
 //   syncS after the host hurt him or stood him up, when a report may still be the staler one → the ledger does not move

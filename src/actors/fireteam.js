@@ -1,7 +1,7 @@
 // actors/fireteam.js — Z89/Z100 friendly FIRETEAM: called in on foot (no-tanks: no APC, no hull to board), free-roam inside the soldier's combat zone
 import * as THREE from 'three';
 import { TROOPS, SQUAD, DEPLOY, FIELDCRAFT, REAL } from '../../config.js';
-import { coopHostDeath, CAMPS, FTSQ, HELI_DOWN, MOBILE, S, droneMarkK, _RUP, _rdir, _sV, animateSoldier, aoeDamage, atCover, bigExplode, blocks, blocksAt, bullets, burst, camera, canThrow, clampField, clearLadders, cmdGoal, combatDive, concuss, coverSpot, damageBlock, damageEnemy, dazePose, dazed, deformCrater, dropGuard, dropPowerup, enemies, fieldEdgePoint, flingDead, floatText, heightAt, inRally, infBlastK, kitAttach, liveGuards, lootModel, losBlocked, makeMortarShell, makeSoldierBar, makeSoldierMesh, nadeBark, nadeFlee, nadeTarget, orderGoal, pickups, playerRange, poseSoldier, radio, rallySpot, riverWay, rifleFX, scene, sfx, shootGuard, smokeSpreadK, soldierReloading, spawnBullet, spawnPart, stanceBarK, stashLoot, stepFlung, takePickup, throwNade, throwSmoke, tip, towers, tracerNext, tryClimb, updateClimb, updateLadders, wadeAt, wantPeek, wrapAngle, zoneJob, gunFlash, gunSound } from '../hub.js';
+import { ambushHold, coopHostDeath, CAMPS, FTSQ, HELI_DOWN, MOBILE, S, droneMarkK, _RUP, _rdir, _sV, animateSoldier, aoeDamage, atCover, bigExplode, blocks, blocksAt, bullets, burst, camera, canThrow, clampField, clearLadders, cmdGoal, combatDive, concuss, coverSpot, damageBlock, damageEnemy, dazePose, dazed, deformCrater, dropGuard, dropPowerup, enemies, fieldEdgePoint, flingDead, floatText, heightAt, inRally, infBlastK, kitAttach, liveGuards, lootModel, losBlocked, makeMortarShell, makeSoldierBar, makeSoldierMesh, nadeBark, nadeFlee, nadeTarget, orderGoal, pickups, playerRange, poseSoldier, radio, rallySpot, riverWay, rifleFX, scene, sfx, shootGuard, smokeSpreadK, soldierReloading, spawnBullet, spawnPart, stanceBarK, stashLoot, stepFlung, takePickup, throwNade, throwSmoke, tip, towers, tracerNext, tryClimb, updateClimb, updateLadders, wadeAt, wantPeek, wrapAngle, zoneJob, gunFlash, gunSound } from '../hub.js';
 
 // ---- friendly FIRETEAM ----
 export const FT=[]; 
@@ -166,7 +166,7 @@ function updateShells(dt, now){ updateTowerRockets(dt, now); const M=SQUAD.morta
     if(u<1) continue; ALLY_SHELLS.splice(i,1); scene.remove(s.m);
     bigExplode({x:s.tx,z:s.tz}, 0xffae5c, M.aoe/3); deformCrater(s.tx, s.tz, 0.9, 0.3); aoeDamage(s.tx, s.tz, M.aoe, s.dmg, false, now, 'HE', false); } }
 export function clearAllyOrdnance(){ for(const r of TOWER_RPG) scene.remove(r.m); TOWER_RPG.length=0; for(const c of CHARGES) scene.remove(c.m); CHARGES.length=0; for(const s of ALLY_SHELLS) scene.remove(s.m); ALLY_SHELLS.length=0; }
-function allyFire(a, now){ const F=TROOPS.fireteam, T=a.target; if(!T) return false;
+function allyFire(a, now){ const F=TROOPS.fireteam, T=a.target; if(!T) return false; if(ambushHold(a)) return false;   // AMBUSH 1 the blade out, nobody alerted: his men hold their fire (game/ambush.js)
   if(T.kind==='inf' && (T.ref.dead || !enemies.includes(T.ref))){ a.target=null; return false; }
   if(T.kind==='guard' && !T.ref.gd.alive){ a.target=null; return false; }
   if(T.kind==='pylon' && !blocks.includes(T.ref)){ a.target=null; return false; }

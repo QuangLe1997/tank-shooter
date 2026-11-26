@@ -20,8 +20,8 @@
 //   soldier-fire (bladeFire), flame.js selectGun / cycleGun (bladeSelect / bladeCycle), spells trySpell (bladeSpecial), player-damage (bladeGuardK), bindings ('blade').
 //   Nothing allocates per frame.
 import * as THREE from 'three';
-import { BLADE, CAV, LOGISTICS, REALCAV } from '../../config.js';
-import { awareNoise, suspectEnemy, decalBlood, enemyPool, getEnemyMesh, layOut, reviveSoldierMesh, hangState, hangStep, CV, MOBILE, PROFILE, RDRAG, S, animClip, animInfo, animRootAt, bloodSpurt, blocksNear, climbing, curlHand, damageBlock, damageEnemy, enemies, floatText, fpvFlying, heightAt, heldAction, ik2, lineClear, loadAnimGroup, loadGLTF, saveProfile, scene, selectGun, sfx, spawnPart, updateGunHUD } from '../hub.js';
+import { AMBUSH, BLADE, CAV, LOGISTICS, REALCAV } from '../../config.js';
+import { AMBST, MATE, ambushClang, ambushMateK, ambushSaySeen, ambushTouch, suspectEnemy, decalBlood, enemyPool, getEnemyMesh, layOut, reviveSoldierMesh, hangState, hangStep, CV, MOBILE, PROFILE, RDRAG, S, animClip, animInfo, animRootAt, bloodSpurt, blocksNear, climbing, curlHand, damageBlock, damageEnemy, enemies, floatText, fpvFlying, heightAt, heldAction, ik2, lineClear, loadAnimGroup, loadGLTF, saveProfile, scene, selectGun, sfx, spawnPart, updateGunHUD } from '../hub.js';
 
 const V3 = () => new THREE.Vector3(), Q4 = () => new THREE.Quaternion(), clamp = (v, a, b) => Math.max(a, Math.min(b, v)), smooth = k => { k = clamp(k, 0, 1); return k * k * (3 - 2 * k); }, wrapA = a => Math.atan2(Math.sin(a), Math.cos(a)), D2R = Math.PI / 180;
 const _a = V3(), _b = V3(), _c = V3(), _d = V3(), _k = V3(), _m = V3(), _n = V3(), _x = V3(), _y = V3(), _z = V3(), _p = V3(), _t = V3(), _u = V3(), _r = V3(), _bk = V3(), _ws = V3(), _one = V3();
@@ -33,9 +33,13 @@ const _tg = new Float32Array(8), UP = new THREE.Vector3(0, 1, 0);
 //   { mv, t (clip s), rate, dmgK, f0 (the bearing it is aimed along), wi (the window he is in), hit (who it has cut) } · chain: the next light · buf: the move asked for
 export const BLADEST = { kind:null, held:false, auto:false, sw:0, act:null, chain:0, chainAt:-9, buf:null, bufAt:0, trigF:-9, down:false, pressT:0, heavied:false, st:BLADE.stamina.max, stAt:-9, spAt:0, guard:false,
   nearAt:0, killAt:-9, flDone:true, frame:0, hits:0, kills:0, silent:0, ambush:0, dashes:0, severed:0, shotAt:-99, swings:0, firstHit:-1, drawAt:-9, ready:{}, tipV:0 };
-const ACT = { mv:null, what:'', t:0, rate:1, dmgK:1, f0:0, rk:1, wi:-1, hit:new Set(), lunge:0, lx:0, lz:0, dashT:0, dashV:0 };
+const ACT = { mv:null, what:'', t:0, rate:1, dmgK:1, f0:0, rk:1, wi:-1, hit:new Set(), lunge:0, lx:0, lz:0, dashT:0, dashV:0, mark:null, markOut:false, dashStop:0 };
 export const bladeKind = () => BLADE.kinds[PROFILE.blade] ? PROFILE.blade : BLADE.def;
 export const bladeHeld = cv => !!BLADE.on && (!cv || cv === CV ? BLADEST.held : !!cv.blade);
+// AMBUSH 1 co-op: a cut is in hand (game/coop-glue.js sends it as his FIRING flag while the blade's stance bit is up) · the other player's cut as this page draws it: while that
+//   flag is up the kind's first light plays through on his rig (a swing to see — not his exact move, and nothing is judged by it)
+export const bladeSwing = () => !!(BLADE.on && BLADEST.held && BLADEST.act && ACT.mv && ACT.mv.win.length);
+function mateAct(cv, L, K, dt){ const s = L.sw || (L.sw = { mv:null, t:0 }); if(s.mv){ s.t += dt * s.mv.rate; if(s.t >= s.mv.to) s.mv = null; } if(!s.mv && cv.mate && MATE.firing && L.w > 0.6){ s.mv = K.moves.light[0]; s.t = s.mv.from; } return s.mv ? s : null; }
 const bodyK = () => REALCAV.opH * (REALCAV.s2 && REALCAV.s2.on ? REALCAV.s2.k || 1 : 1) / 1.8;   // his metres → the world's (his height over 1.8 m)
 const rootK = () => REALCAV.opH / 1.88 * (REALCAV.s2 && REALCAV.s2.on ? REALCAV.s2.k || 1 : 1);   // the library's root travel (the operator's own scale) → the world
 const afoot = () => { const p = S.player; return !!(p && !p.downed && !CV.mounted && !CV.trans && !CV.dead); };
@@ -84,7 +88,7 @@ export function bladeClip(cv, R, G, dt, P, mounted){ if(!BLADE.on || !R.pup || !
   // one phase for the whole set (the feet of two gaits fall together), paced by the leading clip's own speed
   { const I = animInfo(L.ids[lead]), sp = I && I.speed > 0.3 ? clamp(v / (I.speed * rootK()), S0.rate[0], S0.rate[1]) : 1; L.ph = (L.ph + dt * sp / (I ? I.dur : 1)) % 1; }
   // the move in hand (the page's own soldier): cross-faded with the one before
-  const M0 = L.mv[0], M1 = L.mv[1], A = mine && B.act ? ACT : null, id = A ? A.mv.clip : null;
+  const M0 = L.mv[0], M1 = L.mv[1], A = mine ? (B.act ? ACT : null) : mateAct(cv, L, K, dt), id = A ? A.mv.clip : null;
   if(id !== M0.id && id){ M1.id = M0.id; M1.t = M0.t; M1.w = M0.w; M0.id = id; M0.w = 0; } if(id) M0.t = A.t;
   M0.w = clamp(M0.w + (id ? dt / BLADE.fade[0] : -dt / BLADE.fade[1]), 0, 1); M1.w = clamp(M1.w - dt / BLADE.fade[0], 0, 1 - M0.w); if(!id && M0.w <= 0) M0.id = null;
   const mw = Math.min(1, M0.w + M1.w), tn = S.timeNow || performance.now() / 1000;
@@ -219,7 +223,13 @@ const _near = { e:null, d:0, a:0 };
 function nearest(p, r, cone, bear, inf){ let be = null, bd = 1e9, ba = 0; const c = cone * D2R; for(let i = 0; i < enemies.length; i++){ const e = enemies[i]; if(!(e.hp > 0) || e._under || (inf && !(e.def && e.def.inf))) continue;
     const dx = e.pos.x - p.pos.x, dz = e.pos.z - p.pos.z, d = Math.hypot(dx, dz) - (e.radius || 0.4); if(d > r || d >= bd) continue; const a = Math.atan2(dx, dz); if(cone < 180 && Math.abs(wrapA(a - bear)) > c) continue; be = e; bd = d; ba = a; }
   _near.e = be; _near.d = bd; _near.a = ba; return be; }
+// AMBUSH 1 the man a dash-in may be begun on: the nearest within dashR of the crosshair's line who does not know, a clear line to him — and he is sprinting, behind low cover, or outside that man's front → _mk { e, d, a, out }
+const _mk = { e:null, d:0, a:0, out:false };
+function dashMark(p){ const QZ = BLADE.quiet; _mk.e = null; if(!QZ.on || !AMBUSH.on || !nearest(p, QZ.dashR, BLADE.assist, p.aimSmoothed, true)) return null; const e = _near.e, d = _near.d, a = _near.a; if(e.alert >= 2 || e.rise) return null;
+  const out = Math.abs(wrapA(Math.atan2(p.pos.x - e.pos.x, p.pos.z - e.pos.z) - (e.facing || 0))) > LOGISTICS.quiet.knife.front; if(!out && !heldAction('sprint') && !CV.cover) return null;
+  const open = lineClear(p.pos.x, heightAt(p.pos.x, p.pos.z) + (p.lift || 0) + 1.1, p.pos.z, e.pos.x, heightAt(e.pos.x, e.pos.z) + 1.1, e.pos.z); if(!open) return null; _mk.e = e; _mk.d = d; _mk.a = a; _mk.out = out; return e; }
 function begin(what, now){ const B = BLADEST, p = S.player, K = BLADE.kinds[B.kind], MV = K.moves, SM = BLADE.stamina; let mv = null;
+  if(what === 'run' && dashMark(p)) what = 'light';   // AMBUSH 1 at a sprint with a man who does not know within dashR ahead: not the leap — the dash-in and ONE cut
   if(what === 'light'){ const i = (B.act || now - B.chainAt < BLADE.chainT) && B.chain < MV.light.length ? B.chain : 0; mv = MV.light[i]; B.chain = (i + 1) % MV.light.length; B.chainAt = now; } else mv = MV[what]; if(!mv) return false;
   let tired = B.st < (mv.st || 0); if(tired && what !== 'light' && what !== 'flourish'){ mv = MV.light[0]; B.chain = 1; tired = B.st < mv.st; what = 'light'; }
   B.st = Math.max(0, B.st - (mv.st || 0)); B.stAt = now; if(what === 'special') B.spAt = now + mv.cd; if(what !== 'light') B.chain = 0;
@@ -229,8 +239,10 @@ function begin(what, now){ const B = BLADEST, p = S.player, K = BLADE.kinds[B.ki
   if(e && mv.root && I && I.travels){ animRootAt(mv.clip, mv.win[0][0], _root); animRootAt(mv.clip, mv.from, _root0); const go = Math.hypot(_root[0] - _root0[0], _root[1] - _root0[1]) * rootK(); A.rk = go > 0.1 ? clamp((_near.d - reach * 0.6) / go, 0.12, 1) : 1; }   // (a leap lands him at the man, not past him)
   if(e && mv.lunge){ const gap = _near.d - reach * 0.72; if(gap > 0.05){ A.lunge = Math.sqrt(2 * CAV.foot.decel * Math.min(mv.lunge, gap)); A.lx = Math.sin(A.f0); A.lz = Math.cos(A.f0); } }
   // the ambush's dash-in: started at a sprint or from behind cover, a man who does not know within dashR ahead — a quick rush to cutting distance (his own velocity: the game moves him)
-  A.dashT = 0; { const QZ = BLADE.quiet; if(QZ.on && mv.win.length && !mv.root && (heldAction('sprint') || CV.cover) && nearest(p, QZ.dashR, BLADE.assist, p.aimSmoothed, true) && !(_near.e.alert >= 2) && _near.d > reach * 0.7){
-      A.f0 = _near.a; A.dashT = QZ.dashT; A.dashV = Math.min(QZ.dashV, (_near.d - reach * 0.6) / QZ.dashT); A.lx = Math.sin(A.f0); A.lz = Math.cos(A.f0); A.lunge = 0; B.dashes++; B.dashD = _near.d - reach * 0.6; } }
+  //   AMBUSH 1 …it homes on him and pulls up at dash.stop × reach (bladeFoot); begun from outside his front he is flat-footed until the cut has landed (e.flatAt — game/ambush.js)
+  A.dashT = 0; A.mark = null; A.markOut = false; B.dashing = false; { const QZ = BLADE.quiet; if(mv.win.length && !mv.root && what !== 'flourish' && dashMark(p)){ const m = _mk.e; A.mark = m; A.markOut = _mk.out; A.f0 = _mk.a; A.dashStop = reach * AMBUSH.dash.stop;
+      if(_mk.out){ m.flatAt = now + QZ.dashT + AMBUSH.dash.over + (mv.win[0][1] - mv.from) / A.rate + AMBUSH.flat + 0.5; AMBST.marks++; }   // (at the latest; bladeTick lets him go flat s after the cut's window has passed)
+      if(_mk.d > reach * 0.7){ A.dashT = QZ.dashT; A.dashV = Math.min(QZ.dashV, (_mk.d - A.dashStop) / QZ.dashT); A.lx = Math.sin(A.f0); A.lz = Math.cos(A.f0); A.lunge = 0; B.dashing = true; B.dashes++; B.dashD = _mk.d - A.dashStop; } } }
   B.act = A; B.buf = null; B.flDone = what === 'flourish' ? true : B.flDone; if(what !== 'flourish') B.swings++; return true; }
 function ask(what, now){ const B = BLADEST; B.buf = what; B.bufAt = now; }
 function cut(e, A, K, p, now, bear){ const B = BLADEST, mv = A.mv, HT = BLADE.hit, sw = mv.arc[1] - mv.arc[0], heavy = mv.dmg >= 90; let dx, dz;
@@ -238,11 +250,11 @@ function cut(e, A, K, p, now, bear){ const B = BLADEST, mv = A.mv, HT = BLADE.hi
   let dmg = mv.dmg * A.dmgK * (p.dmgMul || 1); if(e.general || e.hitCap) dmg = Math.min(dmg, (e.maxHp || e.hp) * HT.gen);
   // BLADE 5 THE QUIET WEAPON: a man who does not know dies by the knife's own quiet path (game/quiet.js quietDeath: only who SEES it done reacts, the body can be found) — and one
   //   who does not know, struck from outside his front (the knife's own test), dies to any cut at all: the ambush
-  const QZ = BLADE.quiet, inf = !!(e.def && e.def.inf), unaware = QZ.on && inf && !(e.alert >= 2), amb = unaware && QZ.ambush && !e.general && !e.commander && !e.elite && Math.abs(wrapA(Math.atan2(p.pos.x - e.pos.x, p.pos.z - e.pos.z) - (e.facing || 0))) > LOGISTICS.quiet.knife.front;
-  if(amb) dmg = Math.max(dmg, e.hp + 1); const hush = unaware && dmg >= e.hp; if(hush) e._knife = true; if(inf && BLADE.sever.on && dmg >= e.hp && mv.sever !== 'none') e._bladeCut = mv.sever || 'waist';   // (BLADE 7 the cut that kills parts him along it: bladeSever)
+  const QZ = BLADE.quiet, inf = !!(e.def && e.def.inf), unaware = QZ.on && inf && !(e.alert >= 2), amb = unaware && QZ.ambush && !e.general && !e.commander && !e.elite && Math.abs(wrapA(Math.atan2(p.pos.x - e.pos.x, p.pos.z - e.pos.z) - (e.facing || 0))) > LOGISTICS.quiet.knife.front || unaware && QZ.ambush && e === A.mark && A.markOut && !e.general && !e.commander && !e.elite;
+  if(amb) dmg = Math.max(dmg, e.hp + 1); const hush = unaware && dmg >= e.hp; if(hush) e._knife = true; if(inf && dmg >= e.hp){ e._blade = true; AMBST.seenBy = 0; }   /* AMBUSH 1 any man the blade kills dies the blade's way: who SEES it knows, nobody else (game/quiet.js quietDeath → game/ambush.js) */ e._bladeHit = true; if(inf && BLADE.sever.on && dmg >= e.hp && mv.sever !== 'none') e._bladeCut = mv.sever || 'waist';   // (BLADE 7 the cut that kills parts him along it: bladeSever)
   e._hx = dx; e._hz = dz; if(e.def && e.def.inf){ e.dazeUntil = Math.max(e.dazeUntil || 0, now + mv.daze); e.kbx = (e.kbx || 0) + dx * mv.push; e.kbz = (e.kbz || 0) + dz * mv.push; e.aimT = 0; }
-  const ex = e.pos.x, ez = e.pos.z, flesh = !!(e.def && e.def.inf) && !mv.blunt; damageEnemy(e, dmg); if(e.hp > 0) e._bladeCut = null; B.hits++; if(B.firstHit < 0) B.firstHit = now; if(!(e.hp > 0)){ B.kills++; B.killAt = now; B.flDone = false; if(hush){ B.silent++; if(amb) B.ambush++; floatText('HẠ GỤC ÊM', '#9be04a', p.pos, 16); } }
-  else if(QZ.on && inf){ const r2 = QZ.cryR * QZ.cryR; for(let i = 0; i < enemies.length; i++){ const m = enemies[i]; if(m !== e && m.hp > 0 && (m.pos.x - ex) ** 2 + (m.pos.z - ez) ** 2 < r2) suspectEnemy(m, now, ex, ez); } }   // (a wounded man cries out: his mates near turn to look)
+  const ex = e.pos.x, ez = e.pos.z, flesh = !!(e.def && e.def.inf) && !mv.blunt; damageEnemy(e, dmg); e._bladeHit = false; if(e.hp > 0){ e._bladeCut = null; e._blade = false; e._knife = false; } B.hits++; if(B.firstHit < 0) B.firstHit = now; if(!(e.hp > 0)){ B.kills++; B.killAt = now; B.flDone = false; const seen = inf ? AMBST.seenBy : 0; if(amb) B.ambush++; if(seen) ambushSaySeen(p, seen); else if(hush){ B.silent++; floatText('HẠ GỤC ÊM', '#9be04a', p.pos, 16); } }
+  else if(QZ.on && inf && !e.puppet){ const r2 = QZ.cryR * QZ.cryR; for(let i = 0; i < enemies.length; i++){ const m = enemies[i]; if(m !== e && m.hp > 0 && (m.pos.x - ex) ** 2 + (m.pos.z - ez) ** 2 < r2) suspectEnemy(m, now, ex, ez); } }   // (a wounded man cries out: his mates near turn to look)
   if(flesh){ bloodSpurt(ex, ez, dx, dz, heavy ? 1.8 : 1.1); sfx(heavy ? 'crunch' : 'hit', e.pos, 0.75); } else { sparks(ex, heightAt(ex, ez) + 1.1, ez, HT.sparks); sfx(mv.blunt ? 'thud' : 'clang', e.pos, 0.6); }
   S.hitStop = Math.max(S.hitStop || 0, (S.timeNow || now) + HT.stop[heavy ? 1 : 0]); S.shake = Math.min(2.4, (S.shake || 0) + HT.shake[heavy ? 1 : 0]); S.camKick = Math.min(1.2, (S.camKick || 0) + HT.kick[heavy ? 1 : 0]); S.kickAng = A.f0; }
 function sparks(x, y, z, n){ for(let i = 0; i < n; i++) spawnPart(x, y, z, (Math.random() - 0.5) * 6, 1.5 + Math.random() * 3, (Math.random() - 0.5) * 6, { color:0xffd9a0, size:0.09 + Math.random() * 0.08, life:0.22 + Math.random() * 0.2, grav:9, drag:0.6 }); }
@@ -250,7 +262,7 @@ function windows(p, K, A, now){ const mv = A.mv, HT = BLADE.hit; let wi = -1; fo
   if(wi < 0){ A.wi = -1; return; } const W = mv.win[wi], u = (A.t - W[0]) / Math.max(1e-3, W[1] - W[0]), a0 = mv.arc[0], cur = a0 + (mv.arc[1] - a0) * u, tol = mv.tol ?? HT.tol, lo = Math.min(a0, cur) - tol, hi = Math.max(a0, cur) + tol;
   const reach = (mv.reach || K.reach) * bodyK(), py = heightAt(p.pos.x, p.pos.z) + (p.lift || 0), fx = Math.sin(A.f0), fz = Math.cos(A.f0);
   if(A.wi !== wi){ A.wi = wi; sfx('whoosh', p.pos, mv.dmg >= 90 ? 0.7 : 0.45);   // the window opens: the air, and what solid cover stands in the arc is chipped once
-    let nb = 0; for(const bl of blocksNear(p.pos.x + fx * reach * 0.55, p.pos.z + fz * reach * 0.55, reach * 0.5, _bn)){ if(bl.ours || bl.ridge || bl.dead || nb >= 2) continue; nb++; damageBlock(bl, HT.chip * A.dmgK); sparks(bl.x, py + 1, bl.z, 4); if(nb === 1){ sfx('clang', p.pos, 0.5); if(BLADE.quiet.on) awareNoise(p.pos.x, p.pos.z, now, BLADE.quiet.clangR); } } }   // (steel on something solid: the one sound of a blade that carries)
+    let nb = 0; for(const bl of blocksNear(p.pos.x + fx * reach * 0.55, p.pos.z + fz * reach * 0.55, reach * 0.5, _bn)){ if(bl.ours || bl.ridge || bl.dead || nb >= 2 || AMBUSH.on && !ambushTouch(bl, p.pos.x, p.pos.z, A.f0, Math.min(a0, mv.arc[1]) - tol, Math.max(a0, mv.arc[1]) + tol, reach)) continue; nb++; damageBlock(bl, HT.chip * A.dmgK); sparks(bl.x, py + 1, bl.z, 4); if(nb === 1){ sfx('clang', p.pos, 0.5); if(BLADE.quiet.on) ambushClang(p.pos.x, p.pos.z, now); } } }   // (AMBUSH 1 only what the arc really meets, and it turns heads within clangR — it is not a shot's alert)   // (steel on something solid: the one sound of a blade that carries)
   for(let i = enemies.length - 1; i >= 0; i--){ const e = enemies[i]; if(!e || !(e.hp > 0) || e._under || A.hit.has(e)) continue; const dx = e.pos.x - p.pos.x, dz = e.pos.z - p.pos.z, d = Math.hypot(dx, dz) - (e.radius || 0.4); if(d > reach) continue;
     const bear = Math.atan2(dx, dz); let rel = wrapA(bear - A.f0) / D2R; rel += 360 * Math.ceil((lo - rel) / 360); if(rel > hi) continue;   // (the first turn of his bearing at or past the arc's low end: inside it or not)
     const ey = heightAt(e.pos.x, e.pos.z) + (e.air ? e.pos.y || 0 : 0) - py; if(ey < mv.y[0] || ey > mv.y[1]) continue; A.hit.add(e);   // (in reach, in the arc, at his height: one look for a wall between, then never again this swing)
@@ -291,7 +303,7 @@ export const bladeSevered = () => SEV.length;
 // soldier-fire: the trigger is down this frame. true: the round is not fired (the blade has it)
 export function bladeFire(now){ const B = BLADEST, p = S.player, AU = BLADE.auto; if(!BLADE.on || !afoot() || !B.kind || !B.ready[B.kind] || climbing() || fpvFlying()) return false;
   if(B.held){ if(B.auto && !B.act && !B.buf && !nearest(p, AU.keep, 180, 0, true)){ B.held = false; B.auto = false; return false; } B.trigF = B.frame; return true; }   // (AUTO-drawn, nobody near: the rifle again, and this press is its shot)
-  if(AU.on && CV.stance !== 'prone' && nearest(p, AU.r, AU.cone, p.aimSmoothed, true)){ B.held = true; B.auto = true; B.nearAt = now; B.drawAt = now; B.trigF = B.frame; return true; }
+  if(AU.on && CV.stance !== 'prone' && (nearest(p, AU.r, AU.cone, p.aimSmoothed, true) || AMBUSH.on && AMBUSH.dash.auto && (heldAction('sprint') || CV.cover) && dashMark(p))){   /* (AMBUSH 1 …or, at a sprint / from low cover, a man who does not know within dashR: drawn for the dash-in) */ B.held = true; B.auto = true; B.nearAt = now; B.drawAt = now; B.trigF = B.frame; return true; }
   B.shotAt = S.timeNow || now; return false; }   // (the trigger is the rifle's: a shot — the glimpse rule waits quiet.shotT s after it)
 export function bladeSwitch(on, auto){ const B = BLADEST; if(!BLADE.on) return false; on = !!on && afoot() && !climbing() && !!B.ready[B.kind || bladeKind()]; if(on === B.held){ B.auto = B.auto && !!auto; return on; }
   B.held = on; B.auto = !!auto && on; if(on){ B.drawAt = performance.now() / 1000; B.nearAt = B.drawAt; } else { B.act = null; B.buf = null; B.guard = false; } sfx(on ? 'dash' : 'click', S.player && S.player.pos, 0.4); hud(); return on; }
@@ -302,7 +314,7 @@ export function bladeCycle(d){ const p = S.player, B = BLADEST; if(!BLADE.on || 
   const n = p.gunIdx + d; if(n >= p.guns.length || n < 0) return bladeSwitch(true, false); return false; }
 // ai/awareness.js awareTick: how fast an unaware man who has him in view makes him out — with the blade out and no shot fired for quiet.shotT s a glimpse builds `glimpse` × as fast:
 //   it reaches "suspicious" (he comes to look) well before "alerted", and out of his sight it decays as ever — a search, not an instant firefight
-export function bladeGlimpseK(){ const B = BLADEST, Q = BLADE.quiet; return BLADE.on && Q.on && B.held && B.sw > 0.5 && (S.timeNow || performance.now() / 1000) - B.shotAt > Q.shotT ? Q.glimpse : 1; }
+export function bladeGlimpseK(){ const B = BLADEST, Q = BLADE.quiet; if(S.player && S.player.mate) return ambushMateK();   /* (AMBUSH 1 the host's man regarding the co-op guest: the guest's blade) */ return BLADE.on && Q.on && B.held && B.sw > 0.5 && (S.timeNow || performance.now() / 1000) - B.shotAt > Q.shotT ? Q.glimpse : 1; }
 // spells.js: in blade mode the skill key is the blade's special. true: no spell is cast
 export function bladeSpecial(){ const B = BLADEST, p = S.player; if(!BLADE.on || !B.held || !p) return false; const now = S.timeNow || performance.now() / 1000;
   if(now < B.spAt){ floatText('CHIÊU ĐẶC BIỆT: ' + Math.ceil(B.spAt - now) + ' s', '#ffcf5a', p.pos, 13); return true; } ask('special', now); return true; }
@@ -313,14 +325,16 @@ export function bladeFoot(p, dt){ const B = BLADEST; if(!BLADE.on || !B.held) re
   if(A){ p.facing = wrapA(p.facing + wrapA(A.f0 - p.facing) * Math.min(1, dt * 14)); const I = animInfo(A.mv.clip);
     if(A.mv.root && I && I.travels && dt > 0){ animRootAt(A.mv.clip, A.t, _root); animRootAt(A.mv.clip, Math.max(A.mv.from, A.t - dt * A.rate), _root0); const k = rootK() * A.rk / dt, rx = (_root[0] - _root0[0]) * k, rz = (_root[1] - _root0[1]) * k, s = Math.sin(A.f0), c = Math.cos(A.f0);
       p.vel.x = c * rx + s * rz; p.vel.z = -s * rx + c * rz; return; }
-    if(A.dashT > 0){ A.dashT -= dt; p.vel.x = A.lx * A.dashV; p.vel.z = A.lz * A.dashV; return; } if(A.dashV > 0){ A.dashV = 0; p.vel.x *= 0.1; p.vel.z *= 0.1; }   // (he pulls up at cutting distance: no running on through the man)
+    if(B.dashing){ const m = A.mark; A.dashT -= dt; let go = 0; if(m && m.hp > 0){ const dx = m.pos.x - p.pos.x, dz = m.pos.z - p.pos.z, d = Math.hypot(dx, dz) || 1; go = d - (m.radius || 0.4) - A.dashStop; A.f0 = Math.atan2(dx, dz); A.lx = dx / d; A.lz = dz / d; }   // AMBUSH 1 it homes on the man (a corner that slides him off line does not lose him) and stops short of him
+      if(go > 0.06 && A.dashT > -AMBUSH.dash.over){ const v = Math.min(BLADE.quiet.dashV, go / Math.max(dt, A.dashT, 1e-3)); p.vel.x = A.lx * v; p.vel.z = A.lz * v; return; }
+      B.dashing = false; A.dashV = 0; p.vel.x *= 0.1; p.vel.z *= 0.1; }   // (he pulls up at cutting distance: no running on through the man)
     if(A.lunge > 0 && A.t >= A.mv.from){ p.vel.x += A.lx * A.lunge; p.vel.z += A.lz * A.lunge; A.lunge = -1; } if(A.lunge < 0 && A.wi < 0 && A.t < (A.mv.win[0] ? A.mv.win[0][0] : 0)) return; }
   const v = Math.hypot(p.vel.x, p.vel.z); if(v > cap && cap < CAV.foot.run){ const k = Math.max(cap, v - CAV.foot.decel * 2 * dt) / v; p.vel.x *= k; p.vel.z *= k; } }
 // cavalry.js, every frame of the page's own soldier: the kind, the trigger's presses, the move in hand, its windows, AUTO's way back, the flourish
 export function bladeTick(p, dt, now){ const B = BLADEST; B.frame++; if(!BLADE.on || !p) return; if(SEV.length) severTick(dt); const k = bladeKind(); if(B.kind !== k){ B.kind = k; B.act = null; B.buf = null; } load(k);
   const K = BLADE.kinds[k], SM = BLADE.stamina, AU = BLADE.auto;
   if(B.held && (!afoot() || climbing() || fpvFlying())){ B.held = false; B.auto = false; B.act = null; B.buf = null; }
-  if(!B.held){ B.down = false; B.guard = false; B.act = null; if(B.st < SM.max) B.st = Math.min(SM.max, B.st + SM.regen * dt); if(B.frame % 6 === 0) hud(); return; }
+  if(!B.held){ B.down = false; B.guard = false; B.act = null; B.dashing = false; if(B.st < SM.max) B.st = Math.min(SM.max, B.st + SM.regen * dt); if(B.frame % 6 === 0) hud(); return; }
   if(now - B.stAt > SM.delay && !B.act) B.st = Math.min(SM.max, B.st + SM.regen * dt);
   // the trigger: a press = the light (at a sprint the running attack, from the guard the counter); held past `hold` = the heavy, at once if the light has not yet cut
   const down = B.trigF >= B.frame - 1, sprint = heldAction('sprint') && Math.hypot(p.vel.x, p.vel.z) > BLADE.runAt;
@@ -330,7 +344,7 @@ export function bladeTick(p, dt, now){ const B = BLADEST; B.frame++; if(!BLADE.o
   B.guard = B.sw > 0.9 && !B.act && !B.buf && (heldAction('reload') || !!(RDRAG && RDRAG.down) || !!B.tGuard);
   if(B.act && ACT.what === 'flourish' && (Math.hypot(p.vel.x, p.vel.z) > BLADE.flourish.moveV || heldAction('reload') || heldAction('sprint') || B.tGuard)) B.act = null;   // (the flourish gives way to anything he asks: a step, the guard — a cut takes over through the buffer)
   // the move in hand
-  if(B.act){ const A = ACT, mv = A.mv; A.t += dt * A.rate; if(mv.win.length) windows(p, K, A, now);
+  if(B.act){ const A = ACT, mv = A.mv; A.t += dt * A.rate; if(B.dashing && mv.win.length) A.t = Math.min(A.t, mv.win[0][0] - 0.02);   /* (AMBUSH 1 the cut waits for the dash-in) */ if(mv.win.length) windows(p, K, A, now); if(A.markOut && A.wi < 0 && A.t > mv.win[0][1]){ A.markOut = false; if(A.mark && A.mark.hp > 0) A.mark.flatAt = Math.min(A.mark.flatAt || 0, now + AMBUSH.flat); }   // (the cut is over: a man it missed has flat s more)
     if(B.buf && (A.what === 'flourish' || A.t >= mv.next)){ begin(B.buf, now); } else if(A.t >= mv.to){ B.act = null; B.chainAt = now; } }
   if(!B.act && B.buf){ if(B.sw < BLADE.cutAt) B.bufAt = now; else if(now - B.bufAt > BLADE.buffer) B.buf = null; else begin(B.buf, now); }
   // AUTO's way back: nobody within `back` for `wait` s

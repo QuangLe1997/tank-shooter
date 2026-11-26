@@ -1,7 +1,7 @@
 // actors/infantry.js — Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 import * as THREE from 'three';
 import { AWARE, BALANCE, DEATH_POP, ENV, EQUIP, FIELDCRAFT, INFANTRY, REAL, SQUAD, LOGISTICS } from '../../config.js';
-import { bladeSever, objMod, BIOME, ENVMOD, FT, MOBILE, S, UGRID, _cv, aiIQ, animateSoldier, atCover, burst, cMod, canThrow, clampField, clearGore, combatDive, coverSpot, dazePose, dazed, decalBlood, diffDmgMul, diffScale, dropSoldierGun, endFall, enemies, enemyPool, fortExitDir, fortWallCross, heightAt, inSmoke, infPushBlocks, kitAttach, launchEnemyMissile, loadGLTF, loopDmgMul, losBlocked, makeSoldierMesh, makeSquad, nadeFlee, nadeTarget, peekMove, poseSoldier, reviveSoldierMesh, rifleFX, ringPulse, scene, sfx, smokeSpreadK, soldierReloading, spawnBullet, spawnEnemy, spawnPart, squadMove, throwNade, tracerNext, unitsNear, wantPeek, wrapAngle, asShipped, nearShape, riverWay, wadeAt, gunFlash, awareTick, PL, hatchEntry, riseStep, dirFireK, giveUpStep, markAim, markStep, nemFleeStep, gunSound } from '../hub.js';
+import { ambushHold, ambushScatter, bladeSever, objMod, BIOME, ENVMOD, FT, MOBILE, S, UGRID, _cv, aiIQ, animateSoldier, atCover, burst, cMod, canThrow, clampField, clearGore, combatDive, coverSpot, dazePose, dazed, decalBlood, diffDmgMul, diffScale, dropSoldierGun, endFall, enemies, enemyPool, fortExitDir, fortWallCross, heightAt, inSmoke, infPushBlocks, kitAttach, launchEnemyMissile, loadGLTF, loopDmgMul, losBlocked, makeSoldierMesh, makeSquad, nadeFlee, nadeTarget, peekMove, poseSoldier, reviveSoldierMesh, rifleFX, ringPulse, scene, sfx, smokeSpreadK, soldierReloading, spawnBullet, spawnEnemy, spawnPart, squadMove, throwNade, tracerNext, unitsNear, wantPeek, wrapAngle, asShipped, nearShape, riverWay, wadeAt, gunFlash, awareTick, PL, hatchEntry, riseStep, dirFireK, giveUpStep, markAim, markStep, nemFleeStep, gunSound } from '../hub.js';
 
 // ===== Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 // …and a tank rolling over them crushes them flat. Lives in enemies[] (def.inf) so every gun, drone, guard & blast already sees them. =====
@@ -52,7 +52,7 @@ function enemyNade(e, now){ const N=FIELDCRAFT.nade; e.nadeAt=now+0.9+Math.rando
 //   is asked here). Out of sight he works on the last place he knew him (e.lk): suppressing fire for AWARE.keep.suppress s (supp), then the search (lost). One record a man, reused.
 export function infTarget(e, now){ const p=S.player, T=e._T||(e._T={ pos:null, vel:_INF0, you:false, lost:false, supp:false }), al=e.alert>=2, seen=al && e.sees, k=e.lk||(e.lk={ x:e.pos.x, z:e.pos.z });
   let best=seen ? p : null, bd=seen ? Math.hypot(p.pos.x-e.pos.x, p.pos.z-e.pos.z) : Infinity;
-  if(!e.def.rpg && !e.def.mk) for(const a of FT){ const d0=Math.hypot(a.pos.x-e.pos.x, a.pos.z-e.pos.z), d=d0*(a.task==='cover'&&atCover(a.pos,a.cover)?FIELDCRAFT.target.coverMul:1)*(a.g.userData.stance==='prone'?FIELDCRAFT.target.proneMul:1);   // Z220 the man in the open is shot first
+  if(!e.def.rpg && !e.def.mk) for(const a of FT){ if(!al && ambushHold(null)) break;   /* (AMBUSH 1 the blade out and nobody alerted: his men keep down and hold their fire — a man who does not know does not pick them out) */ const d0=Math.hypot(a.pos.x-e.pos.x, a.pos.z-e.pos.z), d=d0*(a.task==='cover'&&atCover(a.pos,a.cover)?FIELDCRAFT.target.coverMul:1)*(a.g.userData.stance==='prone'?FIELDCRAFT.target.proneMul:1);   // Z220 the man in the open is shot first
     if(d<bd*0.9 && d0<e.def.range*1.4){ bd=d; best=a; } }
   if(best===p){ T.pos=p.pos; T.vel=p.vel; T.you=true; T.lost=false; T.supp=false; }
   else if(best){ T.pos=best.pos; T.vel=_INF0; T.you=false; T.lost=false; T.supp=false; }
@@ -93,7 +93,7 @@ export function updateInfantry(e, dt, now, edt){
   const _ex=e.exit ? fortExitDir(e) : null;                                 // Z111b filing out through a fortress gate
   if(_ex){ mx=_ex.x; mz=_ex.z; sp*=1.15; it='deploy'; }
   else if(nadeFlee(e.pos, _fl)){ mx=_fl.x; mz=_fl.z; sp*=1.9; e.aimT=0; it='evade'; }   // Z220 a grenade at his feet: run
-  else if(pd<10 && closing>7){ e.side=e.side||(Math.random()<0.5?-1:1); mx=-puz*e.side; mz=pux*e.side; sp*=1.9; e.aimT=0; it='evade'; }   // SCATTER — dive out of the tank's path
+  else if(pd<10 && closing>7 && ambushScatter(e, now)){ e.side=e.side||(Math.random()<0.5?-1:1); mx=-puz*e.side; mz=pux*e.side; sp*=1.9; e.aimT=0; it='evade'; }   // SCATTER — dive out of the tank's path
   else if(react){ it='react'; }                                              // AI 1 the moment it dawns on him: he stops dead, swings round on him, shouts — not a shot yet
   else if(e.aimT>0){ }                                                       // kneeling with the launcher up: hold still
   else if(now<(e.groundUntil||0) && !fb){ it='ground'; }                     // DIR 1 the director's release: the men in contact go to ground for a few seconds — flat, not a shot

@@ -1,4 +1,5 @@
 // ui/tips.js — Z94 · FIRST-TIME TIPS — the first time something new happens, a short field note explains it (Z168: a side card, the battle keeps running). Once per lifetime (saved).
+import { AMBUSH } from '../../config.js';
 import { MOBILE, PROFILE, S, iconEl, saveProfile, sfx, tapEl } from '../hub.js';
 
 // ===== Z94 · FIRST-TIME TIPS — the first time something new happens, the battle PAUSES and a short field note explains it. Once per lifetime (saved). =====
@@ -16,11 +17,12 @@ export const TIPS={
   pow:     ['team','Trại giam lính ta', 'Lính ta bị giam sau hàng rào thép gai. <b>Diệt hết lính canh</b>, rồi <b>lái xe tới cổng</b> (hoặc cho lính đi bộ vào): tù binh <b>lên xe</b> — đầy chỗ thì họ <b>cầm súng theo bạn</b>.'],
   depot:   ['bunker','Kho vũ khí địch', 'Diệt lính canh, rồi <b>thả lính xuống</b> trong vòng xanh vài giây để <b>chiếm kho</b>. Kho phát <b>súng chống tăng</b> cho lính ta và tung đồ tiếp tế.'],
   rally:   ['spark','Khu tập kết', 'Lính nhặt được vật phẩm sẽ <b>mang về khu tập kết</b> (vòng xanh có cờ, bên phía ta). Đồ ở đó <b>không biến mất</b> — lái xe tới để nhận.'],
+  blade:   AMBUSH.say.tip,   // AMBUSH 1 the blade does not give his position away (game/ambush.js shows it the first time the blade is out with the enemy near and unaware)
   paradrop:['alert','Lính dù địch!', 'Trực thăng vận tải thả lính dù xuống <b>vòng đỏ</b>. Đón lõng chỗ họ tiếp đất — <b>một phát pháo</b> là đủ hạ một lính.'],
 };
 export const TIPQ=[]; export let _tipOpen=null;
 // Z104 only the notes that change how you play stop the battle; simple sightings stay quiet (still in the field manual)
-export const TIP_SHOW={ deploy:1, drive2:1, core:1, pow:1, depot:1, rally:1, paradrop:1 };
+export const TIP_SHOW={ deploy:1, drive2:1, core:1, pow:1, depot:1, rally:1, paradrop:1, blade:1 };
 export function tip(id){ if(!TIPS[id] || !TIP_SHOW[id]) return; const P=PROFILE.tips||(PROFILE.tips={}); if(P[id] || TIPQ.includes(id) || _tipOpen===id) return; TIPQ.push(id); }
 export const TIP_URGENT={ arty:1, atgm:1, boss:1, shield:1, core:1 }; export let _tipNextAt=0;
 export function pumpTips(){ if(_tipOpen || !TIPQ.length || S.mode!=='playing') return; const nowT=performance.now()/1000;

@@ -9,8 +9,8 @@
 //     for one more squad (campaign/director.js dirAlarm). A few a stage at most: the clean approach earns the quieter fight, the botched one is punished where he can read it.
 //   · The EYE chip (loot/powerups.js updateBuffHUD → game/logistics.js hudChips → QUIET.eye): closed — nobody suspects; half — a man is suspicious; open — a man is alerted.
 //   Everything is read LOGISTICS.quiet.every s apart on one pass over the enemies (no sight line a frame; one ray when a takedown is on offer).
-import { AWARE, LOGISTICS } from '../../config.js';
-import { CV, GUNS, MOBILE, PL, S, UGRID, alertEnemy, awareNoise, damageEnemy, dirAlarm, edgeEntry, enemies, entrySeen, floatText, hatchEntry, heightAt, inField, keyLabel, keysFor, killEnemy, lineClear, radio, ringPulse, sfx, showBanner, spawnSquad, squadTypes, suspectEnemy, towers, unitsNear, wrapAngle } from '../hub.js';
+import { AWARE, BLADE, LOGISTICS } from '../../config.js';
+import { ambushBodySeen, ambushDeath, ambushTick, CV, GUNS, MOBILE, PL, S, UGRID, alertEnemy, awareNoise, damageEnemy, dirAlarm, edgeEntry, enemies, entrySeen, floatText, hatchEntry, heightAt, inField, keyLabel, keysFor, killEnemy, lineClear, radio, ringPulse, sfx, showBanner, spawnSquad, squadTypes, suspectEnemy, towers, unitsNear, wrapAngle } from '../hub.js';
 
 const Q = LOGISTICS.quiet, SAY = LOGISTICS.say, NOW = () => performance.now() / 1000;
 // eye: −1 not on foot · 0 unseen · 1 suspected · 2 seen — can: the man a takedown is on offer for — bodies: { x, z, t, found } — pend: the alarm about to be raised { e, at, ring, x, z }
@@ -23,12 +23,13 @@ function over(e, dy){ _at.x = e.pos.x; _at.z = e.pos.z; _at.y = heightAt(e.pos.x
 export function quietShot(p){ const gi = p.guns && p.guns[p.gunIdx], g = gi && GUNS[gi.id]; if(!g || !g.supp) return false; const t = NOW(); QUIET.suppAt = t; QUIET.stats.suppShots++; awareNoise(p.pos.x, p.pos.z, t, Q.suppR); return true; }
 // ai/awareness.js awareDeath: this man has just fallen — to the knife, or within a moment of a suppressed shot. true: a quiet death (the wide alert is not given):
 //   only the men right beside him know (a takedown: only one looking that way); a man who had not been alerted drops where he stood and his body stays
-export function quietDeath(e){ const p = S.player; if(!p) return false; const now = NOW(), knife = e._knife === true; if(!knife && !(now - QUIET.suppAt < Q.killT)) return false;
+export function quietDeath(e){ const p = S.player; if(!p) return false; const now = NOW(), knife = e._knife === true, blade = e._blade === true; if(!knife && !blade && !(now - QUIET.suppAt < Q.killT)) return false;
   const r = knife ? Q.knife.seenR : Q.deathR, r2 = r * r, er = AWARE.death.err;
-  for(const o of unitsNear(UGRID.inf, e.pos.x, e.pos.z, r, _nb)){ if(o === e || !(o.hp > 0)) continue; const dx = e.pos.x - o.pos.x, dz = e.pos.z - o.pos.z; if(dx * dx + dz * dz > r2) continue;
-    if(knife && Math.abs(wrapAngle(Math.atan2(dx, dz) - o.facing)) > Q.knife.cone) continue;
+  if(blade){ if(!e._ambDone) ambushDeath(e, now); }   // AMBUSH 1 the blade (a man who knew, too): who SEES it done is alerted, nobody else — game/ambush.js
+  else for(const o of unitsNear(UGRID.inf, e.pos.x, e.pos.z, r, _nb)){ if(o === e || !(o.hp > 0)) continue; const dx = e.pos.x - o.pos.x, dz = e.pos.z - o.pos.z; if(dx * dx + dz * dz > r2) continue;
+    if(knife && (Math.abs(wrapAngle(Math.atan2(dx, dz) - o.facing)) > Q.knife.cone || !ambushBodySeen(o, e.pos))) continue;   // (AMBUSH 1 …and not through a wall)
     alertEnemy(o, now, 'see', p.pos.x + (Math.random() - 0.5) * er, p.pos.z + (Math.random() - 0.5) * er); }   // (he saw it done: a sentry among them raises the alarm)
-  if(knife || !(e.alert >= 2)){ e._quietKill = true; QUIET.stats.quiet++; const B = QUIET.bodies; if(B.length >= Q.body.max) B.shift(); B.push({ x:e.pos.x, z:e.pos.z, t:now, found:false }); }
+  if(knife || blade || !(e.alert >= 2)){ e._quietKill = true; QUIET.stats.quiet++; const B = QUIET.bodies; if(B.length >= Q.body.max) B.shift(); B.push({ x:e.pos.x, z:e.pos.z, t:now, found:false, life:e._bladeCut && BLADE.sever.on ? BLADE.sever.life : 0 }); }   // (AMBUSH 1 a man cut apart is ONE body, there for as long as he lies)
   return true; }
 
 // ---- the knife ----
@@ -66,13 +67,13 @@ function knifeUi(on){ if(typeof document === 'undefined' || !_btn && !on) return
 
 // ---- the bodies: an unalerted man who comes on one (looking that way, or all but stepping on it) — he and the men near him turn suspicious and search from it ----
 function bodies(now){ const B = Q.body, L = QUIET.bodies;
-  for(let i = L.length - 1; i >= 0; i--){ const b = L[i]; if(now - b.t > B.life){ L.splice(i, 1); continue; } if(b.found) continue;
+  for(let i = L.length - 1; i >= 0; i--){ const b = L[i]; if(now - b.t > (b.life || B.life)){ L.splice(i, 1); continue; } if(b.found) continue;
     for(const o of unitsNear(UGRID.inf, b.x, b.z, B.r, _nb)){ if(!(o.hp > 0) || o.alert >= 2 || o.rise) continue; const dx = b.x - o.pos.x, dz = b.z - o.pos.z, d2 = dx * dx + dz * dz;
-      if(d2 > B.r * B.r || d2 > B.near * B.near && Math.abs(wrapAngle(Math.atan2(dx, dz) - o.facing)) > B.cone) continue;
+      if(d2 > B.r * B.r || d2 > B.near * B.near && Math.abs(wrapAngle(Math.atan2(dx, dz) - o.facing)) > B.cone || !ambushBodySeen(o, b)) continue;   // (AMBUSH 1 a clear line from his eyes to it: never found through a wall)
       found(b, o, now); break; } } }
 function found(b, o, now){ const B = Q.body, r2 = B.callR * B.callR; b.found = true; QUIET.stats.found++;
-  for(const m of unitsNear(UGRID.inf, o.pos.x, o.pos.z, B.callR, _nb2)){ if(!(m.hp > 0) || m.alert >= 2 || (m.pos.x - o.pos.x) ** 2 + (m.pos.z - o.pos.z) ** 2 > r2) continue; suspectEnemy(m, now, b.x, b.z); m.bodyAt = now; }
-  suspectEnemy(o, now, b.x, b.z); o.bodyAt = now; floatText(SAY.body, '#ffd86a', over(o, 2.5), 16); sfx('beep', o.pos, 0.5);
+  for(const m of unitsNear(UGRID.inf, o.pos.x, o.pos.z, B.callR, _nb2)){ if(!(m.hp > 0) || m.alert >= 2 || (m.pos.x - o.pos.x) ** 2 + (m.pos.z - o.pos.z) ** 2 > r2) continue; suspectEnemy(m, now, b.x, b.z); m.bodyAt = now; m.suWhy = 'body'; }
+  suspectEnemy(o, now, b.x, b.z, 'body'); o.bodyAt = now; floatText(SAY.body, '#ffd86a', over(o, 2.5), 16); sfx('beep', o.pos, 0.5);
   if(S.player && now - QUIET.saidAt > 8){ QUIET.saidAt = now; floatText(SAY.bodyTip, '#ffb35a', S.player.pos, 15); } }
 
 // ---- the alarm ----
@@ -107,7 +108,7 @@ export function updateQuiet(dt, now){ const p = S.player; if(!p || !p.cav || now
     if(eye < 2 && d2 < er2){ const k = al ? 2 : e.alert === 1 || e.det > E.det ? 1 : 0; if(k > eye) eye = k; }
     if(al && !e._al2 && !QUIET.pend && !S.awaitingUpgrade && (e.alWhy === 'see' || e.alWhy === 'shot') && d2 < A.r * A.r && QUIET.alarmN < A.max && now - QUIET.alarmAt > A.cd && sentry(e, now)) QUIET.pend = { e, at:now + A.delay, ring:0, said:false, x:e.pos.x, z:e.pos.z };
     e._al2 = al; }
-  QUIET.eye = CV.mounted || CV.dead ? -1 : eye;
+  QUIET.eye = CV.mounted || CV.dead ? -1 : eye; ambushTick(now);   // (AMBUSH 1 the quiet weapon's note, the guest's last shot)
   pending(p, now); if(now >= QUIET.bodyAt){ QUIET.bodyAt = now + Q.body.every; bodies(now); }
   let can = null; if(afoot(p) && now >= QUIET.knifeAt){ const e = knifeTarget(p); if(e && silent(e, p) && clearTo(p, e)) can = e; } QUIET.can = can; knifeUi(!!can); }
 // a new battle, the menu (game/flow.js)
