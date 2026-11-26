@@ -90,6 +90,26 @@ grp('round-robin: never the same variation twice running');
   ok(good && cover, '20 000 draws each for 1, 2, 3, 4 and 7 variations: in range, every one used, never a repeat');
   ok(Object.values(A.guns).every(F => (F.var || A.vars).length >= 2 && (F.var || A.vars).length <= 4 && (F.var || A.vars).every(v => v.length === 3 && v[0] > 0.9 && v[0] < 1.1 && v[1] >= 0 && v[1] < 0.02)) && A.variants >= 2, 'every gun family has 2–4 variations [rate, start offset, low-pass]; every rendered one-shot ' + A.variants + ' takes'); }
 
+grp('the space: what kind of place, the slap-back, the impulse responses');
+{ const C = A.space, K = (roof, walls, high) => M.afxSpaceKind({ roof, walls, high }, C);
+  ok(K(true, 8, 8) === 'roof' && K(false, C.wallN, 8) === 'walls' && K(false, C.wallN - 1, C.valley.n) === 'valley' && K(false, C.wallN - 1, C.valley.n - 1) === 'open' && K(false, 0, 0) === 'open', 'a roof first, then walls round him, then a valley, else the open');
+  const SL = C.slap, out = { n:0, t:[0, 0], g:[0, 0], lp:[0, 0] }, I = Infinity; let n = M.afxSlap([I, 12, I, 6, I, 20, I, 1], 8, SL, U, CS, out);
+  ok(n === 2 && Math.abs(out.t[0] - 2 * 6 * U / CS) < 1e-12 && Math.abs(out.t[1] - 2 * 12 * U / CS) < 1e-12 && out.g[0] > out.g[1] && out.lp[0] > out.lp[1] && out.g[0] <= SL.g[0], 'the two nearest walls past `min` answer: there and back at the speed of sound, the farther one quieter and duller');
+  say(true, `a wall 6 units off slaps back after ${(out.t[0] * 1000).toFixed(0)} ms, one 12 off after ${(out.t[1] * 1000).toFixed(0)} ms (never over ${SL.t[1] * 1000} ms)`);
+  ok(M.afxSlap([I, I, I, I, I, I, I, 2], 8, SL, U, CS, out) === 0 && M.afxSlap([9, 9 + SL.apart / 2, I, I, I, I, I, I], 8, SL, U, CS, out) === 1 && M.afxSlap([SL.R + 1, I, I, I, I, I, I, I], 8, SL, U, CS, out) === 0 && M.afxSlap([SL.R - 0.5, I, I, I, I, I, I, I], 8, SL, U, CS, out) === 1 && out.t[0] <= SL.t[1], 'no wall in range: no echo; two walls at one distance: one echo; the delay stays inside its bounds');
+  const sr = 44100, late = {}; let good = true; for(const [k, S] of Object.entries(C.kinds)){ const ir = M.afxIR(sr, S, M.afxRng(11)), L = ir[0], Rr = ir[1], pre = Math.floor(S.pre * sr) - 1; let silent = true, same = true; for(let i = 0; i < pre; i++) if(L[i] !== 0 || Rr[i] !== 0) silent = false; for(let i = 0; i < L.length; i++) if(L[i] !== Rr[i]){ same = false; break; }
+    late[k] = energy(L, 0.5, 1) / energy(L, 0, 1); if(!(L.length === Math.round(S.len * sr) && Rr.length === L.length && fin(L) && fin(Rr) && Math.max(peak(L), peak(Rr)) <= 0.9 + 1e-6 && Math.max(peak(L), peak(Rr)) > 0.89 && silent && !same && energy(L, 0.75, 1) < energy(L, 0, 0.25) * 0.02 && Math.abs(L[L.length - 1]) < 1e-3 && S.rt <= S.len && S.send > 0 && S.send <= 1.5)) good = false; }
+  say(good && Object.keys(C.kinds).join() === 'open,walls,roof,valley', `four spaces, each its own stereo response: silent until its pre-delay, peak 0.9, decaying to nothing (lengths ${Object.values(C.kinds).map(S => S.len).join(' / ')} s)`); report.spaces = Object.keys(C.kinds).length;
+  ok(C.kinds.valley.rt > C.kinds.open.rt && C.kinds.roof.rt > C.kinds.walls.rt && C.kinds.walls.pre < C.kinds.open.pre && C.kinds.valley.echo.length >= 3 && C.kinds.walls.early.length > C.kinds.open.early.length, 'a valley rings longest and answers late; walls answer at once, short and dense; a roof holds the sound'); }
+
+grp('the ground and the gait');
+{ const Sf = A.surface, C = A.step, f = (water, bridge, paved) => M.afxSurface('MEADOW', { water, bridge, paved }, Sf);
+  ok(f(true, '', true) === 'water' && f(false, 'wood', true) === 'wood' && f(false, '', true) === Sf.paved && f(false, '', false) === 'grass' && M.afxSurface('NOWHERE', { water:false, bridge:'', paved:false }, Sf) === Sf.biome._ && M.afxSurface('ARCTIC', { water:false, bridge:'', paved:false }, Sf) === 'snow' && M.afxSurface('DESERT', { water:false, bridge:'', paved:false }, Sf) === 'sand' && M.afxSurface('FOUNDRY', { water:false, bridge:'', paved:false }, Sf) === 'metal', 'the shallows before a bridge before a paved yard before the land\'s own ground: sand, snow, steel, grass …');
+  ok(new Set(Object.values(Sf.biome)).size >= 6 && [...Object.values(Sf.biome), Sf.paved, Sf.bridge, 'water'].every(s => C.surf[s] > 0), 'six grounds at least across the lands, each with its level');
+  ok(M.afxGait('prone', 9, C) === 'crawl' && M.afxGait('crouch', 9, C) === 'crouch' && M.afxGait('stand', C.sprintV, C) === 'sprint' && M.afxGait('stand', C.runV, C) === 'run' && M.afxGait('stand', C.runV - 0.1, C) === 'walk', 'crawl, crouch, walk, run, sprint by stance and speed');
+  ok(C.gait.sprint.g > C.gait.run.g && C.gait.run.g > C.gait.walk.g && C.gait.walk.g > C.gait.crouch.g && C.gait.crouch.g > C.gait.crawl.g && C.gait.sprint.rate < C.gait.run.rate, 'heavier (and lower) at a sprint, quiet at a crouch, quietest at a crawl');
+  ok(M.afxStepCad(0, false, C) === 0 && M.afxStepCad(C.minV, false, C) === C.cad[0] + C.minV * C.cad[1] && mono(v => M.afxStepCad(v, false, C), C.minV, 12, 200, 1) && M.afxStepCad(99, false, C) === C.cad[2] && M.afxStepCad(1, true, C) === C.crawlCad, 'the cadence: none standing still, quicker with speed up to its top; a crawl drags on its own slow beat'); }
+
 grp('the synthesised one-shots: finite, levelled, repeatable');
 { const sr = 44100, R = s => M.afxRng(s), all = { crack:r => M.afxCrackBuf(sr, r), click:r => M.afxClickBuf(sr, 1100, r), tail:r => M.afxTailBuf(sr, 1.1, 700, r), kit:r => M.afxKitBuf(sr, r), grunt:r => M.afxGruntBuf(sr, r) };
   for(const s of ['sand', 'grass', 'dirt', 'rock', 'snow', 'water', 'metal', 'wood']){ all['step ' + s] = r => M.afxStepBuf(sr, s, r, false); all['hoof ' + s] = r => M.afxStepBuf(sr, s, r, true); all['brass ' + s] = r => M.afxBrassBuf(sr, s, r); }
@@ -129,8 +149,10 @@ class FakeCtx { constructor(){ this.currentTime = 0; this.sampleRate = 44100; th
   advance(dt){ this.currentTime += dt; for(let i = this.srcs.length - 1; i >= 0; i--){ const n = this.srcs[i]; if(this.endOf(n) <= this.currentTime){ this.srcs.splice(i, 1); n.done = true; if(n.onended) n.onended(); } } }
   get playing(){ return this.srcs.filter(n => n.at <= this.currentTime).length; } }
 const reach = n => { const seen = new Set(), st = [n]; while(st.length){ const x = st.pop(); if(seen.has(x)) continue; seen.add(x); for(const i of x.ins) st.push(i); } return seen.size - 1; };   // every node still wired into n
-const up = (n, kind) => { const seen = new Set(), st = [n], out = []; while(st.length){ const x = st.pop(); if(seen.has(x)) continue; seen.add(x); if(x.kind === kind) out.push(x); for(const i of x.ins) st.push(i); } return out; };
+const STOP = new Set(), BASE = { n:-1 };   // STOP: the slap-back lines' outputs (a search for a voice's nodes does not wander up them) · BASE: the fixed graph's size under the master
+const up = (n, kind) => { const seen = new Set(), st = [n], out = []; while(st.length){ const x = st.pop(); if(seen.has(x) || STOP.has(x)) continue; seen.add(x); if(x.kind === kind) out.push(x); for(const i of x.ins) st.push(i); } return out; };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+let clean = () => false;
 
 register('data:text/javascript,' + encodeURIComponent(`export async function resolve(s, c, next){ if(/(^|\\/)hub\\.js$/.test(s) && c.parentURL && /\\/src\\/audio\\/afx[\\w-]*\\.js$/.test(c.parentURL)) return { url:${JSON.stringify(STUB)}, shortCircuit:true }; return next(s, c); }`));
 const H = await import(STUB), T = H.T, AFX = H.AFX;
@@ -143,7 +165,7 @@ grp('the layer without a context, with a suspended one, switched off');
   ctx.state = 'running'; H.PROFILE.realAudio = false; T.sfx.length = 0; ok(H.afxOn() === false && H.afxBus() === null && H.afxSend() === null, 'switched off in the settings: afxOn() is false, the old buses are used'); H.gunSound('shoot_ak', H.S.player.pos, 'p'); ok(T.sfx[0] === 'shoot_ak' && ctx.srcs.length === 0 && !AFX.ready, '… and a shot is sfx() alone');
   H.PROFILE.realAudio = true; H.__muted(true); ok(H.afxGun('rifleShot', { x:5, z:5 }, 'e') === false, 'muted: not played'); H.__muted(false); }
 
-const ctx = H.actx, P0 = H.S.player, bus = () => AFX.bus, V = A.voices;
+const ctx = H.actx, P0 = H.S.player, V = A.voices; clean = () => reach(H.master) === BASE.n && ctx.srcs.length === 0 && AFX.pool.v.every(s => !s.on);   // nothing but the fixed graph is wired, nothing scheduled, every slot free
 const settle = async (sec = 6) => { for(let i = 0; i < sec * 20; i++) ctx.advance(0.05); await sleep(170); };   // every sound ends; a stolen voice's nodes come off 150 ms later
 grp('a shot builds its layers and leaves nothing behind');
 { ok(H.afxGun('shoot_ak', P0.pos, 'p') === true && AFX.ready && H.afxBus() === AFX.bus, 'the player\'s AK is played by the layer (built on first use)');
@@ -152,10 +174,51 @@ grp('a shot builds its layers and leaves nothing behind');
   ok(up(AFX.send, 'source').length === 3 && [...AFX.bus.outs][0] === H.master && [...AFX.send.outs][0] === H.verbSend, 'the voice feeds the world bus and the reverb send');
   ok(up(AFX.bus, 'panner').length === 0 && up(AFX.bus, 'biquad').length === 2 && AFX.pool.v.filter(s => s.on).length === 2, 'his own gun: centred; two voices — the shot (its low-pass the variation\'s) and, low in the queue, its tail');
   await settle(); ok(reach(AFX.bus) === 0 && reach(AFX.send) === 0 && ctx.srcs.length === 0 && AFX.pool.v.every(s => !s.on), 'when it has ended not one node is left wired into the bus or the send, and its slot is free');
-  const rates = []; for(let i = 0; i < 40; i++){ const n0 = ctx.count; H.afxGun('shoot_ak', P0.pos, 'p'); rates.push(...up(AFX.bus, 'source').filter(s => s.id > n0 && s.buffer.duration === 0.5)); ctx.advance(0.13); }
+}
+
+grp('the space he stands in: one ray a tick, four convolvers, the slap-back');
+{ const C = A.space, AS = H.AFXS; C.buildGap = 1; let now = 20, most = 0; T.hit = () => null; T.rays = 0;
+  for(let i = 0; i < 200; i++){ now += 0.016; const b = T.rays; H.updateAfx(0.016, now); most = Math.max(most, T.rays - b); } for(let k = 0; k < 300 && !AS.live; k++) await sleep(10);   // (the four responses are rendered in slices: wait for the last)
+  ok(most === 1 && T.rays >= C.rays * 5 && T.rays <= C.rays * 7.5, `never more than one ray in a frame — a ring of ${C.rays} every ${C.every} s`); report.spaceRaysAFrame = most;
+  ok(AS.built && AS.live && Object.keys(AS.conv).length === 4 && AFX.send.outs.size === 4 && !AFX.send.outs.has(H.verbSend) && up(H.master, 'convolver').length === 4 && ctx.made.convolver === 4, 'the four spaces\' convolvers are built once and the layer\'s send moved onto them (off the old outdoor reverb)');
+  ok(AS.kind === 'open' && AS.in.open.gain.target === C.kinds.open.send && AS.in.walls.gain.target === 0 && AS.lines.length === C.slap.max && AS.lines.every(L => L.g.gain.value === 0 && !L.on), 'in the open: the open space\'s send alone is up, no slap-back');
+  T.hit = (ax, az, bx, bz) => bx > ax + 1 || bz > az + 1 ? 6 / C.R : bx < ax - 1 && Math.abs(bz - az) < 1 ? 13 / C.R : null;   // walls 6 units off on three sides, one 13 off on a fourth
+  for(let i = 0; i < 80; i++){ now += 0.016; H.updateAfx(0.016, now); }
+  say(AS.kind === 'walls' && AS.walls >= C.wallN && AS.in.walls.gain.target === C.kinds.walls.send && AS.in.open.gain.target === 0, `walls on ${AS.walls} of ${C.rays} rays: the space is 'walls', cross-faded over ${C.fade} s`);
+  ok(AS.lines[0].on && Math.abs(AS.lines[0].d.delayTime.target - 2 * 6 * U / CS) < 1e-9 && AS.lines[1].on && Math.abs(AS.lines[1].d.delayTime.target - 2 * 13 * U / CS) < 1e-9 && AS.lines[0].g.gain.target > AS.lines[1].g.gain.target && AFX.slap, 'the two slap-back lines are timed off the walls at 6 and 13 units');
+  for(const L of AS.lines) STOP.add(L.g); const ev = AS.lines[0].d.delayTime.ev.length; for(let i = 0; i < 80; i++){ now += 0.016; H.updateAfx(0.016, now); } ok(AS.lines[0].d.delayTime.ev.length === ev, 'a wall that has not moved: the line is not retimed (no pitch bend)');
+  H.afxGun('shoot_ak', P0.pos, 'p'); ok([...AFX.slap.ins].length === 1 && [...AFX.slap.ins][0].gain.value === A.cls.gun.slap, 'his shot is sent to the slap-back'); await settle(); H.afxGun('shoot_m4s', P0.pos, 'p'); ok(AFX.slap.ins.size === 0, 'the suppressed M4 is not'); await settle();
+  T.roof = true; for(let i = 0; i < 40; i++){ now += 0.016; H.updateAfx(0.016, now); } ok(AS.kind === 'roof' && AS.in.roof.gain.target === C.kinds.roof.send, 'underground: the roof\'s space'); T.roof = false;
+  T.hit = () => null; T.high = (x, z) => Math.hypot(x, z) > 20 ? 9 : 0; for(let i = 0; i < 80; i++){ now += 0.016; H.updateAfx(0.016, now); } ok(AS.kind === 'valley' && AS.high >= C.valley.n && !AS.lines[0].on && AS.lines[0].g.gain.target === 0, 'high ground all round and no wall: a valley, the slap-back lines silent');
+  T.high = () => 0; for(let i = 0; i < 80; i++){ now += 0.016; H.updateAfx(0.016, now); } ok(AS.kind === 'open', 'and back out in the open (a change of place is known within two rings: ' + C.every * 2 + ' s)');
+  BASE.n = reach(H.master); ok(clean(), 'idle: only the fixed graph is wired (' + BASE.n + ' nodes under the master)'); report.fixedNodes = BASE.n; }
+
+grp('footsteps: the ground, the gait, the men near him');
+{ const C = A.step, MV = H.AFXM, CV = H.CV, lastGain = () => AFX.pool.v.find(s => s.on && s.key.startsWith('step:')).n.out.gain.value; let now = 400; H.updateAfx(0.016, now);
+  H.afxFoot(P0, 0.2, 0.1, 4); ok(AFX.bufs['step:sand'] && up(AFX.bus, 'source').length >= 1 && AFX.pool.v.some(s => s.on && s.cls === 'foley') && MV.steps === 1, 'his foot comes down on the desert: a step on sand, a foley voice'); const gRun = lastGain(); await settle(1);
+  H.afxFoot({ pos:{ x:0, z:0 } }, 0.2, 0.1, 4); ok(MV.steps === 1 && ctx.srcs.length === 0, 'somebody else\'s legs: not his step');
+  CV.stance = 'crouch'; H.updateAfx(0.016, now += 1); H.afxFoot(P0, 0.2, 0.1, 1); const gCr = lastGain(); await settle(1); CV.stance = 'stand'; H.updateAfx(0.016, now += 1); H.afxFoot(P0, 0.2, 0.1, 6); const srcs = up(AFX.bus, 'source'), gSp = lastGain();
+  say(gCr < gRun * 0.6 && gSp > gRun * 0.95 && AFX.bufs.kit && srcs.length === 2, `crouched his step is ${(gCr / gRun * 100).toFixed(0)} % of a run's; at a sprint it is heavier and his kit rattles`); await settle(1);
+  let kinds = 0; for(const [b, w, pv, want] of [['ARCTIC', 1, false, 'snow'], ['MEADOW', 1, false, 'grass'], ['CITADEL', 1, false, 'rock'], ['FOUNDRY', 1, false, 'metal'], ['RUINS', 1, false, 'dirt'], ['MEADOW', 0.5, false, 'water'], ['MEADOW', 1, true, 'rock']]){ H.BIOME.name = b; T.wade = () => w; T.paved = () => pv; H.updateAfx(0.016, now += 1); H.afxFoot(P0, 0.2, 0.1, 4); if(AFX.bufs['step:' + want] && up(AFX.bus, 'source').length >= 1) kinds++; await settle(1); }
+  ok(kinds === 7, 'snow, grass, rock, steel, dirt, the shallows, a paved yard: each land and each ground its own step'); H.BIOME.name = 'DESERT'; T.wade = () => 1; T.paved = () => false;
+  CV.mounted = true; const before = MV.steps; H.afxFoot(P0, 0, 0, 4); ok(MV.steps === before, 'in the saddle: no footsteps of his'); CV.mounted = false;
+  CV.stance = 'prone'; P0.vel = { x:0.7, z:0 }; let st = MV.steps; for(let i = 0; i < 250; i++){ now += 0.016; H.updateAfx(0.016, now); ctx.advance(0.016); } const crawl = MV.steps - st; ok(crawl >= 3 && crawl <= 5, `crawling 4 s: ${crawl} drags (no foot-plant comes when he is flat: by cadence)`); CV.stance = 'stand';
+  st = MV.steps; P0.vel = { x:4, z:0 }; MV.footAt = -9; for(let i = 0; i < 125; i++){ now += 0.016; H.updateAfx(0.016, now); ctx.advance(0.016); } const fb = MV.steps - st; ok(fb >= 4 && fb <= 7, `no foot-plant for a while (no rig yet): 2 s of running by cadence, ${fb} steps`);
+  st = MV.steps; for(let i = 0; i < 125; i++){ now += 0.016; H.afxFoot(P0, 0, 0, 0); MV.steps--; H.updateAfx(0.016, now); ctx.advance(0.016); } ok(MV.steps === st, 'while his feet report their own steps the cadence stays out of it'); P0.vel = { x:0, z:0 }; await settle(1);
+  const near = { pos:{ x:6, z:0 } }, far = { pos:{ x:40, z:0 } }, foe = { pos:{ x:0, z:8 } }; H.FT.push(near, far); T.men = [foe]; let ot = MV.others, most = 0;
+  for(let i = 0; i < 125; i++){ now += 0.016; near.pos.x += 4 * 0.016; far.pos.x += 4 * 0.016; foe.pos.z += 1.2 * 0.016; H.updateAfx(0.016, now); ctx.advance(0.016); most = Math.max(most, AFX.pool.v.filter(s => s.on && s.cls === 'foley').length); }
+  say(MV.others - ot >= 7 && MV.others - ot <= 11 && far._fx === undefined && most <= C.max, `a mate running and an enemy walking within ${C.R} units, 2 s: ${MV.others - ot} of their steps heard (the man 40 units off: none); never more than ${most} foley voices`);
+  const crowd = []; for(let k = 0; k < 14; k++) crowd.push({ pos:{ x:3 + k * 0.5, z:(k % 5) - 2 } }); T.men = crowd; most = 0; for(let i = 0; i < 125; i++){ now += 0.016; for(const m of crowd) m.pos.x += 5 * 0.016; H.updateAfx(0.016, now); ctx.advance(0.016); most = Math.max(most, AFX.pool.v.filter(s => s.on && s.cls === 'foley').length); }
+  say(most <= C.max + 1, `fourteen men running past: at most ${most} of their steps sounding at once (cap ${C.max})`); H.FT.length = 0; T.men = []; await settle(1);
+  H.updateAfx(0.016, now += 1); H.afxLand(P0.pos); ok(AFX.bufs.grunt && up(AFX.bus, 'source').length >= 2, 'landing a jump: the boots and the breath out of him'); await settle(1);
+  H.updateAfx(0.016, now += 1); ok(H.afxHoof(2, 1, 9) === true && AFX.bufs['hoof:sand'] && H.afxHoof(2, 1, 9) === true && up(AFX.bus, 'source').length === 1, 'a hoof on the sand is the layer\'s (a second one inside its gap is not played)');
+  H.PROFILE.realAudio = false; ok(H.afxHoof(2, 1, 9) === false, 'with the layer off the old hoof beat plays'); H.PROFILE.realAudio = true; await settle(); ok(clean(), 'all ended: only the fixed graph is wired'); }
+
+grp('automatic fire');
+{ const rates = []; for(let i = 0; i < 40; i++){ const n0 = ctx.count; H.afxGun('shoot_ak', P0.pos, 'p'); rates.push(...up(AFX.bus, 'source').filter(s => s.id > n0 && s.buffer.duration === 0.5)); ctx.advance(0.13); }
   const vr = A.guns.shoot_ak.var, seq = rates.map(s => vr.findIndex(v => Math.abs(v[1] - s.off) < 1e-9)); let rep = 0; for(let i = 1; i < seq.length; i++) if(seq[i] === seq[i - 1]) rep++;   // (each variation has its own start offset)
   ok(seq.length === 40 && rep === 0 && new Set(seq).size === vr.length, '40 rounds of automatic fire: the variation changes every round, all ' + vr.length + ' are used');
-  const tails = rates.length ? up(AFX.bus, 'source').length : 0; await settle(); ok(reach(AFX.bus) === 0 && ctx.srcs.length === 0, '… and nothing is left of them');
+  await settle(); ok(clean(), '… and nothing is left of them');
   let tl = 0; for(let i = 0; i < 30; i++){ const n0 = ctx.count; H.afxGun('shoot_minigun', P0.pos, 'p'); tl += up(AFX.bus, 'source').filter(s => s.id > n0 && s.buffer.duration > 0.6).length; ctx.advance(0.045); } const alive = AFX.pool.v.filter(s => s.on).length;
   say(tl >= 6 && tl <= Math.ceil(30 * 0.045 / A.tailGap) + 1 && alive <= V.same * 2, `the rotary gun, 30 rounds in 1.35 s: ${tl} tails (one every ${A.tailGap} s, not one a round), ${alive} voices alive at the end of the burst`); await settle(); }
 
@@ -167,10 +230,10 @@ grp('near and far; ours and theirs; suppressed');
   H.afxGun('rifleShot', far, 'e'); const b = up(AFX.bus, 'source'), lpF = up(AFX.bus, 'biquad').find(f => f.type === 'lowpass').frequency.value, gF = up(AFX.bus, 'gain').find(g => [...g.outs].some(o => o.kind === 'biquad' && o.type === 'peaking')).gain.value, tF = Math.min(...b.map(s => s.at)) - ctx.currentTime;
   say(lpF < lpN * 0.2 && gF < gN * 0.25 && Math.abs(tF - K.cap) < 1e-9 && tN < 0.03, `the same rifle at 6 and at 120 units: ${lpN.toFixed(0)} → ${lpF.toFixed(0)} Hz, level × ${(gF / gN).toFixed(2)}, ${(tN * 1000).toFixed(0)} → ${(tF * 1000).toFixed(0)} ms late`);
   const tailG = s => [...s.outs][0].gain.value, tl = b.find(s => s.buffer.duration > 0.6); ok(tl && tailG(tl) > A.guns.rifleShot.tail.g * A.who.e.tailK * 0.95, 'far off its tail is at full weight'); await settle();
-  H.afxGun('rifleShot', near, 'ally'); const al = up(AFX.bus, 'source'), bodyRate = s => s.find(x => x.buffer.duration === 0.5).playbackRate.value; const rAlly = bodyRate(al); await settle(); H.afxGun('rifleShot', near, 'e'); const rFoe = bodyRate(up(AFX.bus, 'source')); await settle();
+  H.afxGun('rifleShot', near, 'ally'); const al = up(AFX.bus, 'source'), bodyRate = s => { const b = s.find(x => x.buffer.duration === 0.5); return b.playbackRate.value / A.vars.find(v => Math.abs(v[1] - b.off) < 1e-9)[0]; /* the variation's own rate taken out */ }; const rAlly = bodyRate(al); await settle(); H.afxGun('rifleShot', near, 'e'); const rFoe = bodyRate(up(AFX.bus, 'source')); await settle();
   ok(rFoe < rAlly * 0.93 && al.length === 3, 'the same rifle in an enemy\'s hands plays lower than in a mate\'s (and a mate\'s has its click)');
   H.afxGun('shoot_m4s', P0.pos, 'p'); const sp = up(AFX.bus, 'source'), sendG = up(AFX.send, 'gain').find(g => g.outs.has(AFX.send)).gain.value; ok(sp.length === 2 && sendG < A.cls.gun.tail[0] * 0.3, 'the suppressed M4: body and bolt, no tail, hardly any reverb'); await settle();
-  ok(reach(AFX.bus) === 0 && reach(AFX.send) === 0, 'all of it gone again'); }
+  ok(clean(), 'all of it gone again'); }
 
 grp('a wall between');
 { T.clear = (x, z) => !(x > 30); T.lines = 0; let now = 100, maxLines = 0; const src = { x:50, z:0 }; H.updateAfx(0.016, now);
@@ -185,11 +248,11 @@ grp('a wall between');
 grp('the cap under a volley; what must be heard gets in');
 { let now = 200; H.updateAfx(0.016, now); for(let k = 0; k < 80; k++) H.afxGun('rifleShot', { x:10 + (k % 10) * 7, z:10 + Math.floor(k / 10) * 7 }, 'e');
   const on = AFX.pool.v.filter(s => s.on).length, fam = AFX.pool.v.filter(s => s.on && s.key === 'rifleShot').length; ok(fam === V.family && on <= V.family + 1, `80 enemy rifles in one instant: ${fam} voices (the family's cap), the pool keeps room for the rest`);
-  for(let k = 0; k < 40; k++){ H.afxImpact(['stone', 'dirt', 'wood', 'metal'][k % 4], 4 + k * 4, 3, 1); ctx.advance(0.008); } ok(AFX.pool.v.filter(s => s.on).length === V.max, 'and a burst of strikes on top (each material at most once every ' + A.impact.gap * 1000 + ' ms): the pool is full');
+  for(let k = 0; k < 48; k++){ H.afxImpact(['stone', 'dirt', 'wood', 'metal', 'sand', 'water'][k % 6], 4 + (k % 12) * 3, 3, 1); ctx.advance(0.006); } ok(AFX.pool.v.filter(s => s.on).length === V.max, 'and a burst of strikes on top (each material at most once every ' + A.impact.gap * 1000 + ' ms): the pool is full');
   const before = AFX.pool.stolen; ok(H.afxGun('shoot_ak', P0.pos, 'p') === true && AFX.pool.stolen > before && AFX.pool.v.some(s => s.on && s.key === 'own:shoot_ak'), 'his own gun is still heard: it steals an enemy\'s voice');
   H.afxBrass(1, 1); ok(!AFX.pool.v.some(s => s.on && s.cls === 'foley'), 'a falling case is not: dropped');
   ok(H.afxIncoming({ x:1.5, z:0.5, vx:0, vz:70, ox:1.5, oz:-60 }, P0, false) === true && AFX.pool.v.some(s => s.on && s.key === 'crack') && AFX.pool.v.some(s => s.on && s.key === 'thump'), 'a round cracking past and its thump both get in');
-  ok(AFX.pool.v.filter(s => s.on).length <= V.max, 'never more than the cap'); await settle(); ok(reach(AFX.bus) === 0 && reach(AFX.hi) === 0 && reach(AFX.send) === 0 && ctx.srcs.length === 0, 'after the volley (stolen voices and all) nothing is left connected'); }
+  ok(AFX.pool.v.filter(s => s.on).length <= V.max, 'never more than the cap'); await settle(); ok(clean(), 'after the volley (stolen voices and all) nothing is left connected'); }
 
 grp('incoming, blasts, impacts, brass');
 { const C = A.crack, t = ctx.currentTime; H.afxIncoming({ x:1.2, z:0.4, vx:0, vz:70, ox:1.2, oz:-80 }, P0, false); const cr = up(AFX.hi, 'source'), th = up(AFX.bus, 'source');
@@ -203,7 +266,7 @@ grp('incoming, blasts, impacts, brass');
   H.updateAfx(0.016, 300); H.afxBrass(1, 1); const b1 = Object.keys(AFX.bufs).filter(k => k.startsWith('brass:')); H.afxBrass(1, 1); ok(b1.length === 1 && b1[0] === 'brass:sand' && up(AFX.bus, 'source').length === 1, 'a case lands on the desert\'s sand: its soft thup — and a second one inside `gap` is not played');
   T.wade = () => 0.4; H.updateAfx(0.016, 301); H.afxBrass(1, 1); T.paved = () => true; T.wade = () => 1; H.updateAfx(0.016, 302); H.afxBrass(1, 1); ok(AFX.bufs['brass:water'] && AFX.bufs['brass:rock'], 'in the shallows it plips, on a paved yard it rings'); T.paved = () => false;
   ok(H.afxSfx('reload', null) === true && H.afxSfx('click', null) === false && H.afxSfx('magIn', null) === false, 'the reload\'s clack goes through the layer; the interface\'s clicks and the reload\'s synthesised ticks stay in synth.js (on the layer\'s bus: afxBus)');
-  await settle(); ok(reach(AFX.bus) === 0 && reach(AFX.hi) === 0 && reach(AFX.send) === 0 && ctx.srcs.length === 0 && AFX.pool.v.every(s => !s.on), 'all ended: nothing connected, every slot free'); }
+  await settle(); ok(clean(), 'all ended: nothing connected, every slot free'); }
 
 report.nodesMade = ctx.count; report.pass = pass; report.fail = fail;
 console.log((fail ? '✗ FAIL' : '✓ PASS') + ` — audio-test: ${pass} checks passed, ${fail} failed` + ` · ${ctx.count} fake nodes built and released`);

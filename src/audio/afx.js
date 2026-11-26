@@ -3,7 +3,7 @@
 //   The numbers are config AUDIOFX; the maths (and its tests, tools/audio-test.mjs) is audio/afx-math.js. Nothing is built before the first gesture
 //   (audio() makes the context), nothing throws without one, every node is disconnected when its sound ends.
 import { AUDIOFX } from '../../config.js';
-import { BIOME, LOUD, MOBILE, PROFILE, RIVER, S, SND, actx, afxBrassBuf, afxClamp, afxClickBuf, afxCrackBuf, afxCrackGain, afxCrackGap, afxDelay, afxDensity, afxGain, afxImpactBuf, afxLowpass, afxMiss, afxNear, afxOcclGain, afxOcclGet, afxOcclLp, afxOcclMake, afxOcclTick, afxPoolAsk, afxPoolFree, afxPoolMake, afxPoolTake, afxRR, afxRng, afxSurface, afxTail, afxTailBuf, audio, bankGet, camera, duck, heightAt, lineClear, master, muted, onPaved, sampleGet, sfx, verbSend, wadeAt } from '../hub.js';
+import { BIOME, LOUD, MOBILE, PROFILE, RIVER, S, SND, actx, afxBrassBuf, afxClamp, afxClickBuf, afxCrackBuf, afxCrackGain, afxCrackGap, afxDelay, afxDensity, afxGain, afxImpactBuf, afxLowpass, afxMiss, afxNear, afxOcclGain, afxOcclGet, afxOcclLp, afxOcclMake, afxOcclTick, afxPoolAsk, afxPoolFree, afxPoolMake, afxPoolTake, afxRR, afxRng, afxSurface, afxTail, afxTailBuf, audio, bankGet, camera, duck, heightAt, lineClear, master, muted, onPaved, sampleGet, sfx, updateAfxMove, updateAfxSpace, verbSend, wadeAt } from '../hub.js';
 
 const A = AUDIOFX, OLD = typeof location !== 'undefined' && /[?&#]oldaudio\b/.test(location.search + location.hash);
 // what the layer has built and done (dev/probes read it): bus = the world (dips under a close blast) · hi = what must be heard (never ducked) · send = to the space's reverb
@@ -80,7 +80,7 @@ export function afxGun(name, pos, who, vol){ const F = A.guns[name]; if(!F || !r
   const t0 = _v.t, M = F.mech, T = F.tail; layer(s, body, 1, rate, v[1], t0); LOUD[D.big ? 'big' : 'shot'] += s.lvl;
   if(MOBILE) return true;                                                                                            // (a phone plays the body alone)
   if(M && W.mech > 0 && nw > 0.05) layer(s, afxBuf(afxKey('click', M.f), mkClick, M.f), M.g * W.mech * nw / Math.max(0.05, lvl), 0.96 + Math.random() * 0.08, 0, t0 + M.at);
-  if(T && now - st.tailAt >= A.tailGap){ st.tailAt = now; const o2 = opt(); o2.lpK = W.lpK; o2.wetK = W.tailK * A.tailWet; o2.at = t0 - now + 0.015;      // the tail is its own voice, low in the queue: one per family every tailGap s — a burst rolls away once, not once a round
+  if(T && now - st.tailAt >= A.tailGap){ st.tailAt = now; const o2 = opt(); o2.lpK = W.lpK; o2.wetK = W.tailK * A.tailWet; o2.slapK = 0; o2.at = t0 - now + 0.015;      // the tail is its own voice, low in the queue: one per family every tailGap s — a burst rolls away once, not once a round
     const s2 = open(src, cls, P.far, afxKey('tail', name), lvl * T.g * W.tailK * (A.tailNear + (1 - A.tailNear) * (1 - nw)), o2); if(s2) layer(s2, tailBuf(T.k), 1, 0.9 + Math.random() * 0.2, 0, _v.t); }
   return true; }
 // the call for a shot whose owner is known (combat/soldier-fire.js, actors/infantry.js, actors/fireteam.js); with the layer off it is sfx(name, pos, vol)
@@ -93,6 +93,8 @@ function gap(key, D){ const t = actx.currentTime; if(t - (_last[key] ?? -9) < (D
 export function afxOne(key, pos, vol, cls, prio, o){ if(!ready()) return false; const D = SND[key]; if(!D) return false; const b = sampleGet(D.sample || key) || (D.sampleOnly ? null : bankGet(key)); if(!b) return false; if(gap(key, D)) return true;
   const s = open(pos, cls, prio, key, D.g * (vol == null ? 1 : afxClamp(vol, 0.15, 1.6)) * (0.9 + Math.random() * 0.2), o || opt()); if(!s) return true;
   layer(s, b, 1, (D.rate || 1) * (0.95 + Math.random() * 0.1), 0, _v.t); LOUD[D.big ? 'big' : 'shot'] += s.lvl; return true; }
+// a rendered one-shot as a voice of its own (audio/afx-move.js: a step, the kit, a grunt); false = the layer cannot play now
+export function afxPlay(kind, make, p1, p2, pos, cls, prio, lvl, rate, at){ if(!ready()) return false; const o = opt(); o.slapK = 0; if(at > 0) o.at = at; const s = open(pos, cls, prio, kind, lvl, o); if(s) layer(s, afxBuf(kind, make, p1, p2), 1, rate, 0, _v.t); return true; }
 // a BLAST: the recording, a long tail the farther it is; near, it goes out on the bus nothing ducks and the small arms dip under it (as Z151 did)
 export function afxBlast(M, pos, vol){ if(!ready()) return false; const D = SND[M.key], B = A.blast; if(!D) return false; const b = sampleGet(D.sample || M.key) || bankGet(M.key); if(!b) return false; if(gap(M.key, D)) return true;
   const p = S.player, d = pos && p ? Math.hypot(pos.x - p.pos.x, pos.z - p.pos.z) : 0, near = d < B.nearD, o = opt(); o.hi = near;
@@ -138,6 +140,7 @@ export function afxSfx(name, pos, vol){ if(_raw) return false; const p = S.playe
 function occCheck(x, z){ return lineClear(AFX.lx, AFX.ly, AFX.lz, x, heightAt(x, z) + A.occl.src, z); }
 export function updateAfx(dt, now){ AFX.now = now; if(!AFX.ready || !actx || actx.state !== 'running' || !afxOn()) return; const p = S.player, O = A.occl; if(!p) return;
   AFX.lx = p.pos.x; AFX.lz = p.pos.z; AFX.ly = heightAt(p.pos.x, p.pos.z) + (p.lift || 0) + O.eye;
+  updateAfxSpace(dt, now); updateAfxMove(dt, now);                                                                   // AUDIO 2 the space he stands in; the footsteps round him
   const V = AFX.pool.v, t = actx.currentTime;
   for(let i = 0; i < V.length; i++){ const s = V[i], N = s.n; if(!s.on || !N || !N.rec || !N.out) continue; const r = N.rec; r.want = now;   // (a sounding cell stays on the list)
     if(Math.abs(r.occ - N.occ) > O.step){ N.occ = r.occ; try{ N.out.gain.setTargetAtTime(N.g0 * afxOcclGain(r.occ, O) * N.up, t, O.glide); if(N.lpf) N.lpf.frequency.setTargetAtTime(afxOcclLp(N.lp0, r.occ, O), t, O.glide); }catch(e){} } }

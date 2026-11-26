@@ -18,7 +18,7 @@
 //   · behind cover: kneeling or crouched behind it at exactly the height that lays the rifle on its top.
 import * as THREE from 'three';
 import { CAV, GUNFEEL, SOLDIER_LEGS } from '../../config.js';
-import { CV, climbBody, climbPh, climbing, ik2, mountOwn, mountPose, soleAt } from '../hub.js';
+import { CV, afxFoot, climbBody, climbPh, climbing, ik2, mountOwn, mountPose, soleAt } from '../hub.js';
 const heightAt = soleAt;   // Z451 up on what he climbed his soles go down on its top (game/soldier-climb.js); on the ground it is the ground
 
 const V3 = () => new THREE.Vector3();
@@ -106,7 +106,7 @@ export function soldierLegs(R, G, dt, P, mounted){ const D = R.pup && R.pup.D; i
   for(const f of L.feet){ const w = f.sw; let phT = 0;
     if(w){ w.t = Math.min(1, w.t + dt / w.dur); const e = smooth(w.t); f.p.lerpVectors(w.from, w.to, e); if(w.cross) f.p.addScaledVector(F2, w.cross * A.crossArc * Math.sin(Math.PI * w.t)); f.yaw = w.y0 + wrapA(w.y1 - w.y0) * e; f.lift = Math.sin(Math.PI * w.t) * w.h;
       phT = w.dir > 0.3 ? (w.t < 0.35 ? 0.45 * (1 - w.t / 0.35) : w.t > 0.65 ? -0.28 * (w.t - 0.65) / 0.35 : 0) : w.dir < -0.3 ? (w.t < 0.35 ? -0.2 * (1 - w.t / 0.35) : w.t > 0.6 ? 0.38 * (w.t - 0.6) / 0.4 : 0) : 0;
-      if(w.t >= 1){ f.sw = null; f.lift = 0; } }
+      if(w.t >= 1){ f.sw = null; f.lift = 0; afxFoot(P, f.p.x, f.p.z, s); } }   // AUDIO 2 the foot is down: heard by the ground under it (audio/afx-move.js)
     else { f.lift = 0; if(moving && !back){ const behind = -((f.p.x - _g.x) * L.v.x + (f.p.z - _g.z) * L.v.z) / Math.max(0.1, s); phT = clamp((behind - 0.12) / 0.25, 0, 1) * 0.45; } }   // the trailing heel peels up
     f.ph += (phT - f.ph) * Math.min(1, dt * 16); f.y = heightAt(f.p.x, f.p.z);
     // GUN 4 THE FOOT LIES ON THE SLOPE: the ground's rise from under the heel to under the toes along the foot (read again only when the foot has moved)

@@ -81,16 +81,17 @@ export function afxDeafHold(k, C){ return C.hold[0] + (C.hold[1] - C.hold[0]) * 
 export function afxSpaceKind(Q, C){ if(Q.roof) return 'roof'; if(Q.walls >= C.wallN) return 'walls'; if(Q.high >= C.valley.n) return 'valley'; return 'open'; }
 // the slap-back of a shot off what stands near: the nearest one or two walls → delay there and back, quieter and duller with distance. out = { n, t:[], g:[], lp:[] }
 export function afxSlap(dist, n, C, unit, c, out){ let a = -1, b = -1;
-  for(let i = 0; i < n; i++){ const d = dist[i]; if(!(d >= C.min && d <= C.R)) continue; if(a < 0 || d < dist[a]){ b = a; a = i; } else if(b < 0 || d < dist[b]) b = i; }
-  if(b >= 0 && dist[b] - dist[a] < C.apart) b = -1;                                                                  // two walls at the same distance are one echo
+  for(let i = 0; i < n; i++){ const d = dist[i]; if(d >= C.min && d <= C.R && (a < 0 || d < dist[a])) a = i; }
+  if(a >= 0) for(let i = 0; i < n; i++){ const d = dist[i]; if(d >= dist[a] + C.apart && d <= C.R && (b < 0 || d < dist[b])) b = i; }   // the second: the nearest wall clearly farther (two walls at one distance are one echo)
   out.n = 0; for(const i of [a, b]){ if(i < 0 || out.n >= C.max) continue; const d = dist[i], k = out.n++, f = 1 - d / C.R;
     out.t[k] = clamp(2 * d * unit / c, C.t[0], C.t[1]); out.g[k] = C.g[Math.min(k, C.g.length - 1)] * (0.35 + 0.65 * f); out.lp[k] = C.lp[1] + (C.lp[0] - C.lp[1]) * f; }
   return out.n; }
 // one space's impulse response [left, right]: K = { len, rt (the −60 dB time), pre, lp, damp, build, early:[[t, a]…], echo:[[t, a]…], spread }
 export function afxIR(sr, K, rnd){ const n = Math.max(8, Math.round(K.len * sr)), out = [new Float32Array(n), new Float32Array(n)];
   for(let c = 0; c < 2; c++){ const d = out[c]; let l = 0;
-    for(let i = 0; i < n; i++){ const t = i / sr - K.pre; if(t < 0) continue; const fc = Math.max(300, K.lp * Math.exp(-t / K.damp)); l += ((rnd() * 2 - 1) - l) * (1 - Math.exp(-TAU * fc / sr));
-      d[i] = l * Math.pow(10, -3 * t / K.rt) * Math.min(1, t / K.build); }                                           // the diffuse tail: darker as it dies, thin at first
+    for(let i = Math.max(0, Math.round(K.pre * sr)), a = 1, env = 1, kf = Math.pow(10, -3 / (K.rt * sr)), j = 0; i < n; i++, j++){ const t = j / sr;
+      if((j & 63) === 0){ a = 1 - Math.exp(-TAU * Math.max(300, K.lp * Math.exp(-t / K.damp)) / sr); env = Math.pow(10, -3 * t / K.rt); } else env *= kf;   // (the filter and the envelope re-read every 64 samples: cheap)
+      l += ((rnd() * 2 - 1) - l) * a; d[i] = l * env * Math.min(1, t / K.build); }                                    // the diffuse tail: darker as it dies, thin at first
     for(const [t, a] of K.early || []){ const k = Math.round((t + c * (K.spread || 0)) * sr); if(k < n) d[k] += a; }  // the first reflections: the ground, the walls
     for(const [t, a] of K.echo || []){ const k0 = Math.round((t + c * (K.spread || 0) * 2) * sr), m = Math.round(0.06 * sr); let e = 0;   // a far face answers: a dull burst
       for(let j = 0; j < m && k0 + j < n; j++){ e += ((rnd() * 2 - 1) - e) * 0.07; d[k0 + j] += e * a * 3 * Math.exp(-j / (0.014 * sr)); } }
@@ -100,8 +101,8 @@ export function afxIR(sr, K, rnd){ const n = Math.max(8, Math.round(K.len * sr))
 
 // ---- THE GROUND UNDER A FOOT and how he is going ----
 export function afxSurface(biome, F, C){ return F.water ? 'water' : F.bridge ? F.bridge : F.paved ? C.paved : C.biome[biome] || C.biome._; }
-export function afxGait(stance, sprint, v, C){ return stance === 'prone' ? 'crawl' : stance === 'crouch' ? 'crouch' : sprint ? 'sprint' : v >= C.runV ? 'run' : 'walk'; }
-export function afxStepCad(v, C){ return v < C.minV ? 0 : clamp(C.cad[0] + v * C.cad[1], C.cad[0], C.cad[2]); }      // steps a second for a man going v (the legs' own cadence: SOLDIER_LEGS.stand.cad)
+export function afxGait(stance, v, C){ return stance === 'prone' ? 'crawl' : stance === 'crouch' ? 'crouch' : v >= C.sprintV ? 'sprint' : v >= C.runV ? 'run' : 'walk'; }
+export function afxStepCad(v, crawl, C){ return v < C.minV ? 0 : crawl ? C.crawlCad : clamp(C.cad[0] + v * C.cad[1], C.cad[0], C.cad[2]); }   // steps a second for a man going v (the legs' own cadence: SOLDIER_LEGS.stand.cad); crawling: a drag every so often
 
 // ---- MUSIC follows the director: phase build | peak | release | finale, P its pressure, held = the last lull before the general, duel = he is here. out = { heat, lp, gain } ----
 export function afxMusic(phase, P, held, duel, C, out){ const M = duel ? C.duel : held ? C.held : phase === 'peak' ? C.peak : phase === 'release' ? C.lull : C.build;

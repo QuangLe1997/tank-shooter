@@ -1,5 +1,5 @@
 // audio/engine-music.js — DIESEL ENGINE + TRACK CLATTER (player): idle burble → roar under load; climbing a mound makes it SCREAM, coasting downhill it backs off
-import { APPLE, MOBILE, NOW, NZ, PROFILE, S, __set_musicBus, __set_musicSrc, __set_muted, __set_songBuf, actx, audio, buildScore, composer, doResize, master, musicBus, musicSrc, muted, padCfg, padHaptic, renderer, setIcon, sfxLevel, songBuf, verbSend, rideHealth } from '../hub.js';
+import { APPLE, MOBILE, NOW, NZ, PROFILE, S, afxBus, afxSend, __set_musicBus, __set_musicSrc, __set_muted, __set_songBuf, actx, audio, buildScore, composer, doResize, master, musicBus, musicSrc, muted, padCfg, padHaptic, renderer, setIcon, sfxLevel, songBuf, verbSend, rideHealth } from '../hub.js';
 import { RIDE } from '../../config.js';
 
 // ---- DIESEL ENGINE + TRACK CLATTER (player): idle burble → roar under load; climbing a mound makes it SCREAM, coasting downhill it backs off ----
@@ -34,15 +34,16 @@ export function cubLoop(a){ const C = CUB, sr = a.sampleRate, len = Math.round(s
       d[i] += amp * (Math.sin(6.2832 * C.pipe[0] * t) * Math.exp(-t / C.pipe[1]) * C.pipe[2] + Math.sin(6.2832 * C.body[0] * t) * Math.exp(-t / C.body[1]) * C.body[2] + (rnd() * 2 - 1) * Math.exp(-t / C.puff[0]) * C.puff[1]); }
     const it = Math.round((k + 0.5) / C.f0 * sr); for(let j = 0; j < sr * 0.005; j++){ const i = (it + j) % len; d[i] += (rnd() * 2 - 1) * C.tick[1] * Math.exp(-j / sr / C.tick[0]); } }   // the tappets
   let pk = 0; for(let i = 0; i < len; i++) pk = Math.max(pk, Math.abs(d[i])); for(let i = 0; i < len; i++) d[i] *= 0.9 / (pk || 1); return buf; }
-function bikeEngineStart(a){ const out=a.createGain(); out.gain.value=0; out.connect(master); if(verbSend){ const s=a.createGain(); s.gain.value=0.06; out.connect(s).connect(verbSend); }
+function bikeEngineStart(a){ const out=a.createGain(); out.gain.value=0; out.connect(master); let snd=null; if(verbSend){ snd=a.createGain(); snd.gain.value=0.06; out.connect(snd).connect(verbSend); }
   const lp=a.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=900; lp.Q.value=0.9; lp.connect(out);
   const src=a.createBufferSource(); src.buffer=cubLoop(a); src.loop=true; src.connect(lp);
   const nz=a.createBufferSource(); nz.buffer=NZ; nz.loop=true; const bp=a.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=900; bp.Q.value=0.8; const ng=a.createGain(); ng.gain.value=0; nz.connect(bp).connect(ng).connect(lp);
-  src.start(); nz.start(); return (ENGB.nodes={ out, lp, src, bp, ng }); }
+  src.start(); nz.start(); return (ENGB.nodes={ out, lp, src, bp, ng, snd, bus:master }); }
 function updateBikeEngine(dt, p, t){ const CV=p && p.cav, H=CV && CV.H, D=H && H.drv, a=actx; if(!a) return;
   const on = S.mode==='playing' && !muted && CV && CV.mounted && H && H.bike && (!D || D.state==='ride' || D.state==='mount' || D.state==='pull');
   if(!on){ if(ENGB.nodes) ENGB.nodes.out.gain.setTargetAtTime(0, t, 0.25); return; }
-  const n=ENGB.nodes || bikeEngineStart(a), G=RIDE.gears, v=Math.abs(H.v||0), g=D ? D.gear : G.filter(x=>v>x).length, lo=g ? G[g-1] : 0, hi=G[g] ?? G[G.length-1]*1.3;
+  const n=ENGB.nodes || bikeEngineStart(a), eb=afxBus() || master, G=RIDE.gears, v=Math.abs(H.v||0), g=D ? D.gear : G.filter(x=>v>x).length, lo=g ? G[g-1] : 0, hi=G[g] ?? G[G.length-1]*1.3;
+  if(n.bus!==eb){ n.bus=eb; try{ n.out.disconnect(); n.out.connect(eb); if(n.snd){ n.out.connect(n.snd); n.snd.disconnect(); n.snd.connect(afxSend() || verbSend); } }catch(e){} }   // AUDIO 2 with the layer on the engine rides its world bus and its space (it dips under a close blast, it sounds of the place); off: master, as before
   const thr=Math.max(0, D ? D.thr : 0), within=Math.min(1, Math.max(0, (v-lo)/Math.max(0.5, hi-lo))), big=H.bike==='bagac' ? 0.78 : 1;
   ENGB.rpm += ((0.18 + within*0.7 + thr*0.18 + (D && D.wheelT>0 ? 0.25 : 0)) - ENGB.rpm)*Math.min(1, dt*7);
   const f=(11 + Math.max(0, ENGB.rpm-0.18)*58)*big;   // firings a second: a lazy putt at idle (11: ~1300 rpm), ~65 at the top

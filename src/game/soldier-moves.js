@@ -5,7 +5,7 @@
 //   standing behind higher — and lays the rifle on top of it to fire (combat/real-cav.js reads CV.cover for the rest).
 import * as THREE from 'three';
 import { CAV } from '../../config.js';
-import { CV, S, blockTop, blocksNear, heightAt, inBlock, sfx, soleAt, spawnPart } from '../hub.js';
+import { CV, S, afxLand, blockTop, blocksNear, heightAt, inBlock, sfx, soleAt, spawnPart } from '../hub.js';
 
 const M = () => CAV.moves;
 const _near = [], _ax = new THREE.Vector3();
@@ -36,7 +36,8 @@ export function footMotion(p, dt){ const R = CV.roll, J = CV.jump;
     p.vel.x = Math.sin(R.a) * v; p.vel.z = Math.cos(R.a) * v; p.defK = C.defK; p.radius = CAV.radius.prone;
     if(R.t >= 1){ CV.roll = null; CV.stance = 'crouch'; CV.rise = M().roll.rise; if(CV.want === 'prone') CV.want = 'crouch'; } }
   if(J && !J.climb){ const C = M().jump; J.t += dt; J.vy -= C.g * dt; J.y += J.vy * dt;
-    if(J.y <= 0 && J.vy < 0){ CV.jump = null; CV.land = C.land; sfx('thud', p.pos, 0.35); for(let n = 0; n < 3; n++) spawnPart(p.pos.x, heightAt(p.pos.x, p.pos.z) + 0.05, p.pos.z, (Math.random() - 0.5) * 1.2, 0.3, (Math.random() - 0.5) * 1.2, { color:0xb8a888, size:0.4, life:0.5, smoke:true, grav:-0.5, drag:2, op:0.3 }); } }
+    if(J.y <= 0 && J.vy < 0){ CV.jump = null; CV.land = C.land; sfx('thud', p.pos, 0.35); afxLand(p.pos);   // AUDIO 2 both boots on this ground, the breath out of him
+      for(let n = 0; n < 3; n++) spawnPart(p.pos.x, heightAt(p.pos.x, p.pos.z) + 0.05, p.pos.z, (Math.random() - 0.5) * 1.2, 0.3, (Math.random() - 0.5) * 1.2, { color:0xb8a888, size:0.4, life:0.5, smoke:true, grav:-0.5, drag:2, op:0.3 }); } }
   if(CV.rise > 0){ CV.rise -= dt; if(CV.rise <= 0 && CV.want === 'stand' && !CV.cover) CV.stance = 'stand'; else if(CV.rise > 0) CV.stance = 'crouch'; }
   if(CV.land > 0) CV.land -= dt; }
 // the body: lifted off the ground in a jump; turned over about the line across his roll (pivot at his tucked middle) in a roll

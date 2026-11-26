@@ -3,8 +3,10 @@
 //   T holds what the test sets and reads. Nothing here is loaded by the game.
 export * from '../src/audio/afx-math.js';
 export * from '../src/audio/afx.js';
+export * from '../src/audio/afx-space.js';
+export * from '../src/audio/afx-move.js';
 
-export const T = { clear:() => true, lines:0, wade:() => 1, paved:() => false, sfx:[], samples:true, bank:true, floats:[], radios:[] };
+export const T = { clear:() => true, lines:0, wade:() => 1, paved:() => false, sfx:[], samples:true, bank:true, floats:[], radios:[], hit:() => null, rays:0, high:() => 0, roof:false, men:[] };
 export let actx = null, master = null, duck = null, verbSend = null, muted = false, musicBus = null, limiter = null;
 export function __ctx(c){ actx = c; master = duck = verbSend = musicBus = limiter = null; if(!c) return;
   limiter = c.createDynamicsCompressor(); limiter.connect(c.destination); master = c.createGain(); master.connect(limiter); duck = c.createGain(); duck.connect(master);
@@ -20,7 +22,13 @@ const one = k => actx ? _bufs[k] || (_bufs[k] = actx.createBuffer(1, Math.round(
 export function sampleGet(k){ return T.samples ? one(k) : null; }
 export function bankGet(k){ return T.bank ? one(k) : null; }
 export function sfx(name, pos, vol){ T.sfx.push(name); }
-export function heightAt(){ return 0; }
+export function heightAt(x, z){ return T.high(x, z); }
+const _hit = { bl:{ kind:'fortwall' }, t:0 };
+export function lineHit(ax, ay, az, bx, by, bz, pad, over, skip){ T.rays++; const t = T.hit(ax, az, bx, bz); if(t == null || skip && skip(_hit.bl)) return null; _hit.t = t; return _hit; }
+export function underActive(){ return T.roof; }
+export function underInside(){ return T.roof; }
+export const CV = { mounted:false, stance:'stand', jump:null, roll:null }, FT = [], UGRID = { inf:new Map() };
+export function unitsNear(M, x, z, r, out){ out.length = 0; for(const m of T.men) out.push(m); return out; }
 export function lineClear(ax, ay, az, bx, by, bz){ T.lines++; return T.clear(bx, bz, ax, az); }
 export function wadeAt(x, z){ return T.wade(x, z); }
 export function onPaved(x, z){ return T.paved(x, z); }
