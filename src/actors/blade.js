@@ -20,20 +20,20 @@
 //   soldier-fire (bladeFire), flame.js selectGun / cycleGun (bladeSelect / bladeCycle), spells trySpell (bladeSpecial), player-damage (bladeGuardK), bindings ('blade').
 //   Nothing allocates per frame.
 import * as THREE from 'three';
-import { BLADE, CAV, REALCAV } from '../../config.js';
-import { hangState, hangStep, CV, MOBILE, PROFILE, RDRAG, S, animClip, animInfo, animRootAt, bloodSpurt, blocksNear, climbing, curlHand, damageBlock, damageEnemy, enemies, floatText, fpvFlying, heightAt, heldAction, ik2, lineClear, loadAnimGroup, loadGLTF, saveProfile, scene, selectGun, sfx, spawnPart, updateGunHUD } from '../hub.js';
+import { BLADE, CAV, LOGISTICS, REALCAV } from '../../config.js';
+import { awareNoise, suspectEnemy, hangState, hangStep, CV, MOBILE, PROFILE, RDRAG, S, animClip, animInfo, animRootAt, bloodSpurt, blocksNear, climbing, curlHand, damageBlock, damageEnemy, enemies, floatText, fpvFlying, heightAt, heldAction, ik2, lineClear, loadAnimGroup, loadGLTF, saveProfile, scene, selectGun, sfx, spawnPart, updateGunHUD } from '../hub.js';
 
 const V3 = () => new THREE.Vector3(), Q4 = () => new THREE.Quaternion(), clamp = (v, a, b) => Math.max(a, Math.min(b, v)), smooth = k => { k = clamp(k, 0, 1); return k * k * (3 - 2 * k); }, wrapA = a => Math.atan2(Math.sin(a), Math.cos(a)), D2R = Math.PI / 180;
 const _a = V3(), _b = V3(), _c = V3(), _d = V3(), _k = V3(), _m = V3(), _n = V3(), _x = V3(), _y = V3(), _z = V3(), _p = V3(), _t = V3(), _u = V3(), _r = V3(), _bk = V3(), _ws = V3(), _one = V3();
-const _hp = V3(), _hz = V3(), _hy = V3(), _wp = V3(), _op = V3(), _pl = V3(), _tip = V3(), _mid = V3(), _q = Q4(), _q2 = Q4(), _hq = Q4(), _wq = Q4(), _oq = Q4(), _mat = new THREE.Matrix4(), _mi = new THREE.Matrix4(), _root = [0, 0, 0], _root0 = [0, 0, 0], _bn = [];
+const _hp = V3(), _hz = V3(), _hy = V3(), _wp = V3(), _op = V3(), _pl = V3(), _tip = V3(), _mid = V3(), _q = Q4(), _q2 = Q4(), _hq = Q4(), _wq = Q4(), _oq = Q4(), _mat = new THREE.Matrix4(), _mi = new THREE.Matrix4(), _mrel = new THREE.Matrix4(), _root = [0, 0, 0], _root0 = [0, 0, 0], _bn = [];
 const _tg = new Float32Array(8), UP = new THREE.Vector3(0, 1, 0);
 
 // ---- the page's own soldier: what he is doing with it ----
 //   held: the blade is (to be) in his hands · auto: AUTO drew it · sw: 0 on his back … 1 in his hands (the rig's weight, mirrored) · act: the move in hand
 //   { mv, t (clip s), rate, dmgK, f0 (the bearing it is aimed along), wi (the window he is in), hit (who it has cut) } · chain: the next light · buf: the move asked for
 export const BLADEST = { kind:null, held:false, auto:false, sw:0, act:null, chain:0, chainAt:-9, buf:null, bufAt:0, trigF:-9, down:false, pressT:0, heavied:false, st:BLADE.stamina.max, stAt:-9, spAt:0, guard:false,
-  nearAt:0, killAt:-9, flDone:true, frame:0, hits:0, kills:0, swings:0, firstHit:-1, drawAt:-9, ready:{}, tipV:0 };
-const ACT = { mv:null, what:'', t:0, rate:1, dmgK:1, f0:0, rk:1, wi:-1, hit:new Set(), lunge:0, lx:0, lz:0 };
+  nearAt:0, killAt:-9, flDone:true, frame:0, hits:0, kills:0, silent:0, ambush:0, dashes:0, swings:0, firstHit:-1, drawAt:-9, ready:{}, tipV:0 };
+const ACT = { mv:null, what:'', t:0, rate:1, dmgK:1, f0:0, rk:1, wi:-1, hit:new Set(), lunge:0, lx:0, lz:0, dashT:0, dashV:0 };
 export const bladeKind = () => BLADE.kinds[PROFILE.blade] ? PROFILE.blade : BLADE.def;
 export const bladeHeld = cv => !!BLADE.on && (!cv || cv === CV ? BLADEST.held : !!cv.blade);
 const bodyK = () => REALCAV.opH * (REALCAV.s2 && REALCAV.s2.on ? REALCAV.s2.k || 1 : 1) / 1.8;   // his metres → the world's (his height over 1.8 m)
@@ -43,21 +43,20 @@ function load(k){ const B = BLADEST; if(B.ready[k] !== undefined) return; B.read
 
 // ---- a rig's own state (the other player's soldier has his): the mesh, its weight, the clips' actions, the pose kept, the worn slot ----
 function rigState(R){ const k = R.cvBlade || bladeKind(); let L = R.bl; if(L && L.k === k) return L; if(L){ for(const a of L.A.values()) if(a) a.setEffectiveWeight(0); if(L.m && L.m.parent) L.m.parent.remove(L.m); }
-  const S0 = BLADE.kinds[k].set; L = R.bl = { k, K:BLADE.kinds[k], m:null, w:0, bw:0, A:new Map(), ph:0, ids:null, zl:V3(), zOk:false, ey:V3(), tp:V3(), tpOk:false, bwt:new Float32Array(8), mv:[{ id:null, t:0, w:0 }, { id:null, t:0, w:0 }], yaw:0, bones:null, snap:null, hips:V3(), seated:false, fr:false, pw:0, lw:0, gs:0, swing:0, down:1, hg:hangState(), ul:V3(), rl:V3(), bl:V3(), cx:V3(), zR:0, zL:0, sl:0, rk:0, gk:0, eR:0, eL:0, tp2:V3(), tp2Ok:false }; L.ids = [S0.idle, S0.guard, S0.walk[0], S0.walk[1], S0.walk[2], S0.walk[3], S0.run[0], S0.run[1]]; load(k); return L; }
+  const S0 = BLADE.kinds[k].set; L = R.bl = { k, K:BLADE.kinds[k], m:null, w:0, bw:0, A:new Map(), ph:0, ids:null, zl:V3(), zOk:false, ey:V3(), tp:V3(), tpOk:false, bwt:new Float32Array(8), mv:[{ id:null, t:0, w:0 }, { id:null, t:0, w:0 }], yaw:0, bones:null, snap:null, hips:V3(), seated:false, pw:0, lw:0, gs:0, swing:0, down:1, hg:hangState(), zR:0, zL:0, sl:0, rk:0, gk:0, eR:0, eL:0, tp2:V3(), tp2Ok:false }; L.ids = [S0.idle, S0.guard, S0.walk[0], S0.walk[1], S0.walk[2], S0.walk[3], S0.run[0], S0.run[1]]; load(k); return L; }
 function mesh(R, L){ if(L.m) return true; const gl = BLADEST.ready[L.k]; if(!gl) return false; const m = gl.scene.clone(true); m.name = 'blade_' + L.k; m.traverse(o => { if(o.isMesh){ o.castShadow = true; o.frustumCulled = false; } }); L.m = m;
   const D = R.pup.D; L.bones = Object.values(D).filter(b => b && b.isBone); L.snap = new Float32Array(L.bones.length * 4); return true; }
-function action(R, L, id){ let a = L.A.get(id); if(a !== undefined) return a; const clip = animClip(id); a = clip ? R.om.clipAction(clip) : null; if(a){ a.enabled = true; a.setEffectiveWeight(0); a.timeScale = 0; a.play(); } L.A.set(id, a); return a; }
+function action(R, L, id){ let a = L.A.get(id); if(a !== undefined) return a; const clip = animClip(id); if(clip && clip.uuid !== 'xk-' + id) clip.uuid = 'xk-' + id;   // (the mixer keys its actions by the clip's uuid, and in a seeded battle three's uuids come from the seeded dice (SYNC 1): two library clips had come out as ONE action — the blade's whole stance set at weight 0, his body left in its rest pose. The clip's own id is its uuid)
+  a = clip ? R.om.clipAction(clip) : null; if(a){ a.enabled = true; a.setEffectiveWeight(0); a.timeScale = 0; a.play(); } L.A.set(id, a); return a; }
 
-// the weapon worn: hung from the frog at his right shoulder, BLADE DOWN, in the back's own frame (as CARRY builds it: origin at the Spine2 joint, up = Spine1 → Spine2, his right =
-//   collar bone → collar bone at rest, their cross out of his back) — the frame and the frog's place in the Spine1 bone's own space worked out once
-function seat(R, L){ const D = R.pup.D, b = D.Spine1, W = L.K.worn, q2 = R.pup.rest && R.pup.rest.get(D.Spine2) || D.Spine2.quaternion, ks = bodyK(); if(!b || !D.Spine2 || !D.RightShoulder || !D.LeftShoulder) return;
-  L.ul.copy(D.Spine2.position).normalize(); L.rl.copy(D.RightShoulder.position).sub(D.LeftShoulder.position).applyQuaternion(q2); L.rl.addScaledVector(L.ul, -L.rl.dot(L.ul)).normalize(); L.bl.crossVectors(L.rl, L.ul);
-  b.getWorldScale(_ws); const un = ks / (_ws.x || 1); L.cx.copy(D.Spine2.position).addScaledVector(L.rl, W.at[0] * un).addScaledVector(L.ul, W.at[1] * un).addScaledVector(L.bl, W.at[2] * un);
-  if(L.m.parent !== b) b.add(L.m); L.m.visible = true; L.seated = true; L.fr = true; }
+// the weapon worn: hung from the frog at his right shoulder, BLADE DOWN, in the back's own frame — read each frame from his joints as they stand in the WORLD (up = Spine1 → Spine2,
+//   his right = collar root → collar root, their cross out of his back): the seen soldier's bone chain carries a mirror, and a frame built in a bone's own space came out over the
+//   other shoulder in the game
 // where it hangs now (the world): → op, oq. It lies ON his back (it turns only in the back's plane) and HANGS from the frog (actors/hang.js): the lower end leans to stay hanging
 //   as he leans, nudges with his steps, swings on after a stop; crouched it rides up and leans over, lying prone it lies level along his spine; its lower end never nearer the ground
 //   than W.clear (it rides up through the frog)
-function worn(R, L, D, dt, P, ks, op, oq){ const b = D.Spine1, K = L.K, W = K.worn; if(!L.fr) seat(R, L); b.getWorldQuaternion(_q); _u.copy(L.ul).applyQuaternion(_q); _r.copy(L.rl).applyQuaternion(_q); _H0.copy(L.cx); b.localToWorld(_H0);
+function worn(R, L, D, dt, P, ks, op, oq){ const K = L.K, W = K.worn; L.m.visible = true; D.Spine2.getWorldPosition(_H0); D.Spine1.getWorldPosition(_t); _u.subVectors(_H0, _t).normalize(); D.RightShoulder.getWorldPosition(_r); D.LeftShoulder.getWorldPosition(_t); _r.sub(_t); _r.addScaledVector(_u, -_r.dot(_u)).normalize(); _bk.crossVectors(_r, _u);
+  _H0.addScaledVector(_r, W.at[0] * ks).addScaledVector(_u, W.at[1] * ks).addScaledVector(_bk, W.at[2] * ks);   // (the frog, from the joint along the frame's own turned axes as CARRY lays the rifle — never through the bone's matrix: the seen soldier's chain carries a mirror, and a point put through it lands over the other shoulder)
   const st = P && !P.trans && !P.dead ? P.stance : 'stand'; L.lw += ((st === 'crouch' ? 1 : 0) - L.lw) * Math.min(1, dt * 6); L.pw += ((st === 'prone' ? 1 : 0) - L.pw) * Math.min(1, dt * 5);
   if(L.pw > 0.002){ _t.copy(_u); _t.y *= 1 - L.pw; if(_t.lengthSq() > 1e-4) _u.copy(_t).normalize(); _r.addScaledVector(_u, -_r.dot(_u)).normalize(); } _bk.crossVectors(_r, _u);
   const a0 = ((W.tilt + (W.low[1] - W.tilt) * L.lw) * (1 - L.pw) + W.prone * L.pw) * D2R, lowZ = W.tip < 0 ? K.tip : K.butt, len = Math.abs(lowZ - W.zAt) * ks, o = hangStep(L.hg, dt, a0, _H0, _r, _u, len), a = a0 + o; L.swing = o;
@@ -69,7 +68,7 @@ function worn(R, L, D, dt, P, ks, op, oq){ const b = D.Spine1, K = L.K, W = K.wo
       for(let i = 4; i < n; i++){ const c = CAP[i], d = Math.sqrt(segSeg(_s1, _s2, c.a, c.b, _c1, _c2)), need = c.r + K.r * ks + M - d; if(need > best && d > 1e-4){ best = need; _pn.subVectors(_c1, _c2).divideScalar(d); lev = _c1.distanceTo(_s1); } }
       if(best <= 0 || lev < 0.15) break; _t.copy(_s2).sub(_s1).normalize().multiplyScalar(lev).addScaledVector(_pn, best).normalize(); _q2.setFromUnitVectors(_c.copy(_s2).sub(_s1).normalize(), _t); oq.premultiply(_q2); _z.set(0, 0, 1).applyQuaternion(oq); op.copy(_s1).addScaledVector(_z, -W.zAt * ks); } }
   L.down = -_z.y; }
-function wornPlace(R, L, D, op, oq, ks){ const b = D.Spine1; if(L.m.parent !== b){ b.add(L.m); L.seated = true; } _mat.compose(op, oq, _one.setScalar(ks)); _mi.copy(b.matrixWorld).invert(); _mat.premultiply(_mi); _mat.decompose(L.m.position, L.m.quaternion, L.m.scale); L.m.updateMatrixWorld(true); }
+function wornPlace(R, L, G, op, oq, ks){ if(L.m.parent !== G) G.add(L.m); L.seated = true; _mat.compose(op, oq, _one.setScalar(ks)); _mi.copy(G.matrixWorld).invert(); _mat.premultiply(_mi); _mat.decompose(L.m.position, L.m.quaternion, L.m.scale); L.m.updateMatrixWorld(true); }
 
 // ---- BEFORE THE MIXER: which clips, how much (real-cav poseRealCav). true: the rifle's own clips fade out ----
 export function bladeClip(cv, R, G, dt, P, mounted){ if(!BLADE.on || !R.pup || !R.om) return false; const L = rigState(R); if(!mesh(R, L)) return false;
@@ -141,10 +140,13 @@ function spot(out, g, c, b, rk, gk, ks){ const x = (g[0] + (c[0] - g[0]) * rk) *
 //   BOTH: the edge lies down / as his fist has it at rest and is rolled to lead the cut; the weapon is pushed bodily out of his trunk, pack, head and legs (pushOut) before the hands go
 //   on; DRAW / SHEATH: the right hand goes to it where it hangs, then carries it round the OUTSIDE of his shoulder (BLADE.path.via) to the hold — never through him.
 export function bladeHold(cv, R, G, dt, P){ const L = R.bl; if(!L || !L.m) return; const D = R.pup.D, K = L.K, ks = bodyK();
-  if(L.w <= 0){ worn(R, L, D, dt, P, ks, _wp, _wq); wornPlace(R, L, D, _wp, _wq, ks); L.tpOk = L.tp2Ok = false; return; }
+  if(L.w <= 0){ worn(R, L, D, dt, P, ks, _wp, _wq); wornPlace(R, L, G, _wp, _wq, ks); L.tpOk = L.tp2Ok = false; return; }
   const bw = L.bw, H = BLADE.hand, mine = cv === CV, B0 = BLADEST, PT = BLADE.path;
+  // the rifle CARRY has just slung lies on the back the RIFLE's layers gave him: kept as it lies against the Spine1 bone, so it is on his back still once the blade's pose is laid over
+  const gun = R.cy && R.cy.s > 0.02 && R.arms && R.arms._metric && R.arms._metric[R.armK], sb = D.Spine1; if(gun && sb) _mrel.copy(sb.matrixWorld).invert().multiply(gun.matrixWorld);
   { const B = L.bones, s = L.snap; if(bw >= 0.999) for(let i = 0; i < B.length; i++) B[i].quaternion.fromArray(s, i * 4); else for(let i = 0; i < B.length; i++) B[i].quaternion.slerp(_q.fromArray(s, i * 4), bw);
     if(D.Hips) D.Hips.position.lerp(L.hips, bw); R.pup.dst.updateMatrixWorld(true); }
+  if(gun && sb && gun.parent){ _mat.copy(sb.matrixWorld).multiply(_mrel); _mi.copy(gun.parent.matrixWorld).invert(); _mat.premultiply(_mi); _mat.decompose(gun.position, gun.quaternion, gun.scale); gun.updateMatrixWorld(true); if(R.cy.st){ if(R.cy.st[0]) R.cy.st[0].visible = false; if(R.cy.st[1]) R.cy.st[1].visible = false; } }   // (its sling's ribbon was drawn for the other pose: not shown with the blade out)
   G.getWorldQuaternion(_q); _f.set(0, 0, 1).applyQuaternion(_q); _f.y = 0; _f.normalize(); _rt.set(-_f.z, 0, _f.x); D.Hips.getWorldPosition(_hc);
   // WHERE THIS KIND HOLDS IT → the grip's place _hp, its line _hz, the edge at rest _hy, each hand's point along it (L.zR, L.zL)
   grip(D, 'Right', K, ks, _hp); _hz.copy(_k); _hy.copy(_m);
@@ -183,7 +185,7 @@ export function bladeHold(cv, R, G, dt, P){ const L = R.bl; if(!L || !L.m) retur
       if(_res.lengthSq() > 4e-6){ _d.copy(_res); D.RightHand.getWorldPosition(_a); D.RightHand.getWorldQuaternion(_fq2); _t.copy(_a).sub(_d); D.RightForeArm.getWorldPosition(_pl); ik2(D.RightArm, D.RightForeArm, D.RightHand, _t, _pl); setWorldQ(D.RightHand, _fq2); D.RightHand.getWorldPosition(_b).sub(_a); _op.add(_b); _mid.add(_b); _res.set(0, 0, 0); } } L.eL = _res.length(); }
   if(hw > 0.5){ _tip.copy(_op).addScaledVector(_z, zh * ks); curlHand(D, 'Right', H.curl * hw, _tip); if(ho > 0.3) curlHand(D, 'Left', H.curl * ho, _mid); }
   // laid under the rig group (his own size in the world)
-  if(L.seated){ L.seated = false; G.add(L.m); } _mat.compose(_op, _oq, _one.setScalar(ks)); _mi.copy(G.matrixWorld).invert(); _mat.premultiply(_mi); _mat.decompose(L.m.position, L.m.quaternion, L.m.scale); L.m.updateMatrixWorld(true);
+  L.seated = false; if(L.m.parent !== G) G.add(L.m); _mat.compose(_op, _oq, _one.setScalar(ks)); _mi.copy(G.matrixWorld).invert(); _mat.premultiply(_mi); _mat.decompose(L.m.position, L.m.quaternion, L.m.scale); L.m.updateMatrixWorld(true);
   if(mine){ _tip.copy(_op).addScaledVector(_z, K.tip * ks); _mid.copy(_op).addScaledVector(_z, (K.root + K.tip) / 2 * ks); B0.tipR = Math.hypot(_tip.x - _hc.x, _tip.z - _hc.z); winStat(L, D, K, ks, dt, zh); trail(dt, !!(B0.act && ACT.wi >= 0)); } }
 // ---- THE PROOF A PROBE CAN READ (bladeProbe): through each hit window of the page's own soldier — where his palms are on the handle (0 the butt … 1 the blade's root) and how far
 //   off it (cm), how much further from his chest the tip is than his hands, how far ahead of him it is at its fastest, how squarely the edge leads its travel, its speed ----
@@ -226,13 +228,21 @@ function begin(what, now){ const B = BLADEST, p = S.player, K = BLADE.kinds[B.ki
   const reach = (mv.reach || K.reach) * bodyK(), I = animInfo(mv.clip), far = mv.root && I && I.end ? Math.hypot(I.end[0], I.end[1]) * rootK() : (mv.lunge || 0), e = mv.win.length ? nearest(p, reach + far + 0.8, BLADE.assist, p.aimSmoothed, false) : null; A.f0 = e ? _near.a : p.aimSmoothed; A.rk = 1;
   if(e && mv.root && I && I.travels){ animRootAt(mv.clip, mv.win[0][0], _root); animRootAt(mv.clip, mv.from, _root0); const go = Math.hypot(_root[0] - _root0[0], _root[1] - _root0[1]) * rootK(); A.rk = go > 0.1 ? clamp((_near.d - reach * 0.6) / go, 0.12, 1) : 1; }   // (a leap lands him at the man, not past him)
   if(e && mv.lunge){ const gap = _near.d - reach * 0.72; if(gap > 0.05){ A.lunge = Math.sqrt(2 * CAV.foot.decel * Math.min(mv.lunge, gap)); A.lx = Math.sin(A.f0); A.lz = Math.cos(A.f0); } }
+  // the ambush's dash-in: started at a sprint or from behind cover, a man who does not know within dashR ahead — a quick rush to cutting distance (his own velocity: the game moves him)
+  A.dashT = 0; { const QZ = BLADE.quiet; if(QZ.on && mv.win.length && !mv.root && (heldAction('sprint') || CV.cover) && nearest(p, QZ.dashR, BLADE.assist, p.aimSmoothed, true) && !(_near.e.alert >= 2) && _near.d > reach * 0.7){
+      A.f0 = _near.a; A.dashT = QZ.dashT; A.dashV = Math.min(QZ.dashV, (_near.d - reach * 0.6) / QZ.dashT); A.lx = Math.sin(A.f0); A.lz = Math.cos(A.f0); A.lunge = 0; B.dashes++; B.dashD = _near.d - reach * 0.6; } }
   B.act = A; B.buf = null; B.flDone = what === 'flourish' ? true : B.flDone; if(what !== 'flourish') B.swings++; return true; }
 function ask(what, now){ const B = BLADEST; B.buf = what; B.bufAt = now; }
 function cut(e, A, K, p, now, bear){ const B = BLADEST, mv = A.mv, HT = BLADE.hit, sw = mv.arc[1] - mv.arc[0], heavy = mv.dmg >= 90; let dx, dz;
   if(Math.abs(sw) < 1){ dx = Math.sin(bear); dz = Math.cos(bear); } else { const s = sw > 0 ? 1 : -1; dx = Math.cos(bear) * s * 0.85 + Math.sin(bear) * 0.5; dz = -Math.sin(bear) * s * 0.85 + Math.cos(bear) * 0.5; }   // (a sweep carries him along it and away)
   let dmg = mv.dmg * A.dmgK * (p.dmgMul || 1); if(e.general || e.hitCap) dmg = Math.min(dmg, (e.maxHp || e.hp) * HT.gen);
+  // BLADE 5 THE QUIET WEAPON: a man who does not know dies by the knife's own quiet path (game/quiet.js quietDeath: only who SEES it done reacts, the body can be found) — and one
+  //   who does not know, struck from outside his front (the knife's own test), dies to any cut at all: the ambush
+  const QZ = BLADE.quiet, inf = !!(e.def && e.def.inf), unaware = QZ.on && inf && !(e.alert >= 2), amb = unaware && QZ.ambush && !e.general && !e.commander && !e.elite && Math.abs(wrapA(Math.atan2(p.pos.x - e.pos.x, p.pos.z - e.pos.z) - (e.facing || 0))) > LOGISTICS.quiet.knife.front;
+  if(amb) dmg = Math.max(dmg, e.hp + 1); const hush = unaware && dmg >= e.hp; if(hush) e._knife = true;
   e._hx = dx; e._hz = dz; if(e.def && e.def.inf){ e.dazeUntil = Math.max(e.dazeUntil || 0, now + mv.daze); e.kbx = (e.kbx || 0) + dx * mv.push; e.kbz = (e.kbz || 0) + dz * mv.push; e.aimT = 0; }
-  const ex = e.pos.x, ez = e.pos.z, flesh = !!(e.def && e.def.inf) && !mv.blunt; damageEnemy(e, dmg); B.hits++; if(B.firstHit < 0) B.firstHit = now; if(!(e.hp > 0)){ B.kills++; B.killAt = now; B.flDone = false; }
+  const ex = e.pos.x, ez = e.pos.z, flesh = !!(e.def && e.def.inf) && !mv.blunt; damageEnemy(e, dmg); B.hits++; if(B.firstHit < 0) B.firstHit = now; if(!(e.hp > 0)){ B.kills++; B.killAt = now; B.flDone = false; if(hush){ B.silent++; if(amb) B.ambush++; floatText('HẠ GỤC ÊM', '#9be04a', p.pos, 16); } }
+  else if(QZ.on && inf){ const r2 = QZ.cryR * QZ.cryR; for(let i = 0; i < enemies.length; i++){ const m = enemies[i]; if(m !== e && m.hp > 0 && (m.pos.x - ex) ** 2 + (m.pos.z - ez) ** 2 < r2) suspectEnemy(m, now, ex, ez); } }   // (a wounded man cries out: his mates near turn to look)
   if(flesh){ bloodSpurt(ex, ez, dx, dz, heavy ? 1.8 : 1.1); sfx(heavy ? 'crunch' : 'hit', e.pos, 0.75); } else { sparks(ex, heightAt(ex, ez) + 1.1, ez, HT.sparks); sfx(mv.blunt ? 'thud' : 'clang', e.pos, 0.6); }
   S.hitStop = Math.max(S.hitStop || 0, (S.timeNow || now) + HT.stop[heavy ? 1 : 0]); S.shake = Math.min(2.4, (S.shake || 0) + HT.shake[heavy ? 1 : 0]); S.camKick = Math.min(1.2, (S.camKick || 0) + HT.kick[heavy ? 1 : 0]); S.kickAng = A.f0; }
 function sparks(x, y, z, n){ for(let i = 0; i < n; i++) spawnPart(x, y, z, (Math.random() - 0.5) * 6, 1.5 + Math.random() * 3, (Math.random() - 0.5) * 6, { color:0xffd9a0, size:0.09 + Math.random() * 0.08, life:0.22 + Math.random() * 0.2, grav:9, drag:0.6 }); }
@@ -240,7 +250,7 @@ function windows(p, K, A, now){ const mv = A.mv, HT = BLADE.hit; let wi = -1; fo
   if(wi < 0){ A.wi = -1; return; } const W = mv.win[wi], u = (A.t - W[0]) / Math.max(1e-3, W[1] - W[0]), a0 = mv.arc[0], cur = a0 + (mv.arc[1] - a0) * u, tol = mv.tol ?? HT.tol, lo = Math.min(a0, cur) - tol, hi = Math.max(a0, cur) + tol;
   const reach = (mv.reach || K.reach) * bodyK(), py = heightAt(p.pos.x, p.pos.z) + (p.lift || 0), fx = Math.sin(A.f0), fz = Math.cos(A.f0);
   if(A.wi !== wi){ A.wi = wi; sfx('whoosh', p.pos, mv.dmg >= 90 ? 0.7 : 0.45);   // the window opens: the air, and what solid cover stands in the arc is chipped once
-    let nb = 0; for(const bl of blocksNear(p.pos.x + fx * reach * 0.55, p.pos.z + fz * reach * 0.55, reach * 0.5, _bn)){ if(bl.ours || bl.ridge || bl.dead || nb >= 2) continue; nb++; damageBlock(bl, HT.chip * A.dmgK); sparks(bl.x, py + 1, bl.z, 4); if(nb === 1) sfx('clang', p.pos, 0.5); } }
+    let nb = 0; for(const bl of blocksNear(p.pos.x + fx * reach * 0.55, p.pos.z + fz * reach * 0.55, reach * 0.5, _bn)){ if(bl.ours || bl.ridge || bl.dead || nb >= 2) continue; nb++; damageBlock(bl, HT.chip * A.dmgK); sparks(bl.x, py + 1, bl.z, 4); if(nb === 1){ sfx('clang', p.pos, 0.5); if(BLADE.quiet.on) awareNoise(p.pos.x, p.pos.z, now, BLADE.quiet.clangR); } } }   // (steel on something solid: the one sound of a blade that carries)
   for(let i = enemies.length - 1; i >= 0; i--){ const e = enemies[i]; if(!e || !(e.hp > 0) || e._under || A.hit.has(e)) continue; const dx = e.pos.x - p.pos.x, dz = e.pos.z - p.pos.z, d = Math.hypot(dx, dz) - (e.radius || 0.4); if(d > reach) continue;
     const bear = Math.atan2(dx, dz); let rel = wrapA(bear - A.f0) / D2R; rel += 360 * Math.ceil((lo - rel) / 360); if(rel > hi) continue;   // (the first turn of his bearing at or past the arc's low end: inside it or not)
     const ey = heightAt(e.pos.x, e.pos.z) + (e.air ? e.pos.y || 0 : 0) - py; if(ey < mv.y[0] || ey > mv.y[1]) continue; A.hit.add(e);   // (in reach, in the arc, at his height: one look for a wall between, then never again this swing)
@@ -268,6 +278,7 @@ export function bladeFoot(p, dt){ const B = BLADEST; if(!BLADE.on || !B.held) re
   if(A){ p.facing = wrapA(p.facing + wrapA(A.f0 - p.facing) * Math.min(1, dt * 14)); const I = animInfo(A.mv.clip);
     if(A.mv.root && I && I.travels && dt > 0){ animRootAt(A.mv.clip, A.t, _root); animRootAt(A.mv.clip, Math.max(A.mv.from, A.t - dt * A.rate), _root0); const k = rootK() * A.rk / dt, rx = (_root[0] - _root0[0]) * k, rz = (_root[1] - _root0[1]) * k, s = Math.sin(A.f0), c = Math.cos(A.f0);
       p.vel.x = c * rx + s * rz; p.vel.z = -s * rx + c * rz; return; }
+    if(A.dashT > 0){ A.dashT -= dt; p.vel.x = A.lx * A.dashV; p.vel.z = A.lz * A.dashV; return; } if(A.dashV > 0){ A.dashV = 0; p.vel.x *= 0.1; p.vel.z *= 0.1; }   // (he pulls up at cutting distance: no running on through the man)
     if(A.lunge > 0 && A.t >= A.mv.from){ p.vel.x += A.lx * A.lunge; p.vel.z += A.lz * A.lunge; A.lunge = -1; } if(A.lunge < 0 && A.wi < 0 && A.t < (A.mv.win[0] ? A.mv.win[0][0] : 0)) return; }
   const v = Math.hypot(p.vel.x, p.vel.z); if(v > cap && cap < CAV.foot.run){ const k = Math.max(cap, v - CAV.foot.decel * 2 * dt) / v; p.vel.x *= k; p.vel.z *= k; } }
 // cavalry.js, every frame of the page's own soldier: the kind, the trigger's presses, the move in hand, its windows, AUTO's way back, the flourish
@@ -318,5 +329,5 @@ export function bladePick(k){ if(!BLADE.kinds[k]) return false; PROFILE.blade = 
 // numbers for a probe / the pose studio
 function wornProbe(R, L){ if(!L || !L.m || !R.pup) return null; const K = L.K, m = L.m, ks = bodyK(); m.updateWorldMatrix(true, false); _z.set(0, 0, 1).transformDirection(m.matrixWorld); _x.set(0, 0, K.butt).applyMatrix4(m.matrixWorld); _y.set(0, 0, K.tip).applyMatrix4(m.matrixWorld);
   return { bladeDown:+(-_z.y).toFixed(2), tipY:+(_y.y - heightAt(_y.x, _y.z)).toFixed(2), gapCm:BLADEST.sw > 0 ? null : backGap(R.pup.D, _x, _y, K.r * ks), swingDeg:+(L.swing * 180 / Math.PI).toFixed(2) }; }
-export function bladeProbe(){ const B = BLADEST, R = CV.real, L = R && R.bl; return { kind:B.kind, held:B.held, auto:B.auto, sw:+B.sw.toFixed(3), act:B.act ? ACT.mv.id : null, t:B.act ? +ACT.t.toFixed(3) : 0, win:B.act ? ACT.wi : -1, buf:B.buf, chain:B.chain, st:+B.st.toFixed(1), guard:B.guard, hits:B.hits, kills:B.kills, swings:B.swings,
+export function bladeProbe(){ const B = BLADEST, R = CV.real, L = R && R.bl; return { kind:B.kind, held:B.held, auto:B.auto, sw:+B.sw.toFixed(3), act:B.act ? ACT.mv.id : null, t:B.act ? +ACT.t.toFixed(3) : 0, win:B.act ? ACT.wi : -1, buf:B.buf, chain:B.chain, st:+B.st.toFixed(1), guard:B.guard, hits:B.hits, kills:B.kills, silent:B.silent, ambush:B.ambush, dashes:B.dashes, dashD:+(B.dashD || 0).toFixed(2), swings:B.swings,
     ready:!!B.ready[B.kind], mesh:!!(L && L.m), seated:!!(L && L.seated), tipR:+(B.tipR || 0).toFixed(2), wins:WINS, worn:wornProbe(R, L), cd:+Math.max(0, B.spAt - (S.timeNow || performance.now() / 1000)).toFixed(2) }; }
