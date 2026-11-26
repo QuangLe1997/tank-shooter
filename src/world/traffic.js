@@ -220,7 +220,7 @@ export async function buildTraffic(segs){ TR.on = false; TR.list.length = 0; TR.
   for(const q of kinds){ const n = Math.max(1, Math.round(N * q.w / tot)), W = REALCITY.traffic.wheel && wheelGeo(q.geo, q.moto, q.sc);   // Z290 the wheels turn
     if(W){ W.g.setAttribute('aRoll', new THREE.InstancedBufferAttribute(new Float32Array(n), 1).setUsage(THREE.DynamicDrawUsage)); }
     const im = new THREE.InstancedMesh(W ? W.g : q.geo, W ? (Array.isArray(q.mats) ? q.mats.map(wheelMat) : wheelMat(q.mats)) : q.mats, n); im.instanceMatrix.setUsage(THREE.DynamicDrawUsage); im.userData.rM = W ? W.rM : 0; im.userData.wheels = W ? W.wheels : null;
-    im.castShadow = !MOBILE; im.receiveShadow = true; im.frustumCulled = false; arena.add(im); LAND.meshes.push(im); TR.ims.push(im);
+    im.castShadow = !MOBILE; im.receiveShadow = true; im.frustumCulled = false; im.userData.viewDyn = true; arena.add(im); LAND.meshes.push(im); TR.ims.push(im);   // VIEW 4 far vehicles: no shadow pass, a light copy (render/inst-view.js)
     const lm = new THREE.InstancedMesh(lampGeo(q.size, q.moto, q.sc), LM, n); lm.instanceMatrix = im.instanceMatrix; lm.frustumCulled = false; arena.add(lm); LAND.meshes.push(lm);   // the lamps ride on the same matrices
     contactShadow(q.size.x * (q.moto ? 1.05 : 1.12), q.size.z * 1.06, n, im.instanceMatrix, 0.012 / q.sc);   // Z271 seated on the road
     for(let k = 0; k < n; k++) im.setColorAt(k, _W); im.instanceColor.setUsage(THREE.DynamicDrawUsage);   // Z306 a colour per vehicle (white = its own paint), so a burnt one can char

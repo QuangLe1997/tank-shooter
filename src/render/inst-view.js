@@ -23,9 +23,10 @@ if(renderer && renderer.render){ const base = renderer.render;
   renderer.render = function(sc, cam){ if(sc !== scene || !RECS.size) return base.call(this, sc, cam); DRAW++; try{ return base.call(this, sc, cam); } finally{ DRAW--; } }; }
 
 function eligible(o){ if(!o.isInstancedMesh || RECS.has(o) || o.isSkinnedMesh) return false; const u = o.userData; if(u.viewOf || u.noView || u.skyline || u.forest) return false;
-  if(o.instanceMatrix.usage !== THREE.StaticDrawUsage || o.count < C.minN || !o.parent) return false;
+  const dyn = o.instanceMatrix.usage !== THREE.StaticDrawUsage; if(dyn && !(u.viewDyn && o.count <= C.dynMax)) return false;   // VIEW 4 a mesh rewritten every frame only when its maker asks (userData.viewDyn: street traffic) and it is small
+  if(o.count < C.minN || !o.parent) return false;
   const g = o.geometry; if(!g || !g.attributes.position || trisOf(g) * o.count < C.minTris) return false;
-  for(const k of instNames(g)) if(g.attributes[k].usage !== THREE.StaticDrawUsage) return false;   // a per-instance attribute rewritten as it goes: left alone
+  if(!dyn) for(const k of instNames(g)) if(g.attributes[k].usage !== THREE.StaticDrawUsage) return false;   // a per-instance attribute rewritten as it goes: left alone
   for(let p = o; p; p = p.parent){ if(!p.visible) return false; if(p === scene) break; if(!p.parent) return false; }
   if(!o.boundingSphere) o.computeBoundingSphere(); return o.boundingSphere.radius >= C.minSpread; }
 
@@ -47,7 +48,7 @@ function wrap(im){ const g = im.geometry, names = instNames(g), cap = im.instanc
     if(im.customDepthMaterial) v.customDepthMaterial = im.customDepthMaterial; if(im.customDistanceMaterial) v.customDistanceMaterial = im.customDistanceMaterial;
     if(im.instanceColor) v.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(cap * 3), 3).setUsage(THREE.DynamicDrawUsage);
     v.userData.viewOf = im; G.add(v); return v; };
-  const R = { im, G, geo:g, mat:im.material, cap, names, hasCol:!!im.instanceColor, dLite, dHide:hide, near:mk(g, true), far:null, pos:null, sig:-1, cx:1e9, cz:1e9, k:1, dirty:true, count:im.count, off:null };
+  const R = { im, G, geo:g, mat:im.material, cap, names, hasCol:!!im.instanceColor, dLite, dHide:hide, near:mk(g, true), far:null, dyn:im.instanceMatrix.usage !== THREE.StaticDrawUsage, pos:null, sig:-1, cx:1e9, cz:1e9, k:1, dirty:true, count:im.count, off:null };
   if((lite || shade) && dLite < hide){ R.far = mk(g, false); if(lite)   // the far view wears the whole geometry until its light copy is ready (or for good: a packed scan, a tree of loose leaves)
     farGeo(g, cutout(im) ? C.keepCut : C.keep).then(lo => { if(RECS.get(im) !== R || im.geometry !== g) return; if(lo){ R.far.geometry = viewGeo(lo, names, cap); R.dirty = true; }
       else if(hide === Infinity && !shade){ unwrap(R); im.userData.noView = true; } }); }   // (it would not simplify, is never hidden and casts no shadow: nothing to gain, it draws itself again)
@@ -81,7 +82,8 @@ export function updateInstViews(){ if(!C.on){ if(RECS.size) for(const R of [...R
   const k = pl ? Math.min(C.maxK, Math.max(1, Math.hypot(camera.position.x - px, camera.position.y - (pl.y || 0), camera.position.z - pz) / C.ref)) : 1; let budget = C.perFrame;
   for(const R of RECS.values()){ const im = R.im;
     if(!im.parent || im.geometry !== R.geo || im.material !== R.mat || !!im.instanceColor !== R.hasCol || im.instanceMatrix.count !== R.cap){ unwrap(R); continue; }   // (changed under us: wrapped anew at the next scan)
-    R.G.visible = im.visible; const s = sigOf(im, R);
+    R.G.visible = im.visible; if(R.dyn){ if(im.visible){ positions(R); rebuild(R, px, pz, k); } continue; }   // VIEW 4 moving things: sorted afresh every frame (a few dozen instances)
+    const s = sigOf(im, R);
     if(s !== R.sig){ R.sig = s; positions(R); R.dirty = true; }
     else if(!R.dirty){ const dx = px - R.cx, dz = pz - R.cz; if(dx * dx + dz * dz > C.step * C.step || Math.abs(k - R.k) > C.kStep) R.dirty = true; }
     if(R.dirty && budget > 0){ budget--; rebuild(R, px, pz, k); } } }
