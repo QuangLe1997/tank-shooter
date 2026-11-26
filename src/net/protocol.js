@@ -18,7 +18,7 @@ import { COOP } from '../../config.js';
 const Q = COOP.quant, LIM = COOP.limits, TAU = Math.PI * 2, HEAD = Q.head, AIM = Q.aim;
 export const NET_PROTO = COOP.proto;
 export const NET_MSG = { SNAP:1, INPUT:2, PING:3, PONG:4 };
-export const NET_CTL = ['hello', 'settings', 'ready', 'start', 'end', 'field'];
+export const NET_CTL = ['hello', 'settings', 'ready', 'start', 'end', 'field', 'say'];   // (COOP 6 say: a line of the host's radio for the guest's)
 export const NET_EV = { SHOT:1, HIT:2, DEATH:3, EXPLOSION:4, GRENADE:5, RADIO:6, MARK:7, CUE:8 };
 export const NET_PFLAG = { FIRING:1, RELOADING:2, MOUNTED:4, DOWNED:8, AIMING:16, SPRINT:32, AIRBORNE:64, DEAD:128 };
 export const NET_STANCE = { STAND:0, CROUCH:1, PRONE:2, CLIMB:3, HORSE:4, PILLION:5 };

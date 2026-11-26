@@ -1,7 +1,7 @@
 // game/startup.js — Z103 COMPOSITION ROOT. Last system module in hub.js: everything is defined, so this is where the
 // game is actually started (title-screen actors, saved prefs, first-launch dialogs, boot gate, first frame).
 // Server/co-op work (ARCHITECTURE.md §6) swaps what runs here — not the systems themselves.
-import { makeCavPlayer, PROFILE, S, __set_muted, bootReady, buildCore, doResize, initIcons, loop, muted, openNick, refreshBestLine, refreshStartUI, setMuted, setQuality, syncMenuState, updateSpellHUD } from '../hub.js';
+import { makeCavPlayer, PROFILE, S, __set_muted, bootReady, buildCore, doResize, initIcons, loop, muted, openNick, refreshBestLine, refreshStartUI, setMuted, setQuality, syncMenuState, updateSpellHUD, coopBoot } from '../hub.js';
 
 // build the scene actors up front so the title screen shows a live battlefield
 buildCore(1);
@@ -19,3 +19,4 @@ doResize(true);                                                // size the buffe
 requestAnimationFrame(()=>requestAnimationFrame(bootReady));   // two frames in → the battlefield is genuinely on screen
 
 requestAnimationFrame(loop);
+coopBoot();   // COOP 4 ?room=CODE in the address: the co-op lobby instead of the home screen (no room: returns at once, nothing else happens)

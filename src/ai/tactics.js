@@ -1,7 +1,7 @@
 // ai/tactics.js — THE ENEMY'S FRAME: every enemy unit's HP bar, burning, stun and first sighting; then the infantry (actors/infantry.js) or the helicopter
 //   (actors/helis.js) moves and fights (no-tanks: Z95 the tactical director, its armoured vehicles' steering, gun laying, smoke and ramming are gone)
 import { BALANCE, TACTICS } from '../../config.js';
-import { PROFILE, ENEMY_CLASS, ENVMOD, S, armorOf, enemies, heightAt, killEnemy, radio, spawnPart, typeMul, updateEnemyBar, updateHeli, updateInfantry, bloodSpurt, awareFrame, updateEntries } from '../hub.js';
+import { PROFILE, ENEMY_CLASS, ENVMOD, S, armorOf, enemies, heightAt, killEnemy, radio, spawnPart, typeMul, updateEnemyBar, updateHeli, updateInfantry, bloodSpurt, awareFrame, updateEntries, CO, coopFocus, coopFocusEnd } from '../hub.js';
 
 export function aiIQ(){ const T=TACTICS.iq; return Math.max(0, Math.min(T.cap, T.base + T.perStage*(S.stage-1) + (T[PROFILE.difficulty]||0) + (S.loop||0)*T.loop)); }   // Z95 how sharp the enemy fights (the infantry reads it)
 export function updateEnemies(dt, now){
@@ -30,7 +30,8 @@ export function updateEnemies(dt, now){
       continue;
     }
     const edt = dt * slow;   // movement slow factor (Time Warp); doesn't affect shared dt
-    if(def.inf){ updateInfantry(e, dt, now, edt); continue; }                 // Z79 foot soldiers
+    if(def.inf){ if(CO.ai && coopFocus(e, now)){ try{ updateInfantry(e, dt, now, edt); }finally{ coopFocusEnd(); } continue; }   // COOP 5 on a co-op host this man regards the guest's soldier: "the player" is him for this update
+      updateInfantry(e, dt, now, edt); continue; }                 // Z79 foot soldiers
     if(def.air) updateHeli(e, dt, now, edt);                                  // Z80 attack helicopter · Z222 bomber / transport
   }
 }

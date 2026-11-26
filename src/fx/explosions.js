@@ -1,11 +1,11 @@
 // fx/explosions.js — COMBAT FX / EXPLOSIONS (juiced in P4)
 import { BLAST_DEATH } from '../../config.js';
-import { BIOME, MOBILE, S, fireFxOn, heBlast, heatBlast, smokeRoll, blastLight, bulletImpact, burst, decalCrater, decalDirt, decalScorch, dustSkirt, fireball, gradePass, haptic, heightAt, muzzleLight, ringPulse, scareBirds, sfx, shockDome, spawnDebris, spawnPart, wetAt } from '../hub.js';
+import { BIOME, MOBILE, S, fireFxOn, heBlast, heatBlast, smokeRoll, blastLight, bulletImpact, burst, decalCrater, decalDirt, decalScorch, dustSkirt, fireball, gradePass, haptic, heightAt, muzzleLight, ringPulse, scareBirds, sfx, shockDome, spawnDebris, spawnPart, wetAt, CO, coopHostBlast } from '../hub.js';
 
 // ----------------------------- COMBAT FX / EXPLOSIONS (juiced in P4) -----------------------------
 // FIRE 2/3 kind: 'he' (the default — a grenade, a shell, a bomb, a thing blown up: earth and grey-brown dust first, a brief flash) or 'heat' (a B41's shaped
 //   charge: the compact fireball gone to black smoke, sparks, fragments) — fx/blasts.js; pos.y well above the ground = an air burst. ?oldfx: the look below
-export function bigExplode(pos, color, scale=1.5, kind){ scareBirds(pos.x, pos.z);   // Z235 the swallows scatter from the blast
+export function bigExplode(pos, color, scale=1.5, kind){ if(CO.ai) coopHostBlast(pos, color, scale);   /* COOP 6 the guest sees the host's explosions */ scareBirds(pos.x, pos.z);   // Z235 the swallows scatter from the blast
   if(fireFxOn()){ (kind==='heat' ? heatBlast : heBlast)(pos.x, pos.y, pos.z, scale); if(color!=null) burst(pos, color, Math.floor(3*scale), 9*scale, {y:(pos.y??heightAt(pos.x,pos.z)+1), life:0.3, size:0.5*scale, up:3});   // (a few sparks in the caller's own colour)
     sfx(scale>=2 ? 'bigexplode' : 'explode', pos); return; }
  

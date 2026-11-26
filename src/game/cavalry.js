@@ -43,7 +43,7 @@ function hoofFall(i, x, z, v){ const k=Math.min(1, v/12);
     const n=actx.createBufferSource(), b=actx.createBuffer(1, Math.floor(actx.sampleRate*0.03), actx.sampleRate), d=b.getChannelData(0); for(let q=0;q<d.length;q++) d[q]=(Math.random()*2-1)*(1-q/d.length);
     n.buffer=b; const f=actx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=2200+Math.random()*900; f.Q.value=1.4; const g2=actx.createGain(); g2.gain.value=vol*0.55; n.connect(f).connect(g2).connect(master); n.start(t); }catch(e){} }
 // ---- G: get off / get on (or whistle him over if he is far) ----
-export function cavToggleMount(){ const p=S.player; if(!p || !p.cav || S.mode!=='playing' || CV.trans) return;
+export function cavToggleMount(){ const p=S.player; if(!p || !p.cav || S.mode!=='playing' || CV.trans || p.downed) return;   /* COOP 7 (down in a co-op battle: no ride) */
   if(CV.mounted){ if(CV.speed>CAV.horse.cruise*0.6 || (CV.H && CV.H.air && CV.H.air.y>0)){ floatText(CV.H && CV.H.bike ? 'CHẠY CHẬM LẠI ĐÃ' : 'GHÌM CƯƠNG ĐÃ', '#ffcf5a', p.pos, 14); return; }
     CV.trans={ k:'off', t:0 }; sfx('click'); return; }
   if(CV.climb){ floatText('XUỐNG ĐẤT RỒI MỚI LÊN XE / NGỰA', '#ffcf5a', p.pos, 14); return; }   // Z451 on a wall or a rock

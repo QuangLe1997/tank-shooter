@@ -1,6 +1,6 @@
 // ui/briefing.js — STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin; XK-UI its back button: to the battle setup (a fresh launch from it) or home (asks mid-run)
 import { CONTRACTS, DMG_TYPE, OBJECTIVES, OBJ_REWARD } from '../../config.js';
-import { modeBrief, bigEventsReset, sideMissionsReset, directorReset, opTitle, placeLine, capVi, askConfirm, quitToMenu, openBattleSetup, BS, BIOME, GUNS, PROFILE, S, WAVE, biomeVi, bossForStage, camera, coachFirstRun, conditionsText, escapeHtml, floatText, gunPicEl, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, renderer, resetEnvEvents, resetSurprises, saveProfile, sayVoice, scene, setFocus, setIcon, sfx, show, spawnRelic, storyBrief, storyReset, tapEl, voiceStage, spellNow, briefTeam, nemBrief, droneWarReset, ammoHud } from '../hub.js';
+import { modeBrief, bigEventsReset, sideMissionsReset, directorReset, opTitle, placeLine, capVi, askConfirm, quitToMenu, openBattleSetup, BS, BIOME, GUNS, PROFILE, S, WAVE, biomeVi, bossForStage, camera, coachFirstRun, conditionsText, escapeHtml, floatText, gunPicEl, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, renderer, resetEnvEvents, resetSurprises, saveProfile, sayVoice, scene, setFocus, setIcon, sfx, show, spawnRelic, storyBrief, storyReset, tapEl, voiceStage, spellNow, briefTeam, nemBrief, droneWarReset, ammoHud, coopActive, coopGate } from '../hub.js';
 
 // ----- STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin -----
 export let _brCtx = null;   // what chooseContract should do on confirm: {first?} (stage1) or {stage,biomeName,accentHex} (stage 2+)
@@ -66,7 +66,8 @@ export function updateCountdown(dt){ const el=document.getElementById('countdown
   if(_warm && S.cd-dt<=0.05){ S.cd=0.05; _hold+=dt; if(_hold>0.5 && el && el.textContent!=='NẠP…'){ el.textContent='NẠP…'; el.className='show'; } return; }   // Z323 the shaders are still compiling: wait on "1" (then NẠP…) so the fight never starts mid-compile — the stutter when you first open fire
   _hold=0; S.cd-=dt; const n=Math.max(0, Math.ceil(S.cd));
   if(n!==_cdN && n>0){ _cdN=n; if(el){ el.textContent=String(n); el.className=''; void el.offsetWidth; el.className='show'; } sfx('beep'); }
-  if(S.cd<=0) goLive(); }
+  if(S.cd<=0){ if(coopActive() && !coopGate()){ S.cd=0.02; if(el && el.textContent!=='CHỜ ĐỒNG ĐỘI…'){ el.textContent='CHỜ ĐỒNG ĐỘI…'; el.className='show'; } return; }   // COOP 4 the fight goes live on both pages together
+    goLive(); } }
 export function applyContractHUD(){
   const chip=document.getElementById('contractChip'); if(!chip) return;
   const c=S.contract;

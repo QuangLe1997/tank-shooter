@@ -2552,6 +2552,23 @@ export const BACKDROP = { on:true, ground:14000, lead:-Math.PI / 2 + 0.42, snow:
 //   session (net/coop.js): tickMs = housekeeping step · pingMs = peer round-trip · helloMs = no hello from the peer → say so again · peerLostMs = a battle
 //     waits this long for a dropped peer before it ends
 //   ids: the two players' ids in a snapshot; battle entities start at firstEntity (ids are 1–65535, never reused within a battle)
+// COOP 4–7 THE GAME'S SIDE OF IT (game/coop-glue.js, coop-remote.js, coop-puppets.js, ui/coop-lobby.js, net/rules.js):
+//   puppets: true = on the GUEST the enemy is drawn from the host's snapshots and his own enemy AI / waves / director do not run (false = each page fights its own
+//     enemy: the two only see each other) · sayMax = letters of a radio line the host passes on
+//   cue: the codes of a CUE event (p): at the gate of a stage · go · stage won (a = the next stage, b = 1 the campaign) · lost · score (a low, b high 16 bits) ·
+//     wave (a) · director's phase (a) · stood up again
+//   lobby: levelMax = stages the host may start at · tod / wx = the hours and weathers on offer · gateWaitS = a page waits this long at the 3-2-1 for the other
+//   mate (the other player's soldier): tagY / rideTagY = his name over his head (m; mounted) · arrowPad = px the edge arrow keeps from the screen's edge ·
+//     losEvery = s between two looks whether something hides him (losStep m between samples of the ground, losClear m of earth over the line = hidden) ·
+//     fireEvery = s between two of his muzzle flashes while he holds the trigger, tracer* = his rounds as drawn (m/s, s, how many at once) · hex / css his
+//     colour, downCss when he is down · hitR / rideR = how big a target he is for the enemy's rounds on the host (m) · xrayH / xrayW = the outline seen through walls (m) ·
+//     spawnGap = m the guest starts to the side of the host (both would stand on the one spawn point)
+//   focus: on the host each enemy soldier regards ONE of the two players — looked at again every `every` s, changed only for one `stick` × nearer
+//   down: at no health a player is DOWN (crawls, cannot fire) — the other within r m for reviveS s stands him up with hpK of his health and safeS s of
+//     safety; the count falls back at `decay` of its pace when he steps away; both down = the stage is lost
+//   puppet (the guest's drawn enemy): fireMs = a man who fired within this long is sent as firing · fireEvery = s between two drawn shots of his ·
+//     goneS = a man gone from the snapshots without a death is taken off after this long · blastPerS = explosions passed on a second at most ·
+//     nadeN = grenades in the air drawn at once · hitMax = the most one reported hit may take (a guard against a broken page)
 export const COOP = { proto:1, snapHz:20, inputHz:30,
   interp:{ delayMs:100, inputDelayMs:70, extrapMs:120, keep:10, teleportM:6, driftMs:0.05, offsetUp:0.25 },
   quant:{ pos:100, head:256, aim:65536 },
@@ -2559,7 +2576,14 @@ export const COOP = { proto:1, snapHz:20, inputHz:30,
   delta:{ history:32, maxBack:24 },
   link:{ pingMs:2000, deadMs:8000, queueMax:64, retryBaseMs:400, retryMaxMs:5000, retryK:1.8, retryJitter:0.25, retries:20 },
   session:{ tickMs:250, pingMs:1000, helloMs:3000, peerLostMs:15000 },
-  ids:{ host:1, guest:2, firstEntity:16 } };
+  ids:{ host:1, guest:2, firstEntity:16 },
+  puppets:true, sayMax:160,
+  cue:{ GATE:1, GO:2, WON:3, LOST:4, SCORE:5, WAVE:6, PHASE:7, UP:8 },
+  lobby:{ levelMax:5, tod:['day', 'noon', 'sunset', 'night'], wx:['clear', 'rain', 'sand', 'fog', 'snow'], gateWaitS:120 },
+  mate:{ tagY:2.25, rideTagY:3.0, arrowPad:54, losEvery:0.25, losStep:3, losClear:1.2, fireEvery:0.12, tracerV:230, tracerLife:0.16, tracerN:24, hex:0x6fd0ff, css:'#6fd0ff', downCss:'#ff8a5a', hitR:0.55, rideR:1.2, xrayH:2.0, xrayW:1.05, spawnGap:3.2 },
+  focus:{ every:0.7, stick:0.75 },
+  down:{ r:2.6, reviveS:4, hpK:0.4, safeS:2.5, decay:0.5 },
+  puppet:{ fireMs:220, fireEvery:0.14, goneS:0.6, blastPerS:6, nadeN:8, hitMax:3000 } };
 // SUPPLY 1 AMMUNITION IS A SUPPLY LINE (game/logistics.js; a gun's ammunition class: data/guns.js ammoKind) — "magazines" = × the gun's own magazine; rounds, s, m, kg.
 //   start: the reserve he sets out with by class, in magazines of the gun he carries in it (× diff by the difficulty setting); a new stage and a new life bring every class
 //     back up to it · capK: a class's reserve holds at most capK × that · warn: the reserve at or under `low` magazines = ÍT ĐẠN, none = BĂNG CUỐI, none and an empty

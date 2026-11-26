@@ -14,6 +14,7 @@ export * from './net/protocol.js';   // COOP 2 two-player co-op: the wire format
 export * from './net/interp.js';   // COOP 2 the guest's snapshot buffer
 export * from './net/transport.js';   // COOP 2 the line between the two players
 export * from './net/coop.js';   // COOP 2 the session and the game's hooks (asleep unless the address has ?room=)
+export * from './net/rules.js';   // COOP 4 the rules both pages agree on (cue codes, lobby clash, hit report, focus, down / up) — pure
 export * from './core/config.js';
 export * from './ui/icons.js';
 export * from './ui/gunart.js';   // Z150 one studio photo per gun, used on every screen
@@ -267,6 +268,10 @@ export * from './campaign/daily.js';   // MODE 2 THỬ THÁCH HÔM NAY: one batt
 export * from './game/loop.js';
 export * from './game/viewport.js';
 export * from './game/boot-gate.js';
+export * from './ui/coop-lobby.js';   // COOP 4 the co-op lobby's screen (built only when a room is joined)
+export * from './game/coop-remote.js';   // COOP 5 the other player's soldier
+export * from './game/coop-puppets.js';   // COOP 6 the enemy as the host sends it
+export * from './game/coop-glue.js';   // COOP 4–7 the game's side of two-player co-op (asleep without ?room=)
 export * from './game/startup.js';
 export * from './dev/hooks.js';
 export * from './dev/pose-studio.js';   // Z349 the pose studio: how a soldier holds each weapon, measured and photographed (window.poseStudio)

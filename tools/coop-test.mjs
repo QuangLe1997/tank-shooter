@@ -12,6 +12,7 @@ import * as P from '../src/net/protocol.js';
 import { createSnapInterp, makeInterpOut } from '../src/net/interp.js';
 import { createWsTransport, createLoopbackPair } from '../src/net/transport.js';
 import { createCoopSession, coopStart, coopActive, coopIsHost, coopParseUrl, coopWsUrl, coopBroadcast, coopSendInput, coopState } from '../src/net/coop.js';
+import * as R from '../src/net/rules.js';
 import { startLanRoom } from './lan-room.mjs';
 import net from 'node:net'; import crypto from 'node:crypto'; import fs from 'node:fs'; import path from 'node:path'; import { fileURLToPath } from 'node:url';
 
@@ -151,6 +152,64 @@ grp('a session over a lossy in-memory line: the lobby, deltas that heal themselv
   const [tc, td] = createLoopbackPair(), H2 = createCoopSession({ role:'host', transport:tc, timers:false }), G2 = createCoopSession({ role:'guest', transport:td, timers:false }); H2.start(); G2.start();
   td.subs.emit('message', JSON.stringify({ k:'hello', v:P.NET_PROTO + 1, sid:'x', role:'host' }), false); ok(G2.state === 'ended' && G2.reason === 'version' && H2.state === 'ended', 'a peer on another protocol version ends the session with reason "version"');
   const [te, tf] = createLoopbackPair(), H3 = createCoopSession({ role:'host', transport:te, timers:false }), H4 = createCoopSession({ role:'host', transport:tf, timers:false }); H3.start(); H4.start(); ok(H3.state === 'ended' && H3.reason === 'same-role' || H4.reason === 'same-role', 'two hosts → "same-role"'); H3.stop(); H4.stop(); }
+
+// ---------- COOP 4–7: what the game's side sends and the rules both pages keep (src/net/rules.js) ----------
+grp('the lobby: who is ready, the start, a radio line, two fields that differ');
+{ const clock = { t:5000 }, [ta, tb] = createLoopbackPair({ hostName:'Chủ', guestName:'Khách' }), H = createCoopSession({ role:'host', room:'LOB', name:'Chủ', transport:ta, now:() => clock.t, timers:false }), G = createCoopSession({ role:'guest', room:'LOB', name:'Khách', transport:tb, now:() => clock.t + 4242, timers:false });
+  const said = [], fields = []; G.on('say', (t, k) => said.push(t + '|' + k)); H.on('field', same => fields.push('h' + same)); G.on('field', same => fields.push('g' + same)); H.start(); G.start();
+  const battle = { biome:'MEADOW', level:2, tod:'sunset', wx:'rain', mobile:false, arena:184, quality:'high' }; H.setSettings({ seed:31337, battle }); const early = H.say('too early') === false;
+  ok(G.seed === 31337 && G.battle.biome === 'MEADOW' && G.battle.level === 2 && G.battle.arena === 184 && G.battle.mobile === false && early, 'the guest sees the battlefield the host picked (biome, stage, hour, weather, the machine it was built for); no radio line crosses a lobby');
+  G.setReady(true); const half = H.state === 'lobby' && H.peerReady === true && H.ready === false; H.setReady(true); const both = H.state === 'ready' && G.state === 'ready';
+  H.setSettings({ seed:31337, battle:Object.assign({}, battle, { biome:'CITY' }) }); const reset = H.state === 'lobby' && G.ready === false && G.battle.biome === 'CITY'; G.setReady(true);
+  ok(half && both && reset && H.state === 'ready' && H.begin() && G.state === 'playing' && G.battle.biome === 'CITY', 'ready, ready → the host may start; a new choice asks the guest again; start → both playing the battle last agreed');
+  ok(H.say('TÌNH BÁO: trực thăng địch', 'heli') === true && G.say('x') === true && said.length === 1 && said[0] === 'TÌNH BÁO: trực thăng địch|heli' && H.say('y'.repeat(999)) && said[1].length === COOP.sayMax + 1, 'a line of the host\'s radio reaches the guest\'s, cut to ' + COOP.sayMax + ' letters');
+  H.setFieldHash(111, 'stage 1'); G.setFieldHash(111, 'stage 1'); const same1 = fields.join() === 'gtrue,htrue' || fields.join() === 'htrue,gtrue'; H.setFieldHash(222, 'stage 2'); const wait = fields.length === 2; G.setFieldHash(223, 'stage 2');
+  ok(same1 && wait && fields.length === 4 && fields.slice(2).every(f => /false/.test(f)) && H.fieldOk === false && G.fieldOk === false, 'fingerprint: the same land says so on both pages; the next stage is compared only once both built it — and one number off is "not the same field" on both');
+  H.stop(); }
+
+grp('each page sends its soldier at its rate, and it is drawn on the other from the interpolation buffer');
+{ const clock = { t:9000 }, [ta, tb] = createLoopbackPair(), H = createCoopSession({ role:'host', transport:ta, now:() => clock.t, timers:false }), G = createCoopSession({ role:'guest', transport:tb, now:() => clock.t, timers:false });
+  H.start(); G.start(); H.setSettings({ seed:5, battle:{ biome:'DESERT' } }); H.setReady(true); G.setReady(true); H.begin();
+  const F = P.NET_PFLAG, T = P.NET_STANCE, man = (id, t, fl, st) => ({ id, x:10 + t * 0.004, y:1.25, z:-30 + t * 0.002, heading:1.2, aimYaw:2.9, aimPitch:-0.2, vx:4, vz:2, stance:st, weapon:5, flags:fl, hp:63, hpMax:150, mount:2 });
+  let nIn = 0, nSnap = 0, maxG = 0, maxH = 0, flagsOk = true; const t0 = clock.t;
+  for(let ms = 0; ms < 2000; ms += 4){ clock.t = t0 + ms; const t = clock.t;
+    if(G.inputDue(t)){ G.sendInput(man(COOP.ids.guest, ms, F.FIRING | F.MOUNTED | F.DOWNED, T.PILLION)); nIn++; }
+    if(H.snapDue(t)){ const f = H.frame(); P.netFramePlayer(f, man(COOP.ids.host, ms, F.RELOADING | F.SPRINT, T.CROUCH)); H.broadcast(f); nSnap++; }
+    if(ms > 400 && ms % 16 === 0){ const og = G.sample(t), oh = H.sample(t), dg = ms - COOP.interp.delayMs, dh = ms - COOP.interp.inputDelayMs;
+      if(og.np === 1 && og.mode === 'lerp'){ maxG = Math.max(maxG, Math.hypot(og.pl[0].x - (10 + dg * 0.004), og.pl[0].z - (-30 + dg * 0.002))); flagsOk = flagsOk && og.pl[0].id === COOP.ids.host && og.pl[0].flags === (F.RELOADING | F.SPRINT) && og.pl[0].stance === T.CROUCH && og.pl[0].weapon === 5 && og.pl[0].hp === 63 && og.pl[0].hpMax === 150 && og.pl[0].mount === 2 && Math.abs(og.pl[0].aimYaw - 2.9) < 0.001 && Math.abs(og.pl[0].aimPitch + 0.2) < 0.001 && Math.abs(og.pl[0].y - 1.25) < 0.006; }
+      if(oh.np === 1 && oh.mode === 'lerp'){ maxH = Math.max(maxH, Math.hypot(oh.pl[0].x - (10 + dh * 0.004), oh.pl[0].z - (-30 + dh * 0.002))); flagsOk = flagsOk && oh.pl[0].id === COOP.ids.guest && oh.pl[0].flags === (F.FIRING | F.MOUNTED | F.DOWNED) && oh.pl[0].stance === T.PILLION; } } }
+  say(nIn >= COOP.inputHz * 2 - 2 && nIn <= COOP.inputHz * 2 + 2 && nSnap >= COOP.snapHz * 2 - 2 && nSnap <= COOP.snapHz * 2 + 2 && H.stats.inputsIn === nIn && G.stats.snapsIn === nSnap, `2 s of play: ${nIn} states guest → host (${COOP.inputHz} / s), ${nSnap} snapshots host → guest (${COOP.snapHz} / s), none lost on a clean line`);
+  say(flagsOk && maxG < 0.02 && maxH < 0.02 && maxG > 0, `the other soldier is drawn within ${(Math.max(maxG, maxH) * 100).toFixed(1)} cm of where he was (4.5 m/s), with his stance, weapon, ride, health and flags — firing, reloading, mounted, DOWN — intact`);
+  report.playerBytesPerS = { guestToHost:Math.round(G.stats.bytesOut / 2), hostToGuest:Math.round(H.stats.bytesOut / 2) };
+  say(G.stats.bytesOut / 2 < 2000 && H.stats.bytesOut / 2 < 2000, `a soldier alone costs ${Math.round(G.stats.bytesOut / 2)} B/s guest → host and ${Math.round(H.stats.bytesOut / 2)} B/s host → guest (no enemy in the snapshot)`);
+  // hit reports, and what comes back
+  const hits = [], back = []; H.on('event', (t, a, b, x, y, z, p) => { if(t === P.NET_EV.HIT) hits.push([a, b, x, z, R.coopHitOf(p)]); }); G.on('event', (t, a, b, x, y, z, p) => back.push([t, a, b, p]));
+  G.sendEvent(P.NET_EV.HIT, COOP.ids.guest, 77, 0.6, 0, -0.8, R.coopHitP(34.56, false)); G.sendEvent(P.NET_EV.HIT, COOP.ids.guest, 78, 1, 0, 0, R.coopHitP(900, true)); G.sendEvent(P.NET_EV.HIT, COOP.ids.guest, 79, 0, 0, 1, R.coopHitP(1e9, false));
+  H.sendEvent(P.NET_EV.DEATH, 78, 1, 1, 2.5, 0, 0); H.sendEvent(P.NET_EV.HIT, 0, COOP.ids.guest, 0, 0, 1, R.coopHitP(12.3, false)); H.sendEvent(P.NET_EV.CUE, 5, 0, 0, 0, 0, R.NET_CUE.WAVE);
+  for(let k = 0; k < 6; k++){ clock.t += 40; G.sendInput(man(COOP.ids.guest, 0, 0, 0)); const f = H.frame(); H.broadcast(f); }
+  ok(hits.length === 3 && hits[0][0] === COOP.ids.guest && hits[0][1] === 77 && Math.abs(hits[0][2] - 0.6) < 0.006 && Math.abs(hits[0][3] + 0.8) < 0.006 && Math.abs(hits[0][4].dmg - 34.6) < 0.06 && hits[0][4].heavy === false && hits[1][4].heavy === true && hits[1][4].dmg === 900 && hits[2][4].dmg <= COOP.puppet.hitMax,
+    'hit reports: the guest names the enemy, the way the round flew, the damage (to 0.1) and whether it was a heavy round; each arrives once; a report cannot take more than ' + COOP.puppet.hitMax);
+  ok(back.length === 3 && back[0][0] === P.NET_EV.DEATH && back[0][1] === 78 && back[1][0] === P.NET_EV.HIT && back[1][2] === COOP.ids.guest && Math.abs(R.coopHitOf(back[1][3]).dmg - 12.3) < 0.06 && back[2][3] === R.NET_CUE.WAVE && back[2][1] === 5, 'what comes back: the death of the enemy he hit, the damage the host decided against him, the wave — in order');
+  G.stop(); }
+
+grp('the rules both pages keep: who may play together, whom an enemy regards, down and up again');
+{ const pc = { mobile:false, arena:184, quality:'high' };
+  ok(R.coopLobbyClash(pc, { mobile:true, arena:130, quality:'high' }) === 'mobile' && R.coopClashFatal('mobile') && R.coopLobbyClash(pc, { mobile:false, arena:130 }) === 'arena' && R.coopClashFatal('arena') && R.coopLobbyClash(pc, { mobile:false, arena:184, quality:'low' }) === 'quality' && !R.coopClashFatal('quality') && R.coopLobbyClash(pc, pc) === '' && R.coopLobbyClash(pc, {}) === '' && !R.coopClashFatal(''),
+    'a phone with a desktop is refused (the two build different fields), another field size too; another picture quality only warns');
+  ok(R.coopSeedUrl('http://10.0.0.2:8777/?room=AB12C', 7) === 'http://10.0.0.2:8777/?room=AB12C&seed=7' && R.coopSeedUrl('http://h/?seed=3&room=X&coop=host#dev', 99) === 'http://h/?room=X&coop=host&seed=99#dev' && R.coopSeedUrl('http://h/', 0) === 'http://h/?seed=1' && coopParseUrl(R.coopSeedUrl('?room=abcde', 4242)).seed === 4242, 'a page that must take the host\'s seed reloads at its own address with seed= set (once, kept in order)');
+  const cues = Object.values(R.NET_CUE), sc = R.coopScoreAB(3123456789); ok(new Set(cues).size === cues.length && cues.every(c => c >= 1 && c <= 65535) && R.coopScoreOf(sc[0], sc[1]) === 3123456789 && R.coopScoreOf(...R.coopScoreAB(10550)) === 10550 && R.coopScoreOf(...R.coopScoreAB(-5)) === 0, 'cue codes are distinct; a 32-bit score crosses in a cue\'s two 16-bit fields');
+  ok(Math.abs(R.coopMU16(R.coopU16M(-183.37)) + 183.37) < 0.006 && Math.abs(R.coopMU16(R.coopU16M(183.99)) - 183.99) < 0.006 && R.coopU16M(1e6) === 65535 && R.coopU16M(-1e6) === 0 && R.coopBlastColor(...R.coopBlastAB(0xffb050)) === 0xffb050 && R.coopBlastColor(...R.coopBlastAB(0)) === 0, 'a grenade\'s start point and an explosion\'s colour fit an event\'s 16-bit fields');
+  // whom an enemy regards
+  ok(R.coopFocusPick(0, 10, 30, false, false) === 0 && R.coopFocusPick(0, 30, 10, false, false) === 1 && R.coopFocusPick(0, 10, 9, false, false) === 0 && R.coopFocusPick(1, 9, 10, false, false) === 1 && R.coopFocusPick(1, 5, 10, false, false) === 0
+    && R.coopFocusPick(0, 5, 50, true, false) === 1 && R.coopFocusPick(1, 50, 5, false, true) === 0 && R.coopFocusPick(1, 50, 5, true, true) === 1, 'an enemy regards the nearer player, keeps to him until the other is clearly nearer (×' + COOP.focus.stick + '), and never a man who is down while the other stands');
+  // down and up
+  const D = R.makeCoopDown(), up = { present:true, down:false, dist:9 }, C = COOP.down; let t = 0, res = '';
+  ok(R.coopDownEnter(R.makeCoopDown(), { present:false, down:false, dist:1 }) === 'alone' && R.coopDownEnter(R.makeCoopDown(), { present:true, down:true, dist:1 }) === 'lost' && R.coopDownEnter(D, up) === 'down' && D.on && D.k === 0, 'at no health: DOWN while the other stands · the stage lost when he is down too · alone (nobody in the room) the single-player death');
+  for(let i = 0; i < 100; i++) res = R.coopDownStep(D, 1 / 60, up) || res; const far = D.on && D.k === 0 && res === ''; up.dist = C.r - 0.1;
+  while(D.on && t < 60){ res = R.coopDownStep(D, 1 / 60, up); t += 1 / 60; } const tUp = t; say(far && res === 'up' && Math.abs(tUp - C.reviveS) < 0.05 && !D.on, `the other stands within ${C.r} m for ${tUp.toFixed(2)} s → up again (COOP.down.reviveS = ${C.reviveS})`);
+  R.coopDownEnter(D, up); for(let i = 0; i < 120; i++) R.coopDownStep(D, 1 / 60, up); const k2 = D.k; up.dist = 30; for(let i = 0; i < 60; i++) R.coopDownStep(D, 1 / 60, up); const k3 = D.k; let show = 0; up.dist = 1; for(let i = 0; i < 60; i++) show = R.coopReviveShow(show, 1 / 60, 1, true);
+  ok(Math.abs(k2 - 2 / C.reviveS) < 0.01 && k3 < k2 && k3 > 0 && Math.abs(k3 - (k2 - 1 / C.reviveS * C.decay)) < 0.01 && Math.abs(show - 1 / C.reviveS) < 0.01 && R.coopReviveShow(0.5, 1, 1, false) === 0, 'stepping away lets the count fall back (slower than it rose); the reviver\'s page shows the same count from the DOWNED flag and the distance alone');
+  up.down = true; const lost = R.coopDownStep(D, 1 / 60, up) === 'lost' && D.lost; up.down = false; up.present = false; ok(lost && R.coopDownStep(D, 1 / 60, up) === 'alone' && !D.on && R.coopDownStep(D, 1, up) === '', 'both down → the stage is lost; the other leaves the room → he gets up by himself'); }
 
 // =====================================================================================================================
 // part 2 — real sockets on this machine only

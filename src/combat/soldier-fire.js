@@ -26,7 +26,7 @@ export function trooperGive(id){ const p = S.player, g = GUNS[id]; if(!p || !g) 
     floatText(g.name + (up ? ' ★' + st : ' — ĐẦY ĐẠN'), up ? '#ffd24a' : '#9be04a', p.pos, up ? 20 : 16); if(up){ ringPulse(p.pos, 0xffd24a, 2.4); sfx('levelup'); } ammoOnGive(id, false); }   // SUPPLY 1 …and it brings a magazine for the reserve
   else { p.guns.push({ id, ammo:magCap(g), rU:0, rD:0 }); floatText(g.name + ' — NHẶT ĐƯỢC (' + p.guns.length + ')', '#ffd24a', p.pos, 20); ammoOnGive(id, true); }   // SUPPLY 1 a new gun comes with magazines of its own (game/logistics.js)
   updateGunHUD(); }
-export function soldierFire(now, range){ const p = S.player; if(!p || !p.guns.length) return; if(fpvFire()) return;   // DRONE 2 no shot while he flies the FPV drone: the trigger sets it off (combat/drone-skills.js)
+export function soldierFire(now, range){ const p = S.player; if(!p || !p.guns.length || p.downed) return;   /* COOP 7 down in a co-op battle: he cannot fire (a field only co-op sets) */ if(fpvFire()) return;   // DRONE 2 no shot while he flies the FPV drone: the trigger sets it off (combat/drone-skills.js)
   const inst = p.guns[p.gunIdx], g = GUNS[inst.id];
   if(!g || inst.rU) return; if(!p.infiniteAmmo && inst.ammo <= 0){ startReload(now, inst); return; } if(now < p.fireAt) return;
   const R = CV.mounted && (CV.real || CV.G && CV.G.userData); if(R && (R.sat || R.bed) && R.gunYaw != null){ const off = R.gunYaw - p.aimSmoothed; if(Math.abs(Math.atan2(Math.sin(off), Math.cos(off))) > RIDER_TURN.fire) return; }   // Z340 turning round in the saddle: the trigger waits for the bore to come onto the aim (Z388 on the fallback rig too: actors/general.js · Z389 and stepping round in a bed)

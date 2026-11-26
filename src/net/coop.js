@@ -18,7 +18,7 @@ function makeRate(hz){ const iv = 1000 / hz; let next = -1; return t => { if(nex
 //   the GUEST: setReady(true) → 'playing' when the host begins: sendInput(state) at inputDue(), on('snapshot'), sample(now) each frame for the drawn world
 //   both: setFieldHash(h, tag) once the battlefield stands → on('field', fn(same)) · sendEvent(type, a, b, x, y, z, p) (arrives once, in order) · on('event', fn(type, a, b, x, y, z, p)) · on('state', fn(state, before, reason))
 export function createCoopSession(o){ const now = o.now || (() => performance.now()), tr = o.transport, K = COOP.session, host = o.role === 'host';
-  const L = { state:[], snapshot:[], input:[], event:[], settings:[], peer:[], field:[], error:[] };
+  const L = { state:[], snapshot:[], input:[], event:[], settings:[], peer:[], field:[], error:[], say:[] };
   const emit = (k, a, b, c, d, e, f, g) => { const l = L[k]; for(let i = 0; i < l.length; i++){ try{ l[i](a, b, c, d, e, f, g); }catch(err){ console.error('coop: a ' + k + ' handler threw', err); } } };
   const enc = host ? createSnapEncoder() : null, dec = host ? null : createSnapDecoder(), outbox = createEventOutbox(), inbox = createEventInbox();
   const interp = createSnapInterp(host ? { delayMs:COOP.interp.inputDelayMs } : null);   // the guest: the world · the host: the guest's soldier
@@ -53,6 +53,8 @@ export function createCoopSession(o){ const now = o.now || (() => performance.no
     sendInput(st){ if(host || C.state !== 'playing' || !C.peer) return 0; inp.seq = (inp.seq + 1) & 0xffff; inp.ackTick = dec.ackTick(); inp.time = now() >>> 0; inp.ackEv = inbox.last; netPlayerQ(inp.pl, 0, st); if(!inp.pl[0]) inp.pl[0] = COOP.ids.guest; outbox.fill(inp);
       const bytes = packInput(inp); tr.send(bytes, true); C.stats.inputsOut++; C.stats.bytesOut += bytes.length; return bytes.length; },
     sendEvent(type, a, b, x, y, z, p){ if(C.state !== 'playing') return 0; return outbox.push(type, a | 0, b | 0, x || 0, y || 0, z || 0, p | 0); },
+    // COOP 6 a line of text for the other page (the host's radio): lobby-channel JSON, never lost, cut to COOP.sayMax letters; on('say', fn(text, key))
+    say(text, key){ if(C.state !== 'playing' || !C.peer || !peerHello) return false; const t = String(text == null ? '' : text).slice(0, COOP.sayMax); if(!t) return false; ctl('say', { t, key:String(key || '').slice(0, 24) }); return true; },
     sample(t, into){ return interp.sample(t == null ? now() : t, into); },
     snapDue, inputDue };
 
@@ -90,6 +92,7 @@ export function createCoopSession(o){ const now = o.now || (() => performance.no
     else if(m.k === 'ready'){ C.peerReady = !!m.on && (m.rev | 0) === C.rev; evaluate(); }
     else if(m.k === 'start'){ if(host) return; const c = netCleanSettings(m); if(!c.seed) return; C.seed = c.seed; C.battle = c.battle; C.rev = m.rev | 0; if(C.state === 'playing') return; if(C.state !== 'lobby' && C.state !== 'ready') return; play(!!m.resume); }
     else if(m.k === 'field'){ C.peerFieldHash = (m.hash >>> 0) || 1; C.peerFieldTag = String(m.tag == null ? '' : m.tag).slice(0, 24); fieldCheck(); }
+    else if(m.k === 'say'){ if(C.state === 'playing' && typeof m.t === 'string' && m.t) emit('say', m.t.slice(0, COOP.sayMax), String(m.key || '').slice(0, 24)); }
     else if(m.k === 'end') finish(String(m.reason || 'peer-ended').slice(0, 32), true); }
   function onBin(u){ const kind = netMsgKind(u);
     if(kind === NET_MSG.PING){ tr.send(packPing(NET_MSG.PONG, unpackPing(u).time), true); return; }
@@ -101,7 +104,7 @@ export function createCoopSession(o){ const now = o.now || (() => performance.no
   return C; }
 
 // ---------- the game's hooks: one session a page, made only by coopStart() ----------
-let _co = null; const _subs = { state:[], snapshot:[], input:[], event:[], settings:[], peer:[], field:[], error:[] };
+let _co = null; const _subs = { state:[], snapshot:[], input:[], event:[], settings:[], peer:[], field:[], error:[], say:[] };
 // Reads the address (opts.search, else location.search). No ?room= → returns null and nothing at all happens. Else joins the room as the host
 // (?coop=host) or the guest and returns the session. opts: { search, location, name, url, transport, now, timers, WebSocket, link }
 export function coopStart(opts){ opts = opts || {}; if(_co && _co.state !== 'ended') return _co; const loc = opts.location || globalThis.location, q = coopParseUrl(opts.search != null ? opts.search : loc ? loc.search : ''); if(!q) return null;
@@ -122,6 +125,8 @@ export function coopOnEvent(fn){ _subs.event.push(fn); }         // fn(type, a, 
 export function coopOnSettings(fn){ _subs.settings.push(fn); }   // fn(seed, battle)
 export function coopOnPeer(fn){ _subs.peer.push(fn); }           // fn(present, name)
 export function coopOnField(fn){ _subs.field.push(fn); }         // fn(same, mine, theirs) — did both pages build the same battlefield
+export function coopOnSay(fn){ _subs.say.push(fn); }             // fn(text, key) — a line the other page passed on (COOP 6)
+export function coopSay(text, key){ return _co ? _co.say(text, key) : false; }
 export function coopSetFieldHash(hash, tag){ if(_co) _co.setFieldHash(hash, tag); }
 export function coopSetSettings(s){ return _co ? _co.setSettings(s) : false; }
 export function coopSetReady(on){ return _co ? _co.setReady(on) : false; }

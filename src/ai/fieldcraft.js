@@ -7,7 +7,7 @@
 //     fired through the cloud go wild (both directions)
 import * as THREE from 'three';
 import { FIELDCRAFT } from '../../config.js';
-import { MOBILE, S, blastAllies, blocksNear, damageEnemy, damagePlayer, enemies, floatText, heightAt, inBlock, infBlastK, scene, sfx, spawnPart } from '../hub.js';
+import { MOBILE, S, blastAllies, blocksNear, damageEnemy, damagePlayer, enemies, floatText, heightAt, inBlock, infBlastK, scene, sfx, spawnPart, CO, coopBlastMate, coopHostNade } from '../hub.js';
 
 const FC=FIELDCRAFT, _lb=[], _spark={ color:0xffc060, size:0.3, life:0.4, grav:0, drag:2, op:0.9, keep:true };
 // a "tall" obstacle stops a rifle round dead: buildings, fortress walls, masonry, towers, containers, boulders (sandbags, drums, logs… are shot over)
@@ -51,7 +51,7 @@ export function liveNades(side){ let n=0; for(const g of NADES) if(g.side===side
 export function throwNade(side, fx, fz, tx, tz, now){ const N=FC.nade, d=Math.hypot(tx-fx, tz-fz), er=N.err[0]+Math.random()*(N.err[1]-N.err[0])*Math.min(1, d/N.maxD), ea=Math.random()*6.283;
   const m=new THREE.Mesh(NG, NM); m.castShadow=!MOBILE; scene.add(m);
   const g={ side, m, x0:fx, z0:fz, y0:heightAt(fx,fz)+1.5, x1:tx+Math.cos(ea)*er, z1:tz+Math.sin(ea)*er, t:0, T:0.7+d/26, peak:1.8+d*0.13, landed:false, boomAt:0, ring:null };
-  g.boomAt=g.T+N.fuseGround; NADES.push(g); _lastThrow[side]=now; sfx('click', { x:fx, z:fz }, 0.5); return g; }
+  g.boomAt=g.T+N.fuseGround; NADES.push(g); if(CO.ai) coopHostNade(g);   /* COOP 6 the guest sees it fly */ _lastThrow[side]=now; sfx('click', { x:fx, z:fz }, 0.5); return g; }
 function nadeBoom(g, now){ const N=FC.nade, x=g.x1, z=g.z1, y=heightAt(x,z);
   spawnPart(x, y+0.4, z, 0, 0, 0, { tex:'flash', color:0xfff2d0, size:4.2, life:0.07, grav:0, drag:8 });
   spawnPart(x, y+0.5, z, 0, 0.6, 0, { tex:'fire', color:0xffe0a0, color2:0xff6a1a, size:1.8, grow:1.4, life:0.22, grav:0, drag:4 });
@@ -59,6 +59,7 @@ function nadeBoom(g, now){ const N=FC.nade, x=g.x1, z=g.z1, y=heightAt(x,z);
   spawnPart(x, y+0.8, z, 0, 0.8, 0, { color:0x8a8478, size:2.6, life:1.8, smoke:true, grav:0.2, drag:1.4, grow:1.8, op:0.55, keep:true });
   sfx('explode', { x, z }, 0.55); const p=S.player; if(p && Math.hypot(p.pos.x-x, p.pos.z-z)<16) S.shake=Math.min(3, S.shake+0.25);
   if(g.side==='e'){ blastAllies(x, z, N.R, N.dmgE*(1+(S.stage-1)*0.06));
+    if(g.you && CO.ai) coopBlastMate(x, z, N.R, g.dmg, 0.4);   /* COOP 5 on a co-op host the guest's soldier is caught in it like the host's */
     if(g.you && p){ const dx=p.pos.x-x, dz=p.pos.z-z, dd=Math.hypot(dx, dz); if(dd<N.R) damagePlayer(g.dmg*(1-0.6*dd/N.R), now, dx||0.01, dz); } }   // DIR 2 a grenade thrown to flush the player (ai/tiers.js): it hurts him too
   else for(const e of enemies.slice()){ if(!e.def.inf || e.dead) continue; const k=infBlastK(Math.hypot(e.pos.x-x, e.pos.z-z), N.R); if(k<=0) continue;
     e._blast={ x, z }; e._hitK=1+1.2*k; e._fx='blast'; damageEnemy(e, k>=1 ? e.hp+1 : N.dmgA*k*(1+(S.stage-1)*0.08)); } }

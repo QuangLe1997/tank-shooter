@@ -1,5 +1,5 @@
 // ui/radar.js — RADAR / MINIMAP
-import { radarJam, radarEvents, radarSide, ARENA, DEPOTS, FORTS, FT, HELOS, OBJ, POWS, RALLY_PT, RELIC, RIDGES, S, SMOKES, SQUADS, core, enemies, fieldOutline, lootBeacons, playerRange, drawDroneRadar, radarLogi } from '../hub.js';
+import { radarJam, radarEvents, radarSide, ARENA, DEPOTS, FORTS, FT, HELOS, OBJ, POWS, RALLY_PT, RELIC, RIDGES, S, SMOKES, SQUADS, core, enemies, fieldOutline, lootBeacons, playerRange, drawDroneRadar, radarLogi, MATE, mateRadar } from '../hub.js';
    // grace window so the deploy tap doesn't skip
 
 // ----------------------------- RADAR / MINIMAP -----------------------------
@@ -42,6 +42,7 @@ export function drawRadar(){
   radarEvents(c, toX, toY); radarSide(c, toX, toY); radarLogi(c, toX, toY);   // EVENT 2 a bombing line, a fire, a wreck (campaign/big-events.js) · EVENT 1 the side mission in hand (campaign/side-missions.js)
   drawDroneRadar(c);   // DRONE 1 the marked, and the drones in the air (ui/drone-hud.js)
   c.fillStyle='#9be04a'; for(const a of FT) c.fillRect(toX(a.pos.x)-1, toY(a.pos.z)-1, 2.5, 2.5);
+  if(MATE.on) mateRadar(c, toX, toY);   // COOP 5 the other player (only in a co-op battle)
   if(p){ const x=toX(p.pos.x), y=toY(p.pos.z);                                            // player arrow (facing)
     c.save(); c.translate(x,y); c.rotate(Math.atan2(Math.cos(p.facing),Math.sin(p.facing)));
     c.fillStyle='#bfe66a'; c.beginPath(); c.moveTo(6,0); c.lineTo(-4,3.5); c.lineTo(-4,-3.5); c.closePath(); c.fill(); c.restore(); }
