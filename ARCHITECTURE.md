@@ -53,7 +53,7 @@ tools/
 test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 ```
 
-### 2.1 Danh mục module (293 module theo thứ tự hub · 30.762 dòng)
+### 2.1 Danh mục module (293 module theo thứ tự hub · 30.789 dòng)
 
 <!-- MODULES:BEGIN (npm run modmap) -->
 | # | Module | Dòng | Nội dung |
@@ -115,11 +115,11 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 79 | `src/audio/body-hit.js` | 45 | HIT 1 A MAN IS HIT, NOT A HULL: what HE hears when he is struck (game/player-damage.js), synthesised, no fil… |
 | | **world/** — Bản đồ: địa hình, khí quyển, vật cản, công trình | | |
 | 21 | `src/world/field.js` | 63 | Z106 FIELD BOUNDARY: the playable area is an irregular outline (radius per bearing around the Core) — bays, … |
-| 36 | `src/world/atmosphere.js` | 162 | Z97 VISIBLE SKY: a real gradient dome (zenith → horizon haze that melts into the fog), sun glow by day, moon… |
+| 36 | `src/world/atmosphere.js` | 166 | Z97 VISIBLE SKY: a real gradient dome (zenith → horizon haze that melts into the fog), sun glow by day, moon… |
 | 37 | `src/world/sky-photo.js` | 27 | Z255 PHOTOGRAPHED SKY: a real pure-sky HDRI (Poly Haven, CC0; tools/sky-hdri.mjs → assets/sky) laid into the… |
 | 38 | `src/world/ground.js` | 197 | ARENA ground: procedural ground maps per biome, macro variation + patch textures (cached) |
-| 39 | `src/world/ground-photo.js` | 34 | Z250 PHOTO GROUND: the battlefield floor wears photo-scanned CC0 materials (Poly Haven, see config GROUND_PH… |
-| 40 | `src/world/grass-carpet.js` | 106 | Z251 GRASS CARPET → Z263 PHOTOGRAPHED GRASS: on grassy battlefields a carpet of real grass grows round the c… |
+| 39 | `src/world/ground-photo.js` | 36 | Z250 PHOTO GROUND: the battlefield floor wears photo-scanned CC0 materials (Poly Haven, see config GROUND_PH… |
+| 40 | `src/world/grass-carpet.js` | 115 | Z251 GRASS CARPET → Z263 PHOTOGRAPHED GRASS: on grassy battlefields a carpet of real grass grows round the c… |
 | 42 | `src/world/heightfield.js` | 251 | HEIGHTFIELD: rolling mounds, shell craters & wind drifts; everything (tanks, props, shells, particles) sits … |
 | 43 | `src/world/river.js` | 194 | Z405 RIVERS: a river and its side stream across the battlefields that have one (config RIVERS) — the bed car… |
 | 44 | `src/world/decals.js` | 95 | GROUND SCARS: tread marks (fade over time) + scorch/craters/impact dirt (permanent per stage) painted into a… |
@@ -146,7 +146,7 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 93 | `src/world/regional.js` | 173 | Z140 REGIONAL ARCHITECTURE: every battlefield builds its strongholds its own way — our Core compound and the… |
 | 94 | `src/world/core-walls.js` | 181 | Z140 OUR STRONGHOLD: the Core sits inside a walled compound built in the land's own style (regional.js) — an… |
 | 95 | `src/world/env-events.js` | 60 | Z140 SURPRISES OF THE LAND: every minute or two the battlefield itself does something — the village river fl… |
-| 97 | `src/world/flora.js` | 235 | Z141 LIVING SCENERY: proper trees (layered conifers, round-crowned broadleaf, curved coconut palms, bamboo c… |
+| 97 | `src/world/flora.js` | 236 | Z141 LIVING SCENERY: proper trees (layered conifers, round-crowned broadleaf, curved coconut palms, bamboo c… |
 | 98 | `src/world/cars.js` | 54 | Z206 STREET VEHICLES: which body each parked car takes (sedan · hatchback · SUV · pickup · minivan · taxi · … |
 | 99 | `src/world/city.js` | 449 | Z142 · Z216 A REAL CITY THAT BREAKS. The street plan has a hierarchy: wide BOULEVARDS every third line (two … |
 | 101 | `src/world/wonders.js` | 137 | Z144 WORLD LANDMARKS: every battlefield is set somewhere you recognise. A famous-architecture landmark stand… |
@@ -201,9 +201,9 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 152 | `src/fx/debris.js` | 88 | Z103 split from fx/explosions.js: flying fragments (pooled) — chunks, plates, splinters (no-tanks: the tank … |
 | 153 | `src/fx/shatter.js` | 103 | Z261 REAL BREAKAGE: a destroyed prop breaks into pieces of ITSELF — its own (real, textured) mesh cut into f… |
 | 165 | `src/fx/dust.js` | 33 | Z278 DUST IN THE SUNLIGHT: a few thousand motes drift in a box of air that follows the camera's view (world-… |
-| 166 | `src/fx/footfall.js` | 140 | LIGHT 1 GROUNDED: the soldier stands IN the world. A soft contact shade (the sky the body hides from the gro… |
+| 166 | `src/fx/footfall.js` | 145 | LIGHT 1 GROUNDED: the soldier stands IN the world. A soft contact shade (the sky the body hides from the gro… |
 | 177 | `src/fx/water-spray.js` | 106 | HSWIM 2 WATER THAT READS AS WATER (config HSWIM2): the splash of a boot, a stroke or a swimming horse's ches… |
-| 200 | `src/fx/weather.js` | 81 | Z107 WEATHER: rain squalls (streaks + wet, glossy ground + lightning), sandstorms (driven grit + thick ochre… |
+| 200 | `src/fx/weather.js` | 82 | Z107 WEATHER: rain squalls (streaks + wet, glossy ground + lightning), sandstorms (driven grit + thick ochre… |
 | | **combat/** — Vũ khí, đạn, kỹ năng | | |
 | 80 | `src/combat/projectiles.js` | 23 | PROJECTILES |
 | 81 | `src/combat/ballistics.js` | 43 | Z228b A ROUND THAT FLIES LIKE ONE: velocity curves for every projectile. |
@@ -221,7 +221,7 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 216 | `src/combat/spells.js` | 63 | the soldier's SKILLS in hand (one picked, cast on cooldown: combat/trooper-spells.js), his smoke screen, and… |
 | 249 | `src/combat/drone-skills.js` | 147 | DRONE 1 HIS OWN DRONES (the soldier's skills, combat/trooper-spells.js; each on a clock of its own, combat/s… |
 | | **actors/** — Đơn vị trên sân (địch, lính, drone, Lõi) | | |
-| 87 | `src/actors/core.js` | 171 | CORE (base to defend) |
+| 87 | `src/actors/core.js` | 176 | CORE (base to defend) |
 | 88 | `src/actors/enemies.js` | 63 | ENEMY units: spawn (infantry, helicopters; elites, loot), pooled meshes and floating HP bars (no-tanks: no a… |
 | 89 | `src/actors/fireteam.js` | 256 | Z89/Z100 friendly FIRETEAM: called in on foot (no-tanks: no APC, no hull to board), free-roam inside the sol… |
 | 90 | `src/actors/escalade.js` | 46 | Z145 ESCALADE: while the gate still holds, every third man of an assault carries a scaling ladder on his sho… |
