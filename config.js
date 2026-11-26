@@ -935,12 +935,23 @@ export const AMBIENCE = { on:true, vol:0.55,
 //   space (AUDIO 2): the listener's place, read by `rays` rays of R units (one a tick, a ring every `every` s; kinds in `skip` are no wall): wallN of them hit within
 //     wallR → 'walls' (a fort's yard, a street) · the land valley.h higher at valley.r in valley.n directions → 'valley' · the underground base / a cave → 'roof' ·
 //     else 'open'. kinds: each space's generated impulse response (len s, rt = its −60 dB time, pre-delay, lp Hz darkening over damp s, early [s, level] reflections,
-//     echo [s, level] = a far face answering) and `send` = the level into it; cross-faded over fade s; wet = the reverbs' return. A phone keeps the old outdoor
+//     echo [s, level] = a far face answering) and `send` = the level into it; cross-faded over fade s; wet = the reverbs' return (0.45: a shot's reverb
+//     about where the Z151 mix had it — the old send was × 0.32 into one outdoor response). A phone keeps the old outdoor
 //     reverb, its send × phone[kind]. slap: a shot off the nearest `max` walls between min and R units (apart units between them): delay there and back within
 //     t[min, max] s, level g[first, second] and low-pass lp[near, far] by distance; a line is retimed only when its wall moved by `move` of its delay
 //   step (AUDIO 2): footsteps — the player's at each foot-plant (by cadence cad [base, per unit/s, max] steps/s when none came for fallback s; crawlCad drags/s),
 //     men within R on their own cadence (× npc, at most `max` foley voices); own = the level, × gait g (rate = its pitch) × surf; runV / sprintV = the gaits' speeds;
 //     kit: his kit rattling (chance a step at a run / a sprint), land: a jump's landing (the step × `step`, the breath `grunt`), hoof: a horse's by the ground
+//   limit (AUDIO 3): the soft limiter at the master's end — straight up to thr, bent over toward top (never past it), its table of n points over ±head
+//   duck: the music × (1 − gun·heat) under gunfire (heat = what he hears × heatK, a blast × bigK more; it falls over `down` s), × (1 − blast·k) under a close blast
+//     (near = the dip of any blast inside blast.nearD; back over blastDown s), never under min; the fight × worldSpeech under a spoken radio line
+//   deaf: a blast within R units — strength (1 − d/R)^pow × size/ref; from `min` up the whole mix is low-passed lp[open → at full strength] within `down` s, held
+//     hold[min, max] s, back over `back` s, and a ringing (ring × strength × the effects level, ringHz, two tones `beat` Hz apart) fades over ringT[min, max] s.
+//     Cài đặt → Âm thanh → "Ù tai khi nổ gần" (PROFILE.tinnitus) turns both off
+//   music: the director's phase → what the score is asked for: heat (which stems audio/music.js brings in; + byP × the pressure), lp = a low-pass on the whole score
+//     (gliding over tau s), gain. build / peak / lull (the release) / held (the last lull before the general: a held breath) / duel
+//   barks: the squad's calls — text over the mate who says it + a radio click (no voice is synthesised, no file added): gap s between any two, cd per kind, not
+//     within `radio` s of a radio line, a mate within R units; lines by kind ({who} = the fallen mate's name)
 //   surface: the ground's sound — the shallows 'water', a bridge's deck, a paved yard, else the land's own
 //   brass: a case's first bounce — g (× softK on the grounds in `soft`), at most one every gap s · blast: nearD = inside it a blast is never ducked and the small arms
 //     dip under it (duck [to, down s, hold s, back s], as Z151), tail × its long rumble
@@ -975,7 +986,7 @@ export const AUDIOFX = { on:true, unit:1.3, c:343, seed:20261126, variants:3, pa
   blast:{ nearD:28, tail:0.4, duck:[0.5, 0.008, 0.09, 0.22] },
   map:{ explode:{ key:'boom', blast:1 }, bigexplode:{ key:'bigboom', blast:2 }, hit:{ key:'hitM', rico:0.12 }, hitHeavy:{ key:'hitH' }, ricochet:{ key:'ricochet' }, clang:{ key:'clang', cls:'thump' },
     thud:{ key:'thud', cls:'thump' }, crunch:{ key:'crunch', cls:'thump' }, reload:{ key:'reload', cls:'foley', own:1 } },
-  space:{ every:0.5, rays:8, R:26, wallR:14, eye:2, wallN:3, skip:['tree', 'trunk', 'grass', 'tent', 'post'], valley:{ r:24, h:5, n:5 }, fade:0.7, wet:0.9, buildGap:220,
+  space:{ every:0.5, rays:8, R:26, wallR:14, eye:2, wallN:3, skip:['tree', 'trunk', 'grass', 'tent', 'post'], valley:{ r:24, h:5, n:5 }, fade:0.7, wet:0.45, buildGap:220,
     phone:{ open:1, walls:1.25, roof:1.5, valley:1.3 },
     kinds:{ open:{ send:0.8, len:1.5, rt:1.0, pre:0.012, lp:5200, damp:0.5, build:0.02, spread:0.006, early:[[0.018, 0.4], [0.033, 0.28], [0.052, 0.22]], echo:[[0.34, 0.14], [0.62, 0.08]] },
       walls:{ send:1.15, len:1.1, rt:0.8, pre:0.004, lp:7000, damp:0.35, build:0.006, spread:0.004, early:[[0.009, 0.6], [0.016, 0.5], [0.024, 0.42], [0.037, 0.34], [0.055, 0.26]], echo:[] },
@@ -986,6 +997,16 @@ export const AUDIOFX = { on:true, unit:1.3, c:343, seed:20261126, variants:3, pa
     gait:{ walk:{ g:0.7, rate:1.05 }, run:{ g:1, rate:1 }, sprint:{ g:1.35, rate:0.93 }, crouch:{ g:0.4, rate:1.08 }, crawl:{ g:0.3, rate:0.8 } },
     surf:{ sand:1, grass:0.8, dirt:1, rock:1.1, snow:1, water:1.3, metal:1.1, wood:1.1 },
     kit:{ g:0.045, run:0.45, sprint:1, at:0.03 }, land:{ step:1.6, grunt:0.075, at:0.04 }, hoof:{ g:0.15, gap:0.045, slow:0.45, fullV:12, rate:[0.85, 1.05] } },
+  limit:{ thr:0.8, top:0.98, head:2, n:2049 },
+  duck:{ min:0.3, gun:0.45, speech:1, worldSpeech:0.8, blast:0.6, near:0.5, heatK:2.2, bigK:1.5, down:0.9, blastDown:0.5, glide:0.06, back:0.35 },
+  deaf:{ R:9, pow:1.5, ref:1, min:0.12, lp:[20000, 480], hold:[0.25, 1.4], down:0.03, back:1.1, ring:0.02, ringUp:0.05, ringHz:[3300, 4100], ringT:[1.2, 4.5], beat:7 },
+  music:{ tick:0.1, tau:1.2, open:20000, build:{ heat:0.2, byP:0.45, lp:9000, gain:1 }, peak:{ heat:1, lp:18000, gain:1.06 }, lull:{ heat:0.05, lp:2400, gain:0.8 }, held:{ heat:0, lp:600, gain:0.3 }, duel:{ heat:1, lp:18000, gain:1 } },
+  barks:{ on:true, gap:5, radio:2.5, R:28, tick:0.25, h:2.5, size:13, color:'#cfe6a8', click:0.05, cd:{ reload:14, nade:9, down:6, kill:11, flank:15 },
+    lines:{ reload:['Thay đạn đi, tôi yểm trợ!', 'Yểm trợ! Đội trưởng đang thay đạn!', 'Bắn kìm chân chúng — đội trưởng thay đạn!'],
+      nade:['Lựu đạn ném đi!', 'Coi chừng — lựu đạn ra!', 'Lựu đạn! Cúi xuống!'],
+      down:['{who} trúng đạn rồi!', '{who} ngã rồi — cứu thương!', 'Mất {who} rồi, giữ vị trí!'],
+      kill:['Hạ một tên!', 'Trúng rồi!', 'Bớt một đứa!', 'Gục rồi, tên tiếp theo!'],
+      flank_left:['Chúng vòng bên trái!', 'Bên trái! Bên trái có địch!'], flank_right:['Chúng vòng bên phải!', 'Bên phải! Bên phải có địch!'], flank_rear:['Sau lưng! Chúng vòng ra sau!', 'Địch phía sau, quay lại!'] } },
   surface:{ paved:'rock', bridge:'wood', biome:{ DESERT:'sand', RUINS:'dirt', ARCTIC:'snow', FOUNDRY:'metal', CITADEL:'rock', MEADOW:'grass', CITY:'rock', SAVANNA:'grass', VOLCANO:'rock', QUARRY:'rock', _:'dirt' } } };
 // SPACE — how much of the arena the fence encloses (custom battles); the campaign always fights on the full field
 export const SPACE = { small:{ vi:'HẸP', k:0.72, tx:'đánh giáp lá cà' }, mid:{ vi:'VỪA', k:0.86, tx:'cân bằng' }, wide:{ vi:'RỘNG', k:1, tx:'cơ động, bắn xa' } };

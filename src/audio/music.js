@@ -1,5 +1,5 @@
 // audio/music.js — Z161 ADAPTIVE BATTLE SCORE: five looped stems rendered offline (pad · war drums · bass ostinato · string spiccato · brass) that fade in with the fight, plus a theme for each general
-import { duelOn, duelId, S, actx, enemies, musicBus } from '../hub.js';
+import { duelOn, duelId, S, actx, afxMusicHeat, enemies, musicBus } from '../hub.js';
 
 // D minor, 96 bpm, 8 bars: i – VI – iv – V (two bars each). Every stem is the same length so they loop locked together.
 const BPM=96, BEAT=60/BPM, BARS=8, LEN=BEAT*4*BARS;
@@ -64,7 +64,8 @@ export function updateScore(dt){ if(!SCORE.ready || !actx) return; SCORE.tick-=d
   const p=S.player, play=S.mode==='playing', B=duelOn();
   let near=0; if(play && p) for(const e of enemies){ if(e.def && !e.def.inf && (e.pos.x-p.pos.x)**2+(e.pos.z-p.pos.z)**2 < 1600) near++; }
   const hurt = play && p ? 1-Math.max(0, Math.min(1, p.hp/p.maxHp)) : 0;
-  const want = !play ? (S.mode==='countdown'||S.mode==='briefing' ? 0.25 : 0) : B ? 1 : Math.min(0.85, near/7 + hurt*0.35);
+  const dh = afxMusicHeat(play, B);   // AUDIO 3 the battle's director sets the heat while the sound layer is on (audio/afx-mix.js: calm in a lull, driven at a peak, a held breath before the general); −1: as before
+  const want = dh>=0 ? dh : !play ? (S.mode==='countdown'||S.mode==='briefing' ? 0.25 : 0) : B ? 1 : Math.min(0.85, near/7 + hurt*0.35);
   SCORE.heat += (want-SCORE.heat)*(want>SCORE.heat?0.35:0.08);   // swell fast, settle slowly
   const h=SCORE.heat, L={ pad: play||S.mode==='countdown' ? 0.75 : 0.55, drums:Math.min(1,h*2.2), bass:h>0.3?Math.min(1,(h-0.3)*2.5):0, strings:h>0.55?Math.min(1,(h-0.55)*2.5):0, brass:B?0.55:(h>0.8?0.4:0), boss:B?1:0 };
   if(B && SCORE.boss!==duelId()) bossTheme(duelId()); if(!B && SCORE.boss){ SCORE.boss=null; }

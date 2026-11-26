@@ -1,6 +1,6 @@
 // ui/settings.js — Z103 split from ui/menus.js · XK-UI SETTINGS in tabs (Trò chơi · Hình ảnh · Âm thanh · Điều khiển · Tay cầm · Camera · Tài khoản): one row per option, a plain hint under its name, Mặc định resets the open tab, Xong goes back to home or to the pause menu.
 import { PAD_CFG, CLOUD_CFG, CAM_TUNE, SHAKE, SETTINGS_DEF } from '../../config.js';
-import { CLOUDSAVE, MOBILE, PAD, PROFILE, S, audio, camParams, controlScheme, hide, linkGoogle, onCloud, openPadWizard, padCfg, padDiagram, padMapFor, padRumble, padTest, refreshStartUI, resetPadMap, saveProfile, sayVoice, setMusicOn, setMuted, setQuality, sfx, show, syncNow, tapBtn, tapEl, toggleFullscreen, isFs, hudOn, setHud, applyHud, askConfirm, openKeys, openNick, escapeHtml, refreshBestLine, __set_BEST } from '../hub.js';
+import { CLOUDSAVE, MOBILE, PAD, PROFILE, S, afxOn, audio, camParams, controlScheme, hide, linkGoogle, onCloud, openPadWizard, padCfg, padDiagram, padMapFor, padRumble, padTest, refreshStartUI, resetPadMap, saveProfile, sayVoice, setMusicOn, setMuted, setQuality, sfx, show, syncNow, tapBtn, tapEl, toggleFullscreen, isFs, hudOn, setHud, applyHud, askConfirm, openKeys, openNick, escapeHtml, refreshBestLine, __set_BEST } from '../hub.js';
 
 export const SET = { tab:'game', from:'start' };
 export const SET_TABS = ['game', 'video', 'audio', 'ctrl', 'pad', 'cam', 'account'];
@@ -28,6 +28,8 @@ export function buildSettings(){
   onOff('setMusic', PROFILE.music, on=>_setMus(on));
   onOff('setVoice', PROFILE.voice!==false, on=>{ PROFILE.voice=on; saveProfile(); buildSettings(); if(on) sayVoice('open', true); else sfx('click'); });   // Z161 radio voices
   onOff('setAmb', PROFILE.ambience!==false, on=>{ PROFILE.ambience=on; saveProfile(); redo(); });   // XK-UI birds, wind, sea (the audio reads PROFILE.ambience; unset = on)
+  onOff('setRealAudio', afxOn(), on=>{ PROFILE.realAudio=on; saveProfile(); redo(); });   // AUDIO 3 the whole battle sound layer (audio/afx.js afxOn: unset = on; off = the sound as it was before it; with ?oldaudio it stays off)
+  onOff('setTinnitus', PROFILE.tinnitus!==false, on=>{ PROFILE.tinnitus=on; saveProfile(); redo(); });   // AUDIO 3 the deafened moment after a close blast (audio/afx-mix.js; unset = on)
   // ---- Điều khiển ----
   { const Ct=box('setCtrl'); if(Ct){ const cur=controlScheme();   // Z99 how the move keys / stick steer
     Ct.appendChild(_segChip('Theo màn hình', cur==='screen', ()=>{ PROFILE.ctrl='screen'; saveProfile(); redo(); }, 'đẩy về đâu, đi về đó'));
@@ -66,7 +68,7 @@ export function setTab(t){ SET.tab = SET_TABS.includes(t) ? t : 'game';
 export function resetTab(){ const D=SETTINGS_DEF, t=SET.tab;
   if(t==='game'){ PROFILE.difficulty=D.difficulty; PROFILE.hud=null; saveProfile(); applyHud(); }
   else if(t==='video'){ PROFILE.quality=D.quality; PROFILE.fps=D.fps; PROFILE.shake=SHAKE.def; saveProfile(); setQuality(D.quality); }
-  else if(t==='audio'){ PROFILE.sound=true; PROFILE.sfxVol=D.sfxVol; PROFILE.music=true; PROFILE.voice=true; PROFILE.ambience=true; saveProfile(); audio(); setMuted(false); setMusicOn(true); }
+  else if(t==='audio'){ PROFILE.sound=true; PROFILE.sfxVol=D.sfxVol; PROFILE.music=true; PROFILE.voice=true; PROFILE.ambience=true; PROFILE.realAudio=true; PROFILE.tinnitus=true; saveProfile(); audio(); setMuted(false); setMusicOn(true); }
   else if(t==='ctrl'){ PROFILE.ctrl=D.ctrl; padCfg().phone=PAD_CFG.def.phone; saveProfile(); }
   else if(t==='pad'){ const C=padCfg(); for(const k in PAD_CFG.def) C[k]=PAD_CFG.def[k]; saveProfile(); }
   else if(t==='cam'){ PROFILE.camStyle=D.camStyle; PROFILE.camTune=null; saveProfile(); }

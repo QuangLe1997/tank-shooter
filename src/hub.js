@@ -71,6 +71,7 @@ export * from './audio/afx-math.js';   // AUDIO 1 the battle sound layer's pure 
 export * from './audio/afx.js';   // AUDIO 1 the battle sound layer: voices with a place, layered guns, the crack of a round going by
 export * from './audio/afx-space.js';   // AUDIO 2 the space the listener stands in: its reverb, the slap-back off the walls
 export * from './audio/afx-move.js';   // AUDIO 2 footsteps by ground and gait, the kit, a landing, hooves
+export * from './audio/afx-mix.js';   // AUDIO 3 ducking, the deafened moment, the soft limiter, the score by the director, the squad's calls
 export * from './combat/projectiles.js';
 export * from './combat/ballistics.js';   // Z228b velocity curves, sabot, vapour, swept hits
 export * from './fx/fire-wrecks.js';

@@ -3,7 +3,7 @@
 //   The numbers are config AUDIOFX; the maths (and its tests, tools/audio-test.mjs) is audio/afx-math.js. Nothing is built before the first gesture
 //   (audio() makes the context), nothing throws without one, every node is disconnected when its sound ends.
 import { AUDIOFX } from '../../config.js';
-import { BIOME, LOUD, MOBILE, PROFILE, RIVER, S, SND, actx, afxBrassBuf, afxClamp, afxClickBuf, afxCrackBuf, afxCrackGain, afxCrackGap, afxDelay, afxDensity, afxGain, afxImpactBuf, afxLowpass, afxMiss, afxNear, afxOcclGain, afxOcclGet, afxOcclLp, afxOcclMake, afxOcclTick, afxPoolAsk, afxPoolFree, afxPoolMake, afxPoolTake, afxRR, afxRng, afxSurface, afxTail, afxTailBuf, audio, bankGet, camera, duck, heightAt, lineClear, master, muted, onPaved, sampleGet, sfx, updateAfxMove, updateAfxSpace, verbSend, wadeAt } from '../hub.js';
+import { BIOME, LOUD, MOBILE, PROFILE, RIVER, S, SND, actx, afxBrassBuf, afxClamp, afxClickBuf, afxCrackBuf, afxCrackGain, afxCrackGap, afxDelay, afxDensity, afxGain, afxImpactBuf, afxBlastMix, afxLowpass, afxMiss, afxMixSync, afxNear, afxOcclGain, afxOcclGet, afxOcclLp, afxOcclMake, afxOcclTick, afxPoolAsk, afxPoolFree, afxPoolMake, afxPoolTake, afxRR, afxRng, afxSurface, afxTail, afxTailBuf, audio, bankGet, camera, duck, heightAt, lineClear, master, muted, onPaved, sampleGet, sfx, updateAfxMix, updateAfxMove, updateAfxSpace, verbSend, wadeAt } from '../hub.js';
 
 const A = AUDIOFX, OLD = typeof location !== 'undefined' && /[?&#]oldaudio\b/.test(location.search + location.hash);
 // what the layer has built and done (dev/probes read it): bus = the world (dips under a close blast) · hi = what must be heard (never ducked) · send = to the space's reverb
@@ -101,6 +101,7 @@ export function afxBlast(M, pos, vol){ if(!ready()) return false; const D = SND[
   const s = open(pos, 'big', near ? A.prio.blast : A.prio.far, M.key, D.g * (vol == null ? 1 : afxClamp(vol, 0.15, 1.6)) * (0.92 + Math.random() * 0.16), o); if(!s) return true;
   const t0 = _v.t; layer(s, b, 1, (D.rate || 1) * (0.95 + Math.random() * 0.1), 0, t0);
   LOUD.big += s.lvl; if(!MOBILE) layer(s, tailBuf('x'), B.tail * (A.tailNear + (1 - A.tailNear) * (1 - afxNear(d, A.cls.big))), 0.85 + Math.random() * 0.2, 0, t0 + 0.03);
+  afxBlastMix(pos && p ? d : Infinity, M.blast, t0);                                                                 // AUDIO 3 the music dips; within a few units he is deafened for a moment
   if(near){ const k = B.duck; for(const g of [duck, AFX.bus]) if(g){ try{ g.gain.cancelScheduledValues(t0); g.gain.setTargetAtTime(k[0], t0, k[1]); g.gain.setTargetAtTime(1, t0 + k[2], k[3]); }catch(e){} } }
   return true; }
 
@@ -138,9 +139,10 @@ export function afxSfx(name, pos, vol){ if(_raw) return false; const p = S.playe
 
 // ---- once a frame (game/loop.js): the listener, the obstruction budget, the playing voices follow their cell's answer ----
 function occCheck(x, z){ return lineClear(AFX.lx, AFX.ly, AFX.lz, x, heightAt(x, z) + A.occl.src, z); }
-export function updateAfx(dt, now){ AFX.now = now; if(!AFX.ready || !actx || actx.state !== 'running' || !afxOn()) return; const p = S.player, O = A.occl; if(!p) return;
+export function updateAfx(dt, now){ AFX.now = now; afxMixSync();   // AUDIO 3 the mixer's nodes are in while the layer is on, out the moment it is switched off
+  if(!AFX.ready || !actx || actx.state !== 'running' || !afxOn()) return; const p = S.player, O = A.occl; if(!p) return;
   AFX.lx = p.pos.x; AFX.lz = p.pos.z; AFX.ly = heightAt(p.pos.x, p.pos.z) + (p.lift || 0) + O.eye;
-  updateAfxSpace(dt, now); updateAfxMove(dt, now);                                                                   // AUDIO 2 the space he stands in; the footsteps round him
+  updateAfxSpace(dt, now); updateAfxMove(dt, now); updateAfxMix(dt, now);                                            // AUDIO 2 the space he stands in; the footsteps round him · AUDIO 3 the mixer, the score, the squad's calls
   const V = AFX.pool.v, t = actx.currentTime;
   for(let i = 0; i < V.length; i++){ const s = V[i], N = s.n; if(!s.on || !N || !N.rec || !N.out) continue; const r = N.rec; r.want = now;   // (a sounding cell stays on the list)
     if(Math.abs(r.occ - N.occ) > O.step){ N.occ = r.occ; try{ N.out.gain.setTargetAtTime(N.g0 * afxOcclGain(r.occ, O) * N.up, t, O.glide); if(N.lpf) N.lpf.frequency.setTargetAtTime(afxOcclLp(N.lp0, r.occ, O), t, O.glide); }catch(e){} } }

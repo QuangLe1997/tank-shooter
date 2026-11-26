@@ -83,7 +83,7 @@ export function afxSpaceKind(Q, C){ if(Q.roof) return 'roof'; if(Q.walls >= C.wa
 export function afxSlap(dist, n, C, unit, c, out){ let a = -1, b = -1;
   for(let i = 0; i < n; i++){ const d = dist[i]; if(d >= C.min && d <= C.R && (a < 0 || d < dist[a])) a = i; }
   if(a >= 0) for(let i = 0; i < n; i++){ const d = dist[i]; if(d >= dist[a] + C.apart && d <= C.R && (b < 0 || d < dist[b])) b = i; }   // the second: the nearest wall clearly farther (two walls at one distance are one echo)
-  out.n = 0; for(const i of [a, b]){ if(i < 0 || out.n >= C.max) continue; const d = dist[i], k = out.n++, f = 1 - d / C.R;
+  out.n = 0; for(let j = 0; j < 2; j++){ const i = j ? b : a; if(i < 0 || out.n >= C.max) continue; const d = dist[i], k = out.n++, f = 1 - d / C.R;
     out.t[k] = clamp(2 * d * unit / c, C.t[0], C.t[1]); out.g[k] = C.g[Math.min(k, C.g.length - 1)] * (0.35 + 0.65 * f); out.lp[k] = C.lp[1] + (C.lp[0] - C.lp[1]) * f; }
   return out.n; }
 // one space's impulse response [left, right]: K = { len, rt (the −60 dB time), pre, lp, damp, build, early:[[t, a]…], echo:[[t, a]…], spread }
@@ -179,6 +179,9 @@ export function afxBrassBuf(sr, surf, rnd){ const x = buf(0.36, sr), F = [3100, 
 export function afxKitBuf(sr, rnd){ const x = buf(0.18, sr); add(x, bp2(nz(0.16, sr, rnd, (t, u) => Math.sin(Math.PI * u)), 900, 0.5, sr), 0, 1, sr); add(x, lp1(nz(0.08, sr, rnd, dec(0.025)), 250, sr), 0, 1.5, sr);
   for(let k = 0, n = 2 + Math.floor(rnd() * 2); k < n; k++) add(x, modal(0.05, sr, rnd, 2200 + rnd() * 1400, [1, 1.7], [0.012, 0.007], [1, 0.5], 0.05), 0.01 + rnd() * 0.1, 0.25, sr);
   return done(x, 0.7, sr); }
+// a handset keyed: the squelch's burst, its blip, the release — the click under a squad call (the words are text: no voice is synthesised)
+export function afxSquelchBuf(sr, rnd){ const x = buf(0.1, sr); add(x, bp2(nz(0.03, sr, rnd, dec(0.008)), 2100, 1.2, sr), 0, 1, sr); add(x, sweep(0.03, sr, 1750 + rnd() * 150, 1700, 0.01), 0.035, 0.5, sr);
+  add(x, bp2(nz(0.02, sr, rnd, dec(0.004)), 2600, 1.5, sr), 0.065, 0.6, sr); return done(lp1(hp1(x, 500, sr), 3800, sr), 0.7, sr); }
 // landing a jump: the breath knocked out of him — air through two bands of the throat, a low voiced push under it
 export function afxGruntBuf(sr, rnd){ const x = buf(0.24, sr), e = atk(0.015, 0.07), v = buf(0.22, sr); let ph = 0;
   for(let i = 0; i < v.length; i++){ const t = i / sr, u = i / v.length; ph += (115 - 30 * u) / sr; v[i] = ((ph % 1) * 2 - 1) * e(t); }

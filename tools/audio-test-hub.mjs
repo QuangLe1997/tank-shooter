@@ -5,8 +5,9 @@ export * from '../src/audio/afx-math.js';
 export * from '../src/audio/afx.js';
 export * from '../src/audio/afx-space.js';
 export * from '../src/audio/afx-move.js';
+export * from '../src/audio/afx-mix.js';
 
-export const T = { clear:() => true, lines:0, wade:() => 1, paved:() => false, sfx:[], samples:true, bank:true, floats:[], radios:[], hit:() => null, rays:0, high:() => 0, roof:false, men:[] };
+export const T = { clear:() => true, lines:0, wade:() => 1, paved:() => false, sfx:[], samples:true, bank:true, floats:[], radios:[], hit:() => null, rays:0, high:() => 0, roof:false, men:[], duel:false, squad:[], floatAt:null };
 export let actx = null, master = null, duck = null, verbSend = null, muted = false, musicBus = null, limiter = null;
 export function __ctx(c){ actx = c; master = duck = verbSend = musicBus = limiter = null; if(!c) return;
   limiter = c.createDynamicsCompressor(); limiter.connect(c.destination); master = c.createGain(); master.connect(limiter); duck = c.createGain(); duck.connect(master);
@@ -31,4 +32,10 @@ export const CV = { mounted:false, stance:'stand', jump:null, roll:null }, FT = 
 export function unitsNear(M, x, z, r, out){ out.length = 0; for(const m of T.men) out.push(m); return out; }
 export function lineClear(ax, ay, az, bx, by, bz){ T.lines++; return T.clear(bx, bz, ax, az); }
 export function wadeAt(x, z){ return T.wade(x, z); }
+export const DIR = { on:false, phase:'build', P:0, fin:0, near:0, flank:null }, NADES = [], VOICE = { playing:null };
+export function duelOn(){ return T.duel; }
+export function squadList(){ return T.squad; }
+export function sfxLevel(){ return 0.5; }
+export function floatText(text, color, pos, size){ T.floats.push(text); T.floatAt = { x:pos.x, y:pos.y, z:pos.z }; }
+export function radio(msg){ T.radios.push(msg); radio.at = 0; }
 export function onPaved(x, z){ return T.paved(x, z); }

@@ -1,7 +1,7 @@
 // actors/damage.js — DAMAGE AND DEATH of an enemy unit: hits (the general's hit cap), the kill (score, coins, loot, the soldier's experience), the fall
 import * as THREE from 'three';
 import { BALANCE, LOOT } from '../../config.js';
-import { S, WAVE, addScore, bigExplode, bumpCombo, diffRewardMul, dropBeam, dropPowerup, enemies, enemyPool, floatText, freeEnemyBar, gunshipDown, hitFlash, infantryDown, loopRewardMul, updateHUD, voiceKill, soldierKill, awareHit, awareDeath, dirKill, storyCue, nemSlip } from '../hub.js';
+import { S, WAVE, addScore, bigExplode, bumpCombo, diffRewardMul, dropBeam, dropPowerup, enemies, enemyPool, floatText, freeEnemyBar, gunshipDown, hitFlash, infantryDown, loopRewardMul, updateHUD, voiceKill, soldierKill, awareHit, awareDeath, dirKill, storyCue, nemSlip, afxBark } from '../hub.js';
 
 export function damageEnemy(e, dmg){
   if(e.hitCap) dmg=Math.min(dmg, e.hitCap);   // Z353 the general on foot: no single hit (a grenade's core, a 12.7 slug) takes more than a slice of him
@@ -14,6 +14,7 @@ export function killEnemy(e){
   freeEnemyBar(e.bar); e.bar=null;
   dirKill();   // DIR 1 the director's clock since the last enemy fell
   storyCue('kill', e);   // STORY 2 the first enemy down near him, a run of them: a word on the radio (campaign/story.js)
+  if(e.def.inf && e.pos) afxBark('kill', e.pos.x, e.pos.z);   // AUDIO 3 a mate near him calls it (audio/afx-mix.js: text + a radio click, throttled)
   if(e.def.inf) awareDeath(e);   // AI 1 a mate falling beside them alerts the men near him (ai/awareness.js)
   if(e.laser){ dropBeam(e.laser); e.laser=null; }
   try{ if(e.def.inf) infantryDown(e);                                                                       // Z79 soldier falls / is crushed
