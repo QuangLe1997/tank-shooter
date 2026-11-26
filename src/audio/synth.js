@@ -1,6 +1,6 @@
 // audio/synth.js — AUDIO (Web Audio synth)
 import * as THREE from 'three';
-import { PROFILE, S, VIEW, worldToScreen } from '../hub.js';
+import { PROFILE, S, VIEW, afxBus, afxOn, afxSend, afxSfx, worldToScreen } from '../hub.js';
 
 // ----------------------------- AUDIO (Web Audio synth) -----------------------------
 export let actx=null, master=null, musicBus=null, musicSrc=null, songBuf=null, muted=false;
@@ -42,7 +42,8 @@ export function voice(pos, wet){
     const lp=a.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=Math.max(650, 17000*Math.exp(-d/32)); out.connect(lp); out=lp;      // far = muffled
     if(a.createStereoPanner){ const sp=worldToScreen(new THREE.Vector3(pos.x,1,pos.z)); const pn=a.createStereoPanner(); pn.pan.value=Math.max(-0.85,Math.min(0.85,(sp.x/VIEW.w-0.5)*1.6)); out.connect(pn); out=pn; }
     wet = (wet||0.3)*(1+Math.min(1.2,d/40)); }                                                                                       // distant shots are mostly echo
-  out.connect(duck||master); if(verbSend){ const s=a.createGain(); s.gain.value=wet==null?0.3:wet; out.connect(s).connect(verbSend); }
+  const ab=afxBus(), av=afxSend()||verbSend;   // AUDIO 1 with the layer on, these synthesised voices (the reload's ticks, a whoosh …) ride its world bus and its space
+  out.connect(ab||duck||master); if(av){ const s=a.createGain(); s.gain.value=wet==null?0.3:wet; out.connect(s).connect(av); }
   return g;
 }
 export function tone(freq, dur, {type='sine', vol=0.2, delay=0, slideTo=null, bus=null}={}){
@@ -212,6 +213,7 @@ export function play(k, pos, vol){
 }
 export function sfx(name, pos, vol){
   if(muted) return;
+  if(afxOn() && afxSfx(name, pos, vol)) return;   // AUDIO 1 the battle sound layer plays it (audio/afx.js); off, or a sound it does not own: everything below, as before
   switch(name){                                                   // Z102 world sounds → physically-modelled bank
     case 'shoot': case 'shoot_rifle': return play('rifle', pos, vol);
     case 'shoot_minigun': return play('minigun', pos, vol);

@@ -7,7 +7,7 @@
 //   M79), a flame (the thrower), an arc that jumps to the next man (the energy rifle). Not the tank's: never in its shop, never kept in its arsenal.
 import * as THREE from 'three';
 import { RIDER_TURN, TROOPER, XHAIR, REAL } from '../../config.js';
-import { GUNS, MOBILE, PAD, PROFILE, S, fpvFire, boreNow, burstRound, burstSpread, camKick, shotCase, aimTarget, cMod, fireFlame, gunFlash, gunLight, fireMortar, floatText, magCap, playerRange, rifleFX, ringPulse, sfx, spawnBullet, spawnPart, startReload, updateGunHUD, airShot, CV, fireLine, climbPerch } from '../hub.js';
+import { GUNS, MOBILE, PAD, PROFILE, S, fpvFire, boreNow, burstRound, burstSpread, camKick, shotCase, aimTarget, cMod, fireFlame, gunFlash, gunLight, fireMortar, floatText, magCap, playerRange, rifleFX, ringPulse, sfx, spawnBullet, spawnPart, startReload, updateGunHUD, airShot, CV, fireLine, climbPerch, gunSound } from '../hub.js';
 
 const _v = new THREE.Vector3();
 // Z359 the rifle he may carry in from the start (CHUẨN BỊ TRẬN · TRANG BỊ, and Z411 KHO SÚNG in soldier mode) · Z411 every hand weapon of his, by tier — it listed
@@ -36,8 +36,8 @@ export function soldierFire(now, range){ const p = S.player; if(!p || !p.guns.le
   const bn = burstRound(p, now), B = boreNow();   // GUN 3 which round of a burst this is (the first land tighter, kick the view harder), and how the gun lies (actors/gun-feel.js)
   const air = g.special ? null : airShot(_v.x, _v.z, g.bspeed), a0 = air ? air.a : L ? L.a : p.aimSmoothed, crit = Math.random() < p.crit, power = now < p.buffUntil.power ? 1.6 : 1;
   const dmg = g.dmg * p.dmgMul * power * (crit ? 2 : 1) * cMod('playerDmgMul') * (1 + SK.dmg * st), reach = (range || playerRange()) * (g.rng || 1) + 2, t = aimTarget(reach);
-  if(g.special === 'flame'){ fireFlame(now, g, _v.x, _v.z, a0, dmg / (g.dmg || 1)); if(Math.random() < 0.12) sfx(g.snd, p.pos); }
-  else if(g.special === 'mortar'){ fireMortar(now, g, dmg); sfx(g.snd || 'shoot_agl', p.pos); }
+  if(g.special === 'flame'){ fireFlame(now, g, _v.x, _v.z, a0, dmg / (g.dmg || 1)); if(Math.random() < 0.12) gunSound(g.snd, p.pos, 'p'); }
+  else if(g.special === 'mortar'){ fireMortar(now, g, dmg); gunSound(g.snd || 'shoot_agl', p.pos, 'p'); }
   else { const aimD = ((!MOBILE || PAD.active) && S.pointerActive) ? Math.hypot(S.aimPoint.x - p.pos.x, S.aimPoint.z - p.pos.z) : (t ? Math.hypot(t.pos.x - p.pos.x, t.pos.z - p.pos.z) : reach), n = g.frags || 1;
     const belt = n === 1 && g.type === 'KIN' && g.fireCd < 0.3 && !g.rocket;   // Z419 an automatic rifle / MG: a tracer every REAL.tracer.every rounds (buckshot carries none)
     for(let i = 0; i < n; i++){ const a = a0 + (n > 1 ? (i - (n - 1) / 2) * (g.spread / (n - 1)) + (Math.random() - 0.5) * g.spread * 0.15 : (Math.random() - 0.5) * g.spread * burstSpread(bn)), tr = n > 1 ? 0 : belt ? ((p._trN = (p._trN || 0) + 1) % REAL.tracer.every === 0 ? 1 : 0) : undefined;
@@ -46,6 +46,6 @@ export function soldierFire(now, range){ const p = S.player; if(!p || !p.guns.le
     if(g.rocket){ spawnPart(_v.x, _v.y, _v.z, Math.sin(a0) * 4, 0.3, Math.cos(a0) * 4, { tex:'fire', color:0xfff0c0, color2:0xff6a14, size:0.9, life:0.12, grav:0, drag:6, grow:0.8 }); for(let k = 0; k < 6; k++) spawnPart(_v.x - Math.sin(a0) * 1.1, _v.y, _v.z - Math.cos(a0) * 1.1, -Math.sin(a0) * (4 + Math.random() * 4), 0.6 + Math.random(), -Math.cos(a0) * (4 + Math.random() * 4), { color:0xd8d2c4, size:0.7, life:1.0, smoke:true, grav:-0.3, drag:1.4, grow:1.6, op:0.35 }); }   // the back-blast out of the tube's rear
     else { const fk = (n > 1 ? 1.5 : 1) * (g.flashK ?? 1); gunFlash(_v.x, _v.y, _v.z, a0, 0.62 * fk, 0.34 * fk, g.type === 'ELEC' ? 0xbfe0ff : 0xfff0c0, 1, B ? B.pit : 0); gunLight(_v.x + Math.sin(a0) * 0.6, _v.y + 0.2, _v.z + Math.cos(a0) * 0.6, 0xffc87a, 1.8 * Math.min(1.4, fk)); }   // a rifle's flash, not a cannon's (Z355 each gun its own size: the AK's big, the suppressed M4's faint) · Z419 shaped along the bore, a strobe of light
     if(!g.rocket && g.type !== 'ELEC'){ if(B) shotCase(B, g, _v.x, _v.y, _v.z, a0); else rifleFX(_v.x, _v.y, _v.z, a0, g.dmg * n >= 40, g.supp); }   // GUN 3 the case out of the gun's own ejection port (a bolt / a pump gun: when he works it)   // (Z355 a suppressor swallows the muzzle smoke; the brass still flies)
-    sfx(g.snd || 'rifleShot', p.pos); }
+    gunSound(g.snd || 'rifleShot', p.pos, 'p'); }   // AUDIO 1 his own gun, in layers (audio/afx.js; off: sfx as before)
   const kick = Math.min(0.9, (0.06 + (g.dmg * (g.frags || 1)) / 160) * (g.kickK || 1)) * camKick(bn); S.camKick = Math.min(1.2, (S.camKick || 0) + kick); S.kickAng = a0; S.shake = Math.min(3.2, S.shake + kick * 0.2);   // (Z355 the AK climbs, the suppressed M4 and the MP5 sit still)
   if(!p.infiniteAmmo && inst.ammo <= 0) startReload(now, inst); updateGunHUD(); }

@@ -12,7 +12,7 @@
 //   (the chips / clods / splinters are solid little meshes from the brass pool: a smoke-layer speck can never be opaque — keep its op ≤ 2, the HDR target does not clamp alpha)
 import * as THREE from 'three';
 import { GUNFX, REAL } from '../../config.js';
-import { BIOME, MOBILE, RIVER, S, camera, heightAt, muzzleLight, scene, spawnPart } from '../hub.js';
+import { BIOME, MOBILE, RIVER, S, afxBrass, afxImpact, afxOn, camera, heightAt, muzzleLight, scene, spawnPart } from '../hub.js';
 
 // ---- ribbon pool ----
 const MAXP = 18, POOL = MOBILE ? 10 : 22;
@@ -114,7 +114,7 @@ const _br = (()=>{ const V2=THREE.Vector2, geo=new THREE.LatheGeometry([new V2(0
 export function ejectBrass(x, y, z, vx, vy, vz, kind='rifle'){ const p=S.player; if(!p || (p.pos.x-x)**2+(p.pos.z-z)**2 > REAL.brass.R*REAL.brass.R) return;
   const b=BR[_bi]; _bi=(_bi+1)%BRN; const C=GUNFX.case[kind==='link'?'rifle':kind]||GUNFX.case.rifle;   // oldest recycled
   b.on=true; b.x=x; b.y=y; b.z=z; b.vx=vx; b.vy=vy; b.vz=vz; b.rx=Math.random()*6.283; b.ry=Math.random()*6.283; b.rz=0; b.sx=(Math.random()-0.5)*30; b.sy=(Math.random()-0.5)*10; b.sz=(Math.random()-0.5)*24;
-  b.L=kind==='link'?C[1]*1.4:C[0]; b.d=kind==='link'?C[1]*0.5:C[1]; b.chip=false; b.col=kind==='link'?0x34332e:(kind==='shell'?0xe0b050:0xffd060); b.life=GUNFX.brass.life*(0.85+Math.random()*0.3)*(kind==='shell'?1.6:1); }
+  b.L=kind==='link'?C[1]*1.4:C[0]; b.d=kind==='link'?C[1]*0.5:C[1]; b.chip=false; b.rang=false; b.col=kind==='link'?0x34332e:(kind==='shell'?0xe0b050:0xffd060); b.life=GUNFX.brass.life*(0.85+Math.random()*0.3)*(kind==='shell'?1.6:1); }
 // a solid fragment thrown off a strike (a clod, a stone chip, a splinter): the same pool and tumble as the brass, its own colour and size, short-lived
 function chip(x, y, z, vx, vy, vz, col, L, d){ const p=S.player; if(!p || (p.pos.x-x)**2+(p.pos.z-z)**2 > REAL.brass.R*REAL.brass.R) return;
   const b=BR[_bi]; _bi=(_bi+1)%BRN; b.on=true; b.chip=true; b.x=x; b.y=y; b.z=z; b.vx=vx; b.vy=vy; b.vz=vz; b.rx=Math.random()*6.283; b.ry=Math.random()*6.283; b.rz=Math.random()*6.283;
@@ -122,7 +122,7 @@ function chip(x, y, z, vx, vy, vz, col, L, d){ const p=S.player; if(!p || (p.pos
 function updateBrass(dt){ let n=0; const G=GUNFX.brass;
   for(const b of BR){ if(!b.on) continue; b.life-=dt; if(b.life<=0){ b.on=false; continue; }
     b.vy+=G.grav*dt; b.x+=b.vx*dt; b.y+=b.vy*dt; b.z+=b.vz*dt; b.rx+=b.sx*dt; b.ry+=b.sy*dt; b.rz+=b.sz*dt;
-    const gy=heightAt(b.x,b.z)+b.d*0.5; if(b.y<gy){ b.y=gy; if(b.vy<-1.6){ b.vy=-b.vy*G.bounce; b.vx*=0.5; b.vz*=0.5; b.sx*=0.5; b.sz*=0.5; } else { b.vy=0; b.vx*=0.86; b.vz*=0.86; b.sx*=0.8; b.sy*=0.9; if(!b.chip){ b.sz=0; b.rz+=(Math.PI/2-b.rz)*Math.min(1,dt*10); } } }   // first hit bounces, then it lies down and rolls
+    const gy=heightAt(b.x,b.z)+b.d*0.5; if(b.y<gy){ b.y=gy; if(b.vy<-1.6){ if(!b.chip && !b.rang && afxOn()){ b.rang=true; afxBrass(b.x, b.z); } b.vy=-b.vy*G.bounce; b.vx*=0.5; b.vz*=0.5; b.sx*=0.5; b.sz*=0.5; } else { b.vy=0; b.vx*=0.86; b.vz*=0.86; b.sx*=0.8; b.sy*=0.9; if(!b.chip){ b.sz=0; b.rz+=(Math.PI/2-b.rz)*Math.min(1,dt*10); } } }   // first hit bounces, then it lies down and rolls
     const s=Math.min(1, b.life/0.22); _e.set(b.rx, b.ry, b.rz); _q.setFromEuler(_e); _p.set(b.x,b.y,b.z); _sc.set(b.d*s, b.L*s, b.d*s); _M.compose(_p, _q, _sc); _br.setMatrixAt(n, _M); _br.setColorAt(n, _fc.setHex(b.col)); n++; }
   _br.count=n; if(n){ _br.instanceMatrix.needsUpdate=true; _br.instanceColor.needsUpdate=true; } }
 const _M=new THREE.Matrix4();
@@ -132,7 +132,8 @@ const _M=new THREE.Matrix4();
 export function hitMat(bl, stone){ const M=GUNFX.mat, k=bl&&bl.kind; if(M.sand.includes(k)) return 'sand'; if(M.metal.includes(k)) return 'metal'; if(M.wood.includes(k)) return 'wood'; return (stone || M.stone.includes(k) || (bl && (bl.steel || bl.heavy || bl.fort))) ? 'stone' : 'dirt'; }
 const _dk=new THREE.Color(), _dc=new THREE.Color(), _fv={ x:0, z:0 };
 function fly(up, ox, oz, sp){ const a=Math.random()*6.283, s=Math.random()*1.4; _fv.x=(up?0:ox*sp)+Math.cos(a)*s; _fv.z=(up?0:oz*sp)+Math.sin(a)*s; }   // a fragment's way out: back along (ox,oz) with a scatter, or any way up off flat ground
-export function bulletImpact(mat, x, y, z, ox, oz, k=1){ const H=GUNFX.hit, n=Math.max(2, Math.round((MOBILE?H.chipsMob:H.chips)*Math.min(1.6,k))), up=(ox===0 && oz===0);
+export function bulletImpact(mat, x, y, z, ox, oz, k=1){ if(afxOn()) afxImpact(mat, x, z, k);   // AUDIO 1 the strike is heard by its material (audio/afx.js)
+  const H=GUNFX.hit, n=Math.max(2, Math.round((MOBILE?H.chipsMob:H.chips)*Math.min(1.6,k))), up=(ox===0 && oz===0);
   if(mat==='water'){ const wy=RIVER.on ? RIVER.y+0.05 : y;   // a slim white column that falls back, a ring of spray
     for(let i=0;i<H.splash;i++){ fly(true, ox, oz, 0); spawnPart(x, wy, z, _fv.x*0.7, 4+Math.random()*3*k, _fv.z*0.7, { color:0xeef4f6, size:(0.14+Math.random()*0.1)*k, life:0.55, smoke:true, grav:-16, drag:0.5, op:2, keep:true }); }
     spawnPart(x, wy+0.1, z, 0, 0.6, 0, { color:0xe8f0f3, size:0.55*k, life:0.6, smoke:true, grav:-0.6, drag:3, grow:1.0*k, op:1.6, keep:true }); return; }

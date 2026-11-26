@@ -1,7 +1,7 @@
 // fx/hitfx.js — Z192 REAL ROUNDS & REAL HITS: a shell flies as a hot streak pointed along its path (not a glowing ball), a missile lays a
 //   long lingering smoke ribbon behind a flickering motor flame, an enemy gun barks with flash + smoke at the real muzzle
 //   (no-tanks: the hits on armour, the rocking hull and the smoking engine deck are gone)
-import { BIOME, MOBILE, PART_MAX, PERF, S, heightAt, parts, sfx, smokeKind, smokeRibbon, spawnPart } from '../hub.js';
+import { BIOME, MOBILE, PART_MAX, PERF, S, afxIncoming, afxOn, heightAt, parts, sfx, smokeKind, smokeRibbon, spawnPart } from '../hub.js';
 
 // point the pooled round along its velocity (yaw + the pitch of its real climb / fall this frame); the core is stretched at spawn
 export function orientShell(b, y, dt){ const m=b.mesh, sp=Math.hypot(b.vx,b.vz)||1, vy=(dt>0 && b._py!=null) ? (y-b._py)/dt : 0; b._py=y;
@@ -52,7 +52,8 @@ export function shellTrail(b, x, y, z){ let k=b._trk; if(k===undefined) k=b._trk
 // Z210 an enemy round that only just misses you: the supersonic CRACK past your ear, a whoosh and a jolt — you feel how close it was
 export function nearMiss(b, P){ if(b._nm || !P) return; const dx=b.x-P.pos.x, dz=b.z-P.pos.z, d2=dx*dx+dz*dz, R=b.dmg>=18?3.6:2.6; if(d2>R*R) return;
   const rel=(b.vx*dx+b.vz*dz); if(rel<0) return;   // only once it is past the hull (moving away)
-  b._nm=true; sfx(b.dmg>=18?'flybyHeavy':'flyby', { x:b.x, z:b.z }); S.shake=Math.min(3, (S.shake||0)+(b.dmg>=18?0.55:0.18)); }
+  b._nm=true; if(!(afxOn() && afxIncoming(b, P, b.dmg>=18))) sfx(b.dmg>=18?'flybyHeavy':'flyby', { x:b.x, z:b.z });   // AUDIO 1 the crack at the round, the shot's thump after it (audio/afx.js)
+  S.shake=Math.min(3, (S.shake||0)+(b.dmg>=18?0.55:0.18)); }
 // Z210 a shell that hits the dirt throws up a GEYSER: a dark column of soil and clods standing up out of the ground, falling back as dust
 export function dirtGeyser(x, z, k){ const gy=heightAt(x,z), dc=BIOME.ground;
   for(let i=0;i<(MOBILE?4:8);i++) spawnPart(x+(Math.random()-0.5)*0.6, gy+0.3, z+(Math.random()-0.5)*0.6, (Math.random()-0.5)*2.2*k, 7+Math.random()*7*k, (Math.random()-0.5)*2.2*k,

@@ -910,6 +910,62 @@ export const AMBIENCE = { on:true, vol:0.55,
     pick:{ near:40, far:220, off:0.3 },
     peaks:{ grid:12, edge:15, n:10, minH:3, gap:40 },
     scare:{ r:45, lift:12, t:6 } } };
+// AUDIO 1–3 · THE BATTLE'S SOUND (src/audio/afx*.js): a layer OVER audio/synth.js — every world sound a voice with a place. Realism through detail and space, never
+//   through level (the Z151 ear-safe mix stays: its bank gains, its shelf, compressor and limiter). on:false / Cài đặt → Âm thanh → "Âm thanh chân thực" / ?oldaudio:
+//   the layer sleeps and sfx() plays exactly what it played before. Distances are game units; unit = metres a unit for the speed of sound (c m/s).
+//   voices: the pool (max, phone), his own gun holds at most `same` of it and one family of everybody else's `family` (past that a shot takes over the
+//     family's oldest), a same sound within mergeMs at mergeR units merges
+//     (× mergeUp, at most mergeMax), a stolen voice fades over `fade` s; tau = how fast
+//     a playing voice's level is taken to have fallen when the quietest is looked for; hold = s a slot is kept after its last sample. floor = a level not worth a voice
+//   prio: who is heard when the pool is full (high wins): rounds coming at him, a blast near, the radio > his own gun > the squad > the enemy > the far battle > foley
+//   cls: the distance model of each class — level 1/(1+(d/ref)^pow) · low-pass lp[0]·e^(−d/lp[2]), never under lp[1] Hz · late by d·unit/c, at most cap s ·
+//     tail[near, per unit, max] = the share sent to the reverb · near[full, gone] = where the close layers (the action's click) live · slap = its send to the slap-back
+//   occl: one line check per sounding cell (cell units square) every `every` s, at most perFrame a frame (nearest first), from eye m over the listener's ground to src m
+//     over the source's; a wall between → × gain and a low-pass down to lp Hz, eased over tau s (the voice follows in steps of `step`, gliding `glide` s);
+//     not nearer than minD, not farther than maxD; a cell nobody has sounded in for keep s is forgotten; wetK = how much of its reverb send is left behind a wall
+//   guns: one family per sfx name — key = the bank / recording (SND), mech { f Hz, g, at s } = the action's click (0 none: a bolt / a pump gun has its own stroke
+//     sound, actors/gun-feel.js), tail { k: which of `tails`, g × the body } — its own low-priority voice, one per family every tailGap s (a burst rolls away once),
+//     tailNear of it at the muzzle and all of it far off, × tailWet into the reverb — var = its own round-robin [rate, start offset s, low-pass ×] (else `vars`),
+//     dens: the same family fired n times inside win s plays each at 1/√n (not under min): a volley is wide, not loud (his own gun is never thinned),
+//     supp = a suppressed gun (no tail, little reverb, no slap-back), foe = an unnamed caller's shot of this family is the enemy's
+//   who: whose gun — g, rate, lpK, tailK (× the tail and the reverb), mech (× the click), eq [Hz, Q, dB] a peak that sets the enemy's rifles apart from ours
+//   crack: an enemy round within R of the ear — g (× heavyK, rate heavyRate for a shell), harder the closer (pow, never under floor); the thump of its shot comes
+//     gap[min, max] s later (a round at v m/s against sound), from the muzzle, low-passed at thumpLp, only from thumpMin units off; rush = a shell's wake
+//   impact: a round on a material (fx/gunfx.js) within R, the same material at most once every gap s — g per material, rico = the chance it whines off (the recorded ricochet × ricoG)
+//   brass: a case's first bounce — g (× softK on the grounds in `soft`), at most one every gap s · blast: nearD = inside it a blast is never ducked and the small arms
+//     dip under it (duck [to, down s, hold s, back s], as Z151), tail × its long rumble
+export const AUDIOFX = { on:true, unit:1.3, c:343, seed:20261126, variants:3, pan:0.85, panD:6, floor:0.004, farD:45, tailNear:0.4, tailGap:0.2, tailWet:1.4, dens:{ win:0.05, min:0.4 },
+  voices:{ max:26, phone:12, same:6, family:14, mergeMs:14, mergeR:3, mergeUp:1.2, mergeMax:1.5, fade:0.012, tau:0.35, hold:0.3 },
+  prio:{ incoming:5, blast:5, radio:5, own:4, squad:3, enemy:2, far:1, foley:0 },
+  cls:{ gun:{ ref:20, pow:1.25, lp:[17000, 700, 30], cap:0.32, tail:[0.16, 0.012, 0.85], near:[10, 34], slap:0.5 },
+    supp:{ ref:9, pow:1.6, lp:[9000, 600, 16], cap:0.2, tail:[0.05, 0.004, 0.2], near:[6, 16], slap:0 },
+    big:{ ref:30, pow:1.1, lp:[15000, 320, 46], cap:0.6, tail:[0.24, 0.011, 0.95], near:[16, 60], slap:0.6 },
+    impact:{ ref:11, pow:1.5, lp:[16000, 900, 22], cap:0.2, tail:[0.1, 0.008, 0.5], near:[6, 20], slap:0 },
+    thump:{ ref:22, pow:1.1, lp:[15000, 500, 30], cap:0.4, tail:[0.18, 0.01, 0.8], near:[10, 40], slap:0 },
+    foley:{ ref:6, pow:1.7, lp:[14000, 1200, 14], cap:0.08, tail:[0.05, 0.006, 0.3], near:[4, 12], slap:0 },
+    crack:{ ref:60, pow:1, lp:[18000, 8000, 300], cap:0, tail:[0.05, 0, 0.05], near:[8, 12], slap:0 } },
+  occl:{ every:0.15, perFrame:4, perFramePhone:2, cell:4, keep:2.5, minD:3, maxD:90, gain:0.5, lp:900, tau:0.12, step:0.05, glide:0.04, eye:1.6, src:1.4, wetK:0.8 },
+  jit:{ rate:0.02, gain:0.08 }, vars:[[1, 0, 1], [0.965, 0.003, 0.9], [1.04, 0.001, 1.12], [0.985, 0.006, 1]],
+  tails:{ s:{ len:0.7, lp:900 }, m:{ len:1.1, lp:700 }, l:{ len:1.8, lp:480 }, x:{ len:2.6, lp:340 } }, supp:{ wet:0.25, slap:0 },
+  guns:{ rifleShot:{ key:'rifleE', foe:1, mech:{ f:1100, g:0.035, at:0.04 }, tail:{ k:'s', g:0.22 } },
+    shoot_ak:{ key:'ak', mech:{ f:850, g:0.04, at:0.045 }, tail:{ k:'m', g:0.26 }, var:[[1, 0, 1], [0.97, 0.004, 0.92], [1.03, 0.002, 1.1], [0.99, 0.007, 0.96]] },
+    shoot_m4s:{ key:'m4s', cls:'supp', supp:1, mech:{ f:1500, g:0.05, at:0.012 }, tail:null },
+    shoot_mp5:{ key:'mp5', mech:{ f:1300, g:0.03, at:0.03 }, tail:{ k:'s', g:0.16 } },
+    shoot:{ key:'rifle', mech:{ f:800, g:0.04, at:0.06 }, tail:{ k:'m', g:0.3 } }, shoot_rifle:{ key:'rifle', mech:{ f:800, g:0.04, at:0.06 }, tail:{ k:'m', g:0.3 } },
+    shoot_minigun:{ key:'minigun', mech:0, tail:{ k:'s', g:0.12 }, var:[[1, 0, 1], [0.975, 0.002, 0.94], [1.025, 0.004, 1.08], [1.01, 0.001, 0.97]] },
+    shoot_shotgun:{ key:'shotgun', mech:0, tail:{ k:'l', g:0.3 }, var:[[1, 0, 1], [0.95, 0.003, 0.9], [1.05, 0.001, 1.1]] },
+    shoot_cannon:{ key:'cannon', cls:'big', mech:0, tail:{ k:'l', g:0.35 }, var:[[1, 0, 1], [0.96, 0.004, 0.92], [1.04, 0.002, 1.08]] },
+    shoot_agl:{ key:'agl', mech:0, tail:{ k:'s', g:0.2 } }, rocketlaunch:{ key:'launch', mech:0, tail:{ k:'m', g:0.25 } },
+    enemyShoot:{ key:'enemy', foe:1, mech:0, tail:{ k:'l', g:0.3 } } },
+  who:{ p:{ g:1, rate:1, lpK:1, tailK:1, mech:1, prio:'own' }, ally:{ g:0.85, rate:1.03, lpK:1, tailK:1, mech:0.6, prio:'squad' },
+    e:{ g:0.95, rate:0.9, lpK:0.82, tailK:1.35, mech:0, prio:'enemy', eq:[650, 1.1, 5] }, x:{ g:1, rate:1, lpK:1, tailK:1, mech:0, prio:'enemy' } },
+  crack:{ R:2.8, pow:1.6, floor:0.35, g:0.32, heavyK:1.3, heavyRate:0.72, rush:0.5, wet:0.6, v:740, gap:[0.045, 0.3], thump:0.75, thumpLp:520, thumpRate:0.85, thumpMin:14, thumpWet:1.3 },
+  impact:{ R:60, gap:0.03, g:{ dirt:0.1, sand:0.09, stone:0.13, metal:0.12, wood:0.12, water:0.13 }, rico:{ metal:0.35, stone:0.14 }, ricoG:0.8 },
+  brass:{ g:0.05, gap:0.05, soft:['sand', 'grass', 'snow', 'water'], softK:0.6 },
+  blast:{ nearD:28, tail:0.4, duck:[0.5, 0.008, 0.09, 0.22] },
+  map:{ explode:{ key:'boom', blast:1 }, bigexplode:{ key:'bigboom', blast:2 }, hit:{ key:'hitM', rico:0.12 }, hitHeavy:{ key:'hitH' }, ricochet:{ key:'ricochet' }, clang:{ key:'clang', cls:'thump' },
+    thud:{ key:'thud', cls:'thump' }, crunch:{ key:'crunch', cls:'thump' }, reload:{ key:'reload', cls:'foley', own:1 } },
+  surface:{ paved:'rock', bridge:'wood', biome:{ DESERT:'sand', RUINS:'dirt', ARCTIC:'snow', FOUNDRY:'metal', CITADEL:'rock', MEADOW:'grass', CITY:'rock', SAVANNA:'grass', VOLCANO:'rock', QUARRY:'rock', _:'dirt' } } };
 // SPACE — how much of the arena the fence encloses (custom battles); the campaign always fights on the full field
 export const SPACE = { small:{ vi:'HẸP', k:0.72, tx:'đánh giáp lá cà' }, mid:{ vi:'VỪA', k:0.86, tx:'cân bằng' }, wide:{ vi:'RỘNG', k:1, tx:'cơ động, bắn xa' } };
 // Z107 HULL FRONT MARKER — at speed the hull's heading is hard to read from above: a glowing chevron on the ground just ahead of the nose

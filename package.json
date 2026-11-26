@@ -8,6 +8,7 @@
     "ts": "node tools/ts.mjs",
     "lan-room": "node tools/lan-room.mjs",
     "coop-test": "node tools/coop-test.mjs",
+    "audio-test": "node tools/audio-test.mjs",
     "licenses": "node tools/licenses.mjs",
     "arch": "node tools/archcheck.mjs",
     "serve": "python3 -m http.server 8765",

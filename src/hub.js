@@ -67,6 +67,8 @@ export * from './audio/engine-music.js';
 export * from './audio/voice.js';   // Z161 Vietnamese radio voices
 export * from './audio/music.js';   // Z161 adaptive battle score
 export * from './audio/ambience.js';   // the nature ambience: wind, leaves, the sea, birdsong now and then
+export * from './audio/afx-math.js';   // AUDIO 1 the battle sound layer's pure maths (runs in Node: tools/audio-test.mjs)
+export * from './audio/afx.js';   // AUDIO 1 the battle sound layer: voices with a place, layered guns, the crack of a round going by
 export * from './combat/projectiles.js';
 export * from './combat/ballistics.js';   // Z228b velocity curves, sabot, vapour, swept hits
 export * from './fx/fire-wrecks.js';
