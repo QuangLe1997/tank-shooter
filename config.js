@@ -1082,7 +1082,7 @@ export const DIRECTOR = { on:true, sample:0.25, nearR:48, airR:70, fireT:1.6, lo
 //   the first no sooner than first s into the stage, the next every s after the last one ended (asked again retry s later while the answer is no). Each has a
 //   ring + a badge on the field, a mark on the minimap and a card with its timer; ignored, it costs nothing but its reward. on: false (or ?noevents) = none.
 //   from: first stage · w: weight in the draw (never the same twice running) · its spot is minD…maxD m from him · tick: s between two looks · ring / badgeY:
-//   the marker's drawn radius and the badge's height (m) · endHold: s the card shows the outcome.
+//   the marker's drawn radius and the badge's height (m) · endHold: s the card shows the outcome · maxFoes: with this many enemies on the field a mission sends no more.
 //   pilot — one of our aircraft crosses the sky trailing smoke (fly s at speed m/s, alt m up, gliding down over the last glide m) and goes down `past` m beyond
 //     the pilot, who bails out over a spot crashD m from him and comes down under a canopy (sink m/s); a flare goes up every flareEvery s. An enemy patrol is
 //     sent for him through the entries (campaign/entries.js): a man of it within catchR m of the pilot for catchT s with the player not beside him takes him.
@@ -1092,7 +1092,7 @@ export const DIRECTOR = { on:true, sample:0.25, nearR:48, airR:70, fireT:1.6, lo
 //     outside the circle for overrunT s set it on fire. Out, it drives off (speed m/s, gone after leave s) and leaves a medkit and an ammunition crate.
 //   pows — an escort marches n prisoners (gap m apart, following at walk m/s) march m along the field's edge to its way out; the whole escort down before a man
 //     of it is within exitR m of that point frees them: each takes up a rifle (hp of a man's health) and joins. score / xp: each mission's reward.
-export const SIDEMISSION = { on:true, perStage:2, fromStage:1, first:[40, 60], every:[50, 80], retry:5, tick:0.25, minD:40, maxD:95, ring:6, badgeY:5.4, endHold:4,
+export const SIDEMISSION = { on:true, perStage:2, fromStage:1, first:[40, 60], every:[50, 80], retry:5, tick:0.25, minD:40, maxD:95, ring:6, badgeY:5.4, endHold:4, maxFoes:90,
   from:{ pilot:1, truck:1, pows:2 }, w:{ pilot:1, truck:1, pows:0.9 },
   pilot:{ t:90, r:5, patch:6, crashD:[50, 90], alt:38, speed:36, fly:7, glide:110, past:40, sink:4.2, flareEvery:2.4, catchR:4.5, catchT:2, hp:0.7, score:900, xp:60, strike:true },
   truck:{ t:85, r:12, hold:25, sink:0.3, pull:5, pullN:4, pullR:110, squads:1, overrunR:7, overrunT:6, leave:9, speed:8, block:3, score:800, xp:50 },
@@ -1104,22 +1104,22 @@ export const SIDEMISSION = { on:true, perStage:2, fromStage:1, first:[40, 60], e
 //   never nearer than coreR m to the base's core. on: false (or ?noevents) = none.
 //   bombing — `planes` bombers (wing m apart, alt m up) fly a line len m long through the thickest knot of enemies knotR m from him (else `ahead` m in front of
 //     him): n bombs gap s apart from warn s on, each fall s in the air, across a lane `lane` m wide; a blast of R m, dmg at its centre. The line is drawn on the
-//     ground from the first second; the bombers fly on `off` m past it.
+//     ground from the first second and, when another line will do, is laid at least `clear` m from where he stands; the bombers fly on `off` m past it.
 //   crash — a burning transport comes in (alt m up, speed m/s) and hits the ground minD…maxD m from him, its skid (skid m in skidT s, no nearer than `clear` m
 //     to him) drawn on the ground: a blast (R, dmg) where it hits, fire along the skid (a cell every cellGap m: skidR m, skidDmg, burning burnSkid s), then a
 //     wreck that stops rounds (block m) and cooks off: cookN blasts (cookR m, cookDmg) over cook s, the first cookWarn s after it stops; it burns for burn s.
 //   fire — on the dry fields (biomes; not in the weather `wet`) a stray shell lands d m from him where the scrub is thickest (at least minFuel tufts within
 //     fuelR m) and lit s later the grass is alight: a cell (cell m) smoulders warn s, then burns for burn s — dps to whoever stands in it (enemies × enemyK),
 //     looked at every tick s — and every step s each burning cell lights the next with probability p (at most perStep a step), downwind inside a cone of ± cone
-//     rad (creep: the share that goes any way), only onto scrub that has not burnt, off the trails and out of the water; at most max cells, no farther than reach m
-//     from where it began, no new cell after life s. Its smoke shuts sight lines: `veils` banks of smokeR m (game/stealth.js VEILS).
+//     rad (creep: the share that goes any way), only where a tuft that has not burnt stands within near m, off the trails and out of the water; at most max cells, no farther than reach m
+//     from where it began (× mobileK cells on a phone), no new cell after life s. Its smoke shuts sight lines: `veils` banks of smokeR m (game/stealth.js VEILS).
 //   jam — warn s after the broken-up warning the radio falls silent, the minimap and the squad's cards show static for t s (the director holds the flank's cue).
 export const BIGEVENT = { on:true, perStage:3, gap:55, hpMin:0.45, playerK:1, coreR:26,
   from:{ bombing:2, crash:1, fire:1, jam:2 }, w:{ bombing:0.45, crash:0.4, fire:0.45, jam:0.4 },
-  bombing:{ warn:5.5, len:110, n:14, gap:0.28, fall:2, R:6, dmg:75, lane:6, planes:3, wing:12, alt:40, knotR:[20, 80], ahead:22, off:160 },
+  bombing:{ warn:5.5, len:110, n:14, gap:0.28, fall:2, R:6, dmg:75, lane:6, planes:3, wing:12, alt:40, knotR:[20, 80], ahead:22, clear:14, off:160 },
   crash:{ warn:4.5, minD:38, maxD:75, clear:24, alt:42, speed:44, skid:30, skidT:1.8, R:7, dmg:80, cellGap:3.5, skidR:3, skidDmg:40, burnSkid:14, block:3.2, cook:10, cookWarn:2.5, cookN:[4, 6], cookR:6.5, cookDmg:45, burn:35 },
-  fire:{ warn:2.5, lit:1.2, biomes:['DESERT', 'SAVANNA', 'MEADOW', 'QUARRY', 'VOLCANO'], wet:['rain', 'snow'], d:[24, 55], fuelR:12, minFuel:8, cell:3.2, max:34, reach:42, step:1.1, p:0.55, perStep:3, cone:1.1, creep:0.15,
-    burn:[10, 15], life:45, dps:12, enemyK:1.5, tick:0.5, veils:4, smokeR:8 },
+  fire:{ warn:2.5, lit:1.2, biomes:['DESERT', 'SAVANNA', 'MEADOW', 'QUARRY', 'VOLCANO'], wet:['rain', 'snow'], d:[24, 55], fuelR:12, minFuel:8, near:4.5, cell:3.2, max:34, reach:42, step:1.1, p:0.55, perStep:3, cone:1.1, creep:0.15,
+    burn:[10, 15], life:45, dps:12, enemyK:1.5, tick:0.5, veils:4, smokeR:8, mobileK:0.6 },
   jam:{ warn:3, t:20 } };
 // EVENT 1–2 the radio lines of the side missions and the big events, added to the story's pools (campaign/story.js storyCue; STORY.lines' rules: p, cd, 'who|text')
 Object.assign(STORY.lines, {

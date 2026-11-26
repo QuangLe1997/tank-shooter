@@ -9,7 +9,7 @@
 //   Everything is made once and reused (the strip, the bombs, the flames, the aircraft); a frame makes no object. clearBigEvents: a stage won, a restart, the menu.
 import * as THREE from 'three';
 import { BIGEVENT, STORY } from '../../config.js';
-import { AIR_SCALE, BIOME, DIR, FT, S, SIDEM, UNDER, VEILS, WX, aoeDamage, bigExplode, blastAllies, blocks, buildHind, buildTransport, core, crushAt, crushables, damageAlly, damageEnemy, damagePlayer, decalScorch, deformCrater, dirEventOk, dirSay, duelOn, enemies, fireball, flameFX, floatText, heightAt, holoRing, inCamView, inField, infBlastK, onTrail, radio, ringPulse, scene, sfx, showBanner, spawnPart, storyCue, surpriseAdd } from '../hub.js';
+import { AIR_SCALE, BIOME, DIR, FT, MOBILE, S, SIDEM, UNDER, VEILS, WX, aoeDamage, bigExplode, blastAllies, blocks, buildHind, buildTransport, core, crushAt, crushables, damageAlly, damageEnemy, damagePlayer, decalScorch, deformCrater, dirEventOk, dirSay, duelOn, enemies, fireball, flameFX, floatText, heightAt, holoRing, inCamView, inField, infBlastK, onTrail, radio, ringPulse, scene, sfx, showBanner, spawnPart, storyCue, surpriseAdd } from '../hub.js';
 
 const C = BIGEVENT, R2 = a => a[0] + Math.random() * (a[1] - a[0]), _pt = { x:0, y:0, z:0 };
 const OFF = typeof location !== 'undefined' && /noevents/.test(location.search + location.hash);
@@ -59,7 +59,8 @@ function bombAt(B, i){ const K = C.bombing, s = K.len * i / (K.n - 1), lat = K.p
 function startBombing(now){ const K = C.bombing, p = S.player, f = p.facing || 0; let cx = p.pos.x + Math.sin(f) * K.ahead, cz = p.pos.z + Math.cos(f) * K.ahead, bn = 0, a = -1;
   for(let i = 0; i < enemies.length; i++){ const e = enemies[i]; if(e.def.air) continue; const d = Math.hypot(e.pos.x - p.pos.x, e.pos.z - p.pos.z); if(d < K.knotR[0] || d > K.knotR[1]) continue; let n = 0;   // the thickest knot of enemies: the line goes through it
     for(let j = 0; j < enemies.length; j++){ const o = enemies[j]; if(!o.def.air && (o.pos.x - e.pos.x) ** 2 + (o.pos.z - e.pos.z) ** 2 < 144) n++; } if(n > bn){ bn = n; cx = e.pos.x; cz = e.pos.z; } }
-  for(let k = 0; k < 8 && a < 0; k++){ const t = Math.random() * Math.PI, h = K.len / 2; if(!core || segDist(core.pos.x, core.pos.z, cx - Math.sin(t) * h, cz - Math.cos(t) * h, cx + Math.sin(t) * h, cz + Math.cos(t) * h) > C.coreR) a = t; }
+  for(let k = 0; k < 14 && a < 0; k++){ const t = Math.random() * Math.PI, h = K.len / 2 + K.R, sx = Math.sin(t) * h, sz = Math.cos(t) * h; if(core && segDist(core.pos.x, core.pos.z, cx - sx, cz - sz, cx + sx, cz + sz) <= C.coreR) continue;
+    if(k < 10 && segDist(p.pos.x, p.pos.z, cx - sx, cz - sz, cx + sx, cz + sz) < K.clear) continue; a = t; }   // EVENT 3 never over the base's core; and not over where he stands now, when another line will do
   if(a < 0) return null; let ux = Math.sin(a), uz = Math.cos(a); const v = K.len / ((K.n - 1) * K.gap), back = K.warn * v + K.len / 2;
   if(inCamView(cx - ux * back, cz - uz * back) && !inCamView(cx + ux * back, cz + uz * back)){ ux = -ux; uz = -uz; }   // they come in from where he is not looking, when they can
   fleet(K); const B = { kind:'bombing', t:0, x0:cx - ux * K.len / 2, z0:cz - uz * K.len / 2, ux, uz, v, gy:heightAt(cx, cz), i:0, rel:0, mk:0, mkT:0, siren:1.5, drone:false, fly:true };
@@ -151,9 +152,9 @@ function fireFrame(E, dt, now){ const F = C.fire;
   if((E.vt -= dt) <= 0){ E.vt = 1; veils(now, true); }
   if((E.step -= dt) <= 0){ E.step = F.step; let made = 0, n = 0, live = 0; const N = CELL.length, s0 = (Math.random() * N) | 0; for(let i = 0; i < N; i++) if(CELL[i].on){ n++; if(CELL[i].sp) live++; }
     if(!live){ veils(now, false); _fuel.length = 0; return true; }                                                     // every cell of it has gone out
-    for(let q = 0; q < N && made < F.perStep && n < F.max && E.t < F.life; q++){ const c = CELL[(s0 + q) % N]; if(!c.on || !c.sp || !c.hot || c.life - c.age < 2 || Math.random() > F.p) continue;
+    for(let q = 0; q < N && made < F.perStep && n < F.max * (MOBILE ? F.mobileK : 1) && E.t < F.life; q++){ const c = CELL[(s0 + q) % N]; if(!c.on || !c.sp || !c.hot || c.life - c.age < 2 || Math.random() > F.p) continue;
       const a = Math.random() < F.creep ? Math.random() * 6.283 : E.wa + (Math.random() - 0.5) * 2 * F.cone, d = F.cell * (0.9 + Math.random() * 0.4), x = c.x + Math.sin(a) * d, z = c.z + Math.cos(a) * d;
-      if((x - E.ox) ** 2 + (z - E.oz) ** 2 > F.reach * F.reach || !inField(x, z, 2) || onTrail(x, z) || !fuelNear(x, z, F.cell * 0.85) || cellNear(x, z, F.cell * 0.75)) continue;   // only onto scrub that has not burnt: bare ground, a trail, water stop it
+      if((x - E.ox) ** 2 + (z - E.oz) ** 2 > F.reach * F.reach || !inField(x, z, 2) || onTrail(x, z) || !fuelNear(x, z, F.near) || cellNear(x, z, F.cell * 0.75)) continue;   // only onto scrub that has not burnt: bare ground, a trail, water stop it
       cellAdd(x, z, true, 0, R2(F.burn), F.cell); made++; n++; } }
   return false; }
 
@@ -182,6 +183,10 @@ export function clearBigEvents(){ BIGEV.cur = null; jamSet(false); stripOff(); r
 // a stage begins (ui/briefing.js goLive): nothing left over, and — the first time — the events put into the surprises' hat
 export function bigEventsReset(now){ const st = BIGEV.stats; clearBigEvents(); for(const k in st) st[k] = 0; BIGEV.log.length = 0; BIGEV.on = C.on && !OFF; BIGEV.clock = 0; BIGEV.freeAt = 0; BIGEV.count = 0;
   if(!_hat){ _hat = true; for(const k in START) surpriseAdd(k, n => bigEventStart(k, n), { from:C.from[k], w:C.w[k], ok:n => eventOk(k, n) }); } }
+// EVENT 3 dev / probes: what of the events is on show right now (after clearBigEvents: nothing)
+export function bigEventsShown(){ let hind = 0, bomb = 0, air = 0, flame = 0; for(let i = 0; i < HIND.length; i++) if(HIND[i].visible) hind++; for(let i = 0; i < BOMB.length; i++) if(BOMB[i].visible) bomb++;
+  for(let i = 0; i < AIR.length; i++) if(AIR[i].g.visible) air++; for(let i = 0; i < FLAME.length; i++) if(FLAME[i].visible) flame++;
+  return { hind, bomb, air, flame, cells:BIGEV.nCells, hot:BIGEV.nHot, strip:!!(_strip && _strip.visible), ring:!!(_ring && _ring.visible), veils:VEILS.length, wrecks:BIGEV.wrecks.length, jam:BIGEV.jam, pool:[HIND.length, BOMB.length, AIR.length, FLAME.length, CELL.length] }; }
 // ui/radar.js asks right after it has wiped the canvas: true = jammed, the set shows nothing but static
 const JAMCOL = ['rgba(190,220,170,0.5)', 'rgba(120,150,110,0.35)', 'rgba(230,240,220,0.7)']; let _jf = '', _jw = 0;
 export function radarJam(c, W, H){ if(!BIGEV.jam) return false; c.fillStyle = 'rgba(8,12,7,0.9)'; c.fillRect(0, 0, W, H); for(let i = 0; i < 80; i++){ c.fillStyle = JAMCOL[(Math.random() * 3) | 0]; c.fillRect(Math.random() * W, Math.random() * H, 1 + Math.random() * 16, 1); }

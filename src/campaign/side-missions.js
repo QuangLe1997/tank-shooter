@@ -46,7 +46,8 @@ function spot(d0, d1, m, hidden){ const p = S.player;
   return null; }
 // a squad sent to (x, z) through the entries: over the field's edge near it, out of the frame (campaign/entries.js edgeEntry) — else up out of a hatch beyond
 //   it that he cannot see; the men go into `out` as they come onto the field. false: no way in he would not see
-function sendTo(x, z, out){ const e = edgeEntry(Math.atan2(z, x), 1.2), n0 = enemies.length, p = S.player;
+function sendTo(x, z, out){ if(enemies.length >= C.maxFoes) return false;   // EVENT 3 (a crowded field gets no more men for a side mission)
+  const e = edgeEntry(Math.atan2(z, x), 1.2), n0 = enemies.length, p = S.player;
   if(e){ spawnSquad({ x:e.x, z:e.z, how:'edge' }); for(let i = n0; i < enemies.length; i++) out.push(enemies[i]); return out.length > 0; }
   const a = Math.atan2(x - p.pos.x, z - p.pos.z);
   for(let k = 0; k < 6; k++){ const b = a + (Math.random() - 0.5) * 1.4, hx = x + Math.sin(b) * 28, hz = z + Math.cos(b) * 28; if(!inField(hx, hz, 4) || entrySeen(hx, hz)) continue; hatchEntry(hx, hz, squadTypes(), { each:m => out.push(m) }); return true; }
@@ -205,6 +206,8 @@ export function clearSideMissions(){ if(SIDEM.cur){ cleanup(SIDEM.cur); SIDEM.cu
 // a stage begins (ui/briefing.js goLive)
 export function sideMissionsReset(now){ const st = SIDEM.stats; clearSideMissions(); for(const k in st) st[k] = 0; SIDEM.log.length = 0;
   SIDEM.on = C.on && !OFF; SIDEM.wait = R2(C.first); SIDEM.done = 0; SIDEM.last = ''; SIDEM.tickAt = 0; SIDEM.lives = S.player ? S.player.lives : -1; }
+// EVENT 3 dev / probes: what of the side missions is on show right now (after clearSideMissions: nothing)
+export function sideMissionsShown(){ return { cur:SIDEM.cur ? SIDEM.cur.kind : '', props:SIDEM.props.length, marker:!!(_mk && _mk.ring.visible), air:!!(_air && _air.visible), card:!!(_el && !_el.el.classList.contains('hidden')) }; }
 // the minimap's mark (ui/radar.js): a pulsing blue ring and a cross where the mission is; the prisoners' way out as a small cross
 export function radarSide(c, toX, toY){ const M = SIDEM.cur; if(!M || M.state !== 'go') return; const x = toX(M.x), y = toY(M.z); c.globalAlpha = 0.6 + 0.4 * Math.sin(performance.now() / 170); c.strokeStyle = '#7fd0ff'; c.lineWidth = 1.6;
   c.beginPath(); c.arc(x, y, 5.5, 0, 6.283); c.moveTo(x - 3, y); c.lineTo(x + 3, y); c.moveTo(x, y - 3); c.lineTo(x, y + 3); c.stroke();
