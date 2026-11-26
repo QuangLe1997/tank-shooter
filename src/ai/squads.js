@@ -1,6 +1,6 @@
 // ai/squads.js — Z173 SQUAD TACTICS: enemy foot squads get a leader, a formation and one shared plan (advance → fire-and-manoeuvre with a flank → assault, or fall back when broken), suppression pins men down, squads escort tanks (the tank fixes you, the men flank), and a coarse nav grid routes them round fortress walls. Our fireteam fights in two alternating teams with focus fire and takes squad orders.
 import { AWARE, SQUAD_AI, FIELDCRAFT, RIVERS } from '../../config.js';
-import { ARENA, FT, S, blocks, coverSpot, enemies, floatText, inField, infTarget, radio, sfx, throwSmoke, fieldDepth, wadeAt, riverWay, fallSpot, lastMan, pinEnd, pinPlan, tierK, tierRoles } from '../hub.js';
+import { ARENA, FT, S, blocks, coverSpot, enemies, floatText, inField, infTarget, radio, sfx, throwSmoke, fieldDepth, wadeAt, riverWay, fallSpot, lastMan, pinEnd, pinPlan, storyCue, tierK, tierRoles } from '../hub.js';
 
 export const SQUADS=[];
 let _sid=0;
@@ -60,7 +60,7 @@ function squadThink(sq, now){
   const esc=sq.escort && enemies.includes(sq.escort) ? sq.escort : null; if(sq.escort && !esc) sq.escort=null;
   let st=sq.state;
   if(st==='fallback'){ if((now>sq.fallAt || d>AWARE.squad.breakR) && sp<0.3){ sq.rally=(sq.rally||0)+0.35; st='advance'; } }   // (AI 3 it has broken contact — breakR m off — or has its back to the fence: it rallies instead of standing there)
-  else if(sq.morale<A.breakMorale && n<sq.n0){ st='fallback'; sq.fallAt=now+R2(A.rallyT); floatText('ĐỊCH RÚT LUI', '#9be04a', { x:cx, y:2.8, z:cz }, 14); }
+  else if(sq.morale<A.breakMorale && n<sq.n0){ st='fallback'; sq.fallAt=now+R2(A.rallyT); floatText('ĐỊCH RÚT LUI', '#9be04a', { x:cx, y:2.8, z:cz }, 14); storyCue('enemy_break'); }
   else if(esc && d>R+8) st='escort';
   else if(d>R+10) st='advance';
   else if(d<A.assaultR || (T.you===false && n>=3 && d<R*0.7)) st='assault';

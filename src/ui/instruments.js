@@ -57,7 +57,7 @@ export function updateInstr(now){
   dial(p, k); }
 
 // ---- the radio set: frequency + callsign header, the message typed out like a teleprinter ----
-const NETS=[['SCH','46.250'],['PHÁO BINH','41.775'],['TÌNH BÁO','49.100'],['TRINH SÁT','44.525'],['BỘ BINH','38.900']];
+const NETS=[['SCH','46.250'],['PHÁO BINH','41.775'],['TÌNH BÁO','49.100'],['TRINH SÁT','44.525'],['BỘ BINH','38.900'],['SÓNG ĐỊCH','31.400'],['MINH','44.525']];   // (STORY 2 the enemy's intercepted traffic on a frequency of its own; the scout on the scouts' net)
 export function radioNet(msg){ const m=/^([A-ZÀ-Ỹ ]{2,12}):/u.exec(msg||''); const tag=m ? m[1].trim() : 'SCH'; const n=NETS.find(x=>x[0]===tag) || [tag, '46.250']; return { tag:n[0], mhz:n[1], body: m ? msg.slice(m[0].length).trim() : msg }; }
 export function radioType(el, msg){ const R=radioNet(msg), tx=el.querySelector('.rd-txt'), tg=el.querySelector('.rd-tag'), fq=el.querySelector('.rd-fq');
   if(tg) tg.textContent=R.tag; if(fq) fq.textContent=R.mhz+' MHz';

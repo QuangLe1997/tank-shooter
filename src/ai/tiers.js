@@ -9,7 +9,7 @@
 //     up — he stands there, then walks off the field (shoot him and he dies like any other).
 //   The tier also scales what each man knows (ai/awareness.js: reaction delay, time to make him out, how far a shout carries) and how often a squad thinks.
 import { AWARE, DIRECTOR } from '../../config.js';
-import { DIR, PL, S, _cv, addScore, animateSoldier, camera, canThrow, clampField, coverSpot, dirDiff, dirSay, dropSoldierGun, enemies, enemyPool, fieldEdgePoint, floatText, freeEnemyBar, gunFlash, heightAt, inCamView, inField, infPushBlocks, losBlocked, poseSoldier, radio, reviveSoldierMesh, sfx, spawnBullet, spawnPart, throwNade } from '../hub.js';
+import { DIR, PL, S, _cv, addScore, animateSoldier, camera, canThrow, clampField, coverSpot, dirDiff, dirSay, dropSoldierGun, enemies, enemyPool, fieldEdgePoint, floatText, freeEnemyBar, gunFlash, heightAt, inCamView, inField, infPushBlocks, losBlocked, poseSoldier, radio, reviveSoldierMesh, sfx, spawnBullet, spawnPart, storyCue, throwNade } from '../hub.js';
 
 const T = DIRECTOR.tactics, R2 = a => a[0] + Math.random() * (a[1] - a[0]);
 const OFF = typeof location !== 'undefined' && /notactics/.test(location.search + location.hash);
@@ -35,7 +35,7 @@ export function tierRoles(m){ if(tacTier() < 3 || m.length < T.roles.minMen) ret
   return m; }
 // the marksman takes aim (actors/infantry.js, where a rifleman would open a burst): only ever at the player; the telegraph starts — a beep, the glint
 export function markAim(e, Tg, now){ if(!Tg.you){ e.fireAt = now + 0.8; return; } e.aimT = e.def.aimT; e.mkx = Tg.pos.x; e.mkz = Tg.pos.z; sfx('beep', e.pos, 0.7);
-  if(!TAC.said.marksman){ TAC.said.marksman = 1; radio(T.say.marksman); } }
+  if(!TAC.said.marksman){ TAC.said.marksman = 1; storyCue('marksman') || radio(T.say.marksman); } }
 // one frame of his aim: the glint off the scope grows; he follows his man until lock s before the shot — then one heavy, fast round at where he was. true: fired
 export function markStep(e, Tg, dt, now, dmgMul){ const M = T.marksman, mz = e.mesh.userData.muzzle; e.aimT -= dt; if(Tg.lost || !Tg.you){ e.aimT = 0; e.fireAt = now + 1; return false; }   // lost him: the shot is not taken
   mz.getWorldPosition(_cv); const k = 1 - Math.max(0, e.aimT) / e.def.aimT; _glint.size = M.glint[0] + (M.glint[1] - M.glint[0]) * k + Math.random() * 0.3; spawnPart(_cv.x, _cv.y + 0.1, _cv.z, 0, 0, 0, _glint);
@@ -79,7 +79,7 @@ export function fallSpot(e, sq, ux, uz, tx, tz){ if(!tacTier()) return [e.pos.x 
 // squadThink, a squad down to one man: asked once — does he give himself up? (alerted, the player within r m, not a role man). true: he has; the squad is no more
 export function lastMan(sq, now){ const G = T.surrender, e = sq.m[0], p = S.player, t = tacTier(); if(sq.asked || !t || sq.n0 < G.minN0) return false; sq.asked = true;
   if(!p || e.role || e.general || e.genGuard || e.guard || e.def.rpg && e.aimT > 0 || !(e.alert >= 2) || (e.pos.x - p.pos.x) ** 2 + (e.pos.z - p.pos.z) ** 2 > G.r * G.r || Math.random() > G.chance[t - 1]) return false;
-  e.gaveUp = { until:now + R2(G.hold), tx:0, tz:0, go:false, end:0 }; e.abandoned = true; e.loot = false; e.burstLeft = 0; e.aimT = 0; e.sqGoal = null; e.pinF = false; e.groundUntil = 0; TAC.gaveUp++;
+  e.gaveUp = { until:now + R2(G.hold), tx:0, tz:0, go:false, end:0 }; e.abandoned = true; e.loot = false; e.burstLeft = 0; e.aimT = 0; e.sqGoal = null; e.pinF = false; e.groundUntil = 0; TAC.gaveUp++; storyCue('surrender');
   dropSoldierGun(e.mesh); _pos.x = e.pos.x; _pos.z = e.pos.z; _pos.y = heightAt(e.pos.x, e.pos.z) + 2.5; floatText('ĐẦU HÀNG!', '#e8e4d0', _pos, 17); sfx('click', e.pos, 0.6); addScore(G.score, _pos); return true; }
 // a man who has given himself up (actors/infantry.js, instead of everything else he does): hands up where he stands, facing the player; then he walks to the field's
 //   edge and is gone (past leaveMax s still on the way: gone the moment he is out of the frame)
@@ -103,9 +103,9 @@ function flush(now){ const p = S.player, N = T.nade, C = DIR.contact; let best =
   best.facing = Math.atan2(p.pos.x - best.pos.x, p.pos.z - best.pos.z); best.fireAt = Math.max(best.fireAt || 0, now + N.pause); best.burstLeft = 0; best.actAt = now;
   _pos.x = best.pos.x; _pos.z = best.pos.z; _pos.y = heightAt(best.pos.x, best.pos.z) + 2.6; floatText('LỰU ĐẠN!', '#ff9a4a', _pos, 18); sfx('whoosh', best.pos);
   _pos.x = p.pos.x; _pos.z = p.pos.z; _pos.y = heightAt(p.pos.x, p.pos.z) + 3; floatText('LỰU ĐẠN — RỜI CHỖ NGAY!', '#ff6a4a', _pos, 19);
-  TAC.nades++; TAC.nadeAt = now + R2(N.cd); TAC.campT = N.camp * N.again; }
+  TAC.nades++; TAC.nadeAt = now + R2(N.cd); TAC.campT = N.camp * N.again; storyCue('nade'); }
 // DIRECTOR.sample s apart (campaign/director.js, after its reading — DIR.contact: the alerted men near him)
 export function tacticsTick(now, dt){ const p = S.player, N = T.nade, t = tacTier(); if(!p || !t) return;
   const dx = p.pos.x - TAC.cx, dz = p.pos.z - TAC.cz; if(dx * dx + dz * dz > N.campR * N.campR){ TAC.cx = p.pos.x; TAC.cz = p.pos.z; TAC.campT = 0; } else TAC.campT += dt * (PL.cover ? 1 : N.openK);
   if(t >= 3 && TAC.campT >= N.camp && now >= TAC.nadeAt && DIR.phase !== 'release' && DIR.contact.length && canThrow('e', now)) flush(now);
-  if(t >= 3 && !TAC.said.mg){ const C = DIR.contact; for(let i = 0; i < C.length; i++){ const e = C[i]; if(e.def.mg && now - (e.shotAt || -9) < 1){ TAC.said.mg = 1; _pos.x = e.pos.x; _pos.z = e.pos.z; _pos.y = heightAt(e.pos.x, e.pos.z) + 2.6; floatText('ĐẠI LIÊN!', '#ffb070', _pos, 17); radio(T.say.mg); break; } } } }
+  if(t >= 3 && !TAC.said.mg){ const C = DIR.contact; for(let i = 0; i < C.length; i++){ const e = C[i]; if(e.def.mg && now - (e.shotAt || -9) < 1){ TAC.said.mg = 1; _pos.x = e.pos.x; _pos.z = e.pos.z; _pos.y = heightAt(e.pos.x, e.pos.z) + 2.6; floatText('ĐẠI LIÊN!', '#ffb070', _pos, 17); storyCue('mg') || radio(T.say.mg); break; } } } }

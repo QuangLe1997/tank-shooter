@@ -13,7 +13,7 @@
 //   and direction reactive. DIRECTOR.on / ?nodirector: off, it still reads the fight (DIR.P, the peaks it would have called) and decides nothing.
 import * as THREE from 'three';
 import { DIRECTOR, ENTRY } from '../../config.js';
-import { FORTS, PROFILE, S, SURP, WAVE, saveProfile, surpriseNow, camera, duelOn, edgeFrom, enemies, entrySeen, inCamView, inField, isFoot, radio, reliefDrop, tacticsReset, tacticsTick, wetAt } from '../hub.js';
+import { FORTS, PROFILE, S, SURP, WAVE, saveProfile, surpriseNow, camera, duelOn, edgeFrom, enemies, entrySeen, inCamView, inField, isFoot, radio, reliefDrop, storyCue, tacticsReset, tacticsTick, wetAt } from '../hub.js';
 
 const D = DIRECTOR, R2 = a => a[0] + Math.random() * (a[1] - a[0]), sat = x => x < 0 ? 0 : x > 1 ? 1 : x, _v = new THREE.Vector3();
 const OFF = typeof location !== 'undefined' && /nodirector/.test(location.search + location.hash);
@@ -26,7 +26,7 @@ function note(now, k, why){ const L = DIR.log; if(L.length >= D.logMax) L.shift(
 function setPhase(ph, now, why){ DIR.phase = ph; DIR.phaseAt = now; DIR.lowT = 0; DIR.hiT = 0; note(now, ph, why); }
 const thrHi = () => D.thr.high * DIR.ease, thrLo = () => D.thr.low * DIR.ease;
 // one radio line of the director's (sparingly: radio.gap s apart unless it must be heard)
-export function dirSay(now, key, must){ const L = D.say[key]; if(!L || !must && now - DIR.sayAt < D.radio.gap) return false; DIR.sayAt = now; radio(typeof L === 'string' ? L : L[(Math.random() * L.length) | 0]); return true; }
+export function dirSay(now, key, must){ const L = D.say[key]; if(!L || !must && now - DIR.sayAt < D.radio.gap) return false; DIR.sayAt = now; if(storyCue('dir_' + key, null, must)) return true; radio(typeof L === 'string' ? L : L[(Math.random() * L.length) | 0]); return true; }   // (STORY 2 the story's own variants of the line, the squad's voices among them)
 // DIR 3 the difficulty's row (DIRECTOR.diff): the tier of tactics by stage, the thresholds' multiplier, the head-count multiplier, the awareness knobs' own factors
 export function dirDiff(){ return D.diff[PROFILE.difficulty] || D.diff.soldier; }
 export function dirCount(){ return dirDiff().count; }

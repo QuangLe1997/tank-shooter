@@ -503,7 +503,7 @@ export const OBJ_REWARD = { score:1500 };
 //     hp: nearly dead under low, back on his feet over back · mate: wounded under hurt, mended over ok · streak: n enemies down inside t s within r m ·
 //     maxLen: a radio line's longest (the teleprinter box; test.js) · noVoice: the voice key that keeps a line text-only (audio/voice.js speaks none).
 // ============================================================================
-export const STORY = { on:true, gap:12, gapDanger:5, gapMust:4.6, hold:40, queueMax:6, tick:0.5, maxLen:90, noVoice:'text',
+export const STORY = { on:true, gap:12, gapDanger:6, gapMust:4.6, hold:40, queueMax:6, tick:0.5, maxLen:90, noVoice:'text',
   beat:{ first:9, next:14, hold:80 }, hp:{ low:0.3, back:0.6 }, mate:{ hurt:0.35, ok:0.6 }, streak:{ n:5, t:8, r:60 },
   cast:{
     cmd:   { name:'Đại Bàng', tag:'SCH', role:'chỉ huy', trait:'không bao giờ cao giọng; học trò cũ của vị tướng cuối cùng' },

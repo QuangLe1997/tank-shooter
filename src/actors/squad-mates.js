@@ -5,7 +5,7 @@
 //   and the wounded of the squad too. (The radio's GỌI TỔ BỘ BINH still brings a whole fireteam on top of them.)
 import * as THREE from 'three';
 import { TROOPER, TROOPS } from '../../config.js';
-import { FT, CAREER, S, armAlly, clampFieldXZ, floatText, kitAttach, radio, ringPulse, sfx, spawnAlly, spawnPart, storyMate, storyNamed, updateHUD } from '../hub.js';
+import { FT, CAREER, S, armAlly, clampFieldXZ, floatText, kitAttach, radio, ringPulse, sfx, spawnAlly, spawnPart, storyCue, storyMate, storyNamed, updateHUD } from '../hub.js';
 
 const ROSTER = [];   // { role, name, a (his live fireteam entry, or null), back (true = bring him now), dead }
 let _names = [], _wave = '', _medAt = 0, _thinkAt = 0, _medMat = null;
@@ -44,16 +44,16 @@ export function updateSquadMates(){ if(!S.player || S.awaitingUpgrade) return; c
   const wk = S.stage + ':' + S.wave, newWave = _wave !== '' && wk !== _wave; _wave = wk; const back = [];
   for(const r of ROSTER){
     if(r.a && !FT.includes(r.a)){ r.dead = !!r.a.dead; r.a = null; r.back = !r.dead;   // down → the rear until the next wave · taken off a cleared field → straight back
-      if(r.dead){ floatText(r.name.toUpperCase() + ' BỊ THƯƠNG', '#ff9a7a', S.player.pos, 15); if(Math.random() < 0.5) radio(ROLE_VI[r.role][0].toUpperCase() + ROLE_VI[r.role].slice(1) + ' ' + r.name + ' trúng đạn — đã đưa về tuyến sau, đợt tới sẽ quay lại!'); } }
+      if(r.dead){ floatText(r.name.toUpperCase() + ' BỊ THƯƠNG', '#ff9a7a', S.player.pos, 15); if(!storyCue('mate_down', r) && Math.random() < 0.5) radio(ROLE_VI[r.role][0].toUpperCase() + ROLE_VI[r.role].slice(1) + ' ' + r.name + ' trúng đạn — đã đưa về tuyến sau, đợt tới sẽ quay lại!'); } }
     if(!r.a && (r.back || (r.dead && newWave))) back.push(r); }
-  const rev = back.filter(r => r.dead).length; for(const r of back) join(r, r.dead);
-  if(rev) radio('SCH: Tổ của anh đã được bổ sung ' + rev + ' người — đủ quân số.');
+  const rev = back.filter(r => r.dead).length, r1 = back.find(r => r.dead); for(const r of back) join(r, r.dead);
+  if(rev && !storyCue('mate_back', r1)) radio('SCH: Tổ của anh đã được bổ sung ' + rev + ' người — đủ quân số.');
   medic(t); }
 function medic(t){ const p = S.player, M = C().medic, r = ROSTER.find(q => q.role === 'medic' && q.a && FT.includes(q.a)); if(!r || t < _medAt) return;
   const a = r.a, k = p.medK || 1, d = Math.hypot(a.pos.x - p.pos.x, a.pos.z - p.pos.z);
   if(p.hp > 0 && p.hp < p.maxHp * M.below && d < M.r){ const h = Math.round((M.hp + CAREER.rank * M.perRank) * k); p.hp = Math.min(p.maxHp, p.hp + h); updateHUD();
     ringPulse(p.pos, 0x5fd06a, 2); floatText('Y TÁ ' + r.name.toUpperCase() + ': BĂNG BÓ +' + h, '#7fe07a', p.pos, 16); sfx('powerup');
     for(let i = 0; i < 7; i++) spawnPart(p.pos.x, 1.1 + Math.random() * 0.6, p.pos.z, (Math.random() - 0.5) * 2, 1.5 + Math.random(), (Math.random() - 0.5) * 2, { color:0x7fe07a, size:0.22, life:0.7, grav:-1, drag:2 });
-    _medAt = t + M.cd / k; return; }
+    _medAt = t + M.cd / k; storyCue('patched'); return; }
   for(const q of ROSTER){ const b = q.a; if(!b || b === a || !FT.includes(b) || b.hp >= b.maxHp * M.mateBelow || Math.hypot(b.pos.x - a.pos.x, b.pos.z - a.pos.z) > M.r) continue;
-    b.hp = Math.min(b.maxHp, b.hp + b.maxHp * 0.45); floatText('+ ' + q.name, '#7fe07a', { x:b.pos.x, y:2.2, z:b.pos.z }, 13); _medAt = t + M.cd * 0.6 / k; return; } }
+    b.hp = Math.min(b.maxHp, b.hp + b.maxHp * 0.45); floatText('+ ' + q.name, '#7fe07a', { x:b.pos.x, y:2.2, z:b.pos.z }, 13); _medAt = t + M.cd * 0.6 / k; storyCue('mate_saved', q); return; } }

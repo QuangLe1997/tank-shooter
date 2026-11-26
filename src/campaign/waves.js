@@ -1,7 +1,7 @@
 // campaign/waves.js — WAVES: difficulty / NG+ loop multipliers, wave queue per stage, random wave events, edge spawn points
 import * as THREE from 'three';
 import { BALANCE, ENTRY, INFANTRY } from '../../config.js';
-import { soldierWaveQueue, duelOn, ENEMY_DEFS, FORTS, MOBILE, OBJ, PROFILE, S, UNDER, addScore, applyScriptedWave, cMod, enemies, fieldEdgePoint, fortLaunch, fortSpawnPoint, inField, objMod, opFor, radio, ringPulse, scriptedEvent, sfx, showBanner, spawnEnemy, spawnSquad, startBoss, supplyDmg, tip, trimWaveForSupply, underCut, updateHUD, wetAt, edgeEntry, edgeFrom, entrySeen, entriesPending, hatchEntry, isFoot, dirEntry, dirFinale, dirSpawned, dirWaveGo, dirWaveHold } from '../hub.js';
+import { soldierWaveQueue, duelOn, ENEMY_DEFS, FORTS, MOBILE, OBJ, PROFILE, S, UNDER, addScore, applyScriptedWave, cMod, enemies, fieldEdgePoint, fortLaunch, fortSpawnPoint, inField, objMod, opFor, radio, ringPulse, scriptedEvent, sfx, showBanner, spawnEnemy, spawnSquad, startBoss, supplyDmg, tip, trimWaveForSupply, underCut, updateHUD, wetAt, edgeEntry, edgeFrom, entrySeen, entriesPending, hatchEntry, isFoot, dirEntry, dirFinale, dirSpawned, dirWaveGo, dirWaveHold, storyCue } from '../hub.js';
 
 // ----------------------------- WAVES -----------------------------
 export const WAVE = { spawnQueue:[], spawnAt:0, betweenUntil:0, active:false, perStage:BALANCE.wave.perStageCount, event:null, eventBanner:null, eventColor:'#9bb0c0', treasure:false, eliteForce:0, assault:false };
@@ -42,6 +42,7 @@ export function startWave(now){
   trimWaveForSupply(WAVE.spawnQueue);   // Z194 lost fuel → fewer tanks · lost barracks → fewer squads
   if(objMod('gunshipPerWave',0)>0 && S.stage>=2) WAVE.spawnQueue.splice(Math.min(2,WAVE.spawnQueue.length),0,'gunship');   // Z83 radar site vectors a gunship onto every wave
   setTimeout(()=>{ if(S.mode==='playing') radio(opFor(S.stage).radio[S.wave]); }, 900);                                                // all kamikaze
+  storyCue('wave');   // STORY 2 the stage's plot for this wave waits its turn on the radio (campaign/story.js)
   WAVE.spawnAt = now + 0.4; WAVE.active = true; planWave(now);
   showBanner(WAVE.eventBanner || ('ĐỢT '+S.wave), WAVE.eventColor);
   updateHUD();

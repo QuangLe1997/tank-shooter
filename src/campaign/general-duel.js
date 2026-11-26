@@ -7,7 +7,7 @@
 //   on the field and a medal, and the stage is won.
 import * as THREE from 'three';
 import { TROOPER } from '../../config.js';
-import { S, bigExplode, blastAllies, clampFieldXZ, damagePlayer, disposeArtZone, enemies, floatText, makeArtLock, radio, ringPulse, sfx, showBanner, spawnBullet, spawnEnemy, spawnPart, svgBadgeTex, tickArtLock } from '../hub.js';
+import { S, bigExplode, blastAllies, clampFieldXZ, damagePlayer, disposeArtZone, enemies, floatText, makeArtLock, radio, ringPulse, sfx, showBanner, spawnBullet, spawnEnemy, spawnPart, storyCue, svgBadgeTex, tickArtLock } from '../hub.js';
 
 const G = { on:false, e:null, name:'', guards:[], called:false, rage:false, fanAt:0, fanT:0, nadeAt:0, ringAt:0, zones:[], finish:null, at:null, pending:0, barK:'' };
 const C = () => TROOPER.general;
@@ -19,7 +19,7 @@ export function duelReset(){ for(const z of G.zones) disposeArtZone(z.zone); G.z
 export function generalStart(pos, def, finish){ if(!S.player) return false; duelReset();
   Object.assign(G, { on:true, finish, id:(def && def.id) || '', name:(def && def.name) || 'TƯỚNG ĐỊCH', at:{ x:pos.x, z:pos.z }, pending:NOW() + 1.4, called:false, rage:false, guards:[] });
   showBanner(G.name + ' RA TRẬN!', '#ff9a4a'); sfx('alarm');
-  radio('SCH: ' + G.name + ' cùng cận vệ đã ra khỏi hầm chỉ huy! Hạ hắn đi, đừng để hắn thoát!'); return true; }
+  radio('SCH: ' + G.name + ' cùng cận vệ đã ra khỏi hầm chỉ huy! Hạ hắn đi, đừng để hắn thoát!'); storyCue('general', G.id); return true; }
 export function duelId(){ return G.on ? G.id : ''; }   // (the music's general theme)
 function spawnGeneral(){ const c = C(), p = S.player, ax = G.at.x, az = G.at.z, a = Math.atan2(p.pos.x - ax, p.pos.z - az) + (Math.random() - 0.5) * 1.4;
   const [x, z] = clampFieldXZ(ax + Math.sin(a) * 4.5, az + Math.cos(a) * 4.5, 4), e = spawnEnemy('rifle', x, z);
@@ -44,8 +44,8 @@ export function updateGeneralDuel(dt){ if(!G.on) return; const t = NOW(), p = S.
   if(!enemies.includes(e)){ fallen(e); return; }
   hud(e); const c = C(), f = e.hp / e.maxHp, d = Math.hypot(p.pos.x - e.pos.x, p.pos.z - e.pos.z);
   if(t > G.ringAt){ ringPulse(e.pos, G.rage ? 0xff2a1a : 0xff6a3a, 2.4); G.ringAt = t + (G.rage ? 0.7 : 1.3); }
-  if(!G.called && f < c.callAt){ G.called = true; guards(c.callN); showBanner('TƯỚNG GỌI CẬN VỆ!', '#ff9a4a'); radio(G.name + ': Cận vệ đâu! Giết thằng lính đó cho ta!'); sfx('alarm'); }
-  if(!G.rage && f < c.rageAt){ G.rage = true; e.def = { ...e.def, fireCd:e.def.fireCd * c.rageFire, speed:e.def.speed * c.rageRun }; showBanner('TƯỚNG LIỀU MẠNG!', '#ff4a3a'); radio(G.name + ': Ta chưa thua đâu!'); }
+  if(!G.called && f < c.callAt){ G.called = true; guards(c.callN); showBanner('TƯỚNG GỌI CẬN VỆ!', '#ff9a4a'); radio(G.name + ': Cận vệ đâu! Giết thằng lính đó cho ta!'); sfx('alarm'); storyCue('general_half', G.id); }
+  if(!G.rage && f < c.rageAt){ G.rage = true; e.def = { ...e.def, fireCd:e.def.fireCd * c.rageFire, speed:e.def.speed * c.rageRun }; showBanner('TƯỚNG LIỀU MẠNG!', '#ff4a3a'); storyCue('general_rage', G.id) || radio(G.name + ': Ta chưa thua đâu!'); }
   if(G.fanT > 0){ G.fanT -= dt; glint(e); if(G.fanT <= 0) fan(e); }
   else if(t > G.fanAt && d < c.range){ G.fanT = c.fan.tel; G.fanAt = t + c.fan.cd * (G.rage ? 0.7 : 1); sfx('beep', e.pos); floatText('!', '#ff4a3a', { x:e.pos.x, y:3, z:e.pos.z }, 26); }
   if(t > G.nadeAt && d < 26 && G.fanT <= 0){ G.nadeAt = t + c.nade.cd * (G.rage ? 0.75 : 1); nades(e); } }
@@ -69,7 +69,7 @@ function tickZones(dt, t){ for(let i = G.zones.length - 1; i >= 0; i--){ const s
   const p = S.player; if(!p) continue; const dx = p.pos.x - s.x, dz = p.pos.z - s.z, d = Math.hypot(dx, dz); if(d < s.R) damagePlayer(s.dmg * (1 - 0.6 * d / s.R), t, dx || 0.01, dz); } }
 // he is down: his guards break and run (no longer in reach, no longer firing), slow motion, then the stage is won
 function fallen(){ G.e = null; bar(false); S.timeScale = 0.35; sfx('levelup');
-  showBanner('ĐÃ HẠ ' + G.name + '!', '#ffd24a'); radio('SCH: ' + G.name + ' đã gục! Bọn cận vệ tan rã — trận này là của anh!');
+  showBanner('ĐÃ HẠ ' + G.name + '!', '#ffd24a'); storyCue('general_down', G.id) || radio('SCH: ' + G.name + ' đã gục! Bọn cận vệ tan rã — trận này là của anh!');
   for(const g of G.guards) if(enemies.includes(g)){ g.def = { ...g.def, range:0, keep:90, speed:g.def.speed * 1.3 }; g.genGuard = false; floatText('BỎ CHẠY!', '#e0e0d0', { x:g.pos.x, y:2.4, z:g.pos.z }, 13); }
   for(const z of G.zones) disposeArtZone(z.zone); G.zones.length = 0;
   const fin = G.finish; G.finish = null; G.on = false; setTimeout(() => { if(fin && S.mode !== 'gameover') fin(NOW()); }, 1400); }
