@@ -21,7 +21,7 @@
 //   Nothing allocates per frame.
 import * as THREE from 'three';
 import { BLADE, CAV, LOGISTICS, REALCAV } from '../../config.js';
-import { awareNoise, suspectEnemy, hangState, hangStep, CV, MOBILE, PROFILE, RDRAG, S, animClip, animInfo, animRootAt, bloodSpurt, blocksNear, climbing, curlHand, damageBlock, damageEnemy, enemies, floatText, fpvFlying, heightAt, heldAction, ik2, lineClear, loadAnimGroup, loadGLTF, saveProfile, scene, selectGun, sfx, spawnPart, updateGunHUD } from '../hub.js';
+import { awareNoise, suspectEnemy, decalBlood, enemyPool, getEnemyMesh, layOut, reviveSoldierMesh, hangState, hangStep, CV, MOBILE, PROFILE, RDRAG, S, animClip, animInfo, animRootAt, bloodSpurt, blocksNear, climbing, curlHand, damageBlock, damageEnemy, enemies, floatText, fpvFlying, heightAt, heldAction, ik2, lineClear, loadAnimGroup, loadGLTF, saveProfile, scene, selectGun, sfx, spawnPart, updateGunHUD } from '../hub.js';
 
 const V3 = () => new THREE.Vector3(), Q4 = () => new THREE.Quaternion(), clamp = (v, a, b) => Math.max(a, Math.min(b, v)), smooth = k => { k = clamp(k, 0, 1); return k * k * (3 - 2 * k); }, wrapA = a => Math.atan2(Math.sin(a), Math.cos(a)), D2R = Math.PI / 180;
 const _a = V3(), _b = V3(), _c = V3(), _d = V3(), _k = V3(), _m = V3(), _n = V3(), _x = V3(), _y = V3(), _z = V3(), _p = V3(), _t = V3(), _u = V3(), _r = V3(), _bk = V3(), _ws = V3(), _one = V3();
@@ -32,7 +32,7 @@ const _tg = new Float32Array(8), UP = new THREE.Vector3(0, 1, 0);
 //   held: the blade is (to be) in his hands · auto: AUTO drew it · sw: 0 on his back … 1 in his hands (the rig's weight, mirrored) · act: the move in hand
 //   { mv, t (clip s), rate, dmgK, f0 (the bearing it is aimed along), wi (the window he is in), hit (who it has cut) } · chain: the next light · buf: the move asked for
 export const BLADEST = { kind:null, held:false, auto:false, sw:0, act:null, chain:0, chainAt:-9, buf:null, bufAt:0, trigF:-9, down:false, pressT:0, heavied:false, st:BLADE.stamina.max, stAt:-9, spAt:0, guard:false,
-  nearAt:0, killAt:-9, flDone:true, frame:0, hits:0, kills:0, silent:0, ambush:0, dashes:0, swings:0, firstHit:-1, drawAt:-9, ready:{}, tipV:0 };
+  nearAt:0, killAt:-9, flDone:true, frame:0, hits:0, kills:0, silent:0, ambush:0, dashes:0, severed:0, swings:0, firstHit:-1, drawAt:-9, ready:{}, tipV:0 };
 const ACT = { mv:null, what:'', t:0, rate:1, dmgK:1, f0:0, rk:1, wi:-1, hit:new Set(), lunge:0, lx:0, lz:0, dashT:0, dashV:0 };
 export const bladeKind = () => BLADE.kinds[PROFILE.blade] ? PROFILE.blade : BLADE.def;
 export const bladeHeld = cv => !!BLADE.on && (!cv || cv === CV ? BLADEST.held : !!cv.blade);
@@ -239,9 +239,9 @@ function cut(e, A, K, p, now, bear){ const B = BLADEST, mv = A.mv, HT = BLADE.hi
   // BLADE 5 THE QUIET WEAPON: a man who does not know dies by the knife's own quiet path (game/quiet.js quietDeath: only who SEES it done reacts, the body can be found) — and one
   //   who does not know, struck from outside his front (the knife's own test), dies to any cut at all: the ambush
   const QZ = BLADE.quiet, inf = !!(e.def && e.def.inf), unaware = QZ.on && inf && !(e.alert >= 2), amb = unaware && QZ.ambush && !e.general && !e.commander && !e.elite && Math.abs(wrapA(Math.atan2(p.pos.x - e.pos.x, p.pos.z - e.pos.z) - (e.facing || 0))) > LOGISTICS.quiet.knife.front;
-  if(amb) dmg = Math.max(dmg, e.hp + 1); const hush = unaware && dmg >= e.hp; if(hush) e._knife = true;
+  if(amb) dmg = Math.max(dmg, e.hp + 1); const hush = unaware && dmg >= e.hp; if(hush) e._knife = true; if(inf && BLADE.sever.on && dmg >= e.hp && mv.sever !== 'none') e._bladeCut = mv.sever || 'waist';   // (BLADE 7 the cut that kills parts him along it: bladeSever)
   e._hx = dx; e._hz = dz; if(e.def && e.def.inf){ e.dazeUntil = Math.max(e.dazeUntil || 0, now + mv.daze); e.kbx = (e.kbx || 0) + dx * mv.push; e.kbz = (e.kbz || 0) + dz * mv.push; e.aimT = 0; }
-  const ex = e.pos.x, ez = e.pos.z, flesh = !!(e.def && e.def.inf) && !mv.blunt; damageEnemy(e, dmg); B.hits++; if(B.firstHit < 0) B.firstHit = now; if(!(e.hp > 0)){ B.kills++; B.killAt = now; B.flDone = false; if(hush){ B.silent++; if(amb) B.ambush++; floatText('HẠ GỤC ÊM', '#9be04a', p.pos, 16); } }
+  const ex = e.pos.x, ez = e.pos.z, flesh = !!(e.def && e.def.inf) && !mv.blunt; damageEnemy(e, dmg); if(e.hp > 0) e._bladeCut = null; B.hits++; if(B.firstHit < 0) B.firstHit = now; if(!(e.hp > 0)){ B.kills++; B.killAt = now; B.flDone = false; if(hush){ B.silent++; if(amb) B.ambush++; floatText('HẠ GỤC ÊM', '#9be04a', p.pos, 16); } }
   else if(QZ.on && inf){ const r2 = QZ.cryR * QZ.cryR; for(let i = 0; i < enemies.length; i++){ const m = enemies[i]; if(m !== e && m.hp > 0 && (m.pos.x - ex) ** 2 + (m.pos.z - ez) ** 2 < r2) suspectEnemy(m, now, ex, ez); } }   // (a wounded man cries out: his mates near turn to look)
   if(flesh){ bloodSpurt(ex, ez, dx, dz, heavy ? 1.8 : 1.1); sfx(heavy ? 'crunch' : 'hit', e.pos, 0.75); } else { sparks(ex, heightAt(ex, ez) + 1.1, ez, HT.sparks); sfx(mv.blunt ? 'thud' : 'clang', e.pos, 0.6); }
   S.hitStop = Math.max(S.hitStop || 0, (S.timeNow || now) + HT.stop[heavy ? 1 : 0]); S.shake = Math.min(2.4, (S.shake || 0) + HT.shake[heavy ? 1 : 0]); S.camKick = Math.min(1.2, (S.camKick || 0) + HT.kick[heavy ? 1 : 0]); S.kickAng = A.f0; }
@@ -255,6 +255,36 @@ function windows(p, K, A, now){ const mv = A.mv, HT = BLADE.hit; let wi = -1; fo
     const bear = Math.atan2(dx, dz); let rel = wrapA(bear - A.f0) / D2R; rel += 360 * Math.ceil((lo - rel) / 360); if(rel > hi) continue;   // (the first turn of his bearing at or past the arc's low end: inside it or not)
     const ey = heightAt(e.pos.x, e.pos.z) + (e.air ? e.pos.y || 0 : 0) - py; if(ey < mv.y[0] || ey > mv.y[1]) continue; A.hit.add(e);   // (in reach, in the arc, at his height: one look for a wall between, then never again this swing)
     if(!lineClear(p.pos.x, py + 1.15, p.pos.z, e.pos.x, py + ey + 1.0, e.pos.z)) continue; cut(e, A, K, p, now, bear); } }
+
+// ---- BLADE 7 A MAN CUT DOWN IS CUT APART, NOT BLOWN UP (BLADE.sever; actors/infantry.js infantryDown asks here first for a man the blade killed). An enemy is ONE skinned body in the
+//   troop batch, drawn off his rig's joints — so the same body is drawn TWICE, off two rigs standing where he stood: on each, the joints of the other side of the cut are shrunk to a
+//   point (their skin folds shut onto the cut), so one rig shows what is above / kept and the other what came away: at the waist (a sweep), the neck (a high spin), a leg (a low
+//   slash). Each half has its own small rigid motion — the upper slides off along the cut, tips over and lies; the legs stand a beat and topple the other way; a head drops and
+//   rolls on — a dark red face closes each cut (two small discs: the two extra draw calls), blood sprays along the cut and pools. No chunks, no flash, no fling. The halves lie
+//   `life` s as a body does (the quiet path has already marked ONE body to be found), then sink and both rigs go back to the pool with their joints as they were. At most `max`.
+const SEV = [], CAPS = [], _sq = Q4(), _sax = V3(); let _capG = null, _capM = null;
+function capOn(par, y, r){ if(!_capG){ _capG = new THREE.CircleGeometry(1, 14); _capG.rotateX(-Math.PI / 2); _capM = new THREE.MeshLambertMaterial({ color:0x5e0a08, side:THREE.DoubleSide }); } const c = CAPS.pop() || new THREE.Mesh(_capG, _capM); c.scale.setScalar(r); c.position.set(0, y, 0); c.rotation.set(0, 0, 0); c.visible = true; par.add(c); return c; }
+function shrink(S0, o, k){ S0.push(o, o.scale.x, o.scale.y, o.scale.z, o.position.x, o.position.y, o.position.z); o.scale.multiplyScalar(k); }
+function unsever(s, pool){ for(let i = 0; i < s.keep.length; i += 7){ const o = s.keep[i]; o.scale.set(s.keep[i + 1], s.keep[i + 2], s.keep[i + 3]); o.position.set(s.keep[i + 4], s.keep[i + 5], s.keep[i + 6]); } for(const c of s.caps){ c.parent && c.parent.remove(c); CAPS.push(c); }
+  for(const m of [s.a, s.b]){ m.visible = false; if(m.userData.gun) m.userData.gun.visible = true; m.quaternion.copy(s.q0); if(pool && m.parent){ reviveSoldierMesh(m); (enemyPool[s.type] = enemyPool[s.type] || []).push(m); } } }
+export function bladeSever(e){ const C = BLADE.sever, m = e.mesh, u = m && m.userData, p = S.player; if(!C.on || !u || !u.up || !u.head || !u.body || !u.legs || u.legs.length < 2 || e.puppet || !m.parent || !p) return false;
+  while(SEV.length >= C.max) unsever(SEV.shift(), true); const kind = e._bladeCut, x = e.pos.x, z = e.pos.z; let dx = e._hx || 0, dz = e._hz || 0; const dl = Math.hypot(dx, dz); if(dl < 0.05){ dx = Math.sin(p.facing); dz = Math.cos(p.facing); } else { dx /= dl; dz /= dl; }
+  layOut(m, x, z); const b = getEnemyMesh(e.type), v = b.userData; if(!v.up || !v.legs){ b.visible = false; (enemyPool[e.type] = enemyPool[e.type] || []).push(b); return false; } if(b.parent !== m.parent) m.parent.add(b);
+  b.position.copy(m.position); b.quaternion.copy(m.quaternion); b.scale.copy(m.scale); v.body.scale.copy(u.body.scale); v.tint = u.tint; if(v.gun) v.gun.visible = false; if(u.gun) u.gun.visible = false; layOut(b, x, z);
+  const s = { a:m, b, type:e.type, kind, t:0, dx, dz, keep:[], caps:[], q0:m.quaternion.clone(), y0:m.position.y, done:false }, E = 1e-4, K = s.keep, hy = u.legs[0].hip.position.y, R = C.cap;
+  if(kind === 'neck'){ shrink(K, u.head, E); shrink(K, v.legs[0].hip, E); shrink(K, v.legs[1].hip, E); if(v.arms) shrink(K, v.arms, E); shrink(K, v.up, E); shrink(K, v.head, 1 / E); v.head.position.multiplyScalar(1 / E);   // (a: the body, headless · b: the head alone — its parent shrunk, itself grown back)
+    s.caps.push(capOn(u.up, u.head.position.y, R.neck), capOn(v.body, v.up.position.y + 0.02, R.neck)); s.hy = (v.up.position.y + K[K.length - 2] ) * v.body.scale.y * b.scale.y; }
+  else if(kind === 'leg'){ const i = Math.random() < 0.5 ? 0 : 1; shrink(K, u.legs[i].hip, E); shrink(K, v.legs[1 - i].hip, E); shrink(K, v.up, E); s.caps.push(capOn(u.body, hy, R.leg), capOn(v.body, hy, R.leg)); s.caps[0].position.x = s.caps[1].position.x = u.legs[i].hip.position.x; }   // (a: the man less a leg · b: the leg)
+  else { shrink(K, u.legs[0].hip, E); shrink(K, u.legs[1].hip, E); shrink(K, v.up, E); s.caps.push(capOn(u.up, 0.01, R.waist), capOn(v.body, hy, R.waist)); }   // (a: from the waist up · b: his legs)
+  bloodSpurt(x, z, dx, dz, 2.2); bloodSpurt(x, z, -dz, dx, 1.4); decalBlood(x, z, 1.1 + Math.random() * 0.3); sfx('crunch', e.pos, 0.8); SEV.push(s); BLADEST.severed++; return true; }
+function severTick(dt){ const C = BLADE.sever; for(let i = SEV.length - 1; i >= 0; i--){ const s = SEV[i]; if(!s.a.parent || !s.b.parent){ unsever(s, false); SEV.splice(i, 1); continue; } s.t += dt; if(s.t > C.life){ unsever(s, true); SEV.splice(i, 1); continue; } if(s.done && s.t < C.life - C.sink) continue;
+    const ka = smooth(s.t / C.tip[0]), kb = smooth((s.t - C.wait) / C.tip[1]), sl = smooth(s.t / 0.25) * C.slide, out = Math.max(0, s.t - (C.life - C.sink)) / C.sink, gy = s.y0 - out * 0.6; _sax.set(s.dz, 0, -s.dx);
+    if(s.kind === 'neck'){ s.a.quaternion.copy(_sq.setFromAxisAngle(_sax, -kb * Math.PI / 2)).multiply(s.q0); s.a.position.y = gy + 0.12 * kb;   // (the body folds back; the head goes on along the cut, drops and rolls)
+      const f = Math.min(1, s.t / 0.45), d = C.slide + 1.1 * f; s.b.position.set(s.a.position.x + s.dx * d, gy - (s.hy - 0.14) * f * f + 0.5 * Math.sin(Math.PI * Math.min(1, f)) * (1 - f * 0.5), s.a.position.z + s.dz * d); s.b.quaternion.copy(_sq.setFromAxisAngle(_sax, f * 4)).multiply(s.q0); }
+    else { s.a.quaternion.copy(_sq.setFromAxisAngle(_sax, ka * Math.PI / 2)).multiply(s.q0); if(!s.ax){ s.ax = s.a.position.x; s.az = s.a.position.z; } s.a.position.set(s.ax + s.dx * sl, gy + 0.14 * ka, s.az + s.dz * sl);   // (what he kept slides off along the cut, tips over and lies)
+      s.b.quaternion.copy(_sq.setFromAxisAngle(_sax, -kb * Math.PI / 2)).multiply(s.q0); s.b.position.y = gy + 0.1 * kb; }   // (what came away stands a beat, then goes over the other way)
+    if(s.t > C.tip[1] + C.wait + 0.1) s.done = true; } }
+export const bladeSevered = () => SEV.length;
 
 // soldier-fire: the trigger is down this frame. true: the round is not fired (the blade has it)
 export function bladeFire(now){ const B = BLADEST, p = S.player, AU = BLADE.auto; if(!BLADE.on || !afoot() || !B.kind || !B.ready[B.kind] || climbing() || fpvFlying()) return false;
@@ -282,7 +312,7 @@ export function bladeFoot(p, dt){ const B = BLADEST; if(!BLADE.on || !B.held) re
     if(A.lunge > 0 && A.t >= A.mv.from){ p.vel.x += A.lx * A.lunge; p.vel.z += A.lz * A.lunge; A.lunge = -1; } if(A.lunge < 0 && A.wi < 0 && A.t < (A.mv.win[0] ? A.mv.win[0][0] : 0)) return; }
   const v = Math.hypot(p.vel.x, p.vel.z); if(v > cap && cap < CAV.foot.run){ const k = Math.max(cap, v - CAV.foot.decel * 2 * dt) / v; p.vel.x *= k; p.vel.z *= k; } }
 // cavalry.js, every frame of the page's own soldier: the kind, the trigger's presses, the move in hand, its windows, AUTO's way back, the flourish
-export function bladeTick(p, dt, now){ const B = BLADEST; B.frame++; if(!BLADE.on || !p) return; const k = bladeKind(); if(B.kind !== k){ B.kind = k; B.act = null; B.buf = null; } load(k);
+export function bladeTick(p, dt, now){ const B = BLADEST; B.frame++; if(!BLADE.on || !p) return; if(SEV.length) severTick(dt); const k = bladeKind(); if(B.kind !== k){ B.kind = k; B.act = null; B.buf = null; } load(k);
   const K = BLADE.kinds[k], SM = BLADE.stamina, AU = BLADE.auto;
   if(B.held && (!afoot() || climbing() || fpvFlying())){ B.held = false; B.auto = false; B.act = null; B.buf = null; }
   if(!B.held){ B.down = false; B.guard = false; B.act = null; if(B.st < SM.max) B.st = Math.min(SM.max, B.st + SM.regen * dt); if(B.frame % 6 === 0) hud(); return; }
@@ -329,5 +359,5 @@ export function bladePick(k){ if(!BLADE.kinds[k]) return false; PROFILE.blade = 
 // numbers for a probe / the pose studio
 function wornProbe(R, L){ if(!L || !L.m || !R.pup) return null; const K = L.K, m = L.m, ks = bodyK(); m.updateWorldMatrix(true, false); _z.set(0, 0, 1).transformDirection(m.matrixWorld); _x.set(0, 0, K.butt).applyMatrix4(m.matrixWorld); _y.set(0, 0, K.tip).applyMatrix4(m.matrixWorld);
   return { bladeDown:+(-_z.y).toFixed(2), tipY:+(_y.y - heightAt(_y.x, _y.z)).toFixed(2), gapCm:BLADEST.sw > 0 ? null : backGap(R.pup.D, _x, _y, K.r * ks), swingDeg:+(L.swing * 180 / Math.PI).toFixed(2) }; }
-export function bladeProbe(){ const B = BLADEST, R = CV.real, L = R && R.bl; return { kind:B.kind, held:B.held, auto:B.auto, sw:+B.sw.toFixed(3), act:B.act ? ACT.mv.id : null, t:B.act ? +ACT.t.toFixed(3) : 0, win:B.act ? ACT.wi : -1, buf:B.buf, chain:B.chain, st:+B.st.toFixed(1), guard:B.guard, hits:B.hits, kills:B.kills, silent:B.silent, ambush:B.ambush, dashes:B.dashes, dashD:+(B.dashD || 0).toFixed(2), swings:B.swings,
+export function bladeProbe(){ const B = BLADEST, R = CV.real, L = R && R.bl; return { kind:B.kind, held:B.held, auto:B.auto, sw:+B.sw.toFixed(3), act:B.act ? ACT.mv.id : null, t:B.act ? +ACT.t.toFixed(3) : 0, win:B.act ? ACT.wi : -1, buf:B.buf, chain:B.chain, st:+B.st.toFixed(1), guard:B.guard, hits:B.hits, kills:B.kills, silent:B.silent, ambush:B.ambush, severed:B.severed, severedNow:SEV.length, dashes:B.dashes, dashD:+(B.dashD || 0).toFixed(2), swings:B.swings,
     ready:!!B.ready[B.kind], mesh:!!(L && L.m), seated:!!(L && L.seated), tipR:+(B.tipR || 0).toFixed(2), wins:WINS, worn:wornProbe(R, L), cd:+Math.max(0, B.spAt - (S.timeNow || performance.now() / 1000)).toFixed(2) }; }
