@@ -2952,7 +2952,7 @@ export const HANG = { on:true, g:9.8, k:1, len:0.6, ks:140, z:0.42, max:0.4, acc
 //     the weapon in his hands or on its way is pushed bodily out of them · path: the draw / sheath — a: the share of it his hand takes to reach the weapon where it hangs, via: the
 //     point outside his right shoulder [his right, up, ahead of the shoulder joint] it is carried round, clear: the share of the way over which the push-out comes in
 //   sever: A MAN CUT DOWN IS CUT APART — max bodies lying severed at once, life s they lie (the last sink s sinking), slide m the upper half slides off along the cut, wait s the
-//     other half stands, tip [upper, other] s to go over, cap: the red face's radius by where he is parted; a move's sever: 'waist' (default) | 'neck' | 'leg' | 'none'
+//     other half stands, tip [upper, other] s to go over, cap: the red face's radius by where he is parted (cloth: the colour of its rim); a move's sever: 'waist' (default) | 'neck' | 'leg' | 'none'
 //   quiet: THE QUIET WEAPON — a cut is never a shot's noise; a man who does not know (alert < 2) dies by the knife's quiet path, and struck from outside his front dies to any
 //     cut (ambush); a wounded man's cry turns his mates within cryR m suspicious; steel on cover is heard clangR m off; started at a sprint or from cover with such a man within
 //     dashR m ahead, the cut begins with a dash-in of dashT s (at most dashV m/s); glimpse: with the blade out and no shot fired for shotT s, an unaware man
@@ -2977,7 +2977,7 @@ export const BLADE = { on:!(typeof location !== 'undefined' && /[?&]noblade\b/.t
   auto:{ on:true, r:2.6, cone:75, back:5, wait:2, keep:4.5 }, stamina:{ max:100, regen:28, delay:0.7, tiredRate:0.78, tiredDmg:0.7 },
   hit:{ stop:[0.06, 0.09], shake:[0.22, 0.5], kick:[0.12, 0.3], chip:14, gen:0.34, sparks:6, tol:14 }, guard:{ front:0.45, arc:120, moveK:0.45 },
   trail:{ on:true, n:14, life:0.16, color:0xdfe9ff, op:0.55 }, edge:{ on:true, v:[2.5, 7], rate:30 },
-  body:{ chest:0.185, pack:[0.1, 0.17], head:0.14, hips:0.19, thigh:0.115, shin:0.085, margin:0.012 }, path:{ a:0.25, via:[0.42, 0.22, -0.02], clear:0.15 }, hand:{ palm:0.62, out:0.012, curl:0.9 }, runAt:3.6, flourish:{ r:6, wait:0.4, moveV:0.7 }, sever:{ on:true, max:6, life:24, sink:1.5, slide:0.35, wait:0.18, tip:[0.5, 0.7], cap:{ waist:0.2, neck:0.08, leg:0.1 } },
+  body:{ chest:0.185, pack:[0.1, 0.17], head:0.14, hips:0.19, thigh:0.115, shin:0.085, margin:0.012 }, path:{ a:0.25, via:[0.42, 0.22, -0.02], clear:0.15 }, hand:{ palm:0.62, out:0.012, curl:0.9 }, runAt:3.6, flourish:{ r:6, wait:0.4, moveV:0.7 }, sever:{ on:true, max:6, life:24, sink:1.5, slide:0.35, wait:0.06, tip:[0.5, 0.5], cap:{ waist:0.2, neck:0.08, leg:0.1 }, cloth:[0.36, 0.33, 0.24] },
   quiet:{ on:true, ambush:true, cryR:10, clangR:10, dashR:5.5, dashT:0.25, dashV:16, glimpse:0.45, shotT:6 }, btn:[18, 250], gbtn:[18, 316],
   kinds:{
     guandao:{ name:'ĐẠI ĐAO (Quan đao)', file:'blade_guandao', len:2.048, butt:-1.049, tip:0.998, root:0.313, edge:0.051, back:-0.085, com:0.157, off:[-1.0, -0.2], two:true, reach:2.55, r:0.019, spread:[0.62, 0.2], slide:0.8, slideV:5.5,
@@ -2990,7 +2990,7 @@ export const BLADE = { on:!(typeof location !== 'undefined' && /[?&]noblade\b/.t
           { id:'rise', sl:[0.66, 0.9, 1.22, 1.6, 0.6], ext:0.08, clip:'blade-axe-attack-backhand', rate:1.45, from:0.5, to:1.75, win:[[0.92, 1.2]], arc:[-78, 20], y:[-0.6, 1.5], dmg:78, push:6, daze:0.75, st:24, next:1.35, move:0.35, lunge:0.8 },
           { id:'chop', sl:[0.46, 0.74, 1.0, 1.35, 0.8], clip:'blade-axe-attack-downward', rate:1.3, from:0.3, to:1.55, win:[[0.76, 0.98]], arc:[0, 0], tol:24, y:[-1.2, 1.8], dmg:120, push:3, daze:1.0, st:28, next:1.15, move:0.25, lunge:1.0 } ],
         heavy:{ id:'spin', sever:'neck', sl:[0.58, 0.82, 1.3, 1.75, 0.8], ext:0.16, clip:'blade-axe-attack-360-high', rate:1.55, from:0.45, to:2.0, win:[[0.83, 1.27]], arc:[-140, -395], y:[-0.6, 1.4], dmg:105, push:8, daze:1.1, st:42, next:1.6, move:0.3, lunge:0.5 },
-        run:{ id:'leap', sl:[1.2, 1.5, 1.85, 2.3, 0.7], clip:'blade-axe-run-jump-attack', rate:1.6, from:0.95, to:2.7, win:[[1.53, 1.82]], arc:[0, 0], tol:32, reach:2.1, y:[-1.5, 1.8], dmg:135, push:5, daze:1.1, st:36, next:2.2, move:0, root:true },
+        run:{ id:'leap', sl:[1.2, 1.5, 1.88, 2.3, 0.7], clip:'blade-axe-run-jump-attack', rate:1.6, from:0.95, to:2.7, win:[[1.66, 1.86]], arc:[0, 0], tol:32, reach:2.1, y:[-1.5, 1.8], dmg:135, push:5, daze:1.1, st:36, next:2.2, move:0, root:true },
         special:{ id:'whirl', sever:'leg', sl:[0.42, 0.64, 1.18, 1.55, 0.7], clip:'blade-axe-attack-360-low', rate:1.5, from:0.3, to:1.8, win:[[0.65, 1.15]], arc:[-172, -372], reach:2.0, y:[-0.9, 1.1], dmg:90, push:9, daze:1.5, st:30, cd:9, next:1.45, move:0.2 },
         counter:{ id:'strike', sever:'none', sl:[0.62, 0.84, 1.17, 1.6, 0.55], clip:'blade-misc-smash', rate:1.7, from:0.5, to:1.95, win:[[0.85, 1.15]], arc:[-105, 12], y:[-0.6, 1.5], dmg:60, push:7, daze:1.3, st:14, next:1.4, move:0.3, lunge:0.4 },
         flourish:{ id:'mua', clip:'blade-misc-spinning', rate:1.5, from:0, to:1.7, win:[], move:0.2 } } },
@@ -3002,7 +3002,7 @@ export const BLADE = { on:!(typeof location !== 'undefined' && /[?&]noblade\b/.t
           { id:'cut1', clip:'blade-gs-slash', rate:1.8, from:0.2, to:1.05, win:[[0.63, 0.77]], arc:[-60, 30], y:[-0.8, 1.4], dmg:46, push:2.2, daze:0.35, st:11, next:0.82, move:0.6, lunge:0.6 },
           { id:'cut2', clip:'blade-gs-slash-3', rate:1.9, from:0.42, to:1.45, win:[[0.84, 1.1]], arc:[70, -70], y:[-0.6, 1.3], dmg:50, push:2.4, daze:0.35, st:12, next:1.14, move:0.6, lunge:0.5 },
           { id:'cut3', clip:'blade-gs-slash-5', rate:1.5, from:0.12, to:1.0, win:[[0.37, 0.58]], arc:[-45, 30], y:[-0.6, 1.3], dmg:68, push:3.2, daze:0.55, st:15, next:0.64, move:0.5, lunge:0.6 } ],
-        heavy:{ id:'power', sever:'neck', clip:'blade-gs-slash-4', rate:1.5, from:0.25, to:1.45, win:[[0.63, 1.02]], arc:[-163, -456], y:[-0.6, 1.4], dmg:92, push:4.5, daze:0.8, st:30, next:1.1, move:0.3, root:true },
+        heavy:{ id:'power', sever:'neck', clip:'blade-gs-slash-4', rate:1.5, from:0.25, to:1.45, win:[[0.72, 1.02]], arc:[-230, -456], y:[-0.6, 1.4], dmg:92, push:4.5, daze:0.8, st:30, next:1.1, move:0.3, root:true },
         run:{ id:'slide', sever:'leg', clip:'blade-gs-slide-attack', rate:1.6, from:0.5, to:1.95, win:[[1.1, 1.68]], arc:[-114, 236], y:[-1.0, 1.3], dmg:74, push:3.5, daze:0.7, st:24, next:1.75, move:0, root:true },
         special:{ id:'jump', clip:'blade-gs-jump-attack', rate:1.5, from:0.4, to:2.0, win:[[1.0, 1.48]], arc:[174, 404], reach:1.6, y:[-1.6, 1.8], dmg:125, push:4.5, daze:1.2, st:28, cd:7, next:1.6, move:0, root:true },
         counter:{ id:'riposte', clip:'blade-misc-stable-sword-outward-slash', rate:1.7, from:0.55, to:1.5, win:[[0.85, 1.0]], arc:[-72, 32], y:[-0.6, 1.4], dmg:58, push:3, daze:0.6, st:12, next:1.05, move:0.5, lunge:0.4 },
