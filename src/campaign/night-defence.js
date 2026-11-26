@@ -18,12 +18,12 @@
 //   faced the last one is out of ammunition: he re-arms it by standing by it. Smoke, the recon drone, the fireteam and the ammunition point are the campaign's.
 import * as THREE from 'three';
 import { NIGHTDEF, SIDEMISSION, SPACE, WEATHER } from '../../config.js';
-import { BIOME, BIOMES, CORE_DEF, MODE, RECON, S, SURP, TROOPER_SPELLS, WAVE, WX, _canvasTex, ambient, applyAtmosphere, applyWeather, biomeVi, blHot, bossForStage, capVi, celebrate, clampFieldXZ, computeEnv, core, damageCore, dirCount, dirDiff, dirPass, droneRaid, duelOn, duelReset, enemies, fieldEdgePoint, fillTx, floatText, generalStart, hatchEntry, heightAt, lowVi, modeCard, modeChip, modeDefine, modeKnob, modeLaunch, modeNum, modeOn, modeSay, modeShare, modeStats, modeStore, modeUndo, modeWhere, ndClock, ndQueue, ndScore, openBattleSetup, pickTx, saveProfile, scene, sfx, showBanner, spawnPart, stealthLight, tapBtn, updateHUD, updateSpellHUD } from '../hub.js';
+import { BIOME, BIOMES, CORE_DEF, MODE, RECON, S, SURP, TROOPER_SPELLS, WAVE, WX, _canvasTex, ambient, applyAtmosphere, applyWeather, biomeVi, blHot, bossForStage, capVi, celebrate, clampFieldXZ, computeEnv, core, damageCore, dirCount, dirDiff, dirNoFlank, dirPass, droneRaid, duelOn, duelReset, enemies, fieldEdgePoint, fillTx, floatText, generalStart, hatchEntry, heightAt, lowVi, modeCard, modeChip, modeDefine, modeKnob, modeLaunch, modeNum, modeOn, modeSay, modeShare, modeStats, modeStore, modeUndo, modeWhere, ndClock, ndQueue, ndScore, openBattleSetup, pickTx, saveProfile, scene, sfx, showBanner, spawnPart, stealthLight, tapBtn, updateHUD, updateSpellHUD } from '../hub.js';
 
 const C = NIGHTDEF, Y = C.say, EDGE = [-Math.PI / 2, Math.PI / 2, Math.PI, 0], OPP = [1, 0, 3, 2], R2 = a => a[0] + Math.random() * (a[1] - a[0]);   // EDGE: campaign/waves.js's four sides (their side · ours · west · east) as world/field.js bearings
 // the night as it stands (dev / probes read it): t — seconds of the night · k — the assault in hand (−1: none yet) · phase first | warn | assault | lull | wait
-export const ND = { night:1, base:1, t:0, k:-1, phase:'first', dir:-1, open:false, ax:0, ex:[], survived:0, genDown:false, done:false, won:false, doneT:0, pre:false, pushAt:0, sapAt:0, sapSay:-99, sapRadio:-1, hudAt:0,
-  dry:[], fl:[], liftK:1, ambSet:NaN, flAt:0, warm:null, tier:null, stats:{ flares:0, sig:0, shells:0, hatch:0, drones:0, sapDmg:0, pushed:0, rearmed:0, dried:0, cut:0, marked:0 } };
+export const ND = { night:1, base:1, t:0, k:-1, phase:'first', dir:-1, open:false, ax:0, ex:[], survived:0, genDown:false, done:false, won:false, doneT:0, dawnIn:0, pre:false, pushAt:0, sapAt:0, sapSay:-99, sapRadio:-1, hudAt:0,
+  guns:[], nDry:0, gunSay:-99, fl:[], liftK:1, ambSet:NaN, flAt:0, warm:null, tier:null, stats:{ flares:0, sig:0, shells:0, hatch:0, drones:0, sapDmg:0, pushed:0, rearmed:0, dried:0, cut:0, marked:0 } };
 let _pass = null;   // the word NEXT NIGHT hands to the battle it starts: a restart, or anything else carrying a later night, begins at night one again
 const _at = { x:0, y:0, z:0 }, _lit = { on:true, r:0, st:1, ux:0, uz:1, hit:{ x:0, z:0 } }, SMOKE = { color:0xcfc8b8, size:1.1, life:1.6, smoke:true, grav:-0.2, drag:1, grow:1.2, op:0.22 };
 const hh = u => ndClock(u, C.h0, C.h1, C.clockStep), wxNow = () => lowVi((WEATHER[WX.id] || WEATHER.clear).vi);
@@ -81,13 +81,13 @@ function announce(k, now){ if(ND.open) close(now, 'next'); let d = ND.dir; while
   modeSay(fillTx(A.heli ? Y.warnHeli : pickTx(Y.warn), { d:Y.dirs[d] })); }
 function assault(k, now){ const A = C.assaults[k], T = ND.tier; ND.k = k; ND.phase = 'assault'; ND.open = true; ND.ax = 0; ND.ex.length = 0; for(let i = 0; i < A.extra.length; i++) ND.ex.push(A.extra[i]);
   if(T) T.a[T.i] = Math.min(3, T.v0 + (A.tier || 0));   // the tactics tier of this assault (ai/tiers.js tacTier reads the difficulty's row; the knob goes back with the mode)
-  const q = ndQueue(A, dirCount() * (1 + (ND.night - 1) * C.nightK), Math.random); S.wave = k + 1;
+  const q = ndQueue(A, dirCount() * (1 + (ND.night - 1) * C.nightK), Math.random); S.wave = k + 1; dirNoFlank();   // (a flank the director chose while the field was quiet is dropped: this assault opens from the side the sentry called — one he decides in the fight still comes)
   Object.assign(WAVE, { event:null, eventBanner:null, treasure:false, eliteForce:0, assault:false, columnLeft:0, plan:null, pk:0, probeHeld:false, fixedEdge:ND.dir });
   if(!WAVE.active) WAVE.spawnQueue.length = 0; for(let i = 0; i < q.length; i++) WAVE.spawnQueue.push(q[i]);   // (the last one still on the field: this one comes on top of it)
   WAVE.spawnAt = now + 0.4; WAVE.active = true; sfx('alarm'); modeSay(pickTx(Y.go)); updateHUD(); }
 // seen off: cleared, cut short before the next (its men still on the field are his to finish), or simply outlived when the next is called
 function close(now, why){ if(!ND.open) return; ND.open = false; ND.survived++; if(why === 'next') return; ND.phase = ND.k + 1 < C.assaults.length ? 'lull' : 'wait';
-  modeSay(why === 'cut' ? Y.cut : pickTx(Y.lull)); gunDry(); }
+  modeSay(why === 'cut' ? Y.cut : pickTx(Y.lull)); }
 function mortar(){ const M = C.mortar, c = EDGE[ND.dir], p = S.player;
   for(let i = 0; i < M.n; i++){ let x, z; if(p && Math.random() < M.pP){ const a = Math.random() * 6.283, r = Math.random() * M.nearP; x = p.pos.x + Math.cos(a) * r; z = p.pos.z + Math.sin(a) * r; }
     else { const a = c + (Math.random() - 0.5) * 2 * M.arc, r = R2(M.ring); x = core.pos.x + Math.cos(a) * r; z = core.pos.z + Math.sin(a) * r; }
@@ -112,27 +112,31 @@ function sap(){ const Q = C.sap, cx = core.pos.x, cz = core.pos.z, r2 = Q.r * Q.
   if(!n) return; if(MODE.t - ND.sapSay >= Q.sayT){ ND.sapSay = MODE.t; _at.x = one.pos.x; _at.z = one.pos.z; _at.y = heightAt(_at.x, _at.z) + 2.4; floatText(Y.sap, '#ff8a4a', _at, 15); }
   if(ND.sapRadio !== ND.k){ ND.sapRadio = ND.k; modeSay(Y.sapRadio); }
   const d = n * Q.dps * Q.tick; ND.stats.sapDmg += d; damageCore(d); }   // (last: the Core falling ends the battle — mode-run.js modeOver — inside this call)
-// the base's gun that faced the assault is out of ammunition until he stands by it
-function gunDry(){ const G0 = C.gun; if(ND.k + 1 < G0.from) return; const c = EDGE[ND.dir]; let best = null, bd = 9;
-  for(const L of [CORE_DEF.guns, CORE_DEF.mgs]) for(let i = 0; i < L.length; i++){ const G = L[i]; if(ND.dry.some(q => q.G === G)) continue; const a = Math.atan2(G.z - core.pos.z, G.x - core.pos.x), d = Math.abs(Math.atan2(Math.sin(a - c), Math.cos(a - c))); if(d < bd){ bd = d; best = G; } }
-  if(!best) return; ND.dry.push({ G:best, t:0, tag:0 }); best.fireAt = 1e12; ND.stats.dried++; modeSay(fillTx(Y.gunDry, { d:Y.dirs[ND.dir] }), 3.5); }
-function gunsFrame(dt, now){ const p = S.player, G0 = C.gun, r2 = G0.r * G0.r;
-  for(let i = ND.dry.length - 1; i >= 0; i--){ const q = ND.dry[i], G = q.G; _at.x = G.x; _at.y = (G.y || 0) + 2.4; _at.z = G.z;
-    if(p && (p.pos.x - G.x) ** 2 + (p.pos.z - G.z) ** 2 < r2){ if(q.t === 0) floatText(Y.gunLoad, '#ffd86a', _at, 14); q.t += dt;
-      if(q.t >= G0.t){ G.fireAt = now + 0.4; ND.dry.splice(i, 1); ND.stats.rearmed++; floatText(Y.gunUp, '#9be04a', _at, 16); sfx('powerup'); } continue; }
-    q.t = 0; if((q.tag -= dt) <= 0){ q.tag = 7; floatText(Y.gunTag, '#ffb060', _at, 14); } } }
-function gunsBack(){ for(let i = 0; i < ND.dry.length; i++) ND.dry[i].G.fireAt = 0; ND.dry.length = 0; }
+// THE BASE'S GUNS HAVE A NIGHT'S AMMUNITION EACH, NOT AN ARSENAL: a guard cannon fires NIGHTDEF.gun.shells shells, an MG tower NIGHTDEF.gun.rounds rounds (counted off
+//   their own fire clock: world/core-walls.js moves G.fireAt on every shot), then it is silent until he stands by it for NIGHTDEF.gun.t s — in the lull, or
+//   under fire. Left alone the wall goes quiet gun by gun and the men at it lay their charges in peace.
+function gunsReady(){ ND.guns.length = 0; ND.nDry = 0; for(const L of [CORE_DEF.guns, CORE_DEF.mgs]) for(let i = 0; i < L.length; i++){ const G = L[i]; ND.guns.push({ G, mg:L === CORE_DEF.mgs, left:L === CORE_DEF.mgs ? C.gun.rounds : C.gun.shells, f:G.fireAt, t:0, tag:0 }); } }
+function gunSide(G){ const a = Math.atan2(G.z - core.pos.z, G.x - core.pos.x); let best = 0, bd = 9; for(let i = 0; i < 4; i++){ const d = Math.abs(Math.atan2(Math.sin(a - EDGE[i]), Math.cos(a - EDGE[i]))); if(d < bd){ bd = d; best = i; } } return Y.dirs[best]; }
+function gunsFrame(dt, now){ const p = S.player, G0 = C.gun, r2 = G0.r * G0.r, t2 = G0.tagR * G0.tagR;
+  for(let i = 0; i < ND.guns.length; i++){ const q = ND.guns[i], G = q.G;
+    if(q.left > 0){ if(G.fireAt === q.f) continue; q.f = G.fireAt; if(--q.left > 0) continue;   // it fired
+      G.fireAt = q.f = 1e12; q.t = 0; q.tag = 0; ND.nDry++; ND.stats.dried++; if(MODE.t - ND.gunSay >= G0.sayT){ ND.gunSay = MODE.t; modeSay(fillTx(Y.gunDry, { d:gunSide(G) })); } continue; }
+    if(!p) continue; const d2 = (p.pos.x - G.x) ** 2 + (p.pos.z - G.z) ** 2; _at.x = G.x; _at.y = (G.y || 0) + 2.4; _at.z = G.z;
+    if(d2 < r2){ if(q.t === 0) floatText(Y.gunLoad, '#ffd86a', _at, 14); q.t += dt;
+      if(q.t >= G0.t){ q.left = q.mg ? G0.rounds : G0.shells; G.fireAt = q.f = now + 0.4; ND.nDry--; ND.stats.rearmed++; floatText(Y.gunUp, '#9be04a', _at, 16); sfx('powerup'); } continue; }
+    q.t = 0; if((q.tag -= dt) <= 0){ q.tag = G0.tag; if(d2 < t2) floatText(Y.gunTag, '#ffb060', _at, 14); } } }
+function gunsBack(){ for(let i = 0; i < ND.guns.length; i++) if(!(ND.guns[i].left > 0)) ND.guns[i].G.fireAt = 0; ND.guns.length = 0; ND.nDry = 0; }
 
 // ---- the HUD (text in the side mission's card), the end ----
 function hud(){ const N = C.assaults.length, u = ND.t / C.len, H = Y.hud; let line, left = WAVE.spawnQueue.length; for(let i = 0; i < enemies.length; i++) if(foe(enemies[i])) left++;
-  if(ND.phase === 'first') line = H.first; else if(ND.phase === 'warn') line = fillTx(H.warn, { d:Y.dirs[ND.dir] }); else if(ND.phase === 'assault') line = fillTx(H.assault, { k:ND.k + 1, n:N, e:left });
-  else line = (ND.phase === 'wait' ? H.wait : H.lull) + (ND.dry.length ? fillTx(H.gun, { n:ND.dry.length }) : '');
+  if(ND.phase === 'first') line = H.first; else if(ND.phase === 'warn') line = fillTx(H.warn, { d:Y.dirs[ND.dir] }); else if(ND.phase === 'assault') line = fillTx(H.assault, { k:ND.k + 1, n:N, e:left }); else line = ND.phase === 'wait' ? H.wait : H.lull;
+  if(ND.nDry && !ND.done) line += fillTx(H.gun, { n:ND.nDry });
   modeChip(Y.name + (ND.night > 1 ? ' · ' + fillTx(Y.night, { n:ND.night }) : ''), hh(u), u, line, ''); }
 // DAWN: the hour changes for real, whoever is left of them runs, the men cheer — then the result
 function win(now){ const p = S.player; ND.done = ND.won = true; ND.doneT = 0; if(ND.open){ ND.open = false; ND.survived++; } flaresOff(); gunsBack(); WAVE.spawnQueue.length = 0; ND.ex.length = 0; duelReset();
   for(let i = 0; i < enemies.length; i++){ const e = enemies[i]; if(e.def.inf && !e.guard && !e.fortOf) e.def = { ...e.def, range:0, keep:90, speed:e.def.speed * 1.3 }; }   // (as a fallen general's guards do: campaign/general-duel.js)
-  S.tod = C.dawn.tod; applyAtmosphere(BIOME); applyWeather(WX.id); computeEnv();
-  if(p) p.invincibleUntil = now + C.dawn.hold + 3; showBanner(Y.dawn, '#ffd86a'); modeSay(Y.dawnRadio); celebrate('victory', 0, 0); sfx('levelup'); ND.phase = 'wait'; hud(); }
+  ND.dawnIn = 2;   // the hour itself changes two frames on (frame, below): the switch is a hitch — a new sky, the lights — and the banner should be on the screen before it
+  if(p) p.invincibleUntil = now + C.dawn.hold + 6; celebrate('victory', 0, 0); showBanner(Y.dawn, '#ffd86a'); modeSay(Y.dawnRadio, 0.1); ND.phase = 'wait'; hud(); }   // (after celebrate: its banner and radio line are the campaign's — the dawn's own go over them)
 function card(won, reason){ const st = modeStats(), W = modeWhere(), E = Y.end, N = C.assaults.length, coreK = core && core.maxHp ? Math.max(0, core.hp) / core.maxHp : 0;
   const score = ndScore({ base:S.score, survived:ND.survived, core:coreK, acc:st.acc, won, general:ND.genDown, night:ND.night }, C.score), M = modeStore().nd, streak = won ? ND.night : ND.night - 1;
   const beat = streak > (M.nights | 0) || score > (M.score | 0); if(streak > (M.nights | 0)) M.nights = streak; if(score > (M.score | 0)) M.score = score; saveProfile();
@@ -148,8 +152,8 @@ function card(won, reason){ const st = modeStats(), W = modeWhere(), E = Y.end, 
 modeDefine('nd', {
   // the run is known, the world not yet built: which night this is (a later one only with NEXT NIGHT's word), the side missions off (their card is the clock)
   begin(run){ const q = run.nd || {}, ok = (q.night | 0) > 1 && !!q.pass && q.pass === _pass; _pass = null;
-    Object.assign(ND, { night:ok ? Math.min(C.maxNight, q.night | 0) : 1, base:Math.max(1, (q.base | 0) || (run.level | 0) || 1), t:0, k:-1, phase:'first', dir:-1, open:false, ax:0, survived:0, genDown:false, done:false, won:false, doneT:0, pre:false, pushAt:0, sapAt:0, sapSay:-99, sapRadio:-1, hudAt:0, flAt:0, tier:null });
-    ND.ex.length = 0; ND.dry.length = 0; for(const k in ND.stats) ND.stats[k] = 0; modeKnob(SIDEMISSION, 'on', false); },
+    Object.assign(ND, { night:ok ? Math.min(C.maxNight, q.night | 0) : 1, base:Math.max(1, (q.base | 0) || (run.level | 0) || 1), t:0, k:-1, phase:'first', dir:-1, open:false, ax:0, survived:0, genDown:false, done:false, won:false, doneT:0, dawnIn:0, pre:false, pushAt:0, sapAt:0, sapSay:-99, sapRadio:-1, hudAt:0, flAt:0, tier:null });
+    ND.ex.length = 0; ND.guns.length = 0; ND.nDry = 0; ND.gunSay = -99; for(const k in ND.stats) ND.stats[k] = 0; modeKnob(SIDEMISSION, 'on', false); },
   // the soldier stands ready: the night's loop (one harder a night), the flare in his skill wheel and in hand, the flare's two materials on the field for the
   //   shader warm-up the briefing and the countdown run (ui/briefing.js prewarmStage) — the first one he fires must not hitch
   ready(p){ const lv = ND.base + 5 * (ND.night - 1); S.loop = Math.floor((lv - 1) / 5); if(S.run){ S.run.level = lv; S.run.nd = { night:ND.night, base:ND.base }; } if(S.runCfg){ S.runCfg.level = lv; S.runCfg.nd = { night:ND.night, base:ND.base }; }
@@ -159,17 +163,17 @@ modeDefine('nd', {
     updateHUD(); },
   // the fight goes live: dusk
   live(){ if(ND.warm){ flareFree(ND.warm); ND.warm = null; } const a = dirDiff().tier, i = Math.max(0, Math.min(a.length - 1, (S.stage || 1) - 1)); ND.tier = { a, i, v0:a[i] }; modeKnob(a, i, a[i]);
-    S.wave = 0; modeSay(Y.first, 0.6); hud(); updateHUD(); },
+    gunsReady(); S.wave = 0; modeSay(Y.first, 0.6); hud(); updateHUD(); },
   frame(dt, now){ const N = C.assaults.length; WAVE.betweenUntil = 1e12;   // the campaign's own waves never begin: the night's assaults fill the queue
     flaresFrame(dt); if((ND.flAt -= dt) <= 0){ ND.flAt = C.flare.tick; flaresTick(now); }
-    if(ND.done){ if((ND.doneT += dt) >= C.dawn.hold) card(true); return; }
+    if(ND.done){ if(ND.dawnIn > 0 && --ND.dawnIn === 0){ S.tod = C.dawn.tod; applyAtmosphere(BIOME); applyWeather(WX.id); computeEnv(); } else if((ND.doneT += dt) >= C.dawn.hold) card(true); return; }
     const nk = ND.k + 1, tNext = nk < N ? C.at[nk] - C.warn : C.len, quiet = !WAVE.active && ND.phase !== 'warn' && ND.k >= 0 && !ND.ex.length && !duelOn();
     ND.t = Math.min(C.len, ND.t + dt * (quiet && tNext - ND.t > (nk < N ? C.lull.max : 0) ? C.fastK : 1));
     if(ND.k >= 0){ ND.ax += dt; for(let i = ND.ex.length - 1; i >= 0; i--) if(ND.ax >= ND.ex[i].t) extra(ND.ex.splice(i, 1)[0], now); }
     if(ND.phase === 'assault'){ if(WAVE.spawnQueue.length && ND.t >= tNext - C.lull.min){ WAVE.spawnQueue.length = 0; ND.stats.cut++; close(now, 'cut'); } else if(!WAVE.active && ND.ax > 2) close(now, 'clear'); }
     if(nk < N){ if(ND.phase !== 'warn' && ND.t >= tNext) announce(nk, now); if(ND.phase === 'warn' && ND.t >= C.at[nk]) assault(nk, now); }
     if(!ND.pre && ND.t >= C.len * C.dawn.pre){ ND.pre = true; modeSay(Y.predawn); }
-    if(ND.dry.length) gunsFrame(dt, now);
+    gunsFrame(dt, now);
     if((ND.pushAt -= dt) <= 0){ ND.pushAt = C.push.every; push(); }
     if((ND.hudAt -= dt) <= 0){ ND.hudAt = C.hud; hud(); }
     if(ND.t >= C.len){ win(now); return; }

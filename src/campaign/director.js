@@ -156,6 +156,8 @@ export function dirEntry(t){ const F = DIR.flank, p = S.player, B = D.build; if(
 // one entry of the wave has been made at sp (waves.js): counted, and checked — an edge entry inside the frame would be a pop-in
 // MODE 1 the night defence's last assault (campaign/night-defence.js): the next n of the queue go in whatever the phase — the general's coming out must not hold his own men back
 export function dirPass(n){ DIR.pass = Math.max(DIR.pass, n | 0); }
+// MODE 1 …and an assault opens from the side its sentries called: a flank chosen while the field was quiet is dropped (one chosen in the fight still comes)
+export function dirNoFlank(){ DIR.flank = null; DIR.cue = null; }
 export function dirSpawned(sp){ const st = DIR.stats; st.entries++; if(DIR.pass > 0) DIR.pass--; if(sp && !sp.hatch && sp.how === 'edge' && entrySeen(sp.x, sp.z)) st.seen++; }
 // SUPPLY 2 the HQ is asked for ammunition by parachute (game/logistics.js, his reserves low): never on top of a peak — he could not go and fetch it — never once the
 //   stage is won; a drop that goes is noted in the log

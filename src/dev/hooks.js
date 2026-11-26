@@ -1,7 +1,7 @@
 // dev/hooks.js — Z103 split from game/loop.js: window._* inspection/driving hooks used by Playwright smoke tests and the
 // #dev console. Nothing in the game reads these; a production build may drop this module from hub.js.
-import { CONTRACTS } from '../../config.js';
-import { launchGame, launchStage, BIOME, BIOMES, DEATH, FT, GUNS, OBJ, PH, POWERUPS, PROFILE, S, WAVE, __set_last, __set_soldierLvl, aimDots, applyAtmosphere, applyBiome, applyPowerup, beginDeath, blocks, bootHide, bootReady, buildObjective, buildTerrainDecor, buildTerrainPicker, bullets, cMod, camera, chooseContract, clearProgress, composer, core, cycleGun, damageBlock, damageEnemy, damagePlayer, debris, decorGroup, deploySoldiers, doResize, dropPowerup, enemies, enemyBarPool, fireFlame, heightAt, impactFX, intro, killEnemy, launchParadrop, loop, makeElite, openBriefing, openLoadout, openUpgrade, parts, pickups, playerDie, renderer, respawnPlayer, rocketTarget, rockets, rollWaveEvent, saveProgress, scene, selectGun, skipIntro, soldierLvl, soldiers, spawnEnemy, startBoss, startGame, vehicleExplode, towers, trySpell, updateDeath, updateEnemies, updateEnemyBar, updateRockets } from '../hub.js';
+import { CONTRACTS, DAILY } from '../../config.js';
+import { dailyDay, dailyLaunch, nightDefLaunch, launchGame, launchStage, BIOME, BIOMES, DEATH, FT, GUNS, OBJ, PH, POWERUPS, PROFILE, S, WAVE, __set_last, __set_soldierLvl, aimDots, applyAtmosphere, applyBiome, applyPowerup, beginDeath, blocks, bootHide, bootReady, buildObjective, buildTerrainDecor, buildTerrainPicker, bullets, cMod, camera, chooseContract, clearProgress, composer, core, cycleGun, damageBlock, damageEnemy, damagePlayer, debris, decorGroup, deploySoldiers, doResize, dropPowerup, enemies, enemyBarPool, fireFlame, heightAt, impactFX, intro, killEnemy, launchParadrop, loop, makeElite, openBriefing, openLoadout, openUpgrade, parts, pickups, playerDie, renderer, respawnPlayer, rocketTarget, rockets, rollWaveEvent, saveProgress, scene, selectGun, skipIntro, soldierLvl, soldiers, spawnEnemy, startBoss, startGame, vehicleExplode, towers, trySpell, updateDeath, updateEnemies, updateEnemyBar, updateRockets } from '../hub.js';
 
 // diagnostics hooks (used for automated testing)
 window._game = S;
@@ -38,14 +38,16 @@ window._paradrop = ()=>launchParadrop(performance.now()/1000);   // (debug) Z104
 
 // TEST 1 ?test=BIOME — straight into a battle, for tests and for looking at one thing quickly: no menu, briefing, intro or countdown.
 //   ?test=DESERT[&tod=noon][&wx=clear][&level=3][&seed=7][&at=x,z]   at: the soldier put down at that spot. window.__ready turns true once the fight is on
-//   (tools/ts.mjs waits on it). With ?seed the same battlefield comes out every time (boot/safety.js).
+//   (tools/ts.mjs waits on it). With ?seed the same battlefield comes out every time (boot/safety.js). &mode=nd | daily: one of the extra modes (campaign/mode-run.js).
 { const Q = typeof location !== 'undefined' ? new URLSearchParams(location.search) : null, want = Q && Q.get('test');
   if(want){ const bi = Math.max(0, BIOMES.findIndex(b => b.name === want.toUpperCase())); let launched = false, n = 0;
     const tick = () => { if(window.__ready || ++n > 400) return;
       for(const id of ['briefing', 'start', 'deploy', 'nick', 'tip']){ const e = document.getElementById(id); if(e) e.classList.add('hidden'); }
       if(!launched){ launched = true; document.querySelectorAll('.overlay').forEach(o => o.classList.add('hidden')); const b = document.getElementById('boot'); if(b) b.style.display = 'none';
         PROFILE.onboarded = true; PROFILE.coached = true;
-        launchGame({ mode:'custom', biome:bi, tod:Q.get('tod') || 'noon', wx:Q.get('wx') || 'clear', space:'wide', level:+(Q.get('level') || 3) }); }
+        const md = Q.get('mode');   // MODE 3 &mode=nd: a night defence on this battlefield · &mode=daily: today's daily challenge (its own battlefield, hour and weather)
+        if(md === 'nd') nightDefLaunch({ lvl:+(Q.get('level') || 3), biome:bi, wx:Q.get('wx') || 'clear', space:'wide' }); else if(md === 'daily') dailyLaunch(dailyDay(Date.now(), DAILY.tz));
+        else launchGame({ mode:'custom', biome:bi, tod:Q.get('tod') || 'noon', wx:Q.get('wx') || 'clear', space:'wide', level:+(Q.get('level') || 3) }); }
       else if(S.mode === 'intro'){ try{ skipIntro(); }catch(e){} }
       else if(S.mode !== 'playing' && S.mode !== 'countdown'){ try{ launchStage(false); }catch(e){} }
       if(S.mode === 'playing' && S.player){ const at = (Q.get('at') || '').split(',').map(Number);

@@ -2634,7 +2634,8 @@ export const LOGISTICS = { tick:0.25,
 //   sap: an enemy soldier within r m of the Core for arm s is laying charges: dps to the Core each (at most maxN counted) every tick s, said every sayT s.
 //   mortar: n shells gap s apart from t s on (warn s of red ring each), R / dmg; ring m from the Core within arc rad of the assault's side, or (share pP) within
 //     nearP m of him. hatch: r m from the Core, these men. general: he takes the field `inset` m inside the fence on that side.
-//   gun: after an assault (from assault `from` on) the base's gun nearest that side is out of ammunition until he stands within r m of it for t s.
+//   gun: the base's guns have a night's ammunition each — a guard cannon `shells`, an MG tower `rounds` — then stand silent until he stands within r m of one
+//     for t s (full again); a dry gun says so over itself every tag s when he is within tagR m, and on the radio at most every sayT s.
 //   flare (his new skill, in the skill wheel for the night): cd s; it bursts alt m over the point he aims at (at most reach m off; `ahead` m in front of him with no
 //     pointer), climbing `rise` s, burns `burn` s sinking sink m/s and drifting; enemy soldiers within R m of the point under it are marked (as the recon drone
 //     marks, `mark` s a tick) — and inside it he is lit too (game/stealth.js stealthLight); lift: how much the field's fill light rises while it burns (flick: its
@@ -2652,13 +2653,13 @@ export const NIGHTDEF = { len:480, h0:21, h1:5, clockStep:5, fastK:3, warn:7, lu
     { n:11, rpg:0.3,  squads:3, heli:1, tier:2, extra:[{ k:'mortar', t:0 }, { k:'hatch', t:20 }, { k:'general', t:26 }] } ],
   push:{ every:1.5, ringR:[16, 30] }, sap:{ r:30, arm:3, dps:2.4, maxN:5, tick:1, sayT:6 },
   mortar:{ n:8, t:3.2, gap:0.7, warn:2.6, R:5, dmg:38, ring:[16, 36], arc:1.2, pP:0.4, nearP:9 }, hatch:{ r:[32, 40], types:['rifle', 'rifle', 'rifle', 'rpg'] }, general:{ inset:14 },
-  gun:{ from:2, r:6.5, t:1.2 },
+  gun:{ shells:6, rounds:70, r:6.5, t:1.2, tag:7, tagR:90, sayT:18 },
   flare:{ cd:22, reach:60, ahead:32, alt:30, rise:0.9, burn:15, sink:1.1, drift:1.2, R:30, tick:0.3, mark:1.2, lift:1.3, flick:0.12, pool:0.34, size:9, max:3, col:0xfff0c8, sig:{ col:0xff3a22, alt:46, burn:6, size:7 } },
   dawn:{ tod:'day', hold:5.5, pre:0.92 }, hud:0.25, score:{ assault:400, dawn:1500, core:1500, acc:1000, general:1200, nightK:0.25 },
   say:{ name:'Thủ đêm', tabSub:'giữ căn cứ đến sáng', dirs:['bắc', 'nam', 'tây', 'đông'], night:'đêm thứ {n}',
     sum:'<b>Thủ đêm</b> {b} · {wx} · bản đồ {sp} · địch cấp {lvl}', kick:'Thủ đêm · giữ căn cứ từ {h0} đến {h1}',
     briefOp:'Thủ đêm — giữ căn cứ tới {h1}',
-    brief:'Đêm nay địch đánh {n} đợt, đợt cuối do tướng của chúng dẫn. Không ai báo trước hướng địch tới: nhìn pháo hiệu đỏ của chúng bốc lên phía nào, nghe chòi gác gọi trên máy. Giữa hai đợt có nửa phút — về điểm đạn tiếp đạn, băng bó, nạp lại khẩu pháo vừa hết đạn. Kỹ năng mới trong vòng kỹ năng: PHÁO SÁNG — soi một vùng 15 giây; địch trong vùng sáng bị đánh dấu, và anh đứng trong đó cũng lộ.',
+    brief:'Đêm nay địch đánh {n} đợt, đợt cuối do tướng của chúng dẫn. Không ai báo trước hướng địch tới: nhìn pháo hiệu đỏ của chúng bốc lên phía nào, nghe chòi gác gọi trên máy. Pháo và súng máy trên tường chỉ có cơ số đạn một đêm: khẩu nào hết đạn thì lại đứng cạnh nó hơn một giây để tiếp đạn, không thì địch áp sát tường đặt bộc phá. Giữa hai đợt có nửa phút — về điểm đạn, băng bó, tiếp đạn cho pháo. Kỹ năng mới trong vòng kỹ năng: PHÁO SÁNG — soi một vùng 15 giây; địch trong vùng sáng bị đánh dấu, và anh đứng trong đó cũng lộ.',
     obj:'Giữ Lõi căn cứ từ {h0} đến {h1}. Lõi còn đứng lúc trời sáng là thắng; mất Lõi hoặc hết mạng là thua.',
     first:'SCH: Trời tối rồi. Về giữ căn cứ — đêm nay chúng sẽ tới, chưa biết từ hướng nào.',
     warn:['Chòi gác {d}: có động ngoài hàng rào — pháo hiệu của chúng vừa bốc lên!', 'Chòi gác {d}: nghe tiếng chân, rất đông — chúng sắp vào từ hướng {d}!', 'Chòi gác {d}: thấy bóng người ngoài rào — chuẩn bị đón chúng!'],
@@ -2668,11 +2669,11 @@ export const NIGHTDEF = { len:480, h0:21, h1:5, clockStep:5, fastK:3, warn:7, lu
     cut:'SCH: Đợt này chúng chùn rồi — bọn còn lại bám quanh rào, quét cho sạch!',
     mortar:'Chòi gác {d}: cối địch bắn! Tránh xa các vòng đỏ!', hatch:'SCH: Nắp hầm bật mở ngay trong hàng rào, phía {d} — quay lại!',
     general:'SCH: {g} đích thân dẫn đợt cuối — hạ hắn trước khi trời sáng!', generalDown:'ĐÃ HẠ {g} — ĐỢT CUỐI MẤT ĐẦU!',
-    gunDry:'Pháo thủ: khẩu phía {d} hết đạn — ai lại nạp giúp!', gunTag:'HẾT ĐẠN — LẠI GẦN ĐỂ NẠP', gunLoad:'ĐANG NẠP PHÁO…', gunUp:'ĐÃ NẠP — PHÁO BẮN LẠI',
+    gunDry:'Pháo thủ: khẩu phía {d} hết đạn — ai lại tiếp đạn giúp!', gunTag:'HẾT ĐẠN — LẠI GẦN ĐỂ NẠP', gunLoad:'ĐANG NẠP PHÁO…', gunUp:'ĐÃ NẠP — PHÁO BẮN LẠI',
     sap:'ĐẶT BỘC PHÁ!', sapRadio:'SCH: Địch áp sát tường đặt bộc phá — đánh bật chúng ra!',
     flare:'PHÁO SÁNG', flareUp:'PHÁO SÁNG LÊN!', flareMax:'ĐÃ ĐỦ PHÁO SÁNG TRÊN TRỜI',
     predawn:'SCH: Phía đông hửng rồi — giữ thêm chút nữa!', dawn:'TRỜI SÁNG — CĂN CỨ CÒN ĐỨNG!', dawnRadio:'SCH: Trời sáng rồi! Chúng rút — anh em giữ được căn cứ!',
-    hud:{ first:'Trời vừa tối — về giữ căn cứ', lull:'Tạm lắng — tiếp đạn, băng bó', gun:' · nạp {n} khẩu pháo', warn:'Chòi gác {d} báo động', assault:'Đợt {k}/{n} · còn {e} địch', wait:'Chờ trời sáng' },
+    hud:{ first:'Trời vừa tối — về giữ căn cứ', lull:'Tạm lắng — tiếp đạn, băng bó', gun:' · {n} khẩu pháo hết đạn', warn:'Chòi gác {d} báo động', assault:'Đợt {k}/{n} · còn {e} địch', wait:'Chờ trời sáng' },
     pause:'Thủ đêm · {clock} · đợt {k}/{n}',
     end:{ kickWon:'Trời sáng — căn cứ còn đứng', kickLost:'Căn cứ thất thủ lúc {clock}', won:'Giữ vững', lost:'Thất thủ',
       whyWon:'{b}, {night}: đẩy lui {k} đợt, hạ {kills} địch.{gen}', gen:' Tướng địch gục trước tường.', whyCore:'<b>Lõi bị phá.</b> {b}, {night}: trụ được {k}/{n} đợt, hạ {kills} địch. Đừng để địch áp sát tường đặt bộc phá.',
@@ -2688,7 +2689,7 @@ export const NIGHTDEF = { len:480, h0:21, h1:5, clockStep:5, fastK:3, warn:7, lu
 //     guns (+ strict: nothing else may be carried) · lives (the lives he starts with: 0 = the first death is the last) · tod / wx (the day's hour / weather) ·
 //     spellsOff (skills taken out of the wheel) · lootOff (pickups that do nothing) · general (the stage's general takes the field hunterAt s in) ·
 //     event (a big battlefield event forced every `every` s; busy: again in `retry` s). strictTick: how often a strict loadout is checked. hold: s of cheering
-//     before a win's result card.
+//     before a win's result card. bannerAt: s into the fight the day's rule is put on the banner (the first wave's own banner goes up before it).
 //   One scored attempt a day — spent the moment the fight goes live — then any number of practice attempts, marked as practice. The day's result is kept in the
 //   profile (PROFILE.modes.daily, the last `keep` days). score (data/mode-math.js dailyScore): the battle's score + win + perSec a second under par on a win +
 //   acc × accuracy.
@@ -2698,7 +2699,7 @@ export const NIGHTDEF = { len:480, h0:21, h1:5, clockStep:5, fastK:3, warn:7, lu
 //   the score to what the day's level can be worth (functions/score.js's ceiling × the modifier), and (3) a board collection daily/{day}/top read by
 //   ui/ranking.js. Until then core/score-report.js sends nothing for a mode's run (S.run.offBoard).
 export const DAILY = { tz:7, keep:14, level:[2, 5], tod:['day', 'noon', 'sunset', 'night'], wx:['clear', 'clear', 'rain', 'fog'], wxBiome:{ DESERT:'sand', SAVANNA:'sand', QUARRY:'sand', ARCTIC:'snow', CITADEL:'snow' }, space:['mid', 'wide'],
-  biomes:['DESERT', 'RUINS', 'ARCTIC', 'FOUNDRY', 'CITADEL', 'MEADOW', 'CITY', 'SAVANNA', 'VOLCANO', 'QUARRY'], guns:['carbine', 't_ak', 't_m4', 't_shotgun', 't_lmg', 't_dmr', 't_rust'], kit:['t_rpg'], hunterAt:6, strictTick:0.5, hold:5.4,
+  biomes:['DESERT', 'RUINS', 'ARCTIC', 'FOUNDRY', 'CITADEL', 'MEADOW', 'CITY', 'SAVANNA', 'VOLCANO', 'QUARRY'], guns:['carbine', 't_ak', 't_m4', 't_shotgun', 't_lmg', 't_dmr', 't_rust'], kit:['t_rpg'], hunterAt:6, strictTick:0.5, hold:5.4, bannerAt:3.4,
   mods:[
     { id:'knife',    vi:'Dao và MP5',        ds:'Chỉ dao găm và tiểu liên MP5 bắn đạn súng ngắn — không B41, không nhặt súng khác.', guns:['t_mp5'], strict:true },
     { id:'nomed',    vi:'Không cứu thương',  ds:'Không băng bó, không túi cứu thương, không dù cứu thương: máu chỉ hồi khi thăng cấp.', spellsOff:['medkit'], lootOff:['heal'], set:[['DIRECTOR.lull.drop.hp', '=', 0]] },
@@ -2716,9 +2717,9 @@ export const DAILY = { tz:7, keep:14, level:[2, 5], tod:['day', 'noon', 'sunset'
       scored:'Lượt này TÍNH ĐIỂM — mỗi ngày chỉ một lượt, tính từ lúc nổ súng.', practice:'Lượt tính điểm hôm nay đã dùng ({s} điểm) — lần này là đánh tập.', yes:'Xuất kích', yesP:'Đánh tập', no:'Để sau' },
     briefOp:'Thử thách {date} — {m}', brief:'{ds} Súng được phát hôm nay: {guns}. Hôm nay ai cũng đánh đúng chiến trường này, đúng luật này. {state}',
     obj:'Hạ tướng địch giữ thành để hoàn thành. Điểm = điểm trận + thưởng thắng (thắng càng nhanh càng cao) + độ chính xác.',
-    go:'THỬ THÁCH: {m}', goP:'ĐÁNH TẬP: {m}', pause:'Thử thách {date} · {m}{p}', pauseP:' · đánh tập', noMed:'KHÔNG CỨU THƯƠNG HÔM NAY', strict:'HÔM NAY CHỈ DAO VÀ MP5', hunter:'SCH: Hôm nay tướng địch không chờ trong thành — hắn đang tìm anh!', wonBanner:'ĐÃ HẠ {g} — HOÀN THÀNH THỬ THÁCH!',
+    go:'THỬ THÁCH: {m}', goP:'ĐÁNH TẬP: {m}', radio:'SCH: ', pause:'Thử thách {date} · {m}{p}', pauseP:' · đánh tập', noMed:'KHÔNG CỨU THƯƠNG HÔM NAY', strict:'HÔM NAY CHỈ DAO VÀ MP5', hunter:'SCH: Hôm nay tướng địch không chờ trong thành — hắn đang tìm anh!', wonBanner:'ĐÃ HẠ {g} — HOÀN THÀNH THỬ THÁCH!',
     end:{ kick:'Thử thách {date}', kickP:'Thử thách {date} · đánh tập', won:'Hoàn thành', lost:'Gục ngã', why:'{b} · {tod} · {wx} — luật: <b>{m}</b>. {res}',
       resWon:'Tướng địch đã gục.', resCore:'Lõi căn cứ bị phá.', resDead:'Người lính ngã xuống.', stats:['Điểm', 'Thời gian', 'Hạ địch', 'Chính xác'],
-      best:'Điểm tính của hôm nay: {s}', bestP:'Đánh tập không tính điểm — điểm tính của hôm nay vẫn là {s}', hist:' · {n} ngày gần đây cao nhất {top}', go:'Đánh tập', hint:'Mai có thử thách mới. Đánh tập bao nhiêu lần cũng được.' },
+      best:'Điểm tính của hôm nay: {s}', bestP:'Đánh tập không tính điểm — điểm tính của ngày này vẫn là {s}', bestNone:'Đánh tập — không tính điểm.', hist:' · {n} ngày gần đây cao nhất {top}', go:'Đánh tập', hint:'Mai có thử thách mới. Đánh tập bao nhiêu lần cũng được.' },
     copy:'Chép kết quả', copied:'Đã chép', copyFail:'Không chép được',
     share:{ head:'XUNG KÍCH — Thử thách {date}', where:'{b} · {tod} · {wx}', rule:'Luật: {m}', won:'★ {score} điểm · HOÀN THÀNH · {time}', lost:'✖ {score} điểm · gục ngã · {time}', stats:'Hạ {kills} · chính xác {acc}% · độ khó {diff}', practice:'(đánh tập — không tính điểm)', by:'— {name}' } } };

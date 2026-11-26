@@ -10,11 +10,11 @@
 //   PROFILE.modes.daily.hist (the last DAILY.keep days); the home screen shows today's challenge and whether it is done. The board is local: what a shared one
 //   would need from the server is written at config DAILY.
 import { DAILY, WEATHER } from '../../config.js';
-import { BIOMES, GUNS, MODE, POWERUPS, S, TOD_LABEL, TROOPER_SPELLS, askConfirm, bigEventStart, biomeVi, capVi, celebrate, dailyChallenge, dailyDate, dailyDay, dailyKeep, dailyScore, fillTx, floatText, fortBossDown, lowVi, magCap, modeCard, modeDefine, modeLaunch, modeNum, modeRng, modeSay, modeSet, modeShare, modeStats, modeStore, modeTime, modeUndo, modeWhere, saveProfile, sfx, showBanner, startBoss, tapBtn, updateGunHUD, updateHUD, updateSpellHUD } from '../hub.js';
+import { BIOMES, GUNS, MODE, POWERUPS, S, TOD_LABEL, TROOPER_SPELLS, askConfirm, bigEventStart, biomeVi, capVi, celebrate, dailyChallenge, dailyDate, dailyDay, dailyKeep, dailyScore, fillTx, floatText, fortBossDown, lowVi, magCap, modeCard, modeDefine, modeHash, modeLaunch, modeNum, modeRng, modeSay, modeSet, modeShare, modeStats, modeStore, modeTime, modeUndo, modeWhere, saveProfile, showBanner, startBoss, tapBtn, updateGunHUD, updateHUD, updateSpellHUD } from '../hub.js';
 
 const D = DAILY, Y = D.say;
 // the attempt in hand (dev / probes read it): ch — the day's challenge · mod — its modifier · scored — this is the day's one scored attempt
-export const DC = { day:0, ch:null, mod:null, scored:false, live:false, kept:false, done:false, won:false, doneT:0, evT:0, gunAt:0, hunted:false, stats:{ events:0, stripped:0, knobs:0 } };
+export const DC = { day:0, ch:null, mod:null, scored:false, live:false, kept:false, said:false, done:false, won:false, doneT:0, evT:0, gunAt:0, hunted:false, stats:{ events:0, stripped:0, knobs:0 } };
 const today = () => dailyDay(Date.now(), D.tz), modOf = ch => D.mods.find(m => m.id === ch.mod) || D.mods[0];
 // the profile's record: hist — one scored result a day, the newest first · cur { d } — the scored attempt being played. One left over from an earlier day (the
 //   tab was closed on it) is entered as that day's result: spent, nothing scored
@@ -44,31 +44,34 @@ function card(won, reason){ const st = modeStats(), W = modeWhere(), E = Y.end, 
   const e = entryOf(M, day), top = M.hist.reduce((a, q) => Math.max(a, q.s | 0), 0);
   Object.assign(o, { res:won ? E.resWon : /MẠNG/.test(reason || '') ? E.resDead : E.resCore, score:modeNum(score), time:modeTime(st.secs), kills:st.kills, acc:Math.round(st.acc * 100), diff:W.diff, name:W.name, won, practice:!DC.scored });
   modeCard({ kick:fillTx(DC.scored ? E.kick : E.kickP, o), lost:!won, big:won ? E.won : E.lost, why:fillTx(E.why, o), stats:[[E.stats[0], o.score], [E.stats[1], o.time], [E.stats[2], String(o.kills)], [E.stats[3], o.acc + '%']],
-    best:fillTx(DC.scored ? E.best : E.bestP, { s:modeNum(e ? e.s : 0) }) + (M.hist.length > 1 ? fillTx(E.hist, { n:M.hist.length, top:modeNum(top) }) : ''), newBest:DC.scored && won, hint:E.hint, go:E.go, onGo:() => dailyLaunch(day),
+    best:(DC.scored ? fillTx(E.best, { s:modeNum(e ? e.s : 0) }) : e ? fillTx(E.bestP, { s:modeNum(e.s) }) : E.bestNone) + (M.hist.length > 1 ? fillTx(E.hist, { n:M.hist.length, top:modeNum(top) }) : ''), newBest:DC.scored && won, hint:E.hint, go:E.go, onGo:() => dailyLaunch(day),
     share:modeShare(o, Y.share), copy:{ label:Y.copy, done:Y.copied, fail:Y.copyFail } }); }
 
 // ---- the mode (campaign/mode-run.js calls these) ----
 modeDefine('daily', {
   // the run is known, the world not yet built: the day's challenge, whether this attempt is the scored one, the seed, the modifier's knobs
   begin(run){ const t = today(), day = Number.isFinite(run.daily && run.daily.day) ? Math.floor(run.daily.day) : t, ch = dailyChallenge(day, D), mod = modOf(ch), M = book();
-    Object.assign(DC, { day, ch, mod, scored:day === t && !entryOf(M, day), live:false, kept:false, done:false, won:false, doneT:0, evT:0, gunAt:0, hunted:false }); for(const k in DC.stats) DC.stats[k] = 0;
+    Object.assign(DC, { day, ch, mod, scored:day === t && !entryOf(M, day), live:false, kept:false, said:false, done:false, won:false, doneT:0, evT:0, gunAt:0, hunted:false }); for(const k in DC.stats) DC.stats[k] = 0;
     const r0 = Math.random; Math.random = modeRng(ch.seed); modeUndo(() => { Math.random = r0; });   // the same battlefield for everyone today (the page's own generator comes back with the mode)
     for(const s of mod.set || []) DC.stats.knobs += modeSet(s[0], s[1], s[2]);
     for(const id of mod.spellsOff || []){ const i = TROOPER_SPELLS.findIndex(q => q.id === id); if(i < 0) continue; const sp = TROOPER_SPELLS.splice(i, 1)[0]; modeUndo(() => { TROOPER_SPELLS.splice(Math.min(i, TROOPER_SPELLS.length), 0, sp); updateSpellHUD(); }); }
     for(const id of mod.lootOff || []){ const u = POWERUPS.find(q => q.id === id); if(!u) continue; const f = u.apply; u.apply = () => { if(S.player) floatText(Y.noMed, '#ff9a8a', S.player.pos, 15); }; modeUndo(() => { u.apply = f; }); }
     const b = typeof document !== 'undefined' && document.getElementById('arsenalBtnP'); if(b){ const d0 = b.style.display; b.style.display = 'none'; modeUndo(() => { b.style.display = d0; }); } },   // (the pause screen's arsenal would swap the issued gun)
+  // step k of the battlefield's build (mode-run.js modeSeed): its own stream of the day's seed
+  seed(k){ if(DC.ch) Math.random = modeRng(modeHash(DC.ch.seed, k)); },
   // the soldier stands ready: the day's guns in his hands, full magazines; the lives the modifier leaves him
   ready(p){ if(!p) return; const g = DC.ch.guns.filter(id => GUNS[id]).map(id => ({ id, ammo:magCap(GUNS[id]), rU:0, rD:0 })); if(g.length){ p.guns = g; p.gunIdx = 0; }
     if(DC.mod.lives != null) p.lives = DC.mod.lives; S.spell = 0; updateSpellHUD(); updateGunHUD(); updateHUD(); },
   // the fight goes live: the scored attempt is spent now
-  live(){ DC.live = true; if(DC.scored){ book().cur = { d:DC.day }; saveProfile(true); } showBanner(fillTx(DC.scored ? Y.go : Y.goP, { m:DC.mod.vi }), '#ffd86a'); },
+  live(){ DC.live = true; if(DC.scored){ book().cur = { d:DC.day }; saveProfile(true); } modeSay(Y.radio + fillTx(DC.scored ? Y.go : Y.goP, { m:DC.mod.vi }) + '. ' + DC.mod.ds, 0.4); },
   frame(dt, now){ const m = DC.mod; if(DC.done){ if((DC.doneT += dt) >= D.hold) card(true); return; }
+    if(!DC.said && MODE.t >= D.bannerAt){ DC.said = true; showBanner(fillTx(DC.scored ? Y.go : Y.goP, { m:m.vi }), '#ffd86a'); }   // (after the first wave's own banner, which would wipe it)
     if(m.general && !DC.hunted && MODE.t >= D.hunterAt){ DC.hunted = true; startBoss(now); modeSay(Y.hunter, 5); }
     if(m.event && (DC.evT += dt) >= m.event.every){ if(bigEventStart(m.event.kind, now, true)){ DC.evT = 0; DC.stats.events++; } else DC.evT = m.event.every - m.event.retry; }
     if(m.strict && (DC.gunAt -= dt) <= 0){ DC.gunAt = D.strictTick; strict(); } },
   // the stage's general fell (campaign/boss.js bossStageWon gave it here): the challenge is done — his citadel falls, the men cheer, then the result
   stageWon(now, bdef){ const p = S.player; if(DC.done) return; DC.done = DC.won = true; DC.doneT = 0; S.awaitingUpgrade = true; S.wave = 0; if(p) p.invincibleUntil = now + D.hold + 3;
-    showBanner(fillTx(Y.wonBanner, { g:bdef.name }), '#8cbf3f'); sfx('levelup'); fortBossDown(); celebrate('victory', 0, 0); updateHUD(); },
+    fortBossDown(); celebrate('victory', 0, 0); showBanner(fillTx(Y.wonBanner, { g:bdef.name }), '#8cbf3f'); updateHUD(); },   // (after celebrate: the challenge's own banner over the campaign's)
   over(reason){ if(!DC.done) card(false, reason); },   // (the general is down: nothing that lands afterwards takes the day back)
   pauseTx(){ return DC.ch ? fillTx(Y.pause, { date:dailyDate(DC.day).vi, m:DC.mod.vi, p:DC.scored ? '' : Y.pauseP }) : ''; },
   brief(){ const o = desc(DC.ch, DC.mod), e = entryOf(book(), DC.day); o.state = DC.scored ? Y.ask.scored : fillTx(Y.ask.practice, { s:modeNum(e ? e.s : 0) }); return { op:fillTx(Y.briefOp, o), brief:fillTx(Y.brief, o), obj:Y.obj }; },

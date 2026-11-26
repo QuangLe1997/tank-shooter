@@ -41,6 +41,9 @@ export function modeBegin(run){ modeEnd(); const id = run && run.mode === 'custo
   modeStore().hold = { dirEase:PROFILE.dirEase || null }; PROFILE.dirEase = null; saveProfile(true);   // the same director for everyone; the campaign's own easing waits outside
   S.kills = 0; SHOTS.n = SHOTS.hit = 0;
   MODE.H.begin && MODE.H.begin(run); }
+// a step of the battlefield's build begins (world/biome.js applyBiome, world/cover.js buildBlocks): a mode that builds from a seed starts that step's draws afresh,
+//   so a step never inherits how many draws the steps before it happened to make (a texture or a material made on first use draws too — and only on first use)
+export function modeSeed(k){ if(MODE.id && MODE.H.seed) MODE.H.seed(k); }
 // the soldier stands ready, the battlefield is built (startGame, just before the intro)
 export function modeReady(){ if(MODE.id && MODE.H.ready) MODE.H.ready(S.player); }
 // every frame of play, after the waves (game/loop.js): the first one is the fight going live

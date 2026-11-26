@@ -1,7 +1,7 @@
 // world/cover.js — TERRAIN BLOCKS (cover)
 import * as THREE from 'three';
 import { BALANCE, DEFENSE, FUEL_DRUM, RAM, HARD, OPEN_LAND, REALROCK, SHATTER, FUEL_TANK, BREAKUP } from '../../config.js';
-import { AREA_K, ARENA, BIOME, BUMPS, CONTAINER_PAINT, COVER_HP, COVER_K, COVER_R, COVER_SET, DEF, HEAVY_KINDS, LONE_SET, MOBILE, S, _R, addLootBeacon, dressRock, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildCoreWalls, buildDefense, garrisonDefense, buildLandmarks, buildRidges, buildScenery, buildSupply, buildTowers, buildZones, buildingHit, burst, camera, clearLootBeacons, clearRubble, clearWallMarks, clearWalls, collapseTower, coverGeo, coverMat, coverVariant, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortCoreHit, fortWallHit, freeEnemyBar, garrisonSupply, getEnemyBar, heightAt, hitTunnel, inField, inZone, leaveRubble, makeCoverMesh, placeCaches, planZones, resetSupply, ridgeRockDown, rockSet, scene, sfx, spawnDebris, spawnPart, supplyDamage, trackCover, underHit, wallDamage, clearShatter, shatter, solidKind, blastAllies, dropScenePiece, tentHit, blockTop, shockDome, blastLight, decalAsh, dirtGeyser, dustSkirt } from '../hub.js';
+import { modeSeed, AREA_K, ARENA, BIOME, BUMPS, CONTAINER_PAINT, COVER_HP, COVER_K, COVER_R, COVER_SET, DEF, HEAVY_KINDS, LONE_SET, MOBILE, S, _R, addLootBeacon, dressRock, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildCoreWalls, buildDefense, garrisonDefense, buildLandmarks, buildRidges, buildScenery, buildSupply, buildTowers, buildZones, buildingHit, burst, camera, clearLootBeacons, clearRubble, clearWallMarks, clearWalls, collapseTower, coverGeo, coverMat, coverVariant, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortCoreHit, fortWallHit, freeEnemyBar, garrisonSupply, getEnemyBar, heightAt, hitTunnel, inField, inZone, leaveRubble, makeCoverMesh, placeCaches, planZones, resetSupply, ridgeRockDown, rockSet, scene, sfx, spawnDebris, spawnPart, supplyDamage, trackCover, underHit, wallDamage, clearShatter, shatter, solidKind, blastAllies, dropScenePiece, tentHit, blockTop, shockDome, blastLight, decalAsh, dirtGeyser, dustSkirt } from '../hub.js';
 
 // ----------------------------- TERRAIN BLOCKS (cover) -----------------------------
 // Brick (destructible) + steel (solid). Block tank movement + bullets → real cover.
@@ -17,11 +17,11 @@ export const MAZE_SHAPES = [
 export const blocks=[];   // fuel drums go up after a hit or two
 export function buildBlocks(){
   clearShatter(); for(const b of blocks){ scene.remove(b.mesh); if(b.bar){ freeEnemyBar(b.bar); b.bar=null; } } blocks.length=0; clearWalls(); clearLootBeacons('block'); clearRubble(); resetSupply(); clearWallMarks();
-  planZones();                                                                             // Z104 reserve ground for the rally point, POW stockades, depots
+  modeSeed(4); planZones();                                                                             // Z104 reserve ground for the rally point, POW stockades, depots
   buildCoreWalls();                                                                        // Z140 our walled compound + guard cannons round the Core
-  buildLandmarks();                                                                        // Z139 city buildings · hill woods · village houses + paddies (they claim their ground before cover is scattered)
-  buildDefense();                                                                          // Z420 the enemy's belt, checkpoints and fighting positions — laid before the scatter, which keeps off them
-  const set=COVER_SET[BIOME.name]||COVER_SET.DESERT;
+  modeSeed(5); buildLandmarks();                                                                        // Z139 city buildings · hill woods · village houses + paddies (they claim their ground before cover is scattered)
+  modeSeed(6); buildDefense();                                                                          // Z420 the enemy's belt, checkpoints and fighting positions — laid before the scatter, which keeps off them
+  modeSeed(7); const set=COVER_SET[BIOME.name]||COVER_SET.DESERT;
   const shapeCount = Math.round((4 + Math.floor(S.stage*1.2))*AREA_K*((OPEN_LAND[BIOME.name]||{}).cover||1));   // Z242 town / countryside: more open ground   // Z104 more cover on the wider field (soldiers need somewhere to hide)
   const centers=[];
   let tries=0;
@@ -49,7 +49,7 @@ export function buildBlocks(){
       blocks.push(bobj); if(loot) addLootBeacon(bobj, 'block');
     });
   }
-  buildTowers();                                                            // enemy watchtowers with riflemen
+  modeSeed(8); buildTowers();                                                            // enemy watchtowers with riflemen
   // lone heavy obstacles: boulders + Czech hedgehogs — solid, block shots, deflect tanks
   // Z429 the boulders as rock scans (world/real-props.js dressRock) laid out as outcrops: on the steepest of a few clear spots (a rise, a bank — not dropped
   //   anywhere on the flat), a big stone with smaller ones at its flank, all sunk into the ground; the hedgehogs stay lone, on the open ground
@@ -70,17 +70,18 @@ export function buildBlocks(){
     const n=Math.floor(_R(RK.around[0], RK.around[1]+0.99)), a0=Math.random()*6.283;
     for(let k=0;k<n;k++){ const a=a0+k*_R(0.9,1.6), r=_R(RK.small[0], RK.small[1]), d=R+r+_R(RK.gap[0], RK.gap[1]), sx=x+Math.cos(a)*d, sz=z+Math.sin(a)*d;
       if(inField(sx,sz,3) && !inZone(sx,sz,2) && !blocks.some(b=>b.kind!=='boulder' && Math.hypot(b.x-sx,b.z-sz)<b.r+r+1)) lone(sx,sz,false,r); } }
-  placeLone();                                                                             // Z193 shipping containers + burnt-out car wrecks
-  buildRidges();                                                                           // Z106 rock spines with passes → sectors + chokepoints
+  modeSeed(9); placeLone();                                                                             // Z193 shipping containers + burnt-out car wrecks
+  modeSeed(10); buildRidges();                                                                           // Z106 rock spines with passes → sectors + chokepoints
   buildBrickWalls();                                                                       // Z86 ruined masonry walls
-  buildSupply('far');                                                                      // Z194 fuel / ammo compounds in the enemy-side corners
+  modeSeed(11); buildSupply('far');                                                                      // Z194 fuel / ammo compounds in the enemy-side corners
   buildCamps();                                                                            // Z90 enemy troop camps
   buildSupply('near');                                                                     // Z196 … then the near corners, round whatever room is left
   placeCaches();                                                                           // Z93 guarded supply caches
-  buildZones();                                                                            // Z104 rally point · POW stockades · weapon + tank depots (with guards)
-  buildScenery();                                                                          // Z141 trees · bushes · flowers · reeds · haystacks
-  garrisonSupply();   // Z194 guards + guard tanks (after buildZones cleared its own)
+  modeSeed(12); buildZones();                                                                            // Z104 rally point · POW stockades · weapon + tank depots (with guards)
+  modeSeed(13); buildScenery();                                                                          // Z141 trees · bushes · flowers · reeds · haystacks
+  modeSeed(14); garrisonSupply();   // Z194 guards + guard tanks (after buildZones cleared its own)
   garrisonDefense();   // Z423 the men at the defence's posts
+  modeSeed(15);   // MODE 2 (every modeSeed in here: the daily challenge's battlefield, each step from its own stream of the day's seed — campaign/mode-run.js; a no-op in every other battle)
 }
 // hit feedback + staged damage per material; destruction is material-specific (fuel drums EXPLODE and hurt everything around)
 // Z418 SANDBAGS STOP SMALL ARMS: a round that cannot break a sandbag wall (a rifle / MG / autocannon round, shot, fire — see BREAKUP.sand) only puffs sand
