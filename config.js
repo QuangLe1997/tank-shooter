@@ -3025,3 +3025,31 @@ export const BLADE = { on:!(typeof location !== 'undefined' && /[?&]noblade\b/.t
 //   budgetTris / budgetBytes: the repaired file may grow by at most this
 export const SKINREPAIR = { snap:4, crack:2.5, sealed:0.6, holePerim:150, holeMax:28, finTris:10, finHidden:40, finArea:60, capArea:1e9, buried:0.97, bodyVote:0.01, reach:200, contact:3, slideMm:15, smooth:30, stretch:0.8, stretchMm:30, liftW:1, tornW:0.5, stretchCap:1, tear:2.5, tearCost:2, tearMove:40,
   compact:260, under:0.08, clavCap:0.3, trunkOnly:false, relax:0.5, stray:[0.02, 0.12], touch:5, rimTouch:15, tuck:12, hardDeg:60, ways:['clean', 'body', 'half', 'trunk'], kit:'', hem:{ on:false, min:2, reach:30, minEdges:3, minLen:60, minLum:70, reserve:500 }, liner:{ step:55, fit:0.85, inset:5, joint:0.6, sides:{ torso:10, arm:6, leg:7 }, shrink:0.8, rounds:10, passes:6, eps:0.5, views:22, viewPx:320, margin:4, reserve:800 }, deep:60, liftNear:30, liftMax:30, liftStep:10, budgetTris:0.08, budgetBytes:0.10 };
+// BODY 1 THE SOLDIER'S BODY ROUND AND UPRIGHT (the player's Tripo soldier; tools/skin-repair.mjs, src/actors/puppet.js, src/actors/soldier-upper.js).
+//   rig (offline, tools/skin-repair.mjs addTwist — soldier2.glb only): limbs = per arm / leg bone the twist joints added as its children: n joints laid
+//     along bone → end, the bone's weight handed along them between `from` and `to` (shares of the bone's length: before `from` the bone itself, at `to`
+//     the last joint — the whole roll); cuts = where the long triangles of that limb are cut into rings (shares of its length), a triangle counting as
+//     long past `long`, an edge not cut within `gap` of one of its ends (no slivers), only skin within r × the bone's length of its axis; round = how
+//     many times the edges running round the limb are then halved (those between span[0] and span[1] of its length, longer than `edge` mm of a bone
+//     `mm` long, slanted along the bone by less than `slant` of their length); a new point is lifted lift × the way to the surface its two ends'
+//     normals describe, round the limb only (at most liftMax of the edge's length across the bone): the forearm's round section back;
+//     hang = belt kit weighted to a thigh (≥ thigh of its weight, ≤ maxVerts vertices, its middle no more than `top` and its lowest point `span` down the
+//     thigh, shares of its length) is hung from the hips: thigh weight 0 above at[0], rising to `max` at at[1] down the thigh
+//   twist (src/actors/puppet.js limbs — a limb whose file has twist joints): max = the most of the hand's roll laid along the forearm (rad: a man's
+//     pronation / supination; the rest stays at the wrist), wrap = the roll is read on from the last frame until it passes this (rad), then afresh;
+//     swivel = after the gun hold an arm whose hand is rolled more than lim rad on its forearm, or whose upper arm more than root rad at the shoulder,
+//     has its elbow swung round the shoulder → wrist line until both carry the same share of their limit (eased in over `soft` past it, at most max
+//     rad) — on:false keeps the elbow where the hold's pole put it
+//   hold (src/actors/real-cav.js holdReal, on his feet): poleL = where the support arm's elbow is sent [up, to his right, ahead] of the shoulder (m) —
+//     under the gun, not out to his left: out there the hand had to be rolled 120° and more on the forearm to lie under the handguard
+//     freeRoll = reloading, the left hand (off the gun: the magazine is drawn where its palm is) is rolled no more than this on its forearm (rad)
+//   stance (on his feet, not lying): lean = the line hips → neck is kept between lean[0] and lean[1] rad forward of upright IN THE AIM'S FRAME (kneeling
+//     up to `kneel`, running — between runV m/s — up to `run`), and `roll` of any lean to one side is taken out (actors/soldier-upper.js trunkLean:
+//     gain × the error over the three spine joints, iter passes, eased in / out at rate /s); stood still his hips ride `hips` m ahead of the middle of
+//     his feet (over the front foot) and `tall` × his leg higher (actors/soldier-legs.js: the knees only just bent)
+export const BODYFIX = {
+  rig:{ models:['soldier2'], mm:240, limbs:[{ bone:'ForeArm', end:'Hand', n:3, from:0.12, to:0.96, cuts:[0.26, 0.4, 0.54, 0.68, 0.82], long:0.22, gap:0.045, r:0.45, round:2, span:[0.18, 1.02], edge:14, slant:0.45, lift:0.75, liftMax:0.22 }],
+    hang:{ thigh:0.9, top:0.06, span:0.2, at:[-0.05, 0.15], max:0.3, maxVerts:1500 } },
+  twist:{ max:1.5, wrap:4.6, swivel:{ on:true, lim:1.3, root:1.3, soft:0.3, max:0.6 } },
+  hold:{ poleL:[-0.5, 0.35, 0.15], freeRoll:0.6 },
+  stance:{ lean:[0.1, 0.16], kneel:0.26, run:0.33, runV:[2.4, 4.4], roll:0.8, gain:1.4, iter:2, rate:6, hips:0.04, tall:0.025 } };

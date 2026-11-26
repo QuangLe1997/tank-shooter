@@ -17,7 +17,7 @@
 //     knees on landing;
 //   · behind cover: kneeling or crouched behind it at exactly the height that lays the rifle on its top.
 import * as THREE from 'three';
-import { CAV, GUNFEEL, PUPPET, SOLDIER_LEGS } from '../../config.js';
+import { BODYFIX, CAV, GUNFEEL, PUPPET, SOLDIER_LEGS } from '../../config.js';
 import { CV, afxFoot, climbBody, climbPh, climbing, footLevel, ik2, mountOwn, mountPose, soleAt } from '../hub.js';
 const heightAt = soleAt;   // Z451 up on what he climbed his soles go down on its top (game/soldier-climb.js); on the ground it is the ground
 
@@ -117,12 +117,14 @@ export function soldierLegs(R, G, dt, P, mounted){ const D = R.pup && R.pup.D; i
       f.gs = (f.gs || 0) + ((f.gT || 0) - (f.gs || 0)) * Math.min(1, dt * SL.rate); } }
   // ---- the pelvis: down at each footfall, up over the standing foot, swayed over it; low enough for both legs to reach ----
   const sw = L.feet.find(f => f.sw), k = sw ? sw.sw.t : 0, sdS = sw ? (sw === L.feet[0] ? -1 : 1) : 0;
-  const gY = (L.feet[0].y + L.feet[1].y) / 2; let hipY = gY + ankleH + len.leg * M.hipK - M.dip * Math.min(1, s / 1.4) + (sw ? M.bob * (Math.sin(Math.PI * k) - 0.5) : 0);
-  _c.set(_g.x, 0, _g.z); if(sw){ const st = L.feet[sdS < 0 ? 1 : 0], lat = (st.p.x - _g.x) * R2.x + (st.p.z - _g.z) * R2.z; _c.addScaledVector(R2, lat * A.sway * Math.sin(Math.PI * k)); }
+  // BODY 1 a rifleman stood still: his weight forward over the front foot, his knees only just bent (BODYFIX.stance; eased in as he stops)
+  const SB = BODYFIX.stance; L.sf = (L.sf || 0) + ((L.mode === 'stand' && !moving && !sw ? 1 : 0) - (L.sf || 0)) * Math.min(1, dt * SB.rate); const hipK = M.hipK + SB.tall * L.sf;
+  const gY = (L.feet[0].y + L.feet[1].y) / 2; let hipY = gY + ankleH + len.leg * hipK - M.dip * Math.min(1, s / 1.4) + (sw ? M.bob * (Math.sin(Math.PI * k) - 0.5) : 0);
+  _c.set(_g.x, 0, _g.z).addScaledVector(F2, SB.hips * L.sf); if(sw){ const st = L.feet[sdS < 0 ? 1 : 0], lat = (st.p.x - _g.x) * R2.x + (st.p.z - _g.z) * R2.z; _c.addScaledVector(R2, lat * A.sway * Math.sin(Math.PI * k)); }
   const ank = _ank; for(const [, sd] of SIDES){ const i = sd < 0 ? 0 : 1; ankle(L.feet[i], len, ankleH, slope, ank[i]); }
   for(const [, sd] of SIDES){ const i = sd < 0 ? 0 : 1, hx = _c.x + R2.x * sd * len.hw, hz = _c.z + R2.z * sd * len.hw, hd = Math.hypot(hx - ank[i].x, hz - ank[i].z), rr = len.leg * A.reach;
     if(hd < rr) hipY = Math.min(hipY, ank[i].y + Math.sqrt(rr * rr - hd * hd)); }
-  hipY = Math.max(hipY, gY + ankleH + len.leg * M.hipK - A.maxDrop);   // (never down into a squat: past that the leg stays long and the foot trails)
+  hipY = Math.max(hipY, gY + ankleH + len.leg * hipK - A.maxDrop);   // (never down into a squat: past that the leg stays long and the foot trails)
   if(MV && MV.land > 0) hipY -= A.landDip * Math.sin(Math.PI * clamp(1 - MV.land / CAV.moves.jump.land, 0, 1));   // Z341 down he comes: the knees give, then straighten
   if(MV && MV.cover != null && L.mode === 'stand' && !moving) hipY = clamp(MV.cover + A.coverRest - A.pocket, hipY - A.coverDrop, hipY);   // Z341 behind higher cover: down at the knees until the rifle lies on its top
   _c.y = hipY;

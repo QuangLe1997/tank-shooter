@@ -9,7 +9,7 @@
 //   · climbing on or off a ride he looks at what his left hand takes hold of (actors/soldier-mount.js);
 //   · Z368 running he holds himself up: a runner's lean, not the clip's crouch, and his eyes on the way ahead.
 import * as THREE from 'three';
-import { SOLDIER_UPPER } from '../../config.js';
+import { BODYFIX, SOLDIER_UPPER } from '../../config.js';
 import { CV, LEGKIT, S, turnBone } from '../hub.js';
 
 const V3 = () => new THREE.Vector3(), UP = new THREE.Vector3(0, 1, 0);
@@ -19,6 +19,18 @@ const upState = R => R.upper || (R.upper = { prev:null, v:V3(), a:V3(), pv0:null
 // a damped spring toward `to` (value, velocity) → [value, velocity]
 const spring = (x, v, to, k, z, dt) => { v += (-k * (x - to) - 2 * z * Math.sqrt(k) * v) * dt; return [x + v * dt, v]; };
 
+// BODY 1 LEANING INTO THE GUN (BODYFIX.stance; called by holdReal once his chest is squared to the aim, before the gun is laid in his shoulder): the
+//   line hips → neck is read IN THE AIM'S FRAME and brought within the lean a rifleman stands with — forward a little, never back, not hung to one side.
+//   The stance lean above is laid about his FEET's heading before the chest is turned to the aim: that turn (the aim clip stands him bladed ~60°) swung
+//   it round to his side, and the clip's own lean with it — stood aiming he hung 8–9° back or to his left by turns. kneel / speed widen what is allowed
+const _lf = V3(), _lr = V3(), _lh = V3(), _ln = V3();
+export function trunkLean(R, D, yaw, dt, on, kneel, speed){ const K = BODYFIX.stance; if(!D.Hips || !D.Neck || !D.Spine || !D.Spine1 || !D.Spine2 || !dt) return;
+  const w = R.lnW = (R.lnW || 0) + ((on ? 1 : 0) - (R.lnW || 0)) * Math.min(1, dt * K.rate); if(w < 0.01) return;
+  const kn = R.lnK = (R.lnK || 0) + ((kneel ? 1 : 0) - (R.lnK || 0)) * Math.min(1, dt * K.rate), rn = clamp((speed - K.runV[0]) / (K.runV[1] - K.runV[0]), 0, 1) * (1 - kn);
+  const lo = K.lean[0], hi = K.lean[1] + (K.kneel - K.lean[1]) * kn + (K.run - K.lean[1]) * rn; _lf.set(Math.sin(yaw), 0, Math.cos(yaw)); _lr.set(-Math.cos(yaw), 0, Math.sin(yaw));
+  for(let it = 0; it < K.iter; it++){ D.Hips.getWorldPosition(_lh); D.Neck.getWorldPosition(_ln).sub(_lh); const p = Math.atan2(_ln.dot(_lf), _ln.y), r = Math.atan2(_ln.dot(_lr), _ln.y), dp = (clamp(p, lo, hi) - p) * w * K.gain, dr = -r * K.roll * w * K.gain;
+    if(Math.abs(dp) > 1e-4){ turnBone(D.Spine, _lr, -dp * 0.5); turnBone(D.Spine1, _lr, -dp * 0.35); turnBone(D.Spine2, _lr, -dp * 0.15); }   // (about his right: forward is −)
+    if(Math.abs(dr) > 1e-4){ turnBone(D.Spine, _lf, dr * 0.5); turnBone(D.Spine1, _lf, dr * 0.35); turnBone(D.Spine2, _lf, dr * 0.15); } } }
 // every frame, after his legs (soldierLegs) and before the hold (holdReal)
 export function soldierUpper(R, G, dt, P, mounted){ const D = R.pup && R.pup.D; if(!D || !D.Spine2 || !dt) return; const K = SOLDIER_UPPER, U = upState(R); U.t += dt;
   // how he is speeding up: across the ground from the pace he is set to (clean), up and down from his chest (smoothed hard — a frame's jitter is

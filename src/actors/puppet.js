@@ -24,8 +24,16 @@
 //     joint rests) — the hips set by the straighter leg (a straight leg cannot give), the other leg by a small two-bone correction, softened near full reach.
 // limbTwist(P) re-seats the limbs' rolls the same way AFTER the gun hold / leg IK (shortest-arc IK leaves the roll wherever it fell) without moving a
 // joint or a hand. Nothing is allocated per frame; each frame still starts from his rest pose.
+//
+// BODY 1 TWIST JOINTS (BODYFIX.twist; the soldier's file now carries <bone>Twist1…n under each forearm — tools/skin-repair.mjs addTwist). Sharing the
+// wrist's roll half and half between elbow and wrist still wrung the skin at both: his decimated forearm is a dozen long triangles, and the support hand
+// is rolled 120° and more on it. Where a limb has twist joints the bone itself keeps its hinge (no roll at the elbow: a forearm cannot roll there) and
+// joint i is turned i/n of the hand's roll about the bone — the roll runs evenly down the forearm, as pronation does. The roll is read continuously (no
+// flip from +180° to −180°), no more than `max` of it is laid along the forearm (a man's ±85°; the rest stays at the wrist), and after the gun hold an
+// arm whose hand is rolled past `swivel.lim` on its forearm (or whose upper arm is rolled past `swivel.root` at the shoulder) has its ELBOW swung round
+// the shoulder → wrist line (at most `swivel.max`) until the two carry the same share of what each can take: neither the shoulder nor the hand moves.
 import * as THREE from 'three';
-import { PUPPET } from '../../config.js';
+import { BODYFIX, PUPPET } from '../../config.js';
 
 // [bone, the child it points at] — parents before children
 const CHAINS = [['Spine','Spine1'],['Spine1','Spine2'],['Spine2','Neck'],['Neck','Head'],
@@ -112,7 +120,8 @@ function fullSetup(S, D, src){ const need = ['Hips', 'Spine', 'LeftUpLeg', 'Left
   //   how the upper bone sits on its parent and the end (hand / foot) on the lower bone at rest (the twist across a joint is counted from there)
   const limbs = []; for(const s of ['Left', 'Right']) for(const [un, ln, en, pn] of LIMBS){ const u = D[s + un], l = D[s + ln], e = D[s + en], p = u.parent, arm = un === 'Arm', du = dir(D, s + un, s + ln), dl = dir(D, s + ln, s + en);
     const a = arm ? V().crossVectors(du, fwd) : V().crossVectors(fwd, du); if(a.lengthSq() < 1e-6) return null; a.normalize(); const al = a.clone().addScaledVector(dl, -a.dot(dl)).normalize();
-    limbs.push({ u, l, e, p, arm, au:a.applyQuaternion(wq(u).invert()), al:al.applyQuaternion(wq(l).invert()), relU:wq(p).invert().multiply(wq(u)).invert(), relE:wq(l).invert().multiply(wq(e)).invert(), iu:at[s + un], il:at[s + ln], ie:at[s + en] }); }
+    const tj = []; for(let i = 1; D[s + ln + 'Twist' + i] && D[s + ln + 'Twist' + i].parent === l; i++) tj.push(D[s + ln + 'Twist' + i]);   // BODY 1 (none in a file without them: the roll is shared as before)
+    limbs.push({ u, l, e, p, arm, au:a.applyQuaternion(wq(u).invert()), al:al.applyQuaternion(wq(l).invert()), relU:wq(p).invert().multiply(wq(u)).invert(), relE:wq(l).invert().multiply(wq(e)).invert(), iu:at[s + un], il:at[s + ln], ie:at[s + en], tj:tj.length ? tj : null, ta:e.position.clone().normalize(), tm:0, sw:0, hm:0 }); }
   // where each foot joint rests over the ground (the parent frame's up), in the world's metres; the operator's hips over his feet
   const P0 = src.parent || src, k = V().setFromMatrixColumn(P0.matrixWorld, 1).length(), hy = (B, n) => P0.worldToLocal(wp(B[n])).y * k, feet = [];
   for(const s of ['Left', 'Right']){ const J = ENDS.map(e => s + e).filter(n => S[n] && D[n]); feet.push({ s:J.map(n => S[n]), d:J.map(n => D[n]), rs:J.map(n => hy(S, n)), rd:J.map(n => hy(D, n)), it:at[s + 'UpLeg'], is:at[s + 'Leg'], ik:at[s + 'Foot'], au:limbs[s === 'Left' ? 1 : 3].au }); }
@@ -157,18 +166,34 @@ function plant(P){ const S = P.S, D = P.D, F = P.F, C = PUPPET.feet, H = D.Hips,
 
 // the limbs' rolls: each hinge onto the plane its limb folds in, the twist shared along the limb. Turns bones about their own length only: no joint,
 //   hand or foot moves. clip = the pose came from a clip (a limb found bent the wrong way round keeps the copied roll); after IK the fold is always the pole's
-function limbs(F, clip){ const HG = PUPPET.hinge, TW = PUPPET.twist;
+// BODY 1 the end's (hand's / foot's) roll on its lower bone once that bone's hinge is on the fold: rad, about _v; from _u _v _ql _qe as they stand
+function endRoll(L, HG){ _kn.crossVectors(_u, _v); const sn = _kn.length(), w = smooth((Math.atan2(sn, _u.dot(_v)) - HG.bend[0]) / (HG.bend[1] - HG.bend[0])); _qs.copy(_ql);
+  if(w > 0){ _kn.divideScalar(sn); _qs.premultiply(_q.setFromAxisAngle(_v, about(_pt.copy(L.al).applyQuaternion(_ql), _kn, _v) * w)); }
+  return twistOf(_qr.copy(_qe).multiply(L.relE).multiply(_q0.copy(_qs).invert()), _v); }
+// … and the upper bone's roll on its parent (shoulder / hip), its own hinge on the fold: rad, about _u
+function rootRoll(L, HG){ _kn.crossVectors(_u, _v); const sn = _kn.length(), w = smooth((Math.atan2(sn, _u.dot(_v)) - HG.bend[0]) / (HG.bend[1] - HG.bend[0])); _qs.copy(_qu);
+  if(w > 0){ _kn.divideScalar(sn); _qs.premultiply(_q.setFromAxisAngle(_u, about(_pt.copy(L.au).applyQuaternion(_qu), _kn, _u) * w)); }
+  return twistOf(_qr.copy(_qs).multiply(L.relU).multiply(_q0.copy(_qp).invert()), _u); }
+function limbs(F, clip){ const HG = PUPPET.hinge, TW = PUPPET.twist, BT = BODYFIX.twist, SW = BT.swivel;
   for(let i = 0; i < F.limbs.length; i++){ const L = F.limbs[i], u = L.u, l = L.l, e = L.e, p = L.p; if(!clip){ p.updateWorldMatrix(true, false); u.updateWorldMatrix(false, true); }
     wpos(u, _pa); wpos(l, _pb); wpos(e, _pc); _u.subVectors(_pb, _pa); _v.subVectors(_pc, _pb); if(_u.lengthSq() < 1e-10 || _v.lengthSq() < 1e-10) continue; _u.normalize(); _v.normalize();
-    wquat(p, _qp); wquat(u, _qu); wquat(l, _ql); wquat(e, _qe); _kn.crossVectors(_u, _v); const sn = _kn.length(); let w = smooth((Math.atan2(sn, _u.dot(_v)) - HG.bend[0]) / (HG.bend[1] - HG.bend[0])), tu = 0, tl = 0;
+    wquat(p, _qp); wquat(u, _qu); wquat(l, _ql); wquat(e, _qe);
+    // BODY 1 after the hold: a hand rolled past what a forearm takes — the elbow swung round the shoulder → wrist line (the hand and the shoulder stay)
+    if(!clip && L.arm && L.tj && SW.on){ let r = endRoll(L, HG); if(r - L.tm > Math.PI) r -= 2 * Math.PI; else if(r - L.tm < -Math.PI) r += 2 * Math.PI; const s = rootRoll(L, HG), k = Math.max(Math.abs(r) / SW.lim, Math.abs(s) / SW.root); let want = 0;
+      // (swung by ψ the forearm's roll falls by ψ·a and the upper arm's rises by ψ·b: the two are brought to the same share of what each takes)
+      if(k > 1){ _x.subVectors(_pc, _pa).normalize(); const a = Math.max(0.35, _x.dot(_v)), b = Math.max(0.2, _x.dot(_u)); want = Math.max(-SW.max, Math.min(SW.max, (r * SW.root - s * SW.lim) / (a * SW.root + b * SW.lim))) * smooth((k - 1) / SW.soft); }
+      L.sw = want; if(Math.abs(want) > 1e-4){ _x.subVectors(_pc, _pa).normalize(); _q.setFromAxisAngle(_x, want); _qu.premultiply(_q); _ql.premultiply(_q); _u.applyQuaternion(_q); _v.applyQuaternion(_q); } }
+    _kn.crossVectors(_u, _v); const sn = _kn.length(); let w = smooth((Math.atan2(sn, _u.dot(_v)) - HG.bend[0]) / (HG.bend[1] - HG.bend[0])), tu = 0, tl = 0;
     if(w > 0){ _kn.divideScalar(sn); tu = about(_pt.copy(L.au).applyQuaternion(_qu), _kn, _u); tl = about(_pt.copy(L.al).applyQuaternion(_ql), _kn, _v);
       if(clip) w *= 1 - smooth((Math.abs(tu) - HG.flip[0]) / (HG.flip[1] - HG.flip[0])); tu *= w; tl *= w; }
     // the root joint (shoulder / hip) twisted past what the skin there takes: a share of the excess is handed down to the elbow / knee
     const R = L.arm ? TW.upper : TW.thigh; _qu.premultiply(_q.setFromAxisAngle(_u, tu)); _qr.copy(_qu).multiply(L.relU).multiply(_q0.copy(_qp).invert()); const tr = twistOf(_qr, _u), over = Math.abs(tr) - R.free;
     if(over > 0) _qu.premultiply(_q.setFromAxisAngle(_u, -Math.sign(tr) * Math.min(R.cap, over * R.share)));
     // the lower bone: its hinge, then its share of the twist the end (hand / foot) has on it
-    _ql.premultiply(_q.setFromAxisAngle(_v, tl)); _qr.copy(_qe).multiply(L.relE).multiply(_q0.copy(_ql).invert()); const te = Math.max(-TW.max, Math.min(TW.max, twistOf(_qr, _v))) * (L.arm ? TW.fore : TW.shin);
-    if(Math.abs(te) > 1e-5) _ql.premultiply(_q.setFromAxisAngle(_v, te));
+    _ql.premultiply(_q.setFromAxisAngle(_v, tl)); _qr.copy(_qe).multiply(L.relE).multiply(_q0.copy(_ql).invert()); let tw = twistOf(_qr, _v);
+    if(L.tj){ if(!clip){ if(tw - L.tm > Math.PI) tw -= 2 * Math.PI; else if(tw - L.tm < -Math.PI) tw += 2 * Math.PI; if(Math.abs(tw) > BT.wrap) tw = twistOf(_qr, _v); L.tm = tw; }   // (read on from last frame: a hand right round does not flip the forearm)
+      tw = Math.max(-BT.max, Math.min(BT.max, tw)); const J = L.tj, nj = J.length; for(let k = 0; k < nj; k++) J[k].quaternion.setFromAxisAngle(L.ta, tw * (k + 1) / nj); }   // BODY 1 the roll laid along the bone's twist joints; the bone keeps its hinge
+    else { const te = Math.max(-TW.max, Math.min(TW.max, tw)) * (L.arm ? TW.fore : TW.shin); if(Math.abs(te) > 1e-5) _ql.premultiply(_q.setFromAxisAngle(_v, te)); }
     u.quaternion.copy(_qp).invert().multiply(_qu); l.quaternion.copy(_qu).invert().multiply(_ql); e.quaternion.copy(_ql).invert().multiply(_qe); u.updateMatrixWorld(true); } }
 // a foot that has just been pointed (actors/soldier-legs.js): its sole's side edge laid level — turned about ankle → ball until what is up at rest is up
 //   again as far as that line allows (pointing a bone says nothing of its roll: a sole stood tipped up to 17° on its edge)
@@ -176,5 +201,11 @@ export function footLevel(P, foot, toe){ const F = P && P.F, up = PUPPET.full &&
   foot.updateWorldMatrix(true, false); toe.updateWorldMatrix(false, false); wpos(foot, _pa); wpos(toe, _pb); _u.subVectors(_pb, _pa); if(_u.lengthSq() < 1e-10) return; _u.normalize();
   wquat(foot, _qu); const th = about(_pt.copy(up).applyQuaternion(_qu), _kn.set(0, 1, 0), _u); if(Math.abs(th) < 1e-4) return;
   wquat(foot.parent, _qp); _qu.premultiply(_q.setFromAxisAngle(_u, th)); foot.quaternion.copy(_qp).invert().multiply(_qu); foot.updateMatrixWorld(true); }
+// BODY 1 a hand that holds nothing fixed (the left hand in a reload: a magazine goes where the palm is, whichever way it is turned) is turned about its
+//   forearm until it is rolled no more than max rad on it — the wrist does not move. side = 'Left' / 'Right'; after that arm's IK
+export function handRoll(P, side, max){ const F = P && P.F; if(!F || !PUPPET.full || F.same) return; const L = F.limbs[side === 'Left' ? 0 : 2], u = L.u, l = L.l, e = L.e; if(!L.arm) return;
+  L.p.updateWorldMatrix(true, false); u.updateWorldMatrix(false, true); wpos(u, _pa); wpos(l, _pb); wpos(e, _pc); _u.subVectors(_pb, _pa); _v.subVectors(_pc, _pb); if(_u.lengthSq() < 1e-10 || _v.lengthSq() < 1e-10) return; _u.normalize(); _v.normalize();
+  wquat(l, _ql); wquat(e, _qe); let r = endRoll(L, PUPPET.hinge); if(r - L.hm > Math.PI) r -= 2 * Math.PI; else if(r - L.hm < -Math.PI) r += 2 * Math.PI; if(Math.abs(r) > BODYFIX.twist.wrap) r = endRoll(L, PUPPET.hinge); L.hm = r;
+  const over = r - Math.max(-max, Math.min(max, r)); if(Math.abs(over) < 1e-4) return; _qe.premultiply(_q.setFromAxisAngle(_v, -over)); e.quaternion.copy(_ql).invert().multiply(_qe); e.updateMatrixWorld(true); }
 // after the hold and the leg IK (real-cav.js): the same, on the pose as it stands
 export function limbTwist(P){ if(P && P.F && PUPPET.full && !P.F.same) limbs(P.F, false); }
