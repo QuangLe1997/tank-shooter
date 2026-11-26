@@ -9,7 +9,7 @@
 //   without contact do they drop to searching it, and after keep.search more give the search up. The first shot waits a reaction delay (AWARE.react).
 //   The group of an alerted man's bursts (e.zero, 0 wide … 1 tight) closes while the player stands in his sight and opens when he runs or breaks the line.
 import { AWARE, STEALTH } from '../../config.js';
-import { CV, NIGHT, S, UGRID, aiIQ, clampFieldXZ, crushables, enemies, floatText, heightAt, playerSight, quietDeath, sfx, sneakK, stealthSpot, tierK, unitsNear, wrapAngle } from '../hub.js';
+import { bladeGlimpseK, CV, NIGHT, S, UGRID, aiIQ, clampFieldXZ, crushables, enemies, floatText, heightAt, playerSight, quietDeath, sfx, sneakK, stealthSpot, tierK, unitsNear, wrapAngle } from '../hub.js';
 
 const A = AWARE, R2 = a => a[0] + Math.random() * (a[1] - a[0]), mix = (a, k) => a[0] + (a[1] - a[0]) * k;
 // the player as the enemy's eyes get him this moment: r = how far off a man looking his way makes him out
@@ -54,7 +54,7 @@ export function awareTick(e, now){ if(e.alert === undefined) init(e, now); if(no
   if(vis > 0){
     if(al){ if(!e.sees && e.sq) for(const o of e.sq.m){ if(o !== e && o.alert >= 2 && !o.sees){ o.lk.x = p.pos.x; o.lk.z = p.pos.z; o.lkAt = now; } }   // he has him again: his squad knows (no second shout)
       e.sees = true; k.x = p.pos.x; k.z = p.pos.z; e.lkAt = now; }
-    else { e.det += dtk / ((A.spot.t[0] + (A.spot.t[1] - A.spot.t[0]) * (1 - vis)) * tierK('spot'));
+    else { e.det += dtk * bladeGlimpseK() / ((A.spot.t[0] + (A.spot.t[1] - A.spot.t[0]) * (1 - vis)) * tierK('spot'));   // (BLADE 8 the blade out and no shot fired: a glimpse builds slower — actors/blade.js)
       if(e.det >= 1){ alertEnemy(e, now, 'see'); e.sees = true; if(PL.st === 'prone') stealthSpot('BỊ PHÁT HIỆN!'); }
       else if(e.det >= A.spot.sus) suspectEnemy(e, now, p.pos.x, p.pos.z); } }
   else { e.sees = false;

@@ -2955,7 +2955,8 @@ export const HANG = { on:true, g:9.8, k:1, len:0.6, ks:140, z:0.42, max:0.4, acc
 //     other half stands, tip [upper, other] s to go over, cap: the red face's radius by where he is parted; a move's sever: 'waist' (default) | 'neck' | 'leg' | 'none'
 //   quiet: THE QUIET WEAPON — a cut is never a shot's noise; a man who does not know (alert < 2) dies by the knife's quiet path, and struck from outside his front dies to any
 //     cut (ambush); a wounded man's cry turns his mates within cryR m suspicious; steel on cover is heard clangR m off; started at a sprint or from cover with such a man within
-//     dashR m ahead, the cut begins with a dash-in of dashT s (at most dashV m/s)
+//     dashR m ahead, the cut begins with a dash-in of dashT s (at most dashV m/s); glimpse: with the blade out and no shot fired for shotT s, an unaware man
+//     who has him in view makes him out this × as fast (suspicious — a search — long before alerted; out of sight it decays as ever)
 //   hand: the grip in his fist — palm: how far along wrist → knuckle the handle crosses, out: the palm's skin off the hand bones' plane (the kind's r, the handle's radius, is added), curl: how far the fingers close
 //   A KIND: len / butt / tip / root / edge / back / com are the packed model's own numbers (tools/blade-pack.mjs prints them; z along the weapon from the main hand's grip) ·
 //     off: [from, to] the stretch of the handle the other hand holds, m along the weapon from the main hand's grip (− = toward the butt; the guandao's main hand is the one by the blade,
@@ -2977,7 +2978,7 @@ export const BLADE = { on:!(typeof location !== 'undefined' && /[?&]noblade\b/.t
   hit:{ stop:[0.06, 0.09], shake:[0.22, 0.5], kick:[0.12, 0.3], chip:14, gen:0.34, sparks:6, tol:14 }, guard:{ front:0.45, arc:120, moveK:0.45 },
   trail:{ on:true, n:14, life:0.16, color:0xdfe9ff, op:0.55 }, edge:{ on:true, v:[2.5, 7], rate:30 },
   body:{ chest:0.185, pack:[0.1, 0.17], head:0.14, hips:0.19, thigh:0.115, shin:0.085, margin:0.012 }, path:{ a:0.25, via:[0.42, 0.22, -0.02], clear:0.15 }, hand:{ palm:0.62, out:0.012, curl:0.9 }, runAt:3.6, flourish:{ r:6, wait:0.4, moveV:0.7 }, sever:{ on:true, max:6, life:24, sink:1.5, slide:0.35, wait:0.18, tip:[0.5, 0.7], cap:{ waist:0.2, neck:0.08, leg:0.1 } },
-  quiet:{ on:true, ambush:true, cryR:10, clangR:10, dashR:5.5, dashT:0.25, dashV:16 }, btn:[18, 250], gbtn:[18, 316],
+  quiet:{ on:true, ambush:true, cryR:10, clangR:10, dashR:5.5, dashT:0.25, dashV:16, glimpse:0.45, shotT:6 }, btn:[18, 250], gbtn:[18, 316],
   kinds:{
     guandao:{ name:'ĐẠI ĐAO (Quan đao)', file:'blade_guandao', len:2.048, butt:-1.049, tip:0.998, root:0.313, edge:0.051, back:-0.085, com:0.157, off:[-1.0, -0.2], two:true, reach:2.55, r:0.019, spread:[0.62, 0.2], slide:0.8, slideV:5.5,
       pose:{ guard:[[0.0, 0.34, 0.40], [-0.29, -0.04, -0.03]], carry:[[0.36, 0.06, -0.08], [-0.10, 0.28, 0.34]], block:[[0.28, 0.46, 0.32], [-0.26, 0.12, 0.36]] },

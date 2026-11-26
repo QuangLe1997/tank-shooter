@@ -32,7 +32,7 @@ const _tg = new Float32Array(8), UP = new THREE.Vector3(0, 1, 0);
 //   held: the blade is (to be) in his hands · auto: AUTO drew it · sw: 0 on his back … 1 in his hands (the rig's weight, mirrored) · act: the move in hand
 //   { mv, t (clip s), rate, dmgK, f0 (the bearing it is aimed along), wi (the window he is in), hit (who it has cut) } · chain: the next light · buf: the move asked for
 export const BLADEST = { kind:null, held:false, auto:false, sw:0, act:null, chain:0, chainAt:-9, buf:null, bufAt:0, trigF:-9, down:false, pressT:0, heavied:false, st:BLADE.stamina.max, stAt:-9, spAt:0, guard:false,
-  nearAt:0, killAt:-9, flDone:true, frame:0, hits:0, kills:0, silent:0, ambush:0, dashes:0, severed:0, swings:0, firstHit:-1, drawAt:-9, ready:{}, tipV:0 };
+  nearAt:0, killAt:-9, flDone:true, frame:0, hits:0, kills:0, silent:0, ambush:0, dashes:0, severed:0, shotAt:-99, swings:0, firstHit:-1, drawAt:-9, ready:{}, tipV:0 };
 const ACT = { mv:null, what:'', t:0, rate:1, dmgK:1, f0:0, rk:1, wi:-1, hit:new Set(), lunge:0, lx:0, lz:0, dashT:0, dashV:0 };
 export const bladeKind = () => BLADE.kinds[PROFILE.blade] ? PROFILE.blade : BLADE.def;
 export const bladeHeld = cv => !!BLADE.on && (!cv || cv === CV ? BLADEST.held : !!cv.blade);
@@ -290,7 +290,7 @@ export const bladeSevered = () => SEV.length;
 export function bladeFire(now){ const B = BLADEST, p = S.player, AU = BLADE.auto; if(!BLADE.on || !afoot() || !B.kind || !B.ready[B.kind] || climbing() || fpvFlying()) return false;
   if(B.held){ if(B.auto && !B.act && !B.buf && !nearest(p, AU.keep, 180, 0, true)){ B.held = false; B.auto = false; return false; } B.trigF = B.frame; return true; }   // (AUTO-drawn, nobody near: the rifle again, and this press is its shot)
   if(AU.on && CV.stance !== 'prone' && nearest(p, AU.r, AU.cone, p.aimSmoothed, true)){ B.held = true; B.auto = true; B.nearAt = now; B.drawAt = now; B.trigF = B.frame; return true; }
-  return false; }
+  B.shotAt = S.timeNow || now; return false; }   // (the trigger is the rifle's: a shot — the glimpse rule waits quiet.shotT s after it)
 export function bladeSwitch(on, auto){ const B = BLADEST; if(!BLADE.on) return false; on = !!on && afoot() && !climbing() && !!B.ready[B.kind || bladeKind()]; if(on === B.held){ B.auto = B.auto && !!auto; return on; }
   B.held = on; B.auto = !!auto && on; if(on){ B.drawAt = performance.now() / 1000; B.nearAt = B.drawAt; } else { B.act = null; B.buf = null; B.guard = false; } sfx(on ? 'dash' : 'click', S.player && S.player.pos, 0.4); hud(); return on; }
 export function bladeToggle(){ return bladeSwitch(!BLADEST.held, false); }
@@ -298,6 +298,9 @@ export function bladeToggle(){ return bladeSwitch(!BLADEST.held, false); }
 export function bladeSelect(i){ const p = S.player, B = BLADEST; if(!BLADE.on || !p) return false; if(i === p.guns.length){ bladeSwitch(true, false); return true; } if(B.held && i >= 0 && i < p.guns.length) bladeSwitch(false); return false; }
 export function bladeCycle(d){ const p = S.player, B = BLADEST; if(!BLADE.on || !p || !p.guns.length) return false; if(B.held){ bladeSwitch(false); selectGun(d > 0 ? 0 : p.guns.length - 1); return true; }
   const n = p.gunIdx + d; if(n >= p.guns.length || n < 0) return bladeSwitch(true, false); return false; }
+// ai/awareness.js awareTick: how fast an unaware man who has him in view makes him out — with the blade out and no shot fired for quiet.shotT s a glimpse builds `glimpse` × as fast:
+//   it reaches "suspicious" (he comes to look) well before "alerted", and out of his sight it decays as ever — a search, not an instant firefight
+export function bladeGlimpseK(){ const B = BLADEST, Q = BLADE.quiet; return BLADE.on && Q.on && B.held && B.sw > 0.5 && (S.timeNow || performance.now() / 1000) - B.shotAt > Q.shotT ? Q.glimpse : 1; }
 // spells.js: in blade mode the skill key is the blade's special. true: no spell is cast
 export function bladeSpecial(){ const B = BLADEST, p = S.player; if(!BLADE.on || !B.held || !p) return false; const now = S.timeNow || performance.now() / 1000;
   if(now < B.spAt){ floatText('CHIÊU ĐẶC BIỆT: ' + Math.ceil(B.spAt - now) + ' s', '#ffcf5a', p.pos, 13); return true; } ask('special', now); return true; }
