@@ -373,7 +373,10 @@ function diagCap(par, s, sg){ const c = capOn(par, 0, 1), C = s.cut; _dv.crossVe
 function diagDraw(s){ const K = SOLDIER_KIT[s.a.userData.kitKey], d = s.dg; if(!K || !d) return; for(const [r, h, sg] of [[s.a, d.A, 1], [s.b, d.B, -1]]){ r.updateWorldMatrix(true, true); troopSkinWrite(h.m, 0, r.userData, K.joints, TROOP_BATCH.kinds); troopSkinDone(h.m);
     h.pl.copy(s.lp).applyMatrix4(r.matrixWorld); if(sg < 0) h.pl.negate(); h.m.setColorAt(0, r.userData.tint || _dCol); h.m.instanceColor.needsUpdate = true; h.m.visible = true; } }
 const _dCol = new THREE.Color(1, 1, 1);
-export function bladeSever(e){ const C = BLADE.sever, m = e.mesh, u = m && m.userData, p = S.player; if(!C.on || !u || !u.up || !u.head || !u.body || !u.legs || u.legs.length < 2 || e.puppet || !m.parent || !p) return false;
+// BLADE 10 GORE (the settings' "Máu và cắt rời", PROFILE.gore — unset = on): off, a man the blade kills falls whole (no severing) and every blood effect is cut to BLADE.gore.low
+export const goreOn = () => PROFILE.gore !== false;
+export const goreK = () => PROFILE.gore !== false ? 1 : BLADE.gore.low;
+export function bladeSever(e){ const C = BLADE.sever, m = e.mesh, u = m && m.userData, p = S.player; if(!C.on || !goreOn() || !u || !u.up || !u.head || !u.body || !u.legs || u.legs.length < 2 || e.puppet || !m.parent || !p) return false;
   while(SEV.length >= C.max) unsever(SEV.shift(), true); const kind = e._bladeCut, x = e.pos.x, z = e.pos.z; let dx = e._hx || 0, dz = e._hz || 0; const dl = Math.hypot(dx, dz); if(dl < 0.05){ dx = Math.sin(p.facing); dz = Math.cos(p.facing); } else { dx /= dl; dz /= dl; }
   layOut(m, x, z); const b = getEnemyMesh(e.type), v = b.userData; if(!v.up || !v.legs){ b.visible = false; (enemyPool[e.type] = enemyPool[e.type] || []).push(b); return false; } if(b.parent !== m.parent) m.parent.add(b);
   b.position.copy(m.position); b.quaternion.copy(m.quaternion); b.scale.copy(m.scale); v.body.scale.copy(u.body.scale); v.tint = u.tint; if(v.gun) v.gun.visible = false; if(u.gun) u.gun.visible = false; layOut(b, x, z);

@@ -15,6 +15,7 @@ const DIFF = { recruit:['Tân binh','dễ'], soldier:['Chiến sĩ','vừa sức
 export function buildSettings(){
   // ---- Trò chơi ----
   { const D=box('setDiff'); if(D) for(const k of ['recruit','soldier','veteran']) D.appendChild(_segChip(DIFF[k][0], PROFILE.difficulty===k, ()=>{ PROFILE.difficulty=k; saveProfile(); redo(); }, DIFF[k][1])); }
+  onOff('setGore', PROFILE.gore!==false, on=>{ PROFILE.gore=on; saveProfile(); redo(); });   // BLADE 10 blood and severing (actors/blade.js goreOn / goreK; unset = on)
   for(const [id, k] of [['setHudTalk','talk'], ['setHudCards','cards'], ['setHudBanners','banners']]) onOff(id, hudOn(k), on=>{ setHud(k, on); redo(); });   // Z324 what the battle HUD shows (ui/hud-prefs.js)
   // ---- Hình ảnh ----
   { const Q=box('setQual'); if(Q){ Q.appendChild(_segChip('Cao', PROFILE.quality==='high', ()=>_setQ('high'))); Q.appendChild(_segChip('Thấp', PROFILE.quality==='low', ()=>_setQ('low'), 'máy yếu')); } }
@@ -66,7 +67,7 @@ export function setTab(t){ SET.tab = SET_TABS.includes(t) ? t : 'game';
   buildSettings(); }
 // "Mặc định": the open tab goes back to how the game ships (the pad's defaults are PAD_CFG.def; its learned button maps stay)
 export function resetTab(){ const D=SETTINGS_DEF, t=SET.tab;
-  if(t==='game'){ PROFILE.difficulty=D.difficulty; PROFILE.hud=null; saveProfile(); applyHud(); }
+  if(t==='game'){ PROFILE.difficulty=D.difficulty; PROFILE.hud=null; PROFILE.gore=true; saveProfile(); applyHud(); }
   else if(t==='video'){ PROFILE.quality=D.quality; PROFILE.fps=D.fps; PROFILE.shake=SHAKE.def; saveProfile(); setQuality(D.quality); }
   else if(t==='audio'){ PROFILE.sound=true; PROFILE.sfxVol=D.sfxVol; PROFILE.music=true; PROFILE.voice=true; PROFILE.ambience=true; PROFILE.realAudio=true; PROFILE.tinnitus=true; saveProfile(); audio(); setMuted(false); setMusicOn(true); }
   else if(t==='ctrl'){ PROFILE.ctrl=D.ctrl; padCfg().phone=PAD_CFG.def.phone; saveProfile(); }

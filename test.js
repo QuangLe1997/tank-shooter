@@ -2328,6 +2328,21 @@ grp('GRAPH 3 the motion graph: leap, lean, stop hips, turn catch-up, lifted step
   const ro = by.get(G.roll.clip); ok(G.roll.on === true && ro && G.groups.includes(ro.g) && G.roll.t[0] >= 0 && G.roll.t[1] > G.roll.t[0] && G.roll.t[1] <= ro.dur && G.roll.half > 0
     && /const R = graphRolls\(\) \? null : CV\.roll, J = CV\.jump, C = M\(\);/.test(sm) && /export function graphRolls\(\)/.test(ag),
     'the combat roll is the library\'s '+G.roll.clip+' ('+G.roll.t.join('–')+' s of it over the game\'s own roll); the old turn-the-whole-body-over stands down while it plays'); }
+// BLADE 10–11 the blade held in front, his own skin as the worn gear must clear it, the gore setting, the diagonal cut by a clipping plane
+{ const fs=await import('node:fs'); const C=await import('./config.js'), B=C.BLADE, rd=f=>fs.readFileSync(f,'utf8'), bl=rd('src/actors/blade.js');
+  grp('BLADE 10–11 — the blade in front, worn gear off his real kit, gore setting, the diagonal cut');
+  ok(B.front.on===true && B.front.back>0 && B.front.back<=0.3 && B.front.run[0]<B.front.run[1] && B.front.min.guandao>=0.6 && B.front.min.dadao>=0.3 && /function holdLine\(K, v, gk, ks\)/.test(bl) && /holdLine\(K, v, L\.gk, ks\);/.test(bl) && /if\(R\.blYaw\) _f\.applyAxisAngle\(UP, R\.blYaw\)/.test(bl),
+    'the blade in his hands is held ahead of him (K.hold: stand / run / sprint / block), a cut\'s own line gives way to it within '+B.front.back+' s of its last window, along his body\'s own front');
+  ok(B.skin.on===true && B.skin.cell>=0.02 && B.skin.cell<=0.05 && B.skin.margin>0 && B.skin.margin<0.02 && B.skin.slabs>=8 && B.skin.skip.test('mixamorigLeftHand') && !B.skin.skip.test('mixamorigSpine1') && B.skin.arm.test('mixamorigLeftForeArm') && !B.skin.arm.test('mixamorigSpine2')
+    && /export function skinSlab\(R, Sb, op, oq, sc, piv, spine, arms\)/.test(bl) && /L\.skin = skinSlab\(R, L\.sb \|\| \(L\.sb = slabsOf\(L\.m, 2, 0\)\)/.test(bl) && /skinHang\(R, _fg, _oq, _op, _ZA,/.test(bl) && !/new THREE\.(Vector3|Quaternion|Matrix4)\(/.test(bl.slice(bl.indexOf('export function skinSlab'), bl.indexOf('export const skinPoints'))),
+    'the worn blade is kept off his real kit: one skin point per '+B.skin.cell*100+' cm read once from his skinned mesh (by bone), the blade cut into '+B.skin.slabs+' slabs — what is inside lifts it off his back about its frog; in his hands, out of his trunk about the right fist; no allocation a frame');
+  const st=rd('src/ui/settings.js'), html=rd('index.html');
+  ok(B.gore.low>0 && B.gore.low<1 && /export const goreOn = \(\) => PROFILE\.gore !== false;/.test(bl) && /if\(!C\.on \|\| !goreOn\(\) \|\|/.test(bl) && /onOff\('setGore', PROFILE\.gore!==false/.test(st) && /PROFILE\.gore=true;/.test(st) && /id="setGore"/.test(html) && /Máu và cắt rời/.test(html)
+    && /const gk=goreK\(\);/.test(rd('src/actors/infantry.js')) && /const gk=goreK\(\); if\(gk<1\)/.test(rd('src/fx/gore.js')),
+    'the settings\' "Máu và cắt rời" (PROFILE.gore, on unless turned off): off, a man the blade kills falls whole and blood is cut to '+B.gore.low+' ×');
+  const D=B.sever.diag; ok(B.kinds.dadao.moves.special.sever==='diag' && D.neck>0 && D.neck<1 && D.side>0 && D.side<1 && D.depth>0 && D.depth<1 && /clippingPlanes = \[pl\]/.test(bl) && /renderer\.localClippingEnabled = true/.test(bl) && /&& !u\.clipDraw\)/.test(rd('src/actors/soldiers.js')) && /if\(s\.dg\) diagDraw\(s\);/.test(bl),
+    'the dadao\'s leaping cut parts a man from one shoulder to the other hip: the frozen body drawn twice outside the troop batch, each half clipped by the cut\'s own plane, a red face in the plane');
+}
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

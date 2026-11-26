@@ -3,7 +3,7 @@
 //   low-resolution ground-decal canvas gave for blood.
 import * as THREE from 'three';
 import { GORE } from '../../config.js';
-import { BIOME, MOBILE, S, heightAt, scene, spawnPart } from '../hub.js';
+import { BIOME, MOBILE, S, goreK, heightAt, scene, spawnPart } from '../hub.js';
 
 // ---------- ground splats ----------
 function splatTex(){ const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d');
@@ -22,7 +22,8 @@ const SPL = (()=>{ const base=new THREE.PlaneGeometry(1,1); base.rotateX(-Math.P
   const mesh=new THREE.Mesh(g, mat); mesh.frustumCulled=false; mesh.renderOrder=-1; scene.add(mesh);
   return { g, iPos, iSRA, items:[], dirty:false, at:0 }; })();
 // a pool of blood at (x,z), radius r metres — grows in over a moment, fades out at the end of its life
-export function bloodSplat(x, z, r){ if(!isFinite(x) || !isFinite(z)) return; const L=SPL.items; if(L.length>=NS) L.shift();
+export function bloodSplat(x, z, r){ if(!isFinite(x) || !isFinite(z)) return; const gk=goreK(); if(gk<1){ if(Math.random()>gk*1.5) return; r*=gk*1.6; }   // (BLADE 10 the gore setting off: fewer, smaller pools)
+  const L=SPL.items; if(L.length>=NS) L.shift();
   L.push({ x, y:heightAt(x,z)+0.05, z, s:Math.max(0.2, r*2), rot:Math.random()*6.283, t:0 }); SPL.dirty=true; }
 function flushSplats(){ const L=SPL.items, P=SPL.iPos.array, A=SPL.iSRA.array, T=GORE.splatLife, F=GORE.fade;
   for(let i=0;i<L.length;i++){ const q=L[i], grow=Math.min(1, 0.45+q.t*1.6), a=q.t>T-F ? Math.max(0,(T-q.t)/F) : 1;
