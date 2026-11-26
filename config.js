@@ -2199,3 +2199,29 @@ export const BACKDROP = { on:true, ground:14000, lead:-Math.PI / 2 + 0.42, snow:
     RUINS:[[1300, 40, 150, 'hill', 8, 0.22], [3400, 120, 380, 'hill', 6, 0.32], [8000, 450, 1100, 'peak', 5, 0.42]],
     CITY:[[1200, 40, 170, 'city', 0, 0.2], [2900, 50, 260, 'city', 0, 0.3], [8000, 220, 640, 'hill', 5, 0.43]],
     FOUNDRY:[[1400, 40, 150, 'stacks', 0, 0.22], [3500, 110, 360, 'hill', 6, 0.32], [8500, 520, 1300, 'peak', 5, 0.42]], STEELMILL:'FOUNDRY' } };
+
+// COOP 2 CO-OP FOR TWO OVER A LAN — the net layer's numbers (src/net/*, tools/lan-room.mjs). NOTHING reads them in a single-player game: the layer only
+//   wakes when the address has ?room=CODE. The host's page runs the battle and sends world snapshots; the guest sends his own soldier's state.
+//   proto = the wire version (both pages must match — bump it with any change to net/protocol.js's layouts)
+//   snapHz / inputHz = host → guest snapshots a second · guest → host states a second
+//   interp: delayMs = how far in the past the guest draws the world (two snapshots: one may be lost and the motion stays smooth) · inputDelayMs = the
+//     same for the guest's soldier on the host · extrapMs = at most this long a thing keeps its last velocity when snapshots stop · keep = snapshots held ·
+//     teleportM = a jump longer than this between two snapshots is not walked (respawn, mount) · driftMs = how much the clock offset may sink a snapshot,
+//     offsetUp = the share of a higher reading it takes at once
+//   quant: pos = steps a metre (100 = centimetres; int16 → ±327 m, the field is ±184) · head / aim = steps a turn (entity heading a byte, a player's 16 bit)
+//   limits: entities / events a snapshot · eventQueue = unacknowledged events kept for resending · ctlBytes = a lobby (JSON) message · battleKeys = fields
+//     of the battle settings agreed in the lobby
+//   delta: history = snapshots each side remembers as delta bases · maxBack = older than this many snapshots → a full one
+//   link (net/transport.js): pingMs / deadMs = the relay is pinged, silence this long = dead → reconnect · queueMax = lobby messages kept while closed ·
+//     retry* = reconnect back-off (base × k^n up to max, ± jitter), retries = then give up
+//   session (net/coop.js): tickMs = housekeeping step · pingMs = peer round-trip · helloMs = no hello from the peer → say so again · peerLostMs = a battle
+//     waits this long for a dropped peer before it ends
+//   ids: the two players' ids in a snapshot; battle entities start at firstEntity (ids are 1–65535, never reused within a battle)
+export const COOP = { proto:1, snapHz:20, inputHz:30,
+  interp:{ delayMs:100, inputDelayMs:70, extrapMs:120, keep:10, teleportM:6, driftMs:0.05, offsetUp:0.25 },
+  quant:{ pos:100, head:256, aim:65536 },
+  limits:{ entities:120, events:48, eventQueue:256, players:2, ctlBytes:4096, battleKeys:16, name:24 },
+  delta:{ history:32, maxBack:24 },
+  link:{ pingMs:2000, deadMs:8000, queueMax:64, retryBaseMs:400, retryMaxMs:5000, retryK:1.8, retryJitter:0.25, retries:20 },
+  session:{ tickMs:250, pingMs:1000, helloMs:3000, peerLostMs:15000 },
+  ids:{ host:1, guest:2, firstEntity:16 } };

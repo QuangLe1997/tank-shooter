@@ -1,7 +1,7 @@
 // Regenerate the module catalogue in ARCHITECTURE.md §2.1 (between the MODULES markers) from hub.js order (Z103):
 //   npm run modmap
 import fs from 'fs'; import path from 'path'; import { ROOT, SRC, hubOrder } from './lib.mjs';
-const LAYER = { data:'DỮ LIỆU THUẦN (registry) — không logic, test được bằng node', core:'Hằng số runtime, trạng thái, hồ sơ, tiện ích', render:'Three.js renderer + hậu kỳ',
+const LAYER = { data:'DỮ LIỆU THUẦN (registry) — không logic, test được bằng node', net:'Co-op 2 người: giao thức, đường truyền, phiên — thuần, chạy được bằng node', core:'Hằng số runtime, trạng thái, hồ sơ, tiện ích', render:'Three.js renderer + hậu kỳ',
   audio:'Âm thanh tổng hợp', world:'Bản đồ: địa hình, khí quyển, vật cản, công trình', tank:'Mô hình xe tăng, nòng, khiên, rig', fx:'Hiệu ứng hình ảnh',
   combat:'Vũ khí, đạn, kỹ năng', actors:'Đơn vị trên sân (địch, lính, drone, Lõi)', ai:'Trí tuệ địch', campaign:'Chiến dịch, đợt, tướng, pháo kích',
   loot:'Vật phẩm, rơi đồ, nâng cấp roguelite', input:'Bàn phím, chuột, cảm ứng', ui:'Giao diện DOM (menu, shop, HUD phụ, gợi ý)', game:'Luồng game, vòng lặp, khởi động',

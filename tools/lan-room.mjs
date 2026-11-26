@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 // tools/lan-room.mjs — COOP 1 THE LAN ROOM: one small server on the host's machine that serves the game AND relays the two players' messages.
-//   node tools/lan-room.mjs [--port 8777] [--root <repo>] [--host 0.0.0.0] [--code ABCDE]
-// It prints the address the second device opens (http://<this machine's LAN IP>:<port>/?room=CODE). Zero dependencies: the WebSocket side (RFC 6455
+//   node tools/lan-room.mjs [--port 8777] [--root <repo>] [--host 0.0.0.0] [--code ABCDE] [--seed N]
+// It prints the address the second device opens (http://<this machine's LAN IP>:<port>/?room=CODE&seed=N — the seed makes both pages build the same
+// battlefield: boot/safety.js reads it before any module runs). Zero dependencies: the WebSocket side (RFC 6455
 // handshake, text / binary frames, masking, fragments, ping / pong, close) is written here on Node's http + crypto.
 //   GET  /…                      the repo as static files — code never cached, /assets/ cached for a day (same as tools/ts.mjs)
-//   GET  /lan-room/info          { ok, port, ips } (+ the suggested room code when asked from this machine) — what a "Tạo phòng LAN" screen shows
+//   GET  /lan-room/info          { ok, port, ips } (+ the room code and seed when asked from this machine) — what a "Tạo phòng LAN" screen shows
 //   WS   /ws?room=CODE&role=host|guest&name=…    ONE host and ONE guest per room; every frame from one side goes to the other, untouched.
 // What the server itself says is always a TEXT frame that starts with {"sys": … (a client frame starting that way is never relayed):
 //   → {"sys":"joined","room","role","peer":bool,"peerName"}     you are in          → {"sys":"peer-join","role","name"} / {"sys":"peer-leave","role"}
@@ -32,14 +33,14 @@ function frame(op, payload){ const n = payload.length; let h;
 const EMPTY = Buffer.alloc(0);
 
 export function startLanRoom(opts = {}){
-  const O = Object.assign({}, DEF, opts), ROOT = path.resolve(O.root || path.dirname(HERE)), code = (O.code || roomCode()).toUpperCase();
+  const O = Object.assign({}, DEF, opts), ROOT = path.resolve(O.root || path.dirname(HERE)), code = (O.code || roomCode()).toUpperCase(), seed = (+O.seed >>> 0) || crypto.randomInt(1, 1e9);
   const rooms = new Map(), conns = new Set(), stats = { relayed:0, relayedBytes:0, dropped:0, noPeer:0, joins:0, rejects:0 };
   const log = O.quiet ? () => {} : (...a) => console.log(new Date().toTimeString().slice(0, 8), ...a);
 
   // ---------- static files ----------
   const srv = http.createServer((q, r) => { let u; try{ u = decodeURIComponent((q.url || '/').split('?')[0]); }catch(e){ r.writeHead(400); return r.end(); }
     if(q.method !== 'GET' && q.method !== 'HEAD'){ r.writeHead(405, { Allow:'GET, HEAD' }); return r.end(); }
-    if(u === '/lan-room/info'){ const local = /^(::1|::ffff:127\.|127\.)/.test(q.socket.remoteAddress || ''), body = JSON.stringify(Object.assign({ ok:true, port:srv.address().port, ips:lanIPs() }, local ? { code } : {}));
+    if(u === '/lan-room/info'){ const local = /^(::1|::ffff:127\.|127\.)/.test(q.socket.remoteAddress || ''), body = JSON.stringify(Object.assign({ ok:true, port:srv.address().port, ips:lanIPs() }, local ? { code, seed } : {}));
       r.writeHead(200, { 'Content-Type':'application/json', 'Cache-Control':'no-store' }); return r.end(body); }
     if(u.endsWith('/')) u += 'index.html';
     // nothing hidden and nothing outside the root: no dot-files (.git, .env …), no node_modules, no path that climbs out
@@ -108,8 +109,8 @@ export function startLanRoom(opts = {}){
   // the heartbeat: whoever did not answer the last ping (nor send anything) is gone
   const beat = setInterval(() => { for(const c of conns){ if(!c.alive){ c.sock.destroy(); gone(c); continue; } c.alive = false; try{ c.sock.write(frame(9, EMPTY)); }catch(e){} } }, O.heartbeatMs); beat.unref();
 
-  const api = { server:srv, rooms, conns, stats, code, root:ROOT, port:0,
-    urls(){ const p = srv.address().port; return { host:`http://localhost:${p}/?room=${code}&coop=host`, guests:lanIPs().map(ip => `http://${ip}:${p}/?room=${code}`) }; },
+  const api = { server:srv, rooms, conns, stats, code, seed, root:ROOT, port:0,
+    urls(){ const p = srv.address().port; return { host:`http://localhost:${p}/?room=${code}&seed=${seed}&coop=host`, guests:lanIPs().map(ip => `http://${ip}:${p}/?room=${code}&seed=${seed}`) }; },
     dropAll(){ let n = 0; for(const c of [...conns]){ c.sock.destroy(); n++; } return n; },   // the cable pulled (tests: the clients must come back by themselves)
     close(){ clearInterval(beat); for(const r of rooms.values()) clearTimeout(r.emptyT); for(const c of [...conns]){ clearTimeout(c.killT); c.sock.destroy(); } rooms.clear();
       return new Promise(ok => { srv.close(() => ok()); if(srv.closeAllConnections) srv.closeAllConnections(); }); } };
@@ -119,11 +120,11 @@ export function startLanRoom(opts = {}){
 // ---------- run from the command line ----------
 const isMain = (() => { try{ return !!process.argv[1] && fs.realpathSync(process.argv[1]) === fs.realpathSync(fileURLToPath(import.meta.url)); }catch(e){ return false; } })();
 if(isMain){ const argv = process.argv.slice(2), opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 && argv[i + 1] != null ? argv[i + 1] : d; };
-  if(argv.includes('--help') || argv.includes('-h')){ console.log('usage: node tools/lan-room.mjs [--port 8777] [--root <thư mục game>] [--host 0.0.0.0] [--code ABCDE]'); process.exit(0); }
+  if(argv.includes('--help') || argv.includes('-h')){ console.log('usage: node tools/lan-room.mjs [--port 8777] [--root <thư mục game>] [--host 0.0.0.0] [--code ABCDE] [--seed N]'); process.exit(0); }
   const port = +opt('--port', DEF.port), root = opt('--root', path.dirname(HERE));
   if(!Number.isInteger(port) || port < 0 || port > 65535){ console.error('✗ --port phải là số 0–65535'); process.exit(2); }
   if(!fs.existsSync(path.join(root, 'index.html'))){ console.error('✗ không thấy index.html trong ' + path.resolve(root) + ' — dùng --root <thư mục game>'); process.exit(2); }
-  startLanRoom({ port, root, host:opt('--host', DEF.host), code:opt('--code', '') }).then(room => { const u = room.urls();
+  startLanRoom({ port, root, host:opt('--host', DEF.host), code:opt('--code', ''), seed:opt('--seed', 0) }).then(room => { const u = room.urls();
     console.log('\nXUNG KÍCH — PHÒNG LAN (co-op 2 người)   mã phòng: ' + room.code + '\n');
     console.log('  Chủ phòng (máy này):   ' + u.host);
     if(u.guests.length) for(const g of u.guests) console.log('  Khách (cùng Wi-Fi):    ' + g);

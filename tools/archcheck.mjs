@@ -8,7 +8,7 @@ const files = []; (function walk(d){ for(const f of fs.readdirSync(d)){ const p=
 const rel = p => path.relative(SRC, p).replace(/\\/g,'/');
 let errors = [], warns = [];
 const err = m => errors.push(m), warn = m => warns.push(m);
-const LAYERS = ['data','core','render','audio','world','tank','fx','combat','actors','ai','campaign','loot','input','ui','game','dev','boot'];
+const LAYERS = ['data','net','core','render','audio','world','tank','fx','combat','actors','ai','campaign','loot','input','ui','game','dev','boot'];
 const hubSrc = fs.readFileSync(path.join(SRC,'hub.js'),'utf8');
 const hubList = [...hubSrc.matchAll(/export \* from '\.\/(.+?)\.js';/g)].map(m=>m[1]);
 const exportsBy = new Map();
@@ -20,7 +20,7 @@ for(const f of files){
   if(r.startsWith('boot/')) continue;                                       // classic scripts, no imports
   // R1 — allowed import sources
   for(const m of code.matchAll(/^import .*? from '([^']+)';/gm)){ const spec=m[1];
-    const ok = spec==='three' || spec.startsWith('three/addons/') || /(^|\/)config\.js$/.test(spec) || /\/hub\.js$/.test(spec) || /(^|\/)data\/[\w-]+\.js$/.test(spec) || spec.startsWith('./') && layer==='data';
+    const ok = spec==='three' || spec.startsWith('three/addons/') || /(^|\/)config\.js$/.test(spec) || /\/hub\.js$/.test(spec) || /(^|\/)data\/[\w-]+\.js$/.test(spec) || spec.startsWith('./') && (layer==='data' || layer==='net');
     if(!ok) err(`${r}: imports '${spec}' directly — system modules import from the hub (or data/*, config.js, three)`); }
   // R2 — data/* is pure: no hub, no three, no DOM, no Math.random at load
   if(layer==='data'){
@@ -28,6 +28,12 @@ for(const f of files){
     if(/from 'three/.test(code)) err(`${r}: data module imports three.js (data must be pure)`);
     const bare = code.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\/\/.*$/gm,'');   // ignore comments
     if(/\b(document|window|navigator|localStorage)\b/.test(bare)) err(`${r}: data module touches the DOM/browser (data must be pure)`); }
+  // R13 — net/* (COOP 2, the co-op wire layer) runs in Node too: no hub, no three, no DOM; it may import its own siblings ('./x.js') and config.js
+  if(layer==='net'){
+    if(/from '[^']*hub\.js'/.test(code)) err(`${r}: net module imports the hub (the net layer must run in Node — game glue lives in game/*)`);
+    if(/from 'three/.test(code)) err(`${r}: net module imports three.js (the net layer must run in Node)`);
+    const bare = code.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\/\/.*$/gm,'');
+    if(/\b(document|window|navigator|localStorage)\b/.test(bare)) err(`${r}: net module touches the DOM/browser (use globalThis.x behind a check, or pass it in)`); }
   // R3 — every system module is in the hub exactly once
   const id = r.replace(/\.js$/,''); const n = hubList.filter(x=>x===id).length;
   if(n!==1) err(`${r}: listed ${n}× in hub.js (must be exactly once)`);

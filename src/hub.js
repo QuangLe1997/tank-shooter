@@ -8,6 +8,10 @@ export * from './data/player.js';
 export * from './data/guns.js';
 export * from './data/enemies.js';
 export * from './data/bosses.js';
+export * from './net/protocol.js';   // COOP 2 two-player co-op: the wire format (pure — the net layer imports no hub, so it sits here before any system module)
+export * from './net/interp.js';   // COOP 2 the guest's snapshot buffer
+export * from './net/transport.js';   // COOP 2 the line between the two players
+export * from './net/coop.js';   // COOP 2 the session and the game's hooks (asleep unless the address has ?room=)
 export * from './core/config.js';
 export * from './ui/icons.js';
 export * from './ui/gunart.js';   // Z150 one studio photo per gun, used on every screen
