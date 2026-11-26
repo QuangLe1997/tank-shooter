@@ -1,0 +1,2 @@
+The drivers (Z296) — where each one comes from
+- xeom.glb: Tripo text-to-model (P2), generated on the project owner's paid Tripo plan, auto-rigged by Tripo.

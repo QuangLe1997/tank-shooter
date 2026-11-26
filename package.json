@@ -6,6 +6,7 @@
   "scripts": {
     "test": "node tools/verify.mjs",
     "ts": "node tools/ts.mjs",
+    "licenses": "node tools/licenses.mjs",
     "arch": "node tools/archcheck.mjs",
     "serve": "python3 -m http.server 8765",
     "where": "node tools/where.mjs",

@@ -1,0 +1,3 @@
+Infantry hand weapons — where each one comes from
+- ar.glb, energy.glb, flamer.glb, gl.glb, lmg.glb, minigun.glb, rpg.glb, shotgun.glb, sniper.glb (Z295): Tripo text-to-model (P2), generated on the project owner's paid Tripo plan — generic weapons, no maker's marks.
+- ak.glb, m4.glb, mp5.glb and the Z387 four: Meshy community downloads — see ../../SOURCES-community.txt and ../../scene/SOURCES.txt.

@@ -1,0 +1,2 @@
+Wildlife (Z286) — where each one comes from
+- *.glb: Tripo text-to-model, generated on the project owner's paid Tripo plan (deer, zebra, elephant, reindeer, bear, giraffe), rigged and given a walk with Tripo's quadruped rig; packed with tools/glb-pack.mjs.

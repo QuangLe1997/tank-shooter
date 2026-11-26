@@ -1,0 +1,1 @@
+bolt_action_rifle_7_62_1k.gltf (+ .bin, textures) — "Bolt Action Rifle 7.62" by Poly Haven (https://polyhaven.com/a/bolt_action_rifle_7_62), CC0 (Z247).
