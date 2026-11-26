@@ -41,7 +41,7 @@ export function padDiagram(bare){ const u='pv'+(++_n), F=b=>fnOf(b);
   const dp=[[12,'↑'],[13,'↓'],[14,'←'],[15,'→']].map(([b,a],i)=>lab(true, 266+i*23, a, F(b), '', b)).join('');
   g+=ld('M268 56 H140',268,56)+lab(true,60,'LT',F(6),'',6)+
      ld('M250 87 H140',250,87)+lab(true,91,'LB',F(4),'',4)+
-     ld('M263 192 H140',263,192)+lab(true,184,'CẦN TRÁI',{ t:'Lái xe' },['nghiêng nửa = nửa ga', F(10).t ? 'nhấn L3: '+F(10).t : ''],10)+
+     ld('M263 192 H140',263,192)+lab(true,184,'CẦN TRÁI',{ t:'Di chuyển' },['nghiêng nửa = đi chậm', F(10).t ? 'nhấn L3: '+F(10).t : ''],10)+
      ld('M317 278 H150 V292 H140',317,278)+dp+'<text class="pv-s" x="130" y="358" text-anchor="end">giữ ⧉ + D-pad: thu phóng / xoay camera</text>'+
      ld('M612 56 H740',612,56)+lab(false,60,'RT',F(7),'',7)+
      ld('M630 87 H740',630,87)+lab(false,91,'RB',F(5),'',5)+
@@ -49,7 +49,7 @@ export function padDiagram(bare){ const u='pv'+(++_n), F=b=>fnOf(b);
      ld('M596 158 H740',596,158)+lab(false,162,'Y',F(3),'',3)+
      ld('M630 192 H740',630,192)+lab(false,190,'B',F(1),'',1)+
      ld('M596 226 H740',596,226)+lab(false,234,'A',F(0),'',0)+
-     ld('M562 278 H740',562,278)+lab(false,274,'CẦN PHẢI',{ t:'Xoay nòng' },['thả ra: tự ngắm · cối/tên lửa: ↑↓ chỉnh tầm', F(11).t ? 'nhấn R3: '+F(11).t : ''],11)+
+     ld('M562 278 H740',562,278)+lab(false,274,'CẦN PHẢI',{ t:'Xoay hướng ngắm' },['thả ra: tự ngắm · M79: ↑↓ chỉnh tầm', F(11).t ? 'nhấn R3: '+F(11).t : ''],11)+
      ld('M196 378 H140',196,378)+lab(true,382,'M1 nút sau = ←',F(14),'',14)+
      ld('M684 378 H740',684,378)+lab(false,382,'M2 nút sau = →',F(15),'',15)+
      ld('M398 205 V404',398,205)+lab(true,420,'⧉ View',F(8),'',8)+

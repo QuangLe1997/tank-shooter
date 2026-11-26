@@ -7,18 +7,18 @@ export const TIPS={
   drive2:  ['rifle','Đi và bắn', (MOBILE ? 'Đẩy cần về hướng muốn đi — bác tài lái theo (cưỡi ngựa thì anh tự cưỡi). Giữ <b>BẮN</b> hoặc bật <b>TỰ BẮN</b>.' : '<b>WASD</b> để đi · <b>chuột</b> để ngắm · giữ <b>chuột</b> để bắn.')+' <b>G</b>: xuống / lên xe — xuống đất thì nhảy, khom, bò để ẩn nấp; gọi bác tài tới đón khi cần.'],
   infantry:['team','Bộ binh địch', 'Lính đi bộ yếu nhưng đông. Tổ <b>RPG</b> quỳ ngắm 1 giây có <b>chớp đỏ</b> — né ra khỏi đường đạn. Phi ngựa nước đại thì giẫm ngã được lính địch.'],
   loot:    ['spark','Vật phẩm rơi', 'Đồ rơi văng ra từ địch bị hạ. <b>Quầng sáng</b> quanh món đồ cho biết độ hiếm: <b>xanh lá</b> thường · <b>xanh dương</b> hiếm · <b>tím</b> quý. Địch càng khó, chỗ càng hiểm thì đồ càng xịn. Lại gần là đồ tự hút vào.'],
-  stack:   ['bolt','Cộng dồn vật phẩm', 'Nhặt lại hiệu ứng đang có thì được <b>gia hạn thêm nửa thời gian</b> (tối đa 1,5 lần), không mạnh thêm. <b>TĂNG ÁP</b> lên tới cấp 2, <b>giáp phản ứng</b> tối đa 6 tấm. Tốc độ tối đa có trần ×1,7.'],
+  stack:   ['bolt','Cộng dồn vật phẩm', 'Nhặt lại hiệu ứng đang có thì được <b>gia hạn thêm nửa thời gian</b> (tối đa 1,5 lần), không mạnh thêm.'],
   objective:['bunker','Mục tiêu chiến dịch', 'Công trình viền vàng làm địch mạnh hơn khi còn đứng (xem dòng mô tả trên màn hình). <b>Phá nó</b> để lấy điểm và cắt nguồn sức mạnh của địch.'],
-  camp:    ['bunker','Trại lính địch', 'Nhà vòm tôn liên tục tung lính ra. <b>San phẳng nhà lính</b> để chặn nguồn quân. Lều thì cán bẹp được. Phá trại rơi đồ <b>quý</b>.'],
-  gunship: ['drone','Trực thăng vũ trang', 'Đạn pháo vòng cung không với tới. Dùng <b>súng bắn thẳng, PHÁO PHÒNG KHÔNG</b> (×1,8 vào máy bay) hoặc <b>tên lửa</b>.'],
+  camp:    ['bunker','Trại lính địch', 'Nhà vòm tôn liên tục tung lính ra. <b>San phẳng nhà lính</b> để chặn nguồn quân. Lều trúng đạn là bắt lửa. Phá trại rơi đồ <b>quý</b>.'],
+  gunship: ['drone','Trực thăng vũ trang', 'Đạn M79 bay vòng cung không với tới. Dùng <b>súng bắn thẳng</b> (đại liên, súng tỉa) hoặc <b>B41</b> khi nó lượn thấp.'],
   elite:   ['star','Địch tinh nhuệ', 'Địch có hào quang vàng: trâu hơn, mạnh hơn nhưng <b>luôn rơi đồ quý</b> và nhiều điểm hơn.'],
-  core:    ['bunker','Lõi đang nguy!', 'Nếu <b>LÕI</b> bị phá là thua. Quay về đánh bật địch quanh Lõi, dùng kỹ năng <b>SỬA CHỮA</b> hoặc nhặt <b>SỬA CĂN CỨ</b>.'],
+  core:    ['bunker','Lõi đang nguy!', 'Nếu <b>LÕI</b> bị phá là thua. Quay về đánh bật địch quanh Lõi, nhặt <b>SỬA CĂN CỨ</b> để hồi máu cho Lõi.'],
   deploy:  ['team','Bố trí trận địa', 'Trước mỗi màn bạn <b>chia quân</b>: bao nhiêu người <b>giữ Lõi</b>, áp sát <b>trại giam / kho</b>, giữ <b>hai cánh</b>. Chọn thêm <b>súng máy</b>, <b>cối</b>, <b>công binh</b> (đánh sập tháp canh). Lính được bố trí sẽ <b>giữ khu vực</b> của mình. Lần sau tự nhớ cách bố trí.'],
-  pow:     ['team','Trại giam lính ta', 'Lính ta bị giam sau hàng rào thép gai. <b>Diệt hết lính canh</b>, rồi <b>lái xe tới cổng</b> (hoặc cho lính đi bộ vào): tù binh <b>lên xe</b> — đầy chỗ thì họ <b>cầm súng theo bạn</b>.'],
-  depot:   ['bunker','Kho vũ khí địch', 'Diệt lính canh, rồi <b>thả lính xuống</b> trong vòng xanh vài giây để <b>chiếm kho</b>. Kho phát <b>súng chống tăng</b> cho lính ta và tung đồ tiếp tế.'],
-  rally:   ['spark','Khu tập kết', 'Lính nhặt được vật phẩm sẽ <b>mang về khu tập kết</b> (vòng xanh có cờ, bên phía ta). Đồ ở đó <b>không biến mất</b> — lái xe tới để nhận.'],
+  pow:     ['team','Trại giam lính ta', 'Lính ta bị giam sau hàng rào thép gai. <b>Diệt hết lính canh</b>, rồi <b>áp sát cổng</b> (hoặc cho lính vào): tù binh được thả, <b>cầm súng theo anh</b>.'],
+  depot:   ['bunker','Kho vũ khí địch', 'Diệt lính canh, rồi <b>thả lính xuống</b> trong vòng xanh vài giây để <b>chiếm kho</b>. Kho phát <b>ống phóng rocket</b> cho lính ta và tung đồ tiếp tế.'],
+  rally:   ['spark','Khu tập kết', 'Lính nhặt được vật phẩm sẽ <b>mang về khu tập kết</b> (vòng xanh có cờ, bên phía ta). Đồ ở đó <b>không biến mất</b> — tới đó để nhận.'],
   blade:   AMBUSH.say.tip,   // AMBUSH 1 the blade does not give his position away (game/ambush.js shows it the first time the blade is out with the enemy near and unaware)
-  paradrop:['alert','Lính dù địch!', 'Trực thăng vận tải thả lính dù xuống <b>vòng đỏ</b>. Đón lõng chỗ họ tiếp đất — <b>một phát pháo</b> là đủ hạ một lính.'],
+  paradrop:['alert','Lính dù địch!', 'Trực thăng vận tải thả lính dù xuống <b>vòng đỏ</b>. Đón lõng chỗ họ tiếp đất — bắn ngay khi họ <b>vừa chạm đất</b>, chưa kịp tìm chỗ nấp.'],
 };
 export const TIPQ=[]; export let _tipOpen=null;
 // Z104 only the notes that change how you play stop the battle; simple sightings stay quiet (still in the field manual)

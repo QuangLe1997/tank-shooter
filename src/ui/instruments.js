@@ -15,7 +15,7 @@ function build(){ const hud=document.getElementById('hud'); if(!hud) return fals
     +'<div class="in-row"><span>HƯỚNG</span><b class="in-hdg">000°</b></div>'
     +'<div class="in-row"><span>TỐC ĐỘ</span><b class="in-spd">00</b><em>km/h</em></div>'
     +'<div class="in-row"><span>CỰ LY</span><b class="in-rng">----</b><em>m</em></div>'
-    +'<div class="in-row in-a"><span>GIÁP</span><b class="in-arm">100</b><em>%</em></div><div class="in-bar"><i></i></div></div>';
+    +'<div class="in-row in-a"><span>MÁU</span><b class="in-arm">100</b><em>%</em></div><div class="in-bar"><i></i></div></div>';
   hud.appendChild(el); INSTR.el=el; INSTR.cv=el.querySelector('canvas'); INSTR.cx=INSTR.cv.getContext('2d');
   INSTR.hdg=el.querySelector('.in-hdg'); INSTR.spd=el.querySelector('.in-spd'); INSTR.rng=el.querySelector('.in-rng'); INSTR.arm=el.querySelector('.in-arm'); INSTR.armBar=el.querySelector('.in-bar i');
   return true; }

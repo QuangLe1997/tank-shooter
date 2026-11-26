@@ -176,7 +176,7 @@ function hud(){ const U=UNDER; if(!U.hud){ const h=document.createElement('div')
     document.body.appendChild(h); U.hud=h; }
   const h=U.hud; h.style.display=U.on?'block':'none'; if(!U.on) return; const cnt=r=>{ const a=U.targets.filter(q=>q.role===r); return (a.length-a.filter(q=>q.alive).length)+'/'+a.length; };
   h.innerHTML='<b style="color:#ffcf5a;letter-spacing:.1em">CĂN CỨ NGẦM</b><br>Kho lính '+cnt('inf')+' · Bãi xe '+cnt('veh')+'<br>Kho đạn '+cnt('ammo')+' · Máy phát '+cnt('power')
-    +'<br><span style="color:#9be04a">Viện binh địch: bộ binh −'+Math.round(U.cut.inf*100)+'% · xe −'+Math.round(U.cut.veh*100)+'%</span><br><span style="opacity:.7">Lái lên dốc phía nam để trở lại mặt đất</span>'; }
+    +'<br><span style="color:#9be04a">Viện binh địch: bộ binh −'+Math.round(U.cut.inf*100)+'% · xe −'+Math.round(U.cut.veh*100)+'%</span><br><span style="opacity:.7">Theo dốc phía nam để trở lại mặt đất</span>'; }
 function fade(on, text){ const v=veil(); v.textContent=text||''; v.style.opacity=on?'1':'0'; }
 function stashSurface(){ const U=UNDER; U.surf=enemies.splice(0); for(const e of U.surf){ e.mesh.visible=false; if(e.bar) e.bar.g.visible=false; }
   U.sblocks=blocks.splice(0); for(const b of U.bblocks) blocks.push(b); for(const e of U.bmen){ e.mesh.visible=true; enemies.push(e); } U.bmen.length=0;

@@ -2482,6 +2482,11 @@ grp('GRAPH 5 the motion graph: on by default, lifted feet instead of dragged one
   ok(/horseSwimClip\(R, H, v\)/.test(rc) && /horseSwimMix\(R, H\)/.test(rc) && /horseSwimPose\(R, H, dt\)/.test(rc) && /horseSwimStep\(H, M\.x, M\.z/.test(cr) && /return horseSwimFire\(now\)/.test(sw) && /horseSwimNoHand\(\)\) return true/.test(sw) && /export const swimFxKit/.test(sw)
     && /export \* from '\.\/game\/horse-swim\.js'/.test(rd('src/hub.js')) && !/Math\.random\(\)/.test(hs.split('function horseSwimStep')[1].split('function enter')[0]),
     'the real horse paddles and pitches afloat (actors/real-cav.js), the co-op puppet reads the same depth, the trigger and the hand skills are refused on a swimming horse; the float itself is deterministic'); }
+// NO-TANKS 11 the words a player reads no longer speak of a tank: the controls sheet, the pad diagram, the tips, the field manual, the deploy screen, the HUD
+{ const fs=await import('node:fs'), C=await import('./config.js'), rd=f=>fs.readFileSync(f,'utf8');
+  const T=[rd('src/ui/keys.js'), rd('src/ui/padview.js'), rd('src/ui/tips.js'), rd('src/ui/guide.js'), rd('src/ui/deploy.js'), rd('src/ui/instruments.js'), rd('src/input/gamepad.js'), rd('src/data/text-vi.js'), JSON.stringify(C.TOUCH_HELP), JSON.stringify(C.ACTIONS)].join('\n');
+  ok(!/nòng (theo|ngắm|đã|vẫn)|Xoay nòng|chống tăng|Lái xe —|'Lái xe'|mũi xe|giáp phản ứng|TĂNG ÁP|>GIÁP<|đọ pháo|một phát pháo|cán bẹp|PHÁO PHÒNG KHÔNG|Lính xuống xe|lái vào lửa/.test(T) && !/Lính xuống xe|theo thân xe/.test(rd('index.html')),
+    'the controls sheet, the pad diagram, the tips, the field manual, the deploy screen and the HUD no longer speak of a tank (barrel, anti-tank, driving, armour plates)'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

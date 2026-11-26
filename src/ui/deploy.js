@@ -11,7 +11,7 @@ export function deployPosts(){ const p=S.player, sx=p?p.pos.x:0, sz=p?p.pos.z:AR
   if(RALLY_PT.g) posts.push({ id:'rally', ic:'spark', nm:'Khu tập kết', ds:'Canh đồ và tiếp tế, sát chỗ xuất phát', x:RALLY_PT.x, z:RALLY_PT.z, max:4 });
   const side=w=>w.x<-ARENA*0.3?'trái':(w.x>ARENA*0.3?'phải':'phía sau'), dup=k=>POWS.filter(o=>side(o)===k).length>1;
   POWS.forEach((w,i)=>{ const [x,z]=toward(w.x, w.z, DEPLOY.stage), sd=side(w); posts.push({ id:'pow'+i, ic:'team', nm:'Trại giam '+sd+(dup(sd)?' '+(POWS.filter(o=>side(o)===sd).indexOf(w)+1):''), ds:'Áp sát, diệt lính canh, giải cứu tù binh', x, z, max:6, cls:'enemy', site:w }); });
-  DEPOTS.forEach((d,i)=>{ const [x,z]=toward(d.x, d.z, DEPLOY.stage); posts.push({ id:d.kind+i, ic:'rifle', nm:'Kho vũ khí', ds:'Chiếm kho để lấy súng chống tăng và tiếp tế', x, z, max:6, cls:'enemy', site:d }); });
+  DEPOTS.forEach((d,i)=>{ const [x,z]=toward(d.x, d.z, DEPLOY.stage); posts.push({ id:d.kind+i, ic:'rifle', nm:'Kho vũ khí', ds:'Chiếm kho để lấy ống phóng rocket và tiếp tế', x, z, max:6, cls:'enemy', site:d }); });
   for(const sd of [-1,1]){ const [fx,fz]=clampFieldXZ(sd*ARENA*0.5, ARENA*0.12, 14); posts.push({ id:sd<0?'left':'right', ic:'target', nm:sd<0?'Cánh trái':'Cánh phải', ds:'Giữ sườn, chặn bộ binh vòng sau', x:fx, z:fz, max:5 }); }
   return posts; }
 function roleMax(k){ const a=DEPLOY.roleMax[k]; return a[Math.min(a.length-1, S.stage-1)]; }

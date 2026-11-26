@@ -14,7 +14,7 @@ export const BOONS = [
   { id:'range',  ic:'target', nm:'×2 TẦM BẮN',     ds:'Bắn xa gấp đôi — ra đòn trước khi địch thấy',  col:'#9be04a', apply(p){ p.rangeMul*=2; return ()=>{ p.rangeMul/=2; }; } },
   { id:'mag',    ic:'mag',    nm:'×2 BĂNG ĐẠN',    ds:'Băng đạn mọi súng gấp đôi, nạp đầy ngay',      col:'#ffd24a', apply(p){ p.magMul=(p.magMul||1)*2; for(const gi of p.guns){ gi.ammo=magCap(GUNS[gi.id]); gi.rU=0; } return ()=>{ p.magMul/=2; for(const gi of p.guns) gi.ammo=Math.min(gi.ammo, magCap(GUNS[gi.id])); }; } },
   { id:'reload', ic:'bolt',   nm:'NẠP SIÊU TỐC',   ds:'Nạp đạn nhanh gấp 2,5 · bắn nhanh thêm 30%',  col:'#c9a8ff', apply(p){ p.reloadMul*=0.4; p.fireMul*=0.77; return ()=>{ p.reloadMul/=0.4; p.fireMul/=0.77; }; } },
-  { id:'armor',  ic:'shield', nm:'GIÁP THÉP',      ds:'Giảm 40% sát thương nhận vào',                 col:'#b8c8d8', apply(p){ const a0=p.armor||0, a1=Math.min(0.85, a0+0.4); p.armor=a1; return ()=>{ p.armor=Math.max(0, (p.armor||0)-(a1-a0)); }; } },
+  { id:'armor',  ic:'shield', nm:'ÁO GIÁP THÉP',   ds:'Giảm 40% sát thương nhận vào',                 col:'#b8c8d8', apply(p){ const a0=p.armor||0, a1=Math.min(0.85, a0+0.4); p.armor=a1; return ()=>{ p.armor=Math.max(0, (p.armor||0)-(a1-a0)); }; } },
 ];
 
 let _M=null;

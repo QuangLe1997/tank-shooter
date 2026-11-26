@@ -61,7 +61,7 @@ function lobAim(p, dt, C){ const L=PAD_CFG.lob, sens=C.sens||1, maxR=playerRange
   const a=p.facing+PAD.lobO; S.aimPoint.set(p.pos.x+Math.sin(a)*PAD.lobR, 0, p.pos.z+Math.cos(a)*PAD.lobR); S.pointerActive=true; PAD.aimIdle=0; if(ry||rx) crosshairPad(); }
 let _lobTxt='';
 function lobHud(on){ const el=document.getElementById('lobHud'); if(!el) return; document.body.classList.toggle('lob', on); if(!on) return;
-  const t='TẦM '+Math.round(PAD.lobR||0)+' m · cần phải ↑↓ chỉnh tầm · ←→ xoay trong cung 180° trước mũi xe'; if(t!==_lobTxt){ _lobTxt=t; el.textContent=t; } }
+  const t='TẦM '+Math.round(PAD.lobR||0)+' m · cần phải ↑↓ chỉnh tầm · ←→ xoay trong cung 180° trước mặt'; if(t!==_lobTxt){ _lobTxt=t; el.textContent=t; } }
 
 // ---- battle: sticks are fixed (drive / aim); buttons go through the binding table ----
 // CAM 1 LT HELD = THE RIGHT STICK LOOKS ROUND ("tay cầm thì cần giữ cò trái sau đó dùng cần để change view"): while LT is down the right stick turns
