@@ -1077,6 +1077,68 @@ export const DIRECTOR = { on:true, sample:0.25, nearR:48, airR:70, fireT:1.6, lo
   diff:{ recruit:{ tier:[1, 1, 1, 1, 1], ease:0.85, count:0.8, k:{ react:1.3, spot:1.25, shout:0.85, think:1.2 } }, soldier:{ tier:[1, 2, 3, 3, 3], ease:1, count:1, k:{} },
     veteran:{ tier:[3, 3, 3, 3, 3], ease:1.12, count:1.2, k:{ react:0.8, spot:0.85, shout:1.2, think:0.85 } } },
   arc:[0.92, 1, 1.04, 1.08, 1.12], adapt:{ deaths:2, ease:0.85 } };
+// EVENT 1 SIDE MISSIONS IN THE MIDDLE OF A FIGHT (campaign/side-missions.js) — optional, one at a time, at most perStage a stage, offered when the director has
+//   room for more (campaign/director.js dirOfferOk: a build-up under the queue's meter — never a peak, a lull, the last lull or the duel) and no big event runs:
+//   the first no sooner than first s into the stage, the next every s after the last one ended (asked again retry s later while the answer is no). Each has a
+//   ring + a badge on the field, a mark on the minimap and a card with its timer; ignored, it costs nothing but its reward. on: false (or ?noevents) = none.
+//   from: first stage · w: weight in the draw (never the same twice running) · its spot is minD…maxD m from him · tick: s between two looks · ring / badgeY:
+//   the marker's drawn radius and the badge's height (m) · endHold: s the card shows the outcome.
+//   pilot — one of our aircraft crosses the sky trailing smoke (fly s at speed m/s, alt m up, gliding down over the last glide m) and goes down `past` m beyond
+//     the pilot, who bails out over a spot crashD m from him and comes down under a canopy (sink m/s); a flare goes up every flareEvery s. An enemy patrol is
+//     sent for him through the entries (campaign/entries.js): a man of it within catchR m of the pilot for catchT s with the player not beside him takes him.
+//     Stay within r m for patch s in all: he joins the squad at hp of a man's health; strike: an air strike on the thickest knot of enemies. t: the timer (s).
+//   truck — a supply truck of ours is bogged (sink m into the ground): be inside the circle (r m) for hold s in all while its crew digs. Every pull s up to pullN
+//     enemies within pullR m who have not found him are sent to it, and `squads` come over the edge the first time he arrives; enemies within overrunR m with him
+//     outside the circle for overrunT s set it on fire. Out, it drives off (speed m/s, gone after leave s) and leaves a medkit and an ammunition crate.
+//   pows — an escort marches n prisoners (gap m apart, following at walk m/s) march m along the field's edge to its way out; the whole escort down before a man
+//     of it is within exitR m of that point frees them: each takes up a rifle (hp of a man's health) and joins. score / xp: each mission's reward.
+export const SIDEMISSION = { on:true, perStage:2, fromStage:1, first:[40, 60], every:[50, 80], retry:5, tick:0.25, minD:40, maxD:95, ring:6, badgeY:5.4, endHold:4,
+  from:{ pilot:1, truck:1, pows:2 }, w:{ pilot:1, truck:1, pows:0.9 },
+  pilot:{ t:90, r:5, patch:6, crashD:[50, 90], alt:38, speed:36, fly:7, glide:110, past:40, sink:4.2, flareEvery:2.4, catchR:4.5, catchT:2, hp:0.7, score:900, xp:60, strike:true },
+  truck:{ t:85, r:12, hold:25, sink:0.3, pull:5, pullN:4, pullR:110, squads:1, overrunR:7, overrunT:6, leave:9, speed:8, block:3, score:800, xp:50 },
+  pows:{ t:80, n:3, march:[55, 105], gap:1.6, walk:3.4, exitR:7, hp:0.6, score:1000, xp:60 } };
+// EVENT 2 BIG BATTLEFIELD EVENTS (campaign/big-events.js) — they are drawn out of the surprises' hat with the others (campaign/surprises.js surpriseAdd), only
+//   where the director allows a surprise and his health is over hpMin (campaign/director.js dirEventOk), never while a side mission runs: one at a time, at most
+//   perStage a stage, gap s apart. from: first stage · w: weight in the hat. Each is announced `warn` s before it can hurt (never under 2.5 s: a banner, the
+//   radio, a siren or an engine, and the danger drawn on the ground and the minimap). A blast takes no side: enemies, our men and the player (× playerK) alike —
+//   never nearer than coreR m to the base's core. on: false (or ?noevents) = none.
+//   bombing — `planes` bombers (wing m apart, alt m up) fly a line len m long through the thickest knot of enemies knotR m from him (else `ahead` m in front of
+//     him): n bombs gap s apart from warn s on, each fall s in the air, across a lane `lane` m wide; a blast of R m, dmg at its centre. The line is drawn on the
+//     ground from the first second; the bombers fly on `off` m past it.
+//   crash — a burning transport comes in (alt m up, speed m/s) and hits the ground minD…maxD m from him, its skid (skid m in skidT s, no nearer than `clear` m
+//     to him) drawn on the ground: a blast (R, dmg) where it hits, fire along the skid (a cell every cellGap m: skidR m, skidDmg, burning burnSkid s), then a
+//     wreck that stops rounds (block m) and cooks off: cookN blasts (cookR m, cookDmg) over cook s, the first cookWarn s after it stops; it burns for burn s.
+//   fire — on the dry fields (biomes; not in the weather `wet`) a stray shell lands d m from him where the scrub is thickest (at least minFuel tufts within
+//     fuelR m) and lit s later the grass is alight: a cell (cell m) smoulders warn s, then burns for burn s — dps to whoever stands in it (enemies × enemyK),
+//     looked at every tick s — and every step s each burning cell lights the next with probability p (at most perStep a step), downwind inside a cone of ± cone
+//     rad (creep: the share that goes any way), only onto scrub that has not burnt, off the trails and out of the water; at most max cells, no farther than reach m
+//     from where it began, no new cell after life s. Its smoke shuts sight lines: `veils` banks of smokeR m (game/stealth.js VEILS).
+//   jam — warn s after the broken-up warning the radio falls silent, the minimap and the squad's cards show static for t s (the director holds the flank's cue).
+export const BIGEVENT = { on:true, perStage:3, gap:55, hpMin:0.45, playerK:1, coreR:26,
+  from:{ bombing:2, crash:1, fire:1, jam:2 }, w:{ bombing:0.45, crash:0.4, fire:0.45, jam:0.4 },
+  bombing:{ warn:5.5, len:110, n:14, gap:0.28, fall:2, R:6, dmg:75, lane:6, planes:3, wing:12, alt:40, knotR:[20, 80], ahead:22, off:160 },
+  crash:{ warn:4.5, minD:38, maxD:75, clear:24, alt:42, speed:44, skid:30, skidT:1.8, R:7, dmg:80, cellGap:3.5, skidR:3, skidDmg:40, burnSkid:14, block:3.2, cook:10, cookWarn:2.5, cookN:[4, 6], cookR:6.5, cookDmg:45, burn:35 },
+  fire:{ warn:2.5, lit:1.2, biomes:['DESERT', 'SAVANNA', 'MEADOW', 'QUARRY', 'VOLCANO'], wet:['rain', 'snow'], d:[24, 55], fuelR:12, minFuel:8, cell:3.2, max:34, reach:42, step:1.1, p:0.55, perStep:3, cone:1.1, creep:0.15,
+    burn:[10, 15], life:45, dps:12, enemyK:1.5, tick:0.5, veils:4, smokeR:8 },
+  jam:{ warn:3, t:20 } };
+// EVENT 1–2 the radio lines of the side missions and the big events, added to the story's pools (campaign/story.js storyCue; STORY.lines' rules: p, cd, 'who|text')
+Object.assign(STORY.lines, {
+  ev_pilot:{ p:3, t:['Máy bay ta trúng đạn, phi công nhảy dù! Tới chỗ pháo sáng trước tốp địch!', 'mg|Máy bay mình cháy kìa! Phi công bung dù rồi — chạy tới chỗ pháo sáng!'] },
+  ev_pilot_ok:{ p:3, t:['Đón được phi công rồi. Anh ấy cầm súng theo tổ — làm tốt lắm!', 'medic|Băng xong cho phi công. Còn bắn được — cho anh ấy vào hàng!'] },
+  ev_pilot_lost:{ p:2, t:['Địch tới trước rồi — mất phi công. Đánh tiếp, đừng ngoái lại.', 'medic|Chậm mất rồi… Chúng tới chỗ phi công trước ta.'] },
+  ev_truck:{ p:3, t:['Xe tiếp tế của ta sa lầy, địch đang kéo tới — vào giữ vòng tròn quanh xe!', 'at|Xe đạn của mình kẹt kìa anh! Ra giữ cho tổ lái đào bánh!'] },
+  ev_truck_ok:{ p:3, t:['Xe ra khỏi lầy rồi. Tổ lái để lại thùng đạn và túi cứu thương cho anh.', 'mg|Xe chạy rồi! Có quà để lại kìa — đạn với bông băng!'] },
+  ev_truck_lost:{ p:2, t:['Xe tiếp tế cháy rồi. Không còn gì ở đó — quay lại trận.', 'mg|Cháy mất xe đạn rồi! Tiếc đứt ruột!'] },
+  ev_pows:{ p:3, t:['Địch đang giải tù binh của ta ra mép trận — chặn tốp áp giải lại!', 'medic|Người mình bị trói tay kìa! Hạ tốp áp giải trước khi chúng ra khỏi trận!'] },
+  ev_pows_ok:{ p:3, t:['Tù binh tự do rồi! Họ nhặt súng và theo anh.', 'at|Các anh ấy nhặt súng rồi! Tổ mình đông thêm rồi anh ơi!'] },
+  ev_pows_lost:{ p:2, t:['Tốp áp giải ra khỏi trận rồi. Ta sẽ tìm họ sau — đánh tiếp.', 'mg|Chúng lôi người mình đi mất rồi! Nợ này tôi nhớ!'] },
+  ev_side_gone:{ p:1, t:['Hết thời gian — nhiệm vụ phụ huỷ. Trận chính vẫn còn đó.'] },
+  ev_bomb:{ p:4, t:['Máy bay ném bom rải thảm đang vào! Rời khỏi vệt đỏ, ngay!', 'mg|Bom rải thảm! Chạy khỏi vệt đỏ — ta với địch đều dính cả!'] },
+  ev_crash:{ p:4, t:['Một máy bay cháy đang lao xuống trận địa — tránh xa vệt đỏ!', 'at|Máy bay rơi! Nó lao xuống kìa — tránh ra anh ơi!'] },
+  ev_crash_cook:{ p:2, t:['Xác máy bay còn nổ đạn — đừng lại gần vòng đỏ!', 'medic|Xác máy bay đang nổ lụp bụp. Tránh xa ra, tôi không muốn vá bỏng!'] },
+  ev_fire:{ p:4, t:['Cỏ khô bắt lửa rồi, lửa lan theo gió — ra bãi trống hoặc đường mòn!', 'medic|Cháy đồng! Khói che hết tầm nhìn — đừng đứng trong lửa!'] },
+  ev_jam:{ p:4, t:['Địch gây nh…ễu! …sắp mất liên l…c — bám địa hình, tự đ…nh…'] },
+  ev_jam_end:{ p:3, t:['Liên lạc lại rồi. Bản đồ và tổ của anh đã lên sóng — đánh tiếp!', 'mg|Liên lạc lại rồi! Tưởng điếc luôn chứ!'] } });
 // Z245 CAVALRY MODE (game/cavalry.js) — the general in full plate on his armoured charger, or on foot.
 //   horse: walk / cruise (canter) / gallop (surge, dur s, cd s) speeds, back-up, accel/decel m/s², turn rate rad/s low → high speed · foot: run, sprint (dur, cd),
 //   crouch-walk, crawl · radius (collision + hit size) · defK = damage taken × by posture (plate armour + a smaller target) · camK = camera distance × ·

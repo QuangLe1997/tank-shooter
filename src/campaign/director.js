@@ -135,6 +135,9 @@ export function dirFireK(){ return DIR.on && DIR.phase === 'release' ? D.lull.fi
 // may a surprise be played now? (never on top of a peak or in a lull; in the duel only once it has run a while)
 export function dirSurpriseOk(now){ if(!DIR.on) return true; const hi = thrHi();
   return DIR.phase === 'build' ? DIR.P < hi * D.thr.off : DIR.phase === 'finale' && DIR.fin < 0 && now - DIR.phaseAt > D.finale.quiet && DIR.P < hi * D.thr.off; }
+// EVENT 1 may a side mission be offered now (campaign/side-missions.js)? In a build-up with room for more — where a release ends too — never in a peak, a lull,
+//   the last lull or the duel, never while he is nearly dead
+export function dirOfferOk(now){ if(duelOn() || DIR.fin || S.awaitingUpgrade) return false; return !DIR.on || DIR.phase === 'build' && DIR.P < D.build.meter * DIR.ease && DIR.hp >= D.thr.crit; }
 // the last wave is done on a field without a citadel: the general comes after one last lull, announced. true: now
 export function dirFinale(now){ if(!DIR.on) return true;
   if(!(DIR.fin > 0)){ DIR.fin = now + D.finale.lull / DIR.ease; setPhase('finale', now, 'the last lull'); DIR.flank = null; ground(now, D.finale.ground); dirSay(now, 'finale', true); return false; }

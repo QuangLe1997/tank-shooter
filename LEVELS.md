@@ -265,6 +265,13 @@ Khi còn **mortar (spotter)** sống ở **stage ≥ 2**, một "đạo diễn p
 
 **Lính Elite (champion):** ngoài ELITE WAVE còn có **xác suất nền** mỗi spawn = `min(25%, 2.5%×(stage−1) + 6%×loop)` (không áp cho bomber). Elite: **HP ×2.6, to hơn 32%, hào quang vàng**, **+1 💎 + xu ×3** khi hạ, luôn rơi loot. → mục tiêu ưu tiên, phần thưởng béo.
 
+**Nhiệm vụ phụ giữa trận** (EVENT 1 · `SIDEMISSION` · tối đa 2 mỗi màn, không bắt buộc, đạo diễn trận đánh chọn lúc):
+| Nhiệm vụ | Từ màn | Đồng hồ | Việc cần làm | Thua khi | Thưởng |
+|---|---|---|---|---|---|
+| CỨU PHI CÔNG | 1 | 90 s | đứng cạnh phi công (5 m) đủ 6 s | tốp địch đứng cạnh anh ta 2 s trước | phi công theo tổ · không kích · 900 điểm |
+| GIỮ XE TIẾP TẾ | 1 | 85 s | ở trong vòng 12 m cộng đủ 25 s | địch áp sát xe 6 s khi ta ở ngoài | cứu thương + thùng đạn · 800 điểm |
+| GIẢI CỨU TÙ BINH | 2 | 80 s | hạ hết tốp áp giải | một tên áp giải tới lối ra (×) | 3 lính theo tổ · 1000 điểm |
+
 ## 3c. Hợp đồng màn chơi (STAGE BRIEFING — Z26)
 
 **Trước mỗi màn** (màn 1 sau intro; màn 2-5 sau thẻ nâng cấp) hiện **briefing**: báo boss/biome + cho **chọn 1 trong 3 hợp đồng** = modifier áp **cả màn đó**. Luôn có **STEADY** (an toàn) + 2 ngẫu nhiên. Mỗi cái là **đánh đổi** (risk/reward), giúp người chơi định hướng farm:

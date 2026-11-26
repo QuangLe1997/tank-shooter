@@ -1,6 +1,6 @@
 // ui/briefing.js — STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin; XK-UI its back button: to the battle setup (a fresh launch from it) or home (asks mid-run)
 import { CONTRACTS, DMG_TYPE, OBJECTIVES, OBJ_REWARD } from '../../config.js';
-import { directorReset, opTitle, placeLine, capVi, askConfirm, quitToMenu, openBattleSetup, BS, BIOME, GUNS, PROFILE, S, WAVE, biomeVi, bossForStage, camera, coachFirstRun, conditionsText, escapeHtml, floatText, gunPicEl, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, renderer, resetEnvEvents, resetSurprises, saveProfile, sayVoice, scene, setFocus, setIcon, sfx, show, spawnRelic, storyBrief, storyReset, tapEl, voiceStage, spellNow, briefTeam } from '../hub.js';
+import { sideMissionsReset, directorReset, opTitle, placeLine, capVi, askConfirm, quitToMenu, openBattleSetup, BS, BIOME, GUNS, PROFILE, S, WAVE, biomeVi, bossForStage, camera, coachFirstRun, conditionsText, escapeHtml, floatText, gunPicEl, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, renderer, resetEnvEvents, resetSurprises, saveProfile, sayVoice, scene, setFocus, setIcon, sfx, show, spawnRelic, storyBrief, storyReset, tapEl, voiceStage, spellNow, briefTeam } from '../hub.js';
 
 // ----- STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin -----
 export let _brCtx = null;   // what chooseContract should do on confirm: {first?} (stage1) or {stage,biomeName,accentHex} (stage 2+)
@@ -55,7 +55,7 @@ export function beginStage(c, ctx){
   sfx('click');
 }
 function goLive(){ const g=_go||{ c:S.contract||{}, ctx:{} }, c=g.c, ctx=g.ctx||{}; _go=null;
-  S.mode='playing'; spawnRelic(); coachFirstRun(); resetEnvEvents(performance.now()/1000); resetSurprises(performance.now()/1000); directorReset(performance.now()/1000); storyReset(); setTimeout(()=>{ if(S.mode==='playing') sayVoice('open'); }, 700);   // Z154 the stage's relic rises somewhere on the field · first-ever match → show coach toasts (once) · Z140 the land's surprises start counting
+  S.mode='playing'; spawnRelic(); coachFirstRun(); resetEnvEvents(performance.now()/1000); resetSurprises(performance.now()/1000); directorReset(performance.now()/1000); storyReset(); sideMissionsReset(performance.now()/1000); setTimeout(()=>{ if(S.mode==='playing') sayVoice('open'); }, 700);   // Z154 the stage's relic rises somewhere on the field · first-ever match → show coach toasts (once) · Z140 the land's surprises start counting
   const now=performance.now()/1000;
   playStageTransition(ctx.stage||S.stage, ctx.biomeName||BIOME.name, ctx.accentHex||('#'+BIOME.accent.toString(16).padStart(6,'0')), true); WAVE.betweenUntil=now+1.6;   // Z138 the first wave comes 1.6 s after GO (the countdown already waited)
   { const sub=document.getElementById('cdSub'); if(sub) sub.classList.remove('on'); }

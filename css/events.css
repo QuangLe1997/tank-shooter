@@ -1,0 +1,18 @@
+/* EVENT 1 — the side mission's card (campaign/side-missions.js): its name, the time left, a bar of how far it has come, one line of what to do */
+#sideChip{position:absolute;left:50%;top:158px;transform:translateX(-50%);min-width:236px;max-width:min(340px,64vw);padding:5px 12px 6px;
+  background:linear-gradient(180deg,rgba(8,18,24,.84),rgba(6,12,16,.74));border:1px solid rgba(127,208,255,.5);border-left:3px solid #7fd0ff;
+  clip-path:polygon(8px 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%,0 8px);font-family:'Saira Condensed',Rajdhani,system-ui,sans-serif;pointer-events:none;z-index:6}
+#sideChip.hidden{display:none}
+#sideChip .sc-row{display:flex;align-items:center;gap:7px}
+#sideChip .sc-dot{width:7px;height:7px;background:#7fd0ff;transform:rotate(45deg);box-shadow:0 0 8px #7fd0ff;animation:obPulse 1.2s ease-in-out infinite}
+#sideChip .sc-name{flex:1;color:#d6efff;font-size:12.5px;letter-spacing:.13em;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sideChip .sc-t{color:#fff;font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:.04em}
+#sideChip .sc-bar{height:4px;margin:4px 0 3px;background:rgba(255,255,255,.1)}
+#sideChip .sc-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#3aa0d8,#9be0ff);transition:width .25s}
+#sideChip .sc-fx{color:rgba(214,239,255,.78);font-size:11px;letter-spacing:.05em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sideChip.done{border-color:rgba(140,220,110,.6);border-left-color:#8cdc6e} #sideChip.done .sc-name,#sideChip.done .sc-t{color:#bff0a0} #sideChip.done .sc-dot{background:#8cdc6e;box-shadow:0 0 8px #8cdc6e;animation:none}
+#sideChip.done .sc-bar i{background:#8cdc6e}
+#sideChip.fail{border-color:rgba(255,140,110,.55);border-left-color:#ff8a6a} #sideChip.fail .sc-name,#sideChip.fail .sc-t{color:#ffc0ae} #sideChip.fail .sc-dot{background:#ff8a6a;box-shadow:none;animation:none}
+#sideChip.fail .sc-bar i{background:#ff8a6a}
+body.touch #sideChip{top:62px;min-width:0;max-width:46vw;padding:3px 9px 4px} body.touch #sideChip .sc-name{font-size:10.5px} body.touch #sideChip .sc-fx{display:none} body.touch #sideChip .sc-bar{margin:3px 0 0;height:3px}
+body.inmenu #sideChip,body.hud-no-cards #sideChip{display:none!important}
