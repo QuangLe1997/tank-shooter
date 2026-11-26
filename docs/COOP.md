@@ -1,7 +1,8 @@
 # Co-op 2 người qua LAN — XUNG KÍCH (COOP 1–7)
 
 **Chơi được bây giờ:** hai máy cùng mạng vào một phòng, qua phòng chờ, vào **cùng một trận**: thấy lính của nhau, đánh **chung một đám địch** do máy chủ phòng điều khiển, ngã thì người kia cứu.
-**Mới kiểm bằng:** `npm run coop-test` (100 kiểm, Node) + 3 lượt chạy hai trang trong **một** Chrome trên một máy. **Chưa hề chạy trên hai máy thật.** Chơi một người không đổi: không có `?room=` thì `coopBoot()` thoát ngay dòng đầu.
+**Mới kiểm bằng:** `npm run coop-test` (100 kiểm, Node) + 4 lượt chạy hai trang trong **một** Chrome trên một máy. **Chưa hề chạy trên hai máy thật.**
+**Lỗi đã biết:** màn 1 hai máy dựng giống hệt nhau (4 / 4 lượt), nhưng **từ màn 2 công sự có thể lệch** giữa hai máy (2 / 2 lượt thử) — game phát hiện và hiện dòng cảnh báo đỏ; xem mục 8. Chơi một người không đổi: không có `?room=` thì `coopBoot()` thoát ngay dòng đầu.
 
 ## 1. Chơi trên hai máy, từng bước
 1. **Máy chủ phòng** (máy mạnh hơn — nó chạy cả trận): mở Terminal trong thư mục game, gõ `node tools/lan-room.mjs` (hoặc `npm run lan-room -- --port 8777`). Lần đầu macOS hỏi "cho phép *node* nhận kết nối đến?" → **Cho phép**.
@@ -11,13 +12,13 @@
 5. Mỗi máy xem đoạn mở màn và chọn hợp đồng như thường (ai xong trước thì đếm 3-2-1 xong hiện "CHỜ ĐỒNG ĐỘI…"), rồi **cùng vào trận**.
 6. Trong trận: đồng đội có **tên + thanh máu trên đầu**, **mũi tên mép màn hình kèm số mét** khi ngoài khung hình, **chấm có vòng** trên bản đồ nhỏ, hình viền khi bị che.
 7. Hết máu thì **ngã** (bò được, không bắn được): người kia tới đứng cạnh ~4 giây là dậy với 40 % máu. **Cả hai cùng ngã = thua màn.**
-8. Thắng màn: cả hai chọn phần thưởng riêng, máy tự dựng màn sau giống nhau rồi lại chờ nhau ở 3-2-1. Ctrl+C ở Terminal để đóng phòng.
+8. Thắng màn: cả hai chọn phần thưởng riêng, mỗi máy dựng màn sau rồi lại chờ nhau ở 3-2-1 (nếu hiện dòng đỏ "chiến trường KHÁC nhau" thì vẫn đánh tiếp được, nhưng vài công sự lệch chỗ — muốn chắc thì rời phòng, mở phòng mới và chọn thẳng màn đó). Ctrl+C ở Terminal để đóng phòng.
 
 Lỗi hay gặp (phòng chờ nói bằng chữ): *không có phòng này* (chủ phòng chưa vào / sai mã), *phòng đã đủ hai người*, *chủ phòng đã rời*, *điện thoại và máy tính chưa chơi chung được*.
 - Khách phải mở địa chỉ `http://` của máy chủ phòng, không mở bản GitHub Pages (trang `https` không nối được `ws://` trong LAN).
 - **Wi-Fi văn phòng (10.234.56.0/21) bật client isolation** → không chạy được; dùng Wi-Fi nhà, hotspot điện thoại, router riêng.
 - **Điện thoại ↔ máy tính bị từ chối** ở phòng chờ: `ARENA` 130 / 184 và nhiều hàm dựng trong `world/*` rẽ theo `MOBILE` → hai sân khác nhau.
-- Nếu hiện dòng đỏ "hai máy dựng hai chiến trường KHÁC nhau": rời phòng, tải lại cả hai trang (cùng phiên bản), vào lại.
+- Dòng đỏ "hai máy dựng hai chiến trường KHÁC nhau" **ngay màn đầu**: rời phòng, tải lại cả hai trang (cùng phiên bản), vào lại.
 
 ## 2. Cái gì chạy, cái gì chưa
 | | Có | Chưa |
@@ -64,7 +65,8 @@ Máy **chủ phòng là nơi quyết định**; lời của máy khách luôn b�
 
 ## 6. Số đo
 - Node (`coop-test`, 80 thực thể đều di chuyển): chủ → khách ≈ 8,4 KB/s, khách → chủ ≈ 1,4 KB/s; sai số nội suy 0,7 cm ở trễ 100 ms; mất 20 % gói vẫn đủ và đúng thứ tự.
-- Trận thật (2 trang, 1 Chrome, ~50 địch phần lớn đứng yên): ảnh chụp ≈ **174 B** → ≈ **3,5 KB/s** ở 20 / s; lính của khách ≈ **45 B** → ≈ **1,3 KB/s** ở 30 / s. Hai lượt đo chỉ chạy 5–15 khung / giây (máy bận, hai trang chung GPU) nên số gói thực gửi ít hơn mức danh định.
+- Trận thật (2 trang, 1 Chrome): ảnh chụp ≈ **174 B** với ~50 địch, **237 B** với 75–97 địch → ≈ **3,5–4,7 KB/s** ở 20 / s; lính của khách ≈ **43–45 B** → ≈ **1,3 KB/s** ở 30 / s. Các lượt đo chỉ chạy 4–15 khung / giây (máy bận, hai trang chung GPU) nên số gói thực gửi ít hơn mức danh định.
+- Cứu đồng đội (lượt 4): khách ngã → máy chủ đếm → `UP` → khách dậy với 70 / 175 máu (40 %), 2,4 s an toàn, sổ của máy chủ = máu khách báo; thẻ tên nằm đúng trên đầu (lệch 0 px).
 
 ## 7. Danh sách móc M1–M25 (của COOP 3) — tình trạng
 | Móc | Tình trạng |
@@ -82,5 +84,6 @@ Máy **chủ phòng là nơi quyết định**; lời của máy khách luôn b�
 
 ## 8. Chưa kiểm được
 - **Hai máy thật**: Wi-Fi, hộp thoại tường lửa macOS, độ trễ và mất gói thật, tải model qua LAN, Safari / điện thoại.
-- "Cùng seed → cùng chiến trường" mới thấy trùng trên **cùng một máy** (DESERT, MEADOW); máy khác GPU / trình duyệt có thể lệch — khi đó game báo dòng đỏ.
+- **Màn 2 trở đi lệch công sự (lỗi đã biết).** Lượt 3: lệch toàn bộ. Sau khi sửa (model lính mới không rút số của chiến trường, mỗi bước dựng một seed, dọn địch cũ), lượt 4: độ cao địa hình, đá rải, hầm ngầm **trùng**; chỉ còn `buildBlocks` lệch (534 so với 532 khối; số lần rút ngẫu nhiên của bước đó 86 987 so với 84 608). Nguyên nhân còn lại chưa tìm ra — nghi một trạng thái chỉ máy chủ có sau trận (đồn đã chiếm, tướng, kho, tường Lõi). Sau lượt 4 đã chia tiếp `buildBlocks` thành 4 bước seed riêng (`coopSeedStep(10…13)` trong `world/cover.js`) — **chưa chạy lại**. Cách dò tiếp: `CO.parts` (vân tay từng phần) + đếm số lần `Math.random` giữa các lần `__reseed` trên hai trang.
+- "Cùng seed → cùng chiến trường" ở màn 1 mới thấy trùng trên **cùng một máy, cùng hồ sơ** (DESERT, MEADOW). Hai máy thật có hồ sơ khác nhau (bãi nền menu khác) có thể lệch vì những thứ tạo-một-lần-rồi-giữ (đã tạo sẵn đá + nền của bãi trước khi gieo seed; các thứ khác chưa rà hết) — khi đó game báo dòng đỏ.
 - Dáng lính kia nhìn gần khi đi bộ, viền xuyên tường, ngựa; trận dài nhiều màn; rớt mạng giữa trận trong trình duyệt; khách tải lại trang giữa trận.
