@@ -820,7 +820,7 @@ export const RIVERS = {
 //   dive   holding C (crouch) while swimming ducks him under: depth m his head under the surface (never nearer the bed than floor m) · v m/s · breath s held
 //          · back s/s it comes back at the surface · defK a round's leftover energy after ~1 m of water · tint the blue over the screen · lp Hz the world heard under
 //   wade   defLoss: a round that would strike under the waterline is spent in it — his defK × (1 − defLoss × depth / deep[0])
-//   fx     step splash particles, a wake puff every wake s (wakeOp), a ripple ring every ring s (ringR m wide, ringT s, ringOp at its start), the ring pool's size
+//   fx     step splash particles (ankle / knee) thrown up m/s, a wake puff every wake s (wakeOp), a ripple ring every ring s (ringR m wide, ringT s, ringOp at its start), the ring pool's size
 //   pool   SWIM 1 the rivers as carved were 0.85 m deep mid-channel (1.27 m at the deepest in MEADOW): no stretch to swim in. A pool is dug into the main
 //          channel's middle (u: share of its half width), deep m deeper, kept gap m off every bridge and ford and eased in over ramp m — the crossings stay as they were
 //   foe    enemy infantry and the fireteam do not swim with their kit: a man does not step on into water deeper than maxD (he wades up to it); look m ahead
@@ -828,7 +828,7 @@ export const SWIM = { on:true, bands:[0.03, 0.25, 0.6, 0.95], deep:[1.35, 1.2], 
   swim:{ v:1.05, head:0.14, bob:[0.035, 2.1], yRate:3.2, defK:0.45, fireMsg:3, slingT:0.38, tread:'social-tread-water', stroke:'social-swim-underwater', moveV:0.35, ts:[0.75, 1.5], strokeRate:2, armRate:[5, 40], armT:0.7, breathT:2.4 },
   dive:{ depth:0.85, floor:0.35, v:0.9, breath:14, back:2.5, defK:0.06, tint:'rgba(18,84,104,0.42)', lp:420, msgAt:0.25 },
   wade:{ defLoss:0.55 },
-  fx:{ step:[3, 6], wake:0.11, wakeOp:0.28, ring:0.6, ringR:[0.3, 1.9], ringT:1.6, ringOp:0.2, rings:8, col:0xe8f2f4 },
+  fx:{ step:[3, 5], up:2.2, wake:0.11, wakeOp:0.28, ring:0.6, ringR:[0.3, 1.9], ringT:1.6, ringOp:0.14, rings:8, col:0xe8f2f4 },
   pool:{ on:true, u:0.55, deep:1.05, gap:12, ramp:10 },
   foe:{ maxD:1.15, look:0.9 } };
 

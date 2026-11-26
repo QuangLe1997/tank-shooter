@@ -119,7 +119,7 @@ export function swimClip(cv, R, dt, P, mounted){ if(!R.pup || !R.om || !R.OA) re
 // ---- …after his legs and trunk (before the hold): true = his arms are the clip's (eased in from where they were) and the rifle is on his back ----
 export function swimPose(cv, R, G, dt, P){ const M = R.swm; if(!M) return false; const st = swimOf(cv); if(!st || P.dead || M.t < SWIM.swim.slingT){ if(M) M.take = 0; return false; }
   const D = R.pup.D; if(cv === CV && D.Head){ D.Head.getWorldPosition(_v); G.getWorldPosition(_g); SWST.headOff += (clamp(_v.y - _g.y, 0.2, 2.2) - SWST.headOff) * Math.min(1, dt * 6); }
-  carryBack(R, G); if(R.cy) R.cy.why = 'swim'; bladeHold(cv, R, G, dt, P);
+  carryBack(R, G); const cy = R.cy; if(cy){ cy.why = 'swim'; if(cy.st) for(const m of cy.st) if(m) m.visible = false; } bladeHold(cv, R, G, dt, P);   // (the straps hang by the world's down: on a man lying in the water they hung into it — hidden while he swims)
   M.take += dt; const SW = SWIM.swim, k = Math.min(1, dt * (SW.armRate[0] + (SW.armRate[1] - SW.armRate[0]) * smooth(0, SW.armT, M.take)));
   if(M.ok && k < 1){ for(let i = 0; i < ARM.length; i++){ const b = D[ARM[i]]; _q.fromArray(M.prev, i * 4).slerp(b.quaternion, k); b.quaternion.copy(_q); } if(D.LeftShoulder) D.LeftShoulder.updateMatrixWorld(true); if(D.RightShoulder) D.RightShoulder.updateMatrixWorld(true); }
   return true; }
@@ -135,8 +135,8 @@ function rings(dt){ const F = SWIM.fx; for(let i = 0; i < RINGS.length; i++){ co
 function splash(x, z, n, up){ const y = RIVER.y + 0.05, c = SWIM.fx.col; for(let i = 0; i < n; i++){ const a = Math.random() * 6.283, s = 0.3 + Math.random() * 0.9;
   spawnPart(x, y, z, Math.cos(a) * s, up * (0.6 + Math.random() * 0.7), Math.sin(a) * s, { color:c, size:0.09 + Math.random() * 0.09, life:0.5, smoke:true, grav:-14, drag:0.6, op:1.6, keep:true }); } }
 function fx(p, dt, now, v){ const W = SWST, F = SWIM.fx; rings(dt); if(S.mode !== 'playing') return; const sw = W.mode === 'swim', fa = p.facing, fx_ = Math.sin(fa), fz = Math.cos(fa);
-  if(!sw && W.band >= 1 && v > 0.4){ W.stepT -= dt * clamp(1.1 + v * 0.45, 1.1, 3.2); if(W.stepT <= 0){ W.stepT = 1; W.side = -W.side; const k = W.band >= 3 ? 1.2 : W.band >= 2 ? 1 : 0.7;
-      splash(p.pos.x - fz * 0.14 * W.side + fx_ * 0.25, p.pos.z + fx_ * 0.14 * W.side + fz * 0.25, W.band >= 2 ? F.step[1] : F.step[0], 2 + 1.2 * k); } }   // (his boot comes out ahead of him and goes down)
+  if(!sw && W.band >= 1 && W.band <= 2 && v > 0.4){ W.stepT -= dt * clamp(1.1 + v * 0.45, 1.1, 3.2); if(W.stepT <= 0){ W.stepT = 1; W.side = -W.side; const k = W.band >= 2 ? 1 : 0.6;
+      splash(p.pos.x - fz * 0.14 * W.side + fx_ * 0.25, p.pos.z + fx_ * 0.14 * W.side + fz * 0.25, W.band >= 2 ? F.step[1] : F.step[0], F.up * k); } }   // (his boot comes out ahead of him and goes down; deeper than the knee his legs push through it: the wake, not a splash)
   if((sw && !W.under || W.band >= 2) && v > 0.3){ W.wakeT -= dt; if(W.wakeT <= 0){ W.wakeT = F.wake; const bx = p.pos.x - fx_ * 0.45, bz = p.pos.z - fz * 0.45, s = (Math.random() - 0.5) * 0.6;
       spawnPart(bx - fz * s, RIVER.y + 0.04, bz + fx_ * s, -fx_ * 0.3 - fz * s, 0.05, -fz * 0.3 + fx_ * s, { color:F.col, size:0.2, life:0.9, smoke:true, grav:0, drag:3, grow:0.45, op:F.wakeOp, keep:true }); } }   // (the wake: puffs left astern, drifting out)
   if(sw || W.band >= 2){ W.ringT -= dt * (v > 0.3 ? 1.6 : 1); if(W.ringT <= 0){ W.ringT = F.ring * (0.8 + Math.random() * 0.4); if(!W.under || Math.random() < 0.25) ring(p.pos.x + (Math.random() - 0.5) * 0.3, p.pos.z + (Math.random() - 0.5) * 0.3); } }   // (rings round him; diving, a few from his bubbles)
