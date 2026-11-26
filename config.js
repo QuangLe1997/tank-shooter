@@ -1756,9 +1756,9 @@ export const GUNFEEL = {
 //   slot = where a gun lies on his back, in the back's own frame (rigid with Spine1, the bone his pack hangs on; origin at the Spine2 joint): at = its
 //     UPPER END (the butt plate) [toward the shoulder blade it hangs from, up, behind the spine] m — just under the top of the shoulder, clear of the pack;
 //     tilt = off the spine (rad), more for a long weapon so its muzzle hangs no more than drop m under the butt (at most tiltMax); prone = lying down
-//     [tilt, upper end's side m, extra depth m, eased /s] — in along the spine, the helmet comes back; stack = the extra depth of the one slung OVER the
+//     [tilt, upper end's side m, extra depth m, eased /s, up m] — in along the spine and up it (his legs work under it, the helmet comes back); stack = the extra depth of the one slung OVER the
 //     one worn (the mirror diagonal); a kind in `up` hangs the other way up (the B41: its warhead at the shoulder) and goes round upVia m lower;
-//     via = the two points the grip passes on its way round [side, up, behind] m (out at his side, behind the shoulder); slide = how fast the worn one
+//     via = the two points the grip passes on its way round [side, up, behind] m (out at his side, behind the shoulder), cross m further ahead while it crosses his chest to go round the left; slide = how fast the worn one
 //     crosses to the right-shoulder diagonal after a swap (diagonals /s); its rock in the back's plane: sway rad with the stride, lag rad per m/s² of the
 //     chest's sideways shove, at most max, on a spring k / z (damped: it does not flap)
 //   hang = hung in front on the sling, in his pelvis' frame (his belly does not turn with his chest): the grip's station [his right, up, ahead] of the
@@ -1780,7 +1780,7 @@ export const GUNFEEL = {
 //     frame — the chest, the breastbone, the far ribs, under the far arm, behind the far hip; hung in front it goes behind the neck [back, up] m
 export const GUNCARRY = { on:!(typeof location !== 'undefined' && /[?&]oldcarry\b/.test(location.search)),
   sling:{ climb:true, drone:true, revive:true, knife:true, patrol:true, mounted:false, strap:true, quiet:6, maxV:5.2, t:[0.55, 0.4, 0.22], block:0.25, clear:0.12, knifeT:0.5 },
-  slot:{ at:[0.2, 0.02, 0.24], tilt:0.72, tiltMax:0.88, drop:0.69, prone:[0.12, 0.05, 0.02, 4], stack:0.06, up:['rpg'], upVia:-0.3, via:[[0.34, -0.10, -0.27], [0.4, 0.04, 0.24]], slide:2.2, sway:0.03, lag:0.004, max:0.05, k:60, z:0.7 },
+  slot:{ at:[0.2, 0.02, 0.24], tilt:0.78, tiltMax:0.9, drop:0.655, prone:[0.12, 0.05, 0.02, 4, 0.1], stack:0.06, up:['rpg'], upVia:-0.3, via:[[0.36, -0.10, -0.27], [0.44, 0.04, 0.24]], cross:0.1, slide:2.2, sway:0.03, lag:0.004, max:0.05, k:60, z:0.7 },
   hang:{ at:[0.05, 0.0, 0.27], pitch:0.9, t:0.2, clear:0.1 },
   back:{ on:true, mounted:true, seat:0.07, skip:[] },
   swap:{ on:true, t:0.5, block:0.25, out:0.6, in:0.3 },

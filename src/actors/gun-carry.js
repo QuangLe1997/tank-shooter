@@ -29,7 +29,7 @@
 //   climbArms calls carryBack. Nothing allocates per frame. GUNCARRY.on false / ?oldcarry: none of it runs.
 import * as THREE from 'three';
 import { GUNCARRY, GUNFEEL, GUNHOLD, INFGUN, LOGISTICS, REALCAV } from '../../config.js';
-import { CV, FIT, LEGKIT, MATE, QUIET, S, climbW, fpvFlying, graphOwned, graphState, headLevel, rollHand, wristGive } from '../hub.js';
+import { CV, FIT, LEGKIT, MATE, QUIET, S, climbW, fpvFlying, graphOwned, graphState, headLevel } from '../hub.js';
 
 const V3 = () => new THREE.Vector3(), Q4 = () => new THREE.Quaternion(), clamp = (v, a, b) => Math.max(a, Math.min(b, v)), smooth = k => { k = clamp(k, 0, 1); return k * k * (3 - 2 * k); }, seg = (u, a, b) => clamp((u - a) / (b - a), 0, 1);
 const SIDE = ['Right', 'Left'], FING = ['Thumb', 'Index', 'Middle', 'Ring', 'Pinky'], UP = new THREE.Vector3(0, 1, 0), NP = 10;
@@ -44,7 +44,7 @@ const _A = Array.from({ length:8 }, V3), _P = Array.from({ length:NP }, V3), _L 
 //   s: the gun in his hands, 0 held … 1 on his back · h: 0 … 1 hung in front · why: what for · run: the run carry · sg: the diagonal the gun in his
 //   hands slings to (+1 = from his right shoulder blade, −1 the mirror) · bK: the kind worn on his back, bs its diagonal (it slides to +1), bz its extra
 //   depth · sw: the swap's clock 0…1 (1 = none), oK: the kind being stowed, nS / nZ: where the new one comes from · pw: lying down 0…1
-function state(R){ return R.cy || (R.cy = { cf:null, aL:null, fs:null, runW:0, s:0, h:0, why:'', run:0, quiet:0, k:null, sg:1, nz:0, bK:null, bs:1, bz:0, wK:null, wS:9, wZ:9, wP:9, wa:V3(), wq:Q4(), wk:1, sw:1, oK:null, nS:1, nZ:0,
+function state(R){ return R.cy || (R.cy = { cf:null, aL:null, B:null, fs:null, runW:0, s:0, h:0, why:'', run:0, quiet:0, k:null, sg:1, nz:0, bK:null, bs:1, bz:0, wK:null, wS:9, wZ:9, wP:9, wa:V3(), wq:Q4(), wk:1, sw:1, oK:null, nS:1, nZ:0,
   hOk:false, kAt:0, knifeAt:-9, ang:0, angV:0, pw:0, done:false, tN:0, hrp:V3(), hrq:Q4(), orp:V3(), orq:Q4(), wl:[V3(), V3()], wq2:[Q4(), Q4()], ol:[V3(), V3()], oq:[Q4(), Q4()], fb:null, fq:null, w:[1, 1], st:[null, null] }); }
 const gunOf = k => FIT[k] || GUNHOLD[k] || GUNHOLD.ar, kindOf = id => INFGUN.map[id], upOf = k => GUNCARRY.slot.up.includes(k) ? -1 : 1;
 const afoot = cv => !!(cv && !cv.mounted && !cv.trans);
@@ -66,7 +66,7 @@ function flatQ(up, a, oq){ _x.copy(_cu).multiplyScalar(Math.cos(a) * up).addScal
 //   it is sliding across); depth m behind the spine; ang = its rock; pw = lying down (in along the spine). What is pinned is the gun's UPPER END (the
 //   butt; a kind in slot.up — the B41 — hangs the other way up, its warhead there): no weapon stands over the shoulder, a long one hangs lower
 function slot(k, len, sig, depth, ang, pw, op, oq){ const K = GUNCARRY.slot, up = upOf(k), a0 = clamp(Math.acos(Math.min(1, K.drop / len)), K.tilt, K.tiltMax), a = (a0 + (K.prone[0] - a0) * pw) * sig + ang;
-  flatQ(up, a, oq); pt(op, sig * (K.at[0] + (K.prone[1] - K.at[0]) * pw), K.at[1], depth + K.prone[2] * pw).addScaledVector(_x, -up * len / 2); }
+  flatQ(up, a, oq); pt(op, sig * (K.at[0] + (K.prone[1] - K.at[0]) * pw), K.at[1] + K.prone[4] * pw, depth + K.prone[2] * pw).addScaledVector(_x, -up * len / 2); }
 // THE WAY ROUND HIS SHOULDER: t = 0 where the hold has it (hp, hq) … 1 in the slot (sp, sq) → (op, oq). The grip's station goes through two points of
 //   the back's frame on a spline — out at his side (via[0]: the gun stood on its muzzle there, its top ahead), then behind the shoulder (via[1]: turned
 //   flat to his back, still upright) — sd = +1 round his right, −1 his left
@@ -74,6 +74,7 @@ function path(t, k, sd, gx, hp, hq, sp, sq, op, oq){ const K = GUNCARRY.slot, e 
   _g0.set(gx, 0, 0).applyQuaternion(hq).add(hp); _g3.set(gx, 0, 0).applyQuaternion(sq).add(sp); pt(_w1, sd * A[0], A[1] + dy, A[2]); pt(_w2, sd * B[0], B[1] + dy, B[2]);
   const u = e * 3, i = u >= 2 ? 2 : u >= 1 ? 1 : 0, f = u - i, f2 = f * f, f3 = f2 * f, P0 = i === 2 ? _w1 : _g0, P1 = i === 0 ? _g0 : i === 1 ? _w1 : _w2, P2 = i === 0 ? _w1 : i === 1 ? _w2 : _g3, P3 = i === 0 ? _w2 : _g3;   // (Catmull–Rom, the ends doubled)
   _t.set(0, 0, 0).addScaledVector(P0, -0.5 * f3 + f2 - 0.5 * f).addScaledVector(P1, 1.5 * f3 - 2.5 * f2 + 1).addScaledVector(P2, -1.5 * f3 + 2 * f2 + 0.5 * f).addScaledVector(P3, 0.5 * f3 - 0.5 * f2);
+  if(sd < 0 && i === 0) _t.addScaledVector(_cb, -K.cross * 4 * f * (1 - f));   // (round his LEFT from the right shoulder: across his chest, held out ahead of it)
   if(i < 2){ _x.copy(_cu).multiplyScalar(up); _y.copy(_cb).negate(); _z.crossVectors(_x, _y); _q1.setFromRotationMatrix(_cm.makeBasis(_x, _y, _z)); }
   if(i === 0) oq.copy(hq).slerp(_q1, f); else if(i === 1) oq.copy(_q1).slerp(flatQ(up, 0, _qa), f); else oq.copy(flatQ(up, 0, _qa)).slerp(sq, f);
   op.set(-gx, 0, 0).applyQuaternion(oq).add(_t); }
@@ -94,6 +95,17 @@ function ikArm(a, b, c, t, pole, reach){ a.getWorldPosition(_ia); b.getWorldPosi
   const dist = Math.max(Math.abs(l1 - l2) + 1e-3, Math.min((l1 + l2) * reach, _id.length())); _id.normalize(); const x = (l1 * l1 - l2 * l2 + dist * dist) / (2 * dist), h = Math.sqrt(Math.max(0, l1 * l1 - x * x));
   _if.subVectors(pole, _ia); _if.addScaledVector(_id, -_if.dot(_id)); if(_if.lengthSq() < 1e-8) _if.set(0, -1, 0); _if.normalize();
   _ig.copy(_id).multiplyScalar(x).addScaledVector(_if, h).normalize(); aimB(a, b, _ig); _ig.copy(_ia).addScaledVector(_id, x).addScaledVector(_if, h); _it.copy(_ia).addScaledVector(_id, dist).sub(_ig).normalize(); aimB(b, c, _it); }
+// his arms' bones, looked up once (a name put together from two strings every frame is an allocation), and each arm's length
+function bonesOf(cy, D){ if(cy.B) return; const B = cy.B = { a:[], f:[], h:[], m:[], i:[], p:[] }; cy.aL = [0, 0];
+  for(let i = 0; i < 2; i++){ const s = SIDE[i]; B.a[i] = D[s + 'Arm']; B.f[i] = D[s + 'ForeArm']; B.h[i] = D[s + 'Hand']; B.m[i] = D[s + 'HandMiddle1'] || null; B.i[i] = D[s + 'HandIndex1'] || null; B.p[i] = D[s + 'HandPinky1'] || null;
+    B.a[i].getWorldPosition(_t); B.f[i].getWorldPosition(_t2); cy.aL[i] = _t.distanceTo(_t2) + _t2.distanceTo(B.h[i].getWorldPosition(_t)); } }
+// a hand turned about its own length until its knuckle line runs along `along` (actors/hands.js rollHand, on the cached bones)
+function roll(cy, i, along){ const h = cy.B.h[i], m = cy.B.m[i], i1 = cy.B.i[i], p1 = cy.B.p[i]; if(!m || !i1 || !p1) return; h.getWorldPosition(_ia); m.getWorldPosition(_ib); _ia.subVectors(_ib, _ia); if(_ia.lengthSq() < 1e-10) return; _ia.normalize();
+  i1.getWorldPosition(_ic); p1.getWorldPosition(_ib); _ic.subVectors(_ib, _ic); _ic.addScaledVector(_ia, -_ic.dot(_ia)); _id.copy(along).addScaledVector(_ia, -along.dot(_ia)); if(_ic.lengthSq() < 1e-10 || _id.lengthSq() < 1e-10) return;
+  const th = Math.atan2(_ib.crossVectors(_ic, _id).dot(_ia), _ic.dot(_id)); if(Math.abs(th) > 1e-4){ _iq.setFromAxisAngle(_ia, th); h.getWorldQuaternion(_iqw).premultiply(_iq); h.parent.getWorldQuaternion(_iqp); h.quaternion.copy(_iqp.invert().multiply(_iqw)); h.updateMatrixWorld(true); } }
+// the way a hand should point eased toward its forearm until the wrist bends no more than max (actors/gun-hands.js wristGive, on the cached bones)
+function give(fa, h, want, max, out){ out.copy(want); fa.getWorldPosition(_ia); h.getWorldPosition(_ib); _ib.sub(_ia); if(_ib.lengthSq() < 1e-8) return out; _ib.normalize(); const th = Math.acos(clamp(_ib.dot(want), -1, 1)); if(th <= max || th < 1e-3) return out;
+  const k = (th - max) / th, s = Math.sin(th); return out.multiplyScalar(Math.sin((1 - k) * th) / s).addScaledVector(_ib, Math.sin(k * th) / s).normalize(); }
 function setWorldQ(b, q){ b.parent.getWorldQuaternion(_iqp); b.quaternion.copy(_iqp.invert().multiply(q)); b.updateMatrixWorld(true); }
 // his fingers as the clip left them (before the hold closes them round the gun): a hand that lets go opens back to this
 function snap(cy, D){ if(!cy.fb){ cy.fb = []; for(const s of SIDE) for(const F of FING) for(let j = 1; j <= 4; j++){ const b = D[s + 'Hand' + F + j]; if(b) cy.fb.push(b); } cy.fq = new Float32Array(cy.fb.length * 4); cy.fs = cy.fb.map(b => b.name.includes('Right') ? 0 : 1); }
@@ -133,7 +145,7 @@ function why(R, cy, P, p, cv, dt, now){ const K = GUNCARRY.sling; if(R.cyDev) re
   cy.quiet = calm ? cy.quiet + dt : 0; return K.patrol && cy.quiet >= K.quiet ? 'patrol' : ''; }
 
 // ---- where a free hand goes (the wrist → _fr, the elbow's pole → _fp), by what he let the gun go for ----
-function freeHand(R, cy, D, i, cv, P, now){ const H = GUNCARRY.hands, sd = i ? -1 : 1, sh = D[SIDE[i] + 'Arm'], L = cy.aL[i], st = cv.stance, w = cy.why; sh.getWorldPosition(_sh);
+function freeHand(R, cy, D, i, cv, P, now){ const H = GUNCARRY.hands, sd = i ? -1 : 1, sh = cy.B.a[i], L = cy.aL[i], st = cv.stance, w = cy.why; sh.getWorldPosition(_sh);
   if(w === 'drone'){ _fr.copy(_co).addScaledVector(_r, sd * H.drone[0]).addScaledVector(UP, H.drone[1]).addScaledVector(_f, H.drone[2]); _fp.copy(_sh).addScaledVector(UP, -0.4).addScaledVector(_r, sd * 0.3).addScaledVector(_f, -0.05); return; }
   if(w === 'revive'){ _fr.copy(_sh).addScaledVector(_r, -sd * H.revive[0]).addScaledVector(UP, H.revive[1]).addScaledVector(_f, H.revive[2]); _fp.copy(_sh).addScaledVector(UP, -0.2).addScaledVector(_r, sd * 0.4).addScaledVector(_f, 0.1); return; }
   if(w === 'knife' && i === 0){ const u = (now - cy.knifeAt) / GUNCARRY.sling.knifeT, k = u < 0.3 ? smooth(u / 0.3) : 1 - smooth((u - 0.3) / 0.7);   // (the thrust: out in a third of it, back over the rest)
@@ -145,16 +157,16 @@ function freeHand(R, cy, D, i, cv, P, now){ const H = GUNCARRY.hands, sd = i ? -
   _fp.copy(_sh).addScaledVector(_f, -0.35).addScaledVector(UP, -0.25).addScaledVector(_r, sd * 0.12); }
 
 // one arm: its wrist to the mix of the gun it holds (wn on the gun in his hands, wo on the one being stowed) and where it goes free
-function arm(R, cy, D, i, wn, wo, tN, cv, P, now){ const s = SIDE[i], sd = i ? -1 : 1, a = D[s + 'Arm'], b = D[s + 'ForeArm'], h = D[s + 'Hand'], m = D[s + 'HandMiddle1'], H = GUNCARRY.hands, wf = clamp(1 - wn - wo, 0, 1);
+function arm(R, cy, D, i, wn, wo, tN, cv, P, now){ const sd = i ? -1 : 1, a = cy.B.a[i], b = cy.B.f[i], h = cy.B.h[i], m = cy.B.m[i], H = GUNCARRY.hands, wf = clamp(1 - wn - wo, 0, 1);
   b.getWorldPosition(_el); h.getWorldQuaternion(_hw); _tg.set(0, 0, 0); _pl.set(0, 0, 0);
   if(wn > 0){ _t.copy(cy.wl[i]).applyQuaternion(_nq).add(_np); _tg.addScaledVector(_t, wn); a.getWorldPosition(_sh).addScaledVector(UP, 0.25).addScaledVector(_r, sd * 0.4).addScaledVector(_cb, 0.1); _pl.addScaledVector(_el.lerp(_sh, smooth(tN * 1.5)), wn); }   // (the elbow where the hold has it; up and out as the gun goes round the shoulder)
   if(wo > 0){ _t.copy(cy.ol[i]).applyQuaternion(_oq).add(_op); _tg.addScaledVector(_t, wo); a.getWorldPosition(_sh).addScaledVector(UP, 0.25).addScaledVector(_r, sd * 0.4).addScaledVector(_cb, 0.1); _pl.addScaledVector(_sh, wo); }
   if(wf > 0){ freeHand(R, cy, D, i, cv, P, now); _tg.addScaledVector(_fr, wf); _pl.addScaledVector(_fp, wf); }
   ikArm(a, b, h, _tg, _pl, H.reach);
   // the hand: along its forearm and palm in when free, turned with the gun it is on
-  if(m){ b.getWorldPosition(_t); h.getWorldPosition(_t2); _t2.sub(_t).normalize(); LEGKIT.aim(h, m, _t2); rollHand(D, s, cy.why === 'drone' || cy.why === 'revive' ? _r : _f); }
+  if(m){ b.getWorldPosition(_t); h.getWorldPosition(_t2); _t2.sub(_t).normalize(); LEGKIT.aim(h, m, _t2); roll(cy, i, cy.why === 'drone' || cy.why === 'revive' ? _r : _f); }
   if(wn + wo > 0.001){ h.getWorldQuaternion(_q); if(wo > 0){ _q2.copy(_oq).multiply(cy.oq[i]); _q.slerp(_q2, wo); } if(wn > 0){ _q2.copy(_nq).multiply(cy.wq2[i]); _q.slerp(_q2, wn / Math.max(1e-4, wn + wf)); } setWorldQ(h, _q);
-    if(m){ h.getWorldPosition(_t); m.getWorldPosition(_t2).sub(_t).normalize(); wristGive(D, s, _t2, GUNFEEL.hold.wrist[i ? 1 : 0], _wg); LEGKIT.aim(h, m, _wg); } }   // (no wrist bent past a man's as the gun turns in his hand)
+    if(m){ h.getWorldPosition(_t); m.getWorldPosition(_t2).sub(_t).normalize(); give(b, h, _t2, GUNFEEL.hold.wrist[i ? 1 : 0], _wg); LEGKIT.aim(h, m, _wg); } }   // (no wrist bent past a man's as the gun turns in his hand)
   // the fingers open back to the clip's as the hand comes off
   const on = clamp(wn + wo, 0, 1); if(on < 0.999) for(let j = 0; j < cy.fb.length; j++) if(cy.fs[j] === i) cy.fb[j].quaternion.slerp(_q.fromArray(cy.fq, j * 4), 1 - on); }
 
@@ -180,11 +192,11 @@ function strap(R, cy, D, G, j, m, k, sig, wb, wh){ const K = GUNCARRY.strap, mes
   m.updateWorldMatrix(true, false); _a.set(K.rear * len, K.under, 0).applyMatrix4(m.matrixWorld); _b.set(K.front * len, K.under, 0).applyMatrix4(m.matrixWorld);   // the two swivels
   for(let i = 0; i < NP; i++) _P[i].set(0, 0, 0);
   if(wl > 0) for(let i = 0; i < NP; i++){ const u = i / (NP - 1); _P[i].addScaledVector(_t.lerpVectors(_a, _b, u).addScaledVector(UP, -K.sag * 4 * u * (1 - u)), wl); }
-  if(wb > 0){ const T = K.back, sd = sig >= 0 ? 1 : -1, hi = up > 0 ? _a : _b, lo = up > 0 ? _b : _a; _A[0].copy(hi); D[(sd > 0 ? 'Right' : 'Left') + 'Arm'].getWorldPosition(_A[1]).addScaledVector(UP, K.top).addScaledVector(_r, -sd * 0.04);   // (over the top of that shoulder)
+  if(wb > 0){ const T = K.back, sd = sig >= 0 ? 1 : -1, hi = up > 0 ? _a : _b, lo = up > 0 ? _b : _a; _A[0].copy(hi); cy.B.a[sd > 0 ? 0 : 1].getWorldPosition(_A[1]).addScaledVector(UP, K.top).addScaledVector(_r, -sd * 0.04);   // (over the top of that shoulder)
     for(let i = 0; i < T.length; i++) pt(_A[2 + i], sd * T[i][0], T[i][1], T[i][2]); _A[2 + T.length].copy(lo); anchors(3 + T.length);
     if(up < 0) for(let i = 0; i < NP; i++) _P[i].addScaledVector(_L[NP - 1 - i], wb); else for(let i = 0; i < NP; i++) _P[i].addScaledVector(_L[i], wb); }
-  if(wh > 0){ const T = K.neck; _A[0].copy(_a); D.RightArm.getWorldPosition(_A[1]).addScaledVector(UP, K.top).addScaledVector(_r, -0.04); (D.Neck || D.Spine2).getWorldPosition(_A[2]).addScaledVector(_f, -T[0]).addScaledVector(UP, T[1]);
-    D.LeftArm.getWorldPosition(_A[3]).addScaledVector(UP, K.top).addScaledVector(_r, 0.04); _A[4].copy(_b); anchors(5); for(let i = 0; i < NP; i++) _P[i].addScaledVector(_L[i], wh); }
+  if(wh > 0){ const T = K.neck; _A[0].copy(_a); cy.B.a[0].getWorldPosition(_A[1]).addScaledVector(UP, K.top).addScaledVector(_r, -0.04); (D.Neck || D.Spine2).getWorldPosition(_A[2]).addScaledVector(_f, -T[0]).addScaledVector(UP, T[1]);
+    cy.B.a[1].getWorldPosition(_A[3]).addScaledVector(UP, K.top).addScaledVector(_r, 0.04); _A[4].copy(_b); anchors(5); for(let i = 0; i < NP; i++) _P[i].addScaledVector(_L[i], wh); }
   // the ribbon: its width lies along the surface it is on (square to its run and to the way out from his spine)
   const pos = mesh.geometry.attributes.position, arr = pos.array; _mi.copy(G.matrixWorld).invert();
   for(let i = 0; i < NP; i++){ _t.subVectors(_P[Math.min(NP - 1, i + 1)], _P[Math.max(0, i - 1)]); _n.subVectors(_P[i], _co); _n.addScaledVector(_cu, -_n.dot(_cu)); _w.crossVectors(_t, _n); if(_w.lengthSq() < 1e-10) _w.copy(_cu); _w.setLength(K.w / 2);
@@ -195,7 +207,7 @@ function strap(R, cy, D, G, j, m, k, sig, wb, wh){ const K = GUNCARRY.strap, mes
 export function carryAfter(R, G, dt, P){ const C = GUNCARRY, D = R.pup && R.pup.D, M = R.arms._metric, met = M && M[R.armK]; if(!C.on || !D || !met || !met.visible || !D.Spine || !D.Spine1 || !D.Spine2 || !D.LeftShoulder || !D.RightShoulder || !D.LeftUpLeg || !D.RightUpLeg) return;
   const cy = state(R), p = S.player, cv = p && p.cav; if(!cv) return; const now = performance.now() / 1000, foot = afoot(cv), K = C.sling, SL = C.slot, len = met.userData.len, g = gunOf(R.armK), gx = g.grip[0] * len, mine = cv === CV && !R.cyDev, Z = SL.at[2];
   chest(R, cy, D); G.getWorldQuaternion(_q); _f.set(0, 0, 1).applyQuaternion(_q); _f.y = 0; _f.normalize(); _r.set(-_f.z, 0, _f.x);
-  if(!cy.aL){ cy.aL = [0, 0]; for(let i = 0; i < 2; i++){ D[SIDE[i] + 'Arm'].getWorldPosition(_t); D[SIDE[i] + 'ForeArm'].getWorldPosition(_t2); cy.aL[i] = _t.distanceTo(_t2) + _t2.distanceTo(D[SIDE[i] + 'Hand'].getWorldPosition(_t)); } }
+  bonesOf(cy, D);
   cy.pw += ((foot && cv.stance === 'prone' ? 1 : 0) - cy.pw) * Math.min(1, dt * SL.prone[3]); if(cy.pw < 0.004) cy.pw = 0; else if(cy.pw > 0.996) cy.pw = 1;
   // a new gun in his hands: his right hand brings it round the right shoulder from where it was worn, his left takes the old one round the left side
   if(cy.k !== R.armK){ const old = cy.k; cy.k = R.armK;
@@ -219,7 +231,7 @@ export function carryAfter(R, G, dt, P){ const C = GUNCARRY, D = R.pup && R.pup.
   // the gun in his hands as the hold left it, in the world; kept in the back's frame for a swap
   met.matrixWorld.decompose(_hp, _hq, _hs);
   if(tN < 1e-4 && cy.h < 1e-4 && !swap){ _t.copy(_hp).sub(_co); cy.hrp.set(_t.dot(_cr), _t.dot(_cu), _t.dot(_cb)); cy.hrq.copy(_cq).invert().multiply(_hq); cy.hOk = true; _q.copy(_hq).invert();
-    for(let i = 0; i < 2; i++){ const h = D[SIDE[i] + 'Hand']; h.getWorldPosition(cy.wl[i]).sub(_hp).applyQuaternion(_q); h.getWorldQuaternion(cy.wq2[i]).premultiply(_q); } }
+    for(let i = 0; i < 2; i++){ const h = cy.B.h[i]; h.getWorldPosition(cy.wl[i]).sub(_hp).applyQuaternion(_q); h.getWorldQuaternion(cy.wq2[i]).premultiply(_q); } }
   _np.copy(_hp); _nq.copy(_hq); const own = cy.s >= tIn;   // (own: it goes to / comes from its own sling slot; else it is coming off where it was worn)
   if(tN >= 1e-4){ slot(R.armK, len, own ? cy.sg : cy.nS, Z + (own ? cy.nz : cy.nZ), cy.ang, cy.pw, _sp, _sq); path(tN, R.armK, own ? cy.sg : 1, gx, _hp, _hq, _sp, _sq, _np, _nq); }
   if(cy.h >= 1e-4){ hangPose(D, R.armK, len, cy.ang, _fpos, _fq); const e = smooth(cy.h); _np.lerp(_fpos, e).addScaledVector(_f, C.hang.clear * 4 * e * (1 - e)); _nq.slerp(_fq, e); }   // (let down out ahead of his chest, not through it)
@@ -249,7 +261,7 @@ export function carryAfter(R, G, dt, P){ const C = GUNCARRY, D = R.pup && R.pup.
 // ---- on a wall (actors/soldier-climb-pose.js climbArms): true = the gun is this module's (it has just been laid by carryAfter, or — the hold skipped at the
 //   top of the climb — is laid here, wholly in its slot, with the weapon worn on his back) ----
 export function carryBack(R, G){ const C = GUNCARRY, D = R.pup && R.pup.D, M = R.arms._metric, met = M && M[R.armK]; if(!C.on || !C.sling.climb || !D || !met || !met.visible || !D.Spine1 || !D.Spine2 || !D.LeftShoulder || !D.RightShoulder) return false;
-  const cy = state(R); if(cy.done){ cy.done = false; return true; } const p = S.player, Z = C.slot.at[2]; chest(R, cy, D); G.getWorldQuaternion(_q); _f.set(0, 0, 1).applyQuaternion(_q); _f.y = 0; _f.normalize(); _r.set(-_f.z, 0, _f.x);
+  const cy = state(R); if(cy.done){ cy.done = false; return true; } const p = S.player, Z = C.slot.at[2]; bonesOf(cy, D); chest(R, cy, D); G.getWorldQuaternion(_q); _f.set(0, 0, 1).applyQuaternion(_q); _f.y = 0; _f.normalize(); _r.set(-_f.z, 0, _f.x);
   if(met.parent !== R.arms._G){ R.arms._G.add(met); if(cy.wK === R.armK) cy.wK = null; } cy.k = R.armK; cy.sw = 1; cy.oK = null; cy.h = 0; cy.why = 'climb'; cy.pw = 0;
   const bK = backKind(R, p, cy); if(cy.s < 1){ cy.s = 1; cy.sg = bK ? -(Math.sign(cy.bs) || 1) : 1; cy.nz = bK ? C.slot.stack : 0; }
   slot(R.armK, met.userData.len, cy.sg, Z + cy.nz, 0, 0, _sp, _sq); place(met, G, _sp, _sq); if(C.sling.strap) strap(R, cy, D, G, 0, met, R.armK, cy.sg, 1, 0);
