@@ -181,7 +181,7 @@ model,nhom_nguon,giay_phep,so_ban_sao,MB,nhan_hieu_that,bang_chung
 "real/gun/inf/rust","Meshy tự sinh","gói trả phí của chủ dự án — dùng thương mại được","1","5.3","","real/scene/SOURCES.txt: - rust.glb: ""Ruststeel Assault Rifle"" — Meshy_AI_Ruststeel_Assault_Rifle_20260416_texture_fbx.zip"
 "real/gun/inf/saw","Meshy tự sinh","gói trả phí của chủ dự án — dùng thương mại được","1","5.7","","real/scene/SOURCES.txt: - saw.glb: ""Rusty Sawgun"" — Meshy_AI_Rusty_Sawgun_20260504_texture_fbx.zip"
 "real/horse","Meshy tự sinh","gói trả phí của chủ dự án — dùng thương mại được","1","3.3","","tools/meshy-assets.json: horse"
-"real/operator","Meshy tự sinh","gói trả phí của chủ dự án — dùng thương mại được","1","5.2","","tools/meshy-assets.json: operator · lưới + trọng số da được sửa ngoại tuyến bằng tools/skin-repair.mjs (SKIN 1), giấy phép không đổi"
+"real/operator","Meshy tự sinh","gói trả phí của chủ dự án — dùng thương mại được","1","5.1","","tools/meshy-assets.json: operator · lưới + trọng số da được sửa ngoại tuyến bằng tools/skin-repair.mjs (SKIN 1), giấy phép không đổi"
 "real/proj/missile","Meshy tự sinh","gói trả phí của chủ dự án — dùng thương mại được","1","0.5","","real/proj/SOURCES.txt: - missile.glb: ""MK-4F Missile"" — Meshy_AI_MK_4F_Missile_1121184459_texture.glb"
 "real/scene/fence_gate","Meshy tự sinh","gói trả phí của chủ dự án — dùng thương mại được","4","11.1","","real/scene/SOURCES.txt: - fence_gate.glb: ""Chain Link Gate"" — Meshy_AI_Chain_Link_Gate_20261114_texture_fbx.zip"
 "real/scene/ice_peak","Meshy tự sinh","gói trả phí của chủ dự án — dùng thương mại được","4","11.2","","real/scene/SOURCES.txt: - ice_peak.glb: ""Icebound Summit"" — Meshy_AI_Icebound_Summit_20260417_texture_fbx.zip"
