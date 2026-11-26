@@ -13,7 +13,7 @@
 //   and direction reactive. DIRECTOR.on / ?nodirector: off, it still reads the fight (DIR.P, the peaks it would have called) and decides nothing.
 import * as THREE from 'three';
 import { DIRECTOR, ENTRY } from '../../config.js';
-import { FORTS, PROFILE, S, SURP, WAVE, saveProfile, surpriseNow, camera, duelOn, edgeFrom, enemies, entrySeen, inCamView, inField, isFoot, radio, reliefDrop, storyCue, tacticsReset, tacticsTick, wetAt } from '../hub.js';
+import { CO, coopDirAt, coopDirCountK, FORTS, PROFILE, S, SURP, WAVE, saveProfile, surpriseNow, camera, duelOn, edgeFrom, enemies, entrySeen, inCamView, inField, isFoot, radio, reliefDrop, storyCue, tacticsReset, tacticsTick, wetAt } from '../hub.js';
 
 const D = DIRECTOR, R2 = a => a[0] + Math.random() * (a[1] - a[0]), sat = x => x < 0 ? 0 : x > 1 ? 1 : x, _v = new THREE.Vector3();
 const OFF = typeof location !== 'undefined' && /nodirector/.test(location.search + location.hash);
@@ -29,7 +29,7 @@ const thrHi = () => D.thr.high * DIR.ease, thrLo = () => D.thr.low * DIR.ease;
 export function dirSay(now, key, must){ const L = D.say[key]; if(!L || !must && now - DIR.sayAt < D.radio.gap) return false; DIR.sayAt = now; if(storyCue('dir_' + key, null, must)) return true; radio(typeof L === 'string' ? L : L[(Math.random() * L.length) | 0]); return true; }   // (STORY 2 the story's own variants of the line, the squad's voices among them)
 // DIR 3 the difficulty's row (DIRECTOR.diff): the tier of tactics by stage, the thresholds' multiplier, the head-count multiplier, the awareness knobs' own factors
 export function dirDiff(){ return D.diff[PROFILE.difficulty] || D.diff.soldier; }
-export function dirCount(){ return dirDiff().count; }
+export function dirCount(){ return dirDiff().count * (CO.ai ? coopDirCountK() : 1); }   // COOP 9 two players in the room: more of them (COOP2.director.countK, not ×2)
 // the thresholds' multiplier now: the difficulty's × the stage's (DIRECTOR.arc: the campaign tightens stage by stage) × the gentle step once he has died adapt.deaths
 //   times on this stage (PROFILE.dirEase, kept on this machine until the stage is won).
 //   Under 1 everything is kinder: a peak is called (and released) at less pressure, "little to do" asks for less, the lulls are longer, the escalations slower
@@ -147,7 +147,8 @@ export function dirFinale(now){ if(!DIR.on) return true;
   return now >= DIR.fin; }
 // the way in the director wants for the next man or squad of the wave (type t), or null: its own. Over the field's edge on the bearing he is not looking along when
 //   that is out of the frame and neither too near nor too far; else up out of a hatch on that bearing, out of the frame
-export function dirEntry(t){ const F = DIR.flank, p = S.player, B = D.build; if(!DIR.on || !F || F.n <= 0 || !p || t !== 'squad' && !isFoot(t)) return null; let q = null;
+export function dirEntry(t){ const F = DIR.flank, p = CO.ai ? coopDirAt(S.player) : S.player, B = D.build;   // (COOP 9 the flank goes at the player who is alone)
+  if(!DIR.on || !F || F.n <= 0 || !p || t !== 'squad' && !isFoot(t)) return null; let q = null;
   for(let k = 0; k < 4 && !q; k++){ const e = edgeFrom(p.pos.x, p.pos.z, F.a + (Math.random() - 0.5) * B.spread * (1 + k * 0.4)); if(e && e.d >= ENTRY.minD && e.d <= B.maxD && !wetAt(e.x, e.z, 3) && !entrySeen(e.x, e.z)) q = e; }
   for(let k = 0; k < 5 && !q; k++){ const a = F.a + (Math.random() - 0.5) * B.spread, d = R2(B.hatchD), x = p.pos.x + Math.sin(a) * d, z = p.pos.z + Math.cos(a) * d; if(inField(x, z, 4) && !wetAt(x, z, 3) && !inCamView(x, z)) q = { x, z, hatch:true }; }
   if(!q) return null; F.n--; DIR.stats.fromFlank++; q.dir = F.side; q.alert = true;   // (they come knowing where he is: a flank that wanders off looking for him is no flank)

@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BRIDGE, HUMAN_SCALE, TOWERFALL } from '../../config.js';
-import { AREA_K, ARENA, clearTowerFalls, towerTopple, BIOME, FT, MOBILE, NIGHT, S, TOWER, TOWER_KINDS, _R, _mergeColored, _xf, addLootBeacon, addScore, animateSoldier, blocks, buildBridge, burst, cMod, clearBridges, coverMat, detailize, diffDmgMul, diffHpMul, dropSearchlight, floatText, heightAt, homeClear, inField, inZone, loopDmgMul, loopHpMul, makeSearchlight, makeSoldierMesh, pickTowerKind, propTex, scene, sfx, spawnBullet, spawnEnemy, spawnPart, towerKindGeo, updateBeams, updateSearchSpot, updateSearchlight, playerSeen, stealthLight } from '../hub.js';
+import { CO, coopGuardReport, coopGuardWaits, coopHostGuardDown, coopHostGuardShot, mateProxy, AREA_K, ARENA, clearTowerFalls, towerTopple, BIOME, FT, MOBILE, NIGHT, S, TOWER, TOWER_KINDS, _R, _mergeColored, _xf, addLootBeacon, addScore, animateSoldier, blocks, buildBridge, burst, cMod, clearBridges, coverMat, detailize, diffDmgMul, diffHpMul, dropSearchlight, floatText, heightAt, homeClear, inField, inZone, loopDmgMul, loopHpMul, makeSearchlight, makeSoldierMesh, pickTowerKind, propTex, scene, sfx, spawnBullet, spawnEnemy, spawnPart, towerKindGeo, updateBeams, updateSearchSpot, updateSearchlight, playerSeen, stealthLight } from '../hub.js';
 
 export const towers=[], fallers=[];
 export let _towerGeo=null;
@@ -84,12 +84,12 @@ export function updateTowers(dt, now){
       if(!tg){ gd.g.rotation.y += (Math.sin(now*0.4+gd.fireAt)*0.9 - gd.g.rotation.y)*Math.min(1, dt*1.5); animateSoldier(gd.g, 0, dt, false); continue; }
       const dx=tg.x-_tw.x, dz=tg.z-_tw.z, d=Math.hypot(dx,dz);
       gd.g.rotation.y = Math.atan2(dx,dz) - t.body.rotation.y;
-      const fired = d<TOWER.range && now>=gd.fireAt && S.mode==='playing';
+      const fired = d<TOWER.range && now>=gd.fireAt && S.mode==='playing' && !CO.puppet;   // (COOP 9 on a co-op guest the guards' rounds are the host's: he aims, the shot comes as an event)
       if(fired){ gd.fireAt = now + TOWER.fireCd*(0.8+Math.random()*0.5);
         gd.g.userData.muzzle.getWorldPosition(_tw); const ang=Math.atan2(tg.x-_tw.x, tg.z-_tw.z)+(Math.random()-0.5)*0.08;
         const dmg=(TOWER.guardDmg + S.stage*0.7)*loopDmgMul()*diffDmgMul()*cMod('enemyDmgMul');
         spawnBullet(_tw.x, _tw.z, ang, {owner:'e', inf:true, dmg, speed:72, color:0xffb04a, r:0.24, life:1.4, maxDist:TOWER.range+4, arcDist:d, noArc:true, y:_tw.y, dropTo:1.4, ignore:t.block});
-        spawnPart(_tw.x,_tw.y,_tw.z, Math.sin(ang)*5,-1,Math.cos(ang)*5, {tex:'flash', color:0xfff0c0, size:0.7, life:0.05, grav:0, drag:8}); sfx('rifleShot', {x:_tw.x, z:_tw.z}); }
+        spawnPart(_tw.x,_tw.y,_tw.z, Math.sin(ang)*5,-1,Math.cos(ang)*5, {tex:'flash', color:0xfff0c0, size:0.7, life:0.05, grav:0, drag:8}); sfx('rifleShot', {x:_tw.x, z:_tw.z}); if(CO.ai) coopHostGuardShot(t, gd, _tw.x, _tw.y, _tw.z, ang); }
       animateSoldier(gd.g, 0, dt, fired); }
   }
   for(let i=fallers.length-1;i>=0;i--){ const f=fallers[i]; f.t+=dt;                                          // guards tumbling off the collapsing tower
@@ -115,15 +115,16 @@ export function collapseTower(t){
   towerTopple({ g:t.g, x:t.x, z:t.z, gy:t.gy, dx:Math.sin(fa), dz:Math.cos(fa), metal:K.mat==='steel', h:(K.h||8)/(K.deck||0.8), r:K.r, kick:rammed ? 0.22 : undefined });
 }
 // a guard leaves the tower: shot off it by our infantry (Z104) or thrown when it collapses — he tumbles to the ground (score on landing)
-export function dropGuard(t, gd, ux, uz, live){ if(!gd.alive) return; gd.alive=false; gd.g.visible=true; const wp=new THREE.Vector3(); gd.g.getWorldPosition(wp); const wq=new THREE.Quaternion(); gd.g.getWorldQuaternion(wq);
+export function dropGuard(t, gd, ux, uz, live){ if(!gd.alive) return; if(CO.ai) coopHostGuardDown(t, gd, ux, uz, live); else if(CO.puppet && coopGuardWaits(t)) return;   /* COOP 9 the host passes it on · on the guest a guard falls only by the host's word (a wall hit replayed here must not throw its own dice for him) */ gd.alive=false; gd.g.visible=true; const wp=new THREE.Vector3(); gd.g.getWorldPosition(wp); const wq=new THREE.Quaternion(); gd.g.getWorldQuaternion(wq);
   t.body.remove(gd.g); scene.add(gd.g); gd.g.position.copy(wp); gd.g.quaternion.copy(wq);
   fallers.push({ g:gd.g, t:0, vx:ux*(3+Math.random()*3)+(Math.random()-0.5)*3, vy:3+Math.random()*3, vz:uz*(3+Math.random()*3)+(Math.random()-0.5)*3, rx:(Math.random()<0.5?-1:1)*(2+Math.random()*3), rz:(Math.random()-0.5)*4, down:false, live:!!live, fort:t.fort||null }); }
 // Z104 one of our riflemen hits a guard up top (x,z = the shooter) — he falls off the platform
-export function shootGuard(t, gd, x, z){ if(!gd.alive || t.falling) return false; const ux=(gd.wx||t.x)-x, uz=(gd.wz||t.z)-z, L=Math.hypot(ux,uz)||1;
+export function shootGuard(t, gd, x, z){ if(!gd.alive || t.falling) return false; if(CO.puppet && coopGuardReport(t, gd)) return true;   /* COOP 9 the guest's round on a guard is reported: the host drops him */ const ux=(gd.wx||t.x)-x, uz=(gd.wz||t.z)-z, L=Math.hypot(ux,uz)||1;
   dropGuard(t, gd, ux/L, uz/L); floatText('HẠ LÍNH GÁC', '#9be04a', new THREE.Vector3(t.x, 8, t.z), 15); return true; }
 // Z104 who a tower guard shoots: the tank, unless one of our foot soldiers is clearly closer
 export function towerGuardAim(x, z, y){ const p=S.player, seen=y==null || playerSeen(x, y, z), dp=Math.hypot(p.pos.x-x, p.pos.z-z), near=seen && dp<TOWER.range; let best=near?p.pos:null, bd=near?dp*0.8:Infinity;   // Z377 a soldier lying flat out of his sight is no target (null: none) · Z403 nor one beyond his reach: he keeps watching his sector until you are inside it
   for(const a of FT){ const d=Math.hypot(a.pos.x-x, a.pos.z-z); if(d<bd && d<TOWER.range){ bd=d; best=a.pos; } }
+  if(CO.ai && !CO.gd.on){ const m=mateProxy(); if(m){ const d=Math.hypot(m.pos.x-x, m.pos.z-z); if(d<bd && d<TOWER.range) best=m.pos; } }   // COOP 9 the other player's soldier is a target like ours (the round against him: combat/lock-on.js coopBulletMate)
   return best; }
 // every live guard (cached world position) — for our soldiers' target picking
 export function* liveGuards(){ for(const t of towers){ if(t.falling) continue; for(const gd of t.guards) if(gd.alive && gd.wx!=null) yield { t, gd }; } }

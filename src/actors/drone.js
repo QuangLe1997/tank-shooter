@@ -9,7 +9,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { DRONEWAR } from '../../config.js';
-import { S, audio, blockTop, blocksNear, burst, camera, clearDroneRaid, clearDroneSkills, decalScorch, droneHudOff, droneRaidReset, droneSkillsIdle, droneSkillsReset, heightAt, inShape, master, muted, radio, realAir, scene, sfx, spawnPart, tone, updateDroneHud, updateDroneRaid, updateDroneSkills } from '../hub.js';
+import { CO, coopDroneHit, coopHostDeath, S, audio, blockTop, blocksNear, burst, camera, clearDroneRaid, clearDroneSkills, decalScorch, droneHudOff, droneRaidReset, droneSkillsIdle, droneSkillsReset, heightAt, inShape, master, muted, radio, realAir, scene, sfx, spawnPart, tone, updateDroneHud, updateDroneRaid, updateDroneSkills } from '../hub.js';
 
 const D = DRONEWAR, ARMS = [[0.22, 0.22], [-0.22, 0.22], [0.22, -0.22], [-0.22, -0.22]];
 // what is in the air (dev / probes read it): list — the live drones · wrecks — the ones coming down or burning · n — what happened this stage
@@ -55,13 +55,13 @@ function unlist(d){ const i = DW.list.indexOf(d); if(i >= 0) DW.list.splice(i, 1
 export function droneFree(d){ if(!d || !d.g) return; unlist(d); d.g.visible = false; POOL[d.kind].push(d.g); d.g = null; }
 function wreckEnd(i){ const w = DW.wrecks[i]; DW.wrecks.splice(i, 1); w.g.visible = false; w.g.rotation.set(0, 0, 0); POOL[w.kind].push(w.g); }
 // shot out of the air: a burst where it was, and the wreck goes down
-export function droneKill(d){ if(!d || d.dead || !d.g) return; unlist(d); DW.n.downed++; const g = d.g; d.g = null; g.visible = true; g.userData.disc.visible = false; _p.x = d.x; _p.z = d.z;
+export function droneKill(d){ if(!d || d.dead || !d.g) return; if(d.nid && CO.ai) coopHostDeath(d);   /* COOP 9 the guest's copy goes down with it */ unlist(d); DW.n.downed++; const g = d.g; d.g = null; g.visible = true; g.userData.disc.visible = false; _p.x = d.x; _p.z = d.z;
   spawnPart(d.x, d.y, d.z, 0, 0, 0, { tex:'flash', color:0xfff2d0, size:2.4, life:0.07, grav:0, drag:0 });
   burst(_p, 0xffb050, 8, 7, { y:d.y, life:0.3, size:0.5, grav:-8, drag:3 }); burst(_p, 0x2a2420, 3, 2.4, { y:d.y, life:0.8, size:1.4, smoke:true, grav:-0.4, drag:2, op:0.45 }); sfx('explode', _p, 0.4);
   if(DW.wrecks.length >= D.wrecks) wreckEnd(0);
   DW.wrecks.push({ g, kind:d.kind, x:d.x, y:d.y, z:d.z, vx:d.vx * 0.5 + (Math.random() - 0.5) * 3, vy:Math.min(2, d.vy * 0.3), vz:d.vz * 0.5 + (Math.random() - 0.5) * 3, sx:4 + Math.random() * 5, sz:(Math.random() - 0.5) * 9, t:0, sm:0, down:false }); }
 // a round struck it: true when that brought it down
-export function droneHurt(d, dmg){ if(!d || d.dead) return false; d.hp -= dmg; d.hitT = 0.16; _p.x = d.x; _p.z = d.z;
+export function droneHurt(d, dmg){ if(!d || d.dead) return false; if(d.puppet && coopDroneHit(d, dmg)) return false;   /* COOP 9 on a co-op guest the drone is the host's: the hit is reported */ d.hp -= dmg; d.hitT = 0.16; _p.x = d.x; _p.z = d.z;
   spawnPart(d.x, d.y, d.z, (Math.random() - 0.5) * 6, 2 + Math.random() * 3, (Math.random() - 0.5) * 6, { color:0xffd27a, size:0.35, life:0.28, grav:-6, drag:2 }); sfx('hit', _p, 0.6);
   if(d.hp > 0) return false; droneKill(d); return true; }
 // is there a roof over (x, z): he stands inside a block's footprint (a tent, a house, a bunker) whose top is DRONEWAR.recon.roof m above the ground under him
@@ -108,6 +108,8 @@ export function droneSay(key, must){ const Y = D.say, L = Y[key], now = performa
 export function updateDroneWar(dt, now){ if(!DW.on) return; updateDroneSkills(dt, now); updateDroneRaid(dt, now);
   for(let i = DW.list.length - 1; i >= 0; i--) frame(DW.list[i], dt, now);
   if(DW.wrecks.length) wrecks(dt); updateDroneHud(dt, now); }
+// COOP 9 the guest's frame (game/coop-puppets.js): the drones are the host's — drawn where the snapshot put them, the wrecks come down; no skill, no raid of this page's own
+export function droneWarGuest(dt, now){ if(!DW.on) return; for(let i = DW.list.length - 1; i >= 0; i--) frame(DW.list[i], dt, now); if(DW.wrecks.length) wrecks(dt); }
 // not in play (game/loop.js, every frame of a menu, a pause, the death, a won stage): the pause holds everything as it is; anything else ends what he was flying
 export function droneWarIdle(){ if(DW.on && S.mode !== 'paused'){ droneSkillsIdle(); droneHudOff(); } }
 // the field is cleared (game/flow.js: a new run, back to the menu)

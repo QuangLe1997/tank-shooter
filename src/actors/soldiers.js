@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { REAL, REALTROOP, TROOPLOD } from '../../config.js';
-import { SHADOW_EXT, farGeo, MOBILE, S, SOLDIER, _R, _canvasTex, burst, camera, core, enemies, fitRealMan, floatText, heightAt, loadRealTroops, paintTroops, scene, sfx, spawnBullet, spawnPart, troopSkinDone, troopSkinFree, troopSkinMesh, troopSkinWrite } from '../hub.js';
+import { coopHostDeath, SHADOW_EXT, farGeo, MOBILE, S, SOLDIER, _R, _canvasTex, burst, camera, core, enemies, fitRealMan, floatText, heightAt, loadRealTroops, paintTroops, scene, sfx, spawnBullet, spawnPart, troopSkinDone, troopSkinFree, troopSkinMesh, troopSkinWrite } from '../hub.js';
    // support defenders (cap raised to fit the CORE GUARDS upgrade, +1..3)
 export let soldiers=[], soldierLvl=0;
 // ---- infantryman: jointed legs (walk cycle), plate carrier + pouches, covered helmet w/ NVG mount, gloves, boots, M4-pattern carbine with optic ----
@@ -280,10 +280,10 @@ export function spawnSoldier(){ if(soldiers.length>=SOLDIER.cap) return; const g
     fireAt:0, hurtAt:0, hitT:0, postAngle:0, bob:Math.random()*6.28, wpx:0, wpz:0, wanderAt:0, dead:false }); _placeSoldiers(); }
 export function deploySoldiers(target){ while(soldiers.length<Math.min(SOLDIER.cap,target)) spawnSoldier(); _placeSoldiers(); }
 export function clearSoldiers(){ for(const s of soldiers){ scene.remove(s.g); scene.remove(s.bar); } soldiers.length=0; }
-export function damageSoldier(s, dmg){ if(s.dead) return; s.hp-=dmg; s.hitT=0.16;
+export function damageSoldier(s, dmg){ if(s.dead || s.puppet) return;   /* COOP 9 the host's man on a co-op guest */ s.hp-=dmg; s.hitT=0.16;
   const t=s.g.userData.torso; if(t){ t.material.emissive.setHex(0xff5a2a); t.material.emissiveIntensity=0.85; }
   if(s.hp<=0) killSoldier(s); }
-export function killSoldier(s){ if(s.dead) return; s.dead=true; const i=soldiers.indexOf(s); if(i>=0) soldiers.splice(i,1);
+export function killSoldier(s){ if(s.dead) return; s.dead=true; if(s.nid) coopHostDeath(s);   /* COOP 9 */ const i=soldiers.indexOf(s); if(i>=0) soldiers.splice(i,1);
   burst(s.pos, 0xb04830, 10, 6, {y:1.0, life:0.5, size:0.8}); burst(s.pos, 0x2c331c, 5, 4, {y:0.8, life:0.7, size:1.1, smoke:true, op:0.4});
   floatText('✝', '#ff9a7a', {x:s.pos.x,y:1.7,z:s.pos.z}, 18); sfx('explode'); scene.remove(s.g); scene.remove(s.bar); _placeSoldiers(); }
 export function updateSoldiers(dt, now){

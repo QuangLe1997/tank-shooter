@@ -2,7 +2,7 @@
 //   camera, music, pause, key sheet) has up to 2 keys + 1 pad button, all rebindable from the key sheet (PROFILE.binds).
 //   Also the shared MENU NAVIGATION (focus ring) for keyboard (arrows / Tab / Enter / Esc) and pad (D-pad / A / B / LB-RB / right stick).
 import { ACTIONS } from '../../config.js';
-import { soldierFire, reloadNow, PROFILE, S, assaultFort, castSpellId, fpvKey, callParadrop, camReset, cavStance, closeKeys, crewPress, crewRelease, cycleGun, cycleSpell, cycleSquadOrder, floatText, keysOpen, musterAll, openKeys, padCfg, playerRange, rotStep, saveProfile, setCamAuto, sfx, toggleMusic, togglePause, tryDash, trySpell, yawReset, zoomPing, zoomReset, zoomStep, soldierRoll, soldierClimb, quietKnife } from '../hub.js';
+import { coopGive, coopPing, soldierFire, reloadNow, PROFILE, S, assaultFort, castSpellId, fpvKey, callParadrop, camReset, cavStance, closeKeys, crewPress, crewRelease, cycleGun, cycleSpell, cycleSquadOrder, floatText, keysOpen, musterAll, openKeys, padCfg, playerRange, rotStep, saveProfile, setCamAuto, sfx, toggleMusic, togglePause, tryDash, trySpell, yawReset, zoomPing, zoomReset, zoomStep, soldierRoll, soldierClimb, quietKnife } from '../hub.js';
 
 // ---- the table: ACTIONS (config) = [id, label, group, defaultKeys[], defaultPadButton|null, hold?] ----
 export const BIND = { cap:null, map:null };
@@ -44,6 +44,7 @@ export function runAction(id, phase, repeat){ if(phase==='up'){ if(id==='crew') 
     case 'camAuto': if(S.player && S.player.cav && !S.player.cav.mounted){ cavStance('crouch'); break; } setCamAuto(!S.camAuto); sfx('click'); break;   /* Z245 C = kneel on foot */ case 'camReset': camReset(); break;
     case 'music': toggleMusic(); break; case 'pause': togglePause(); break;
     case 'keys': if(keysOpen()) closeKeys(); else if(S.mode==='playing') openKeys(null); break;
+    case 'coopPing': coopPing(); break; case 'coopGive': coopGive(); break;   // COOP 9 (their rows exist only once a room is joined: game/coop-team.js)
   } }
 
 // ---- MENUS: one focus ring for keyboard and pad ----
@@ -111,7 +112,7 @@ addEventListener('keydown', e=>{ const k=e.key.toLowerCase(); S.keys[k]=true;
     return; }
   if(S.mode!=='playing') return;
   if(k>='1' && k<='8'){ return; }                                                               // gun slots stay on the number row (input.js)
-  const a=actionForKey(k); if(!a) return; if(a==='dash' || a==='fire' || a==='roll' || a==='sprint') e.preventDefault(); runAction(a, 'down', e.repeat); });
+  const a=actionForKey(k); if(!a) return; if(a==='dash' || a==='fire' || a==='roll' || a==='sprint' || a==='coopPing') e.preventDefault(); runAction(a, 'down', e.repeat); });
 addEventListener('keyup', e=>{ const k=e.key.toLowerCase(); S.keys[k]=false; if(BIND.cap) return; const a=actionForKey(k); if(a) runAction(a, 'up'); });
 addEventListener('mousedown', ()=>{ if(NAV.kb){ NAV.kb=false; document.body.classList.remove('kbnav'); clearFocus(); } }, true);   // the mouse takes over: drop the ring
 addEventListener('blur', ()=>{ S.keys={}; S.firing=false; });

@@ -3,13 +3,13 @@
 // they built, the 3-2-1 waits for both; every frame each page sends its soldier and draws the other's (COOP 5); the host sends the enemy and the guest draws it and
 // reports his hits (COOP 6); a player at no health is DOWN until the other stands him up, both down = the stage is lost (COOP 7). Without ?room= coopBoot() returns
 // at its first line and CO.on stays false: every hook in the game is behind CO.on / coopActive() / a field only co-op sets, so single player runs as before.
-import { CAV, COOP } from '../../config.js';
-import { DICE, fieldSteps, modeSeed, ARENA, BIOMES, CV, DIR, FORTS, GUNS, MATE, SIDEM, MOBILE, NET_CUE, NET_EV, NET_HASH0, NET_PFLAG, NET_STANCE, PROFILE, PUPS, S, TREES, blocks, bloodSpurt, celebrate, climbing, coopBegin, coopBroadcast, coopClashFatal, coopDownEnter, coopDownStep, coopEnemyById, coopEventAllowed, coopFocusPick, coopFrame, coopGuestBlast, coopGuestDeath, coopGuestNade, coopGuestPlay, coopHitOf, coopHitP, coopHostEntities, coopInfo, coopInputDue, coopJudgeHit, coopLedger, coopLine, coopLobbyClash, coopLobbyHide, coopLobbyOpen, coopLobbyShow, coopOnEvent, coopOnField, coopOnPeer, coopOnSay, coopOnSettings, coopOnState, coopParseUrl, coopPlaying, coopPuppetsClear, coopReviveShow, coopSample, coopSay, coopScoreAB, coopScoreOf, coopSeedUrl, coopSendEvent, coopSendInput, coopSession, coopSetFieldHash, coopSetReady, coopSetSettings, coopSnapDue, coopStart, coopStop, coopTrustWeapon, coopWarn, damageEnemy, damagePlayer, gameOver, heightAt, hide, launchGame, makeCoopDown, makeCoopTrust, mateClear, mateGunId, mateGunIndex, mateProxy, mateRange, mateRideCode, mateUpdate, netFramePlayer, netHashStep, netRand, openUpgrade, quitToMenu, radio, showBanner, towers, updateHUD, victory, clearEnemyMissiles, clearHeliDown, clearHelis, clearInfDead, clearLootBeacons, clearSquads, enemies, enemyPool, freeEnemyBar, applyBiome, buildBlocks, buildObjective, buildLava, buildUnderground, buildTrails, groundMaps, rockSet } from '../hub.js';
+import { CAV, COOP, COOP2 } from '../../config.js';
+import { CT, coopDmgNote, coopDroneById, coopTeamEvent, coopTeamKeys, coopTeamProbe, coopTeamReset, coopTeamTick, coopWorldEvent, coopWorldProbe, coopWorldReset, coopWorldTick, droneHurt, DICE, fieldSteps, modeSeed, ARENA, BIOMES, CV, DIR, FORTS, GUNS, MATE, SIDEM, MOBILE, NET_CUE, NET_EV, NET_HASH0, NET_PFLAG, NET_STANCE, PROFILE, PUPS, S, TREES, blocks, bloodSpurt, celebrate, climbing, coopBegin, coopBroadcast, coopClashFatal, coopDownEnter, coopDownStep, coopEnemyById, coopEventAllowed, coopFocusPick, coopFrame, coopGuestBlast, coopGuestDeath, coopGuestNade, coopGuestPlay, coopHitOf, coopHitP, coopHostEntities, coopInfo, coopInputDue, coopJudgeHit, coopLedger, coopLine, coopLobbyClash, coopLobbyHide, coopLobbyOpen, coopLobbyShow, coopOnEvent, coopOnField, coopOnPeer, coopOnSay, coopOnSettings, coopOnState, coopParseUrl, coopPlaying, coopPuppetsClear, coopReviveShow, coopSample, coopSay, coopScoreAB, coopScoreOf, coopSeedUrl, coopSendEvent, coopSendInput, coopSession, coopSetFieldHash, coopSetReady, coopSetSettings, coopSnapDue, coopStart, coopStop, coopTrustWeapon, coopWarn, damageEnemy, damagePlayer, gameOver, heightAt, hide, launchGame, makeCoopDown, makeCoopTrust, mateClear, mateGunId, mateGunIndex, mateProxy, mateRange, mateRideCode, mateUpdate, netFramePlayer, netHashStep, netRand, openUpgrade, quitToMenu, radio, showBanner, towers, updateHUD, victory, clearEnemyMissiles, clearHeliDown, clearHelis, clearInfDead, clearLootBeacons, clearSquads, enemies, enemyPool, freeEnemyBar, applyBiome, buildBlocks, buildObjective, buildLava, buildUnderground, buildTrails, groundMaps, rockSet } from '../hub.js';
 
 // what the page knows of the room (dev probes read it): on = a room was joined · live = the battle is on and the other is with us · ai = on the host the enemy
 // regards both players · puppet = on the guest the enemy is the host's · the stage each side stands at the gate of · counters
 export const CO = { on:false, host:false, me:0, live:false, ai:false, puppet:false, error:'', down:makeCoopDown(), gd:makeCoopDown(), led:-1, ledMax:1, holdUntil:0, safeUntil:0, trust:makeCoopTrust(), drops:0, dropWhy:'', gate:0, mateGate:0, go:0, gateAt:0, fieldOk:null, field:0, parts:[0, 0, 0, 0, 0, 0, 0, 0, 0], tag:'', lost:false, lostSent:false, scoreAt:0, score:-1, wave:-1, phase:'',
-  hurtOut:0, hurtIn:0, hitsIn:0, deaths:0, says:0, mark:'', bytes:0, t0:0, sampleAt:-1, sample:null, battle:null, link:'', err:0, lastErr:'' };
+  hurtOut:0, hurtIn:0, hitsIn:0, deaths:0, says:0, mark:'', bytes:0, snaps:0, mute:false, t0:0, sampleAt:-1, sample:null, battle:null, link:'', err:0, lastErr:'' };
 const PH = ['build', 'peak', 'release', 'finale'], _me = { id:0, x:0, y:0, z:0, heading:0, aimYaw:0, aimPitch:0, vx:0, vz:0, stance:0, weapon:0, flags:0, hp:0, hpMax:0, mount:0 }, _mi = { present:false, down:false, dist:0 }, _hit = { dmg:0, heavy:false }, _q = { now:0, dmg:0, heavy:false, weapon:0, enemyAlive:false, dist:0, gunDmg:0, gunRange:0, gunHeavy:false, guestDown:false }, _j = { ok:false, dmg:0, heavy:false, why:'' };
 function drop(why){ CO.drops++; CO.dropWhy = why; }   // a message this page may not act on: counted, never thrown
 function fail(e){ CO.err++; CO.lastErr = String(e && e.message || e).slice(0, 200); if(CO.err <= 3) console.warn('coop:', e); }
@@ -31,7 +31,7 @@ function render(){ if(!CO.on || (CO.live && !CO.error)) return; try{ coopLobbySh
 export function coopBoot(){ if(typeof location === 'undefined' || typeof document === 'undefined') return false; const q = coopParseUrl(location.search); if(!q) return false;
   if(q.host && !(globalThis.__seed > 0)){ location.replace(coopSeedUrl(location.href, 1 + Math.floor(netRand() * 2147483000))); return true; }   // (the seed is read before any module runs: the host's page comes back with one)
   const co = coopStart({ name:q.name || PROFILE.nickname || (q.host ? 'CHỦ PHÒNG' : 'KHÁCH') }); if(!co) return false;
-  CO.on = true; CO.host = co.isHost; CO.me = CO.host ? COOP.ids.host : COOP.ids.guest; CO.t0 = performance.now();
+  CO.on = true; CO.host = co.isHost; CO.me = CO.host ? COOP.ids.host : COOP.ids.guest; CO.t0 = performance.now(); try{ coopTeamKeys(); }catch(e){ fail(e); }   // (COOP 9 the ping's and the magazine's keys exist from here on)
   coopOnState(onState); coopOnSettings(onSettings); coopOnPeer(() => { render(); if(CO.live) coopWarn(coopInfo().peer ? '' : 'Mất liên lạc với đồng đội — đang chờ nối lại…'); }); coopOnField(onField); coopOnEvent(onEvent); coopOnSay((t, key) => { if(CO.host){ drop('say'); return; } CO.says++; try{ radio(String(t), /^[\w-]{1,24}$/.test(key) ? key : undefined); }catch(e){} });   // (the radio is the host's: a guest's line is dropped)
   if(CO.host){ const bi = BIOMES[Math.max(0, Math.min(BIOMES.length - 1, PROFILE.terrain | 0))] || BIOMES[0];
     CO.battle = Object.assign({ biome:bi.name, level:1, tod:'noon', wx:'clear' }, myBuild()); coopSetSettings({ seed:globalThis.__seed >>> 0, battle:CO.battle });
@@ -49,13 +49,13 @@ function onSettings(seed, battle){ if(CO.host){ render(); return; }
 function onState(state, was, reason){
   if(state === 'playing'){ if(reason === 'resume' && CO.live) return; startBattle(); return; }
   if(state === 'ended'){ const inBattle = CO.live; CO.live = CO.ai = CO.puppet = false; if(!CO.error) CO.error = REASON[reason] || ('Phòng đã đóng (' + reason + ').');
-    try{ mateClear(); coopLine(''); if(CO.down.on) standUp(performance.now() / 1000, true); }catch(e){ fail(e); }
+    try{ mateClear(); coopTeamReset(); coopLine(''); if(CO.down.on) standUp(performance.now() / 1000, true); }catch(e){ fail(e); }
     if(inBattle && CO.host){ coopWarn('Đồng đội đã rời — bạn đánh tiếp một mình.'); CO.on = false; return; }   // (the battle was the host's: it goes on, single-handed)
     if(inBattle){ try{ coopPuppetsClear(); quitToMenu(); }catch(e){ fail(e); } }   // (the guest's enemy was the host's: nothing is left to fight)
     coopWarn(''); CO.live = false; try{ coopLobbyShow(model(), CB); }catch(e){ fail(e); } return; }
   render(); }
 // both pages: the battle agreed in the lobby, through the game's own launch (the veil, the build, the intro, the briefing)
-function startBattle(){ const b = (coopInfo() || {}).battle || {}; CO.live = true; CO.error = ''; CO.puppet = !CO.host && !!COOP.puppets; CO.ai = CO.host && !!COOP.puppets; CO.gate = CO.mateGate = CO.go = 0; CO.lost = CO.lostSent = false; CO.down.on = false; CO.score = CO.wave = -1; CO.fieldOk = null; CO.trust = makeCoopTrust(); CO.drops = 0;
+function startBattle(){ const b = (coopInfo() || {}).battle || {}; CO.live = true; CO.error = ''; CO.puppet = !CO.host && !!COOP.puppets; CO.ai = CO.host && !!COOP.puppets; CO.gate = CO.mateGate = CO.go = 0; CO.lost = CO.lostSent = false; CO.down.on = false; CO.score = CO.wave = -1; CO.fieldOk = null; CO.trust = makeCoopTrust(); CO.drops = 0; CO.bytes = CO.snaps = 0; coopTeamReset();
   coopLobbyHide(); coopWarn(''); for(const id of ['start', 'nick', 'battleSetup', 'guide']){ const o = document.getElementById(id); if(o && !o.classList.contains('hidden')) hide(id); }
   launchGame({ mode:'custom', biome:Math.max(0, BIOMES.findIndex(x => x.name === b.biome)), tod:b.tod || 'noon', wx:b.wx || 'clear', space:'wide', level:Math.max(1, b.level | 0) }); }
 // ---- the same land? a fingerprint of what this page built (game/flow.js startGame and loot/upgrades.js chooseUpgrade call it once the field stands) ----
@@ -79,7 +79,7 @@ function warmLand(){ try{ const R = S.run || {}, b = BIOMES[Math.min(Math.max(0,
 // the men on the field, or places a garrison, sees the same empty field on both
 function coopPreBuild(){ if(!CO.live) return; try{ coopPuppetsClear(); for(const e of enemies){ e.mesh.visible = false; (enemyPool[e.type] = enemyPool[e.type] || []).push(e.mesh); freeEnemyBar(e.bar); e.bar = null; }
     enemies.length = 0; clearSquads(); clearHelis(); clearEnemyMissiles(); clearInfDead(); clearHeliDown(); clearLootBeacons(); }catch(e){ fail(e); } }
-export function coopFieldBuilt(){ if(!CO.on) return; try{ CO.field = coopFieldPrint(); CO.tag = 'stage ' + S.stage; CO.gate = CO.go = 0; CO.gateAt = 0; CO.lost = CO.lostSent = false; coopPuppetsClear(); resetDown(); if(CO.live) coopSetFieldHash(CO.field, CO.tag);
+export function coopFieldBuilt(){ if(!CO.on) return; try{ CO.field = coopFieldPrint(); CO.tag = 'stage ' + S.stage; CO.gate = CO.go = 0; CO.gateAt = 0; CO.lost = CO.lostSent = false; coopPuppetsClear(); coopWorldReset(); coopTeamReset(); resetDown(); if(CO.live) coopSetFieldHash(CO.field, CO.tag);   // (COOP 9 the blocks and towers get their ids here: the list both pages just fingerprinted)
     if(!CO.host && S.player){ const p = S.player; p.pos.x += COOP.mate.spawnGap; p.mesh.position.x = p.pos.x; if(CV.hPos) CV.hPos.x = p.pos.x; } }catch(e){ fail(e); } }   // (the guest beside the host, not inside him)
 // a new field (the next stage, the battle again): whoever was down is on his feet
 function resetDown(){ const D = CO.down, p = S.player; CO.gd.on = false; CO.gd.k = 0; CO.gd.lost = false; CO.led = -1; CO.holdUntil = CO.safeUntil = 0; if(p && (D.on || p.downed)){ p.downed = false; p.invincibleUntil = 0; if(!(p.hp > 0)) p.hp = Math.max(1, Math.round(p.maxHp * COOP.down.hpK)); CV.want = 'stand'; } D.on = false; D.k = 0; D.lost = false; MATE.revive = 0; coopLine(''); }
@@ -105,11 +105,12 @@ function sampleNow(nowMs){ if(CO.sampleAt !== nowMs){ CO.sampleAt = nowMs; CO.sa
 export function coopTick(dt, now, nowMs){ if(!CO.live || !coopPlaying() || !S.player) return;
   try{
     const inField = S.mode === 'playing' || S.mode === 'countdown' || S.mode === 'dying' || S.mode === 'paused';
-    if(CO.host){ if(coopSnapDue(nowMs)){ const f = coopFrame(); netFramePlayer(f, myState(now)); if(CO.ai && inField) coopHostEntities(f, now); CO.bytes += coopBroadcast(f); mirrors(now); } }
+    if(CO.host){ if(coopSnapDue(nowMs)){ const f = coopFrame(); netFramePlayer(f, myState(now)); if(CO.ai && inField) coopHostEntities(f, now); const nb = coopBroadcast(f); if(nb){ CO.bytes += nb; CO.snaps++; } mirrors(now); } }
     else if(coopInputDue(nowMs)) CO.bytes += coopSendInput(myState(now));
     const o = sampleNow(nowMs), st = o && o.np > 0 && o.pl[0].id ? o.pl[0] : null, I = coopInfo();
     mateUpdate(dt, now, inField || S.mode === 'intro' ? st : null, I ? I.peerName : '');
     if(CO.host) guestLedger(dt, now, st, !!(I && I.peer)); downTick(dt, now, !!(I && I.peer));
+    if(CO.ai && inField) coopWorldTick(dt, now); coopTeamTick(dt, now);   // COOP 9 what changed in the shared world goes out · COOP 9 pings, the director's pick, a magazine in the air
   }catch(e){ fail(e); } }
 // game/loop.js: on the guest (COOP.puppets) the fight's frame is the puppet one — true = it ran, the single-player updates are skipped
 export function coopGuestFrame(dt, now, nowMs){ if(!CO.puppet || !CO.live) return false; try{ coopGuestPlay(dt, now, sampleNow(nowMs)); }catch(e){ fail(e); } return true; }
@@ -127,14 +128,16 @@ function onEvent(type, a, b, x, y, z, p){ try{ const now = performance.now() / 1
     if(!coopEventAllowed(CO.host, type, a, b, p)){ drop('event ' + type + '/' + p); return; }
     if(CO.host){
       if(type === NET_EV.CUE){ CO.mateGate = b; return; }   // (GATE: the only cue a guest may send)
+      if(type >= NET_EV.BLOCK){ if(!coopWorldEvent(true, type, a, b, x, y, z, p, now)) coopTeamEvent(type, a, b, x, y, z, p, now); return; }   // COOP 9 a report on a block / a guard, a request for loot, a ping, a magazine: each judged in its module
       // a hit report: judged against what the host itself knows — the enemy, the weapon his state named, that weapon's own numbers, where he said he was
-      const e = coopEnemyById(b), h = coopHitOf(p, _hit), w = Math.round(y * 100), g = GUNS[mateGunId(w)] || null;
-      _q.now = now; _q.dmg = h.dmg; _q.heavy = h.heavy; _q.weapon = w; _q.enemyAlive = !!(e && e.hp > 0); _q.dist = e ? Math.hypot(e.pos.x - MATE.x, e.pos.z - MATE.z) : 0; _q.gunDmg = g ? g.dmg || 0 : 0; _q.gunRange = mateRange();
+      const dr = coopEnemyById(b) ? null : coopDroneById(b), e = dr ? null : coopEnemyById(b), h = coopHitOf(p, _hit), w = Math.round(y * 100), g = GUNS[mateGunId(w)] || null;   // (COOP 9 the id may be a drone's)
+      _q.now = now; _q.dmg = h.dmg; _q.heavy = h.heavy; _q.weapon = w; _q.enemyAlive = dr ? !dr.dead : !!(e && e.hp > 0); _q.dist = dr ? Math.hypot(dr.x - MATE.x, dr.z - MATE.z) : e ? Math.hypot(e.pos.x - MATE.x, e.pos.z - MATE.z) : 0; _q.gunDmg = g ? g.dmg || 0 : 0; _q.gunRange = mateRange();
       _q.gunHeavy = !!(g && (g.aoe > 0 || g.special || (g.dmg || 0) >= 30)); _q.guestDown = CO.gd.on || !MATE.on || S.mode !== 'playing';
-      const j = coopJudgeHit(CO.trust, _q, _j); if(!j.ok){ drop('hit ' + j.why); return; } CO.hitsIn++;
+      const j = coopJudgeHit(CO.trust, _q, _j); if(!j.ok){ drop('hit ' + j.why); return; } CO.hitsIn++; coopDmgNote(1, j.dmg); if(dr){ droneHurt(dr, Math.min(2, j.dmg)); return; }
       const L = Math.hypot(x, z) || 1; e._hx = x / L; e._hz = z / L; e._big = j.heavy; e._blast = null; e._hitK = Math.min(8, j.dmg / 40); e._fx = null;
       if(e.def.inf) bloodSpurt(e.pos.x, e.pos.z, e._hx, e._hz, j.heavy ? 1.4 : 0.7); e.hitT = Math.max(e.hitT || 0, 0.16); damageEnemy(e, j.dmg); return; }   // (the death, if it is one, goes back as the host's event)
     // ---- the guest: the host's word ----
+    if(type >= NET_EV.BLOCK || type === NET_EV.SHOT){ if(!coopWorldEvent(false, type, a, b, x, y, z, p, now)) coopTeamEvent(type, a, b, x, y, z, p, now); return; }   // COOP 9
     if(type === NET_EV.CUE){
       if(p === NET_CUE.GATE) CO.mateGate = b; else if(p === NET_CUE.GO) CO.go = b;
       else if(p === NET_CUE.SCORE){ S.score = coopScoreOf(a, b); updateHUD(); } else if(p === NET_CUE.WAVE){ S.wave = a; updateHUD(); }
@@ -152,7 +155,8 @@ function onEvent(type, a, b, x, y, z, p){ try{ const now = performance.now() / 1
 // the host's AI: which player this enemy soldier regards. true = for the length of his update "the player" is the guest's soldier (coopFocusEnd puts it back)
 let _real = null;
 export function coopFocus(e, now){ const gp = mateProxy(), hp = S.player; if(!gp || !hp || hp.mate) return false;
-  if(now >= (e._cfAt || 0)){ e._cfAt = now + COOP.focus.every * (0.7 + 0.6 * ((e.nid || 0) % 7) / 7); e._cf = coopFocusPick(e._cf | 0, Math.hypot(e.pos.x - hp.pos.x, e.pos.z - hp.pos.z), Math.hypot(e.pos.x - gp.pos.x, e.pos.z - gp.pos.z), CO.down.on, CO.gd.on); }
+  if(now >= (e._cfAt || 0)){ e._cfAt = now + COOP.focus.every * (0.7 + 0.6 * ((e.nid || 0) % 7) / 7); const pr = CT.pick.press, pk = COOP2.director.pressK;   // (COOP 9 the one hurting them most counts as nearer)
+    e._cf = coopFocusPick(e._cf | 0, Math.hypot(e.pos.x - hp.pos.x, e.pos.z - hp.pos.z) * (pr === 0 ? pk : 1), Math.hypot(e.pos.x - gp.pos.x, e.pos.z - gp.pos.z) * (pr === 1 ? pk : 1), CO.down.on, CO.gd.on); }
   if(e._cf !== 1) return false; _real = hp; S.player = gp; return true; }
 export function coopFocusEnd(){ if(_real){ S.player = _real; _real = null; } }
 // damage to the guest's soldier is DECIDED ON THE HOST and sent as a final number: the host takes his stance's protection off it (its own table), keeps its own
@@ -177,7 +181,9 @@ export function coopGameOver(){ if(CO.host && CO.live && !CO.lostSent){ CO.lostS
 function lose(why){ if(S.mode === 'gameover' || CO.lost) return; coopLine(''); CO.lost = true; if(CO.host) CO.down.lost = why === 'both'; gameOver(why === 'both' ? 'CẢ HAI ĐÃ NGÃ' : 'MẤT LÕI CĂN CỨ');
   if(why === 'both'){ const w = document.getElementById('go-why'); if(w) w.innerHTML = '<b>Cả hai đã ngã.</b> Không còn ai đứng để cứu người kia. Lần sau, khi đồng đội ngã hãy tới đứng cạnh 4 giây để dựng anh ấy dậy.'; } }
 // a line of the host's radio for the guest (campaign/operations.js radio)
-export function coopRadio(msg, vkey){ if(CO.ai && CO.live) coopSay(msg, vkey); }
+export function coopRadio(msg, vkey){ if(CO.ai && CO.live && !CO.mute) coopSay(msg, vkey); }
+// COOP 9 a line for THIS page's radio only (the ping's shout: its bearing is this player's own)
+export function coopRadioLocal(msg){ CO.mute = true; try{ radio(msg); }catch(e){ fail(e); }finally{ CO.mute = false; } }
 
 // ================= COOP 7: GOING DOWN TOGETHER (the host's word) =================
 // The HOST decides both: its own soldier is down when his health is gone; the guest's when the host's LEDGER of his health is (CO.led — what the host itself took
@@ -213,4 +219,4 @@ function downTick(dt, now, peerIn){ const D = CO.down, p = S.player;
 export function coopProbe(){ const I = coopInfo(), co = coopSession(); return { role:CO.host ? 'host' : 'guest', state:I ? I.state : 'none', reason:I ? I.reason : '', peer:!!(I && I.peer), rtt:I ? +(I.rtt || 0).toFixed(1) : 0, mode:S.mode, stage:S.stage, biome:CO.battle && CO.battle.biome, seed:globalThis.__seed >>> 0,
   field:CO.field, parts:CO.parts.join('.'), tag:CO.tag, fieldOk:CO.fieldOk, peerField:co ? co.peerFieldHash : 0, gate:CO.gate, go:CO.go, live:CO.live, ai:CO.ai, puppet:CO.puppet, down:CO.down.on, lost:CO.lost, hurtOut:CO.hurtOut, hurtIn:CO.hurtIn, hitsIn:CO.hitsIn, deaths:CO.deaths, says:CO.says, mark:CO.host ? CO.mark : MATE.mark ? 'on' : '', drops:CO.drops, dropWhy:CO.dropWhy, led:Math.round(CO.led), gDown:CO.gd.on, trust:{ ok:CO.trust.ok, dropped:CO.trust.dropped, clamped:CO.trust.clamped, why:CO.trust.why }, err:CO.err, lastErr:CO.lastErr,
   mate:{ on:MATE.on, name:MATE.name, x:+MATE.x.toFixed(2), z:+MATE.z.toFixed(2), hp:MATE.hp, mounted:MATE.mounted, stance:MATE.stance, gun:MATE.gun, down:MATE.down, onScreen:MATE.onScreen, hidden:MATE.hidden, dist:+MATE.dist.toFixed(1), shots:MATE.shots, frames:MATE.frames, real:!!(MATE.RC && MATE.RC.real), err:MATE.err, lastErr:MATE.lastErr },
-  pups:Object.assign({}, PUPS), stats:co ? Object.assign({}, co.stats) : null, secs:+((performance.now() - CO.t0) / 1000).toFixed(1) }; }
+  pups:Object.assign({}, PUPS), world:coopWorldProbe(), team:coopTeamProbe(), snaps:CO.snaps, perSnap:CO.snaps ? Math.round(CO.bytes / CO.snaps) : 0, stats:co ? Object.assign({}, co.stats) : null, secs:+((performance.now() - CO.t0) / 1000).toFixed(1) }; }

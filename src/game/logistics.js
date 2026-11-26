@@ -14,7 +14,7 @@
 //   game/cavalry.js and game/soldier-moves.js) — a chip shows how much; firing it off lightens him.
 import * as THREE from 'three';
 import { LOGISTICS } from '../../config.js';
-import { BUFF_COL, BUFF_ICON, CV, DEPOTS, FORTS, FT, GIFTS, GUNS, PROFILE, QUIET, RALLY_PT, S, ammoKind, blocksNear, clampFieldXZ, core, dirSupply, dropPowerup, enemies, floatText, heightAt, holoRing, inBlock, inField, magCap, radio, scene, sfx, spawnGift, startReload, suspectEnemy, updateGunHUD } from '../hub.js';
+import { CO, coopCrateOpened, coopHostCrate, coopNeedAmmo, BUFF_COL, BUFF_ICON, CV, DEPOTS, FORTS, FT, GIFTS, GUNS, PROFILE, QUIET, RALLY_PT, S, ammoKind, blocksNear, clampFieldXZ, core, dirSupply, dropPowerup, enemies, floatText, heightAt, holoRing, inBlock, inField, magCap, radio, scene, sfx, spawnGift, startReload, suspectEnemy, updateGunHUD } from '../hub.js';
 
 const L = LOGISTICS, NOW = () => performance.now() / 1000, R2 = a => a[0] + Math.random() * (a[1] - a[0]);
 const fmt = (s, o) => s.replace(/\{(\w)\}/g, (m, k) => o[k] ?? '');
@@ -73,13 +73,17 @@ export function updateLogistics(dt, now){ const p = S.player; if(!p || !p.cav ||
   weigh(p, r); if((LOGI.n++ & 3) === 0) baseAt();
   for(let i = LOGI.drops.length - 1; i >= 0; i--){ const u = LOGI.drops[i].u; if(u.st === 'open' || !GIFTS.includes(u) || now - LOGI.drops[i].t > L.drop.stale) LOGI.drops.splice(i, 1); }   // (opened, cleared, or left lying so long that the HQ may send another)
   if(S.awaitingUpgrade || p.infiniteAmmo) return;
-  regen(p, r, sdt); warn(p); restock(p, now); mateHand(p, now); if(wantDrop(p, r, now)) callDrop(p, now); }
+  regen(p, r, sdt); warn(p); restock(p, now); mateHand(p, now); if(wantDrop(p, r, now)){ if(CO.puppet) coopNeedAmmo(now); else callDrop(p, now); } }   // (COOP 9 the guest says he is short: the host's HQ sends the crate)
+// COOP 9 the host's HQ drops a crate for the OTHER player's soldier (p = his stand-in: where he is, the way he faces) — unless one already lies waiting
+export function ammoDropFor(p, now){ if(!p || LOGI.drops.length) return false; return callDrop(p, now); }
+// COOP 9 rounds out of a class's reserve (a magazine thrown to the other player) → what came out
+export function ammoSpend(c, n){ const p = S.player; if(!p || !p.guns || !(n > 0)) return 0; const r = ensure(p); if(!(c in r)) return 0; const k = Math.max(0, Math.min(Math.round(n), r[c])); if(k){ r[c] -= k; updateGunHUD(); } return k; }
 // the text of a gain, for the modules that hand rounds over ("+30 ĐẠN 7.62")
 export function ammoSay(n, c){ return fmt(L.say.got, { n, c:L.say.cls[c] || '' }); }
 
 // ---- SUPPLY 2 what a fallen enemy soldier carried: a pouch on the ground, picked up like any loot (no toast: a line over his head) ----
 const POUCH = {};
-function pouchDef(c){ return POUCH[c] || (POUCH[c] = { id:'pouch_' + c, svg:'mag', color:0xd8c070, vi:L.say.pouch, ds:L.say.pouchDs, cat:'ammo', tier:0, quiet:true,
+export function pouchDef(c){ return POUCH[c] || (POUCH[c] = { id:'pouch_' + c, svg:'mag', color:0xd8c070, vi:L.say.pouch, ds:L.say.pouchDs, cat:'ammo', tier:0, quiet:true,
   apply(p){ const n = ammoGain(c, c === 'rocket' ? 1 : R2(L.pouch.n) * diffK()); LOGI.stats.pouch += n; floatText(n ? ammoSay(n, c) : L.say.full, n ? '#ffd86a' : '#9aa3ad', p.pos, 15); } }); }
 // loot/soldier-arms.js armsDrop: this man has fallen — his pouch, maybe (sure: always — the man a knife took never fired a round)
 export function ammoPouch(e, sure){ const p = S.player, P = L.pouch; if(!p || !e.def || !e.def.inf || (e.pos.x - p.pos.x) ** 2 + (e.pos.z - p.pos.z) ** 2 > P.maxD * P.maxD) return; const r = ensure(p); let c = null;
@@ -125,7 +129,7 @@ function callDrop(p, now){ const D = L.drop, px = p.pos.x, pz = p.pos.z; let ex 
     for(let i = 0; i < enemies.length; i++){ const e = enemies[i]; if((e.pos.x - x) ** 2 + (e.pos.z - z) ** 2 < D.foeR * D.foeR) f++; }
     if(f < bn){ bn = f; bx = x; bz = z; if(f <= D.foes) break; } }
   if(bn === 1e9){ LOGI.dropAt = now + 5; return false; } if(!dirSupply(now)){ LOGI.dropAt = now + 2; return false; }
-  const u = spawnGift({ x:bx, z:bz }, () => { ammoCrate(D.share); LOGI.stats.drops++; if(S.player) floatText(L.say.dropGot, '#ffd86a', S.player.pos, 18); });
+  const u = spawnGift({ x:bx, z:bz }, () => { ammoCrate(D.share); LOGI.stats.drops++; if(S.player) floatText(L.say.dropGot, '#ffd86a', S.player.pos, 18); if(CO.ai) coopCrateOpened(u); }); if(CO.ai) coopHostCrate(u);   // COOP 9 one crate for both
   LOGI.drops.push({ x:bx, z:bz, u, t:now }); LOGI.dropAt = now + D.cd; LOGI.stats.called++;
   const dx = bx - px, dz = bz - pz, T = L.say.drop, o = { d:Math.round(Math.hypot(dx, dz) / 5) * 5, b:L.say.bearings[(Math.round(Math.atan2(dx, -dz) / (Math.PI / 4)) + 8) % 8] };   // (north is up the minimap: −z)
   radio(fmt(T[(Math.random() * T.length) | 0], o)); floatText(fmt(L.say.dropTip, o).toUpperCase(), '#ffd86a', p.pos, 17);   // (the radio is busy in a fight: said over his head too)

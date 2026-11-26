@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { LOOT, HUMAN_SCALE, INFGUN } from '../../config.js';
-import { SOLDIER, addScore, soldierLoot, BIOME, GUNS, S, __set_soldierLvl, burst, clampField, core, damageEnemy, deploySoldiers, enemies, equippedGun, floatText, gunPicEl, gunTierTx, heightAt, iconEl, ringPulse, scene, setIcon, sfx, soldierLvl, soldiers, droneCrate, tip, updateHUD, blPulse, holoArc, holoRing, trooperGunPick, trooperGive, loadGLTF, svgGlyphTex, asShipped, nearShape, hudChips } from '../hub.js';
+import { CO, coopLootDropped, coopLootKeeps, coopLootMay, coopLootTouch, SOLDIER, addScore, soldierLoot, BIOME, GUNS, S, __set_soldierLvl, burst, clampField, core, damageEnemy, deploySoldiers, enemies, equippedGun, floatText, gunPicEl, gunTierTx, heightAt, iconEl, ringPulse, scene, setIcon, sfx, soldierLvl, soldiers, droneCrate, tip, updateHUD, blPulse, holoArc, holoRing, trooperGunPick, trooperGive, loadGLTF, svgGlyphTex, asShipped, nearShape, hudChips } from '../hub.js';
 
 // ===== POWER-UPS (drops) =====
 // Power-ups: TIMED buffs (longer now), PERMANENT buffs (∞ until death), instant, gun drops.
@@ -104,6 +104,7 @@ export function trooperLoot(tier){ const p=S.player; if(p.hp/p.maxHp<0.4 && Math
   const pool=POWERUPS.filter(u=>(u.tier||0)<=tier); return pool[(Math.random()*pool.length)|0]; }
 export function pickLoot(tier){ return soldierLoot(tier); }   // tier = how tough the source was (0 common · 1 rare · 2 epic) · Z352 a medal or an ammo crate now and then, else trooperLoot
 export function dropPowerup(pos, tier, forced){
+  if(CO.live && !coopLootMay()) return null;   // COOP 9 on a co-op guest a pick-up is the host's: it comes as his event (game/coop-world.js)
   tip('loot');
   tier=tier|0; const def=forced||pickLoot(tier), t=def.tier||0;   // Z104 forced = re-drop a carried item (rally point)
   const g=new THREE.Group(); scene.add(g); const model=lootModel(def); g.add(model);
@@ -116,6 +117,7 @@ export function dropPowerup(pos, tier, forced){
   const u={def, g, model, beam, icon, ring, x:pos.x, z:pos.z, y:heightAt(pos.x,pos.z)+1.4, vx:Math.cos(a)*sp, vz:Math.sin(a)*sp, vy:7+Math.random()*2, landed:false, bounces:0, born:performance.now()/1000, tier:t};
   g.position.set(u.x,u.y,u.z); pickups.push(u);
   if(t>=1) burst(pos, RAR[t], 6, 5, {y:1.5, life:0.4, size:0.5, grav:-6, drag:2, up:3});
+  if(CO.live) coopLootDropped(u);   // COOP 9 (the host gives it an id and sends it)
   return u;
 }
 // Z104 a soldier picks an item up to carry it home → { def, tier } (null if someone was faster)
@@ -139,8 +141,9 @@ export function updatePickups(dt, now){
     const dx=p.pos.x-u.x, dz=p.pos.z-u.z, d2=dx*dx+dz*dz;
     if(d2 < 64){ const d=Math.sqrt(d2)||1; u.x+=dx/d*18*dt; u.z+=dz/d*18*dt; }           // magnet toward player when near
     u.g.position.set(u.x, heightAt(u.x,u.z), u.z);
-    if(d2 < (p.radius+1.2)**2){ applyPowerup(u.def); sfx('powerup'); ringPulse(p.pos,u.def.color,3); burst(p.pos, RAR[u.tier], 10, 6, {y:1.6, life:0.5, size:0.45, grav:-4, drag:2, up:4}); disposePickup(u); pickups.splice(i,1); continue; }
-    if(age>life && !u.stash){ disposePickup(u); pickups.splice(i,1); }
+    if(d2 < (p.radius+1.2)**2 && !(CO.live && coopLootTouch(u, now))){ applyPowerup(u.def);   // (COOP 9 the guest asks the host for it: whoever touched first)
+      sfx('powerup'); ringPulse(p.pos,u.def.color,3); burst(p.pos, RAR[u.tier], 10, 6, {y:1.6, life:0.5, size:0.45, grav:-4, drag:2, up:4}); disposePickup(u); pickups.splice(i,1); continue; }
+    if(age>life && !u.stash && !(CO.live && coopLootKeeps(u))){ disposePickup(u); pickups.splice(i,1); }
   }
 }
 export function clearPickups(){ for(const u of pickups) disposePickup(u); pickups.length=0; }

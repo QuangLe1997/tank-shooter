@@ -1,6 +1,6 @@
 // net/rules.js — COOP 4 THE RULES BOTH PAGES MUST AGREE ON, AS PLAIN FUNCTIONS (they run in Node: tools/coop-test.mjs): the cue codes, whether two machines can
 // build the same battlefield, the seed in the address, a hit report's parameter, which of the two players an enemy regards, and going down / being stood up again
-import { COOP } from '../../config.js';
+import { COOP, COOP2, LOGISTICS } from '../../config.js';
 import { NET_EV } from './protocol.js';
 
 export const NET_CUE = COOP.cue;
@@ -48,6 +48,7 @@ export function coopBlastColor(a, b){ return ((a & 0xffff) << 8) | (b & 0xff); }
 // only a hit report against an enemy id and "I stand at the gate of stage b"; never a hit on a player, a death, a blast, a score, a wave, a stage won or lost,
 // down or up. From the host the guest takes every kind, with its numbers in range. Anything else is dropped (counted, never thrown).
 export function coopEventAllowed(recvIsHost, type, a, b, p){ const C = NET_CUE, T = COOP.trust, first = COOP.ids.firstEntity, G = COOP.ids.guest, stage = v => v >= 1 && v <= T.stageMax;
+  if(type >= NET_EV.BLOCK && type <= NET_EV.STATE) return coopWorldAllowed(recvIsHost, type, a, b, p);   // COOP 9 the shared world's events: their own table below
   if(recvIsHost){ if(type === NET_EV.HIT) return a === G && b >= first; if(type === NET_EV.CUE) return p === C.GATE && a === G && stage(b); return false; }
   if(type === NET_EV.HIT) return b === G && a !== G; if(type === NET_EV.DEATH) return a >= first; if(type === NET_EV.EXPLOSION) return p >= 1; if(type === NET_EV.GRENADE) return p >= 1 && p <= T.nadeMs;
   if(type === NET_EV.MARK) return a === 0 || a === 1; if(type === NET_EV.RADIO || type === NET_EV.SHOT) return true;
@@ -72,3 +73,64 @@ export function coopJudgeHit(TR, q, out){ const T = COOP.trust; out = out || {};
 //   (already cut to COOP.trust.hpMax): it falls with his report at once (he may hurt himself: a fall, lava) and rises no faster than healPerS; hold = inside the
 //   syncS after the host hurt him or stood him up, when a report may still be the staler one → the ledger does not move
 export function coopLedger(led, rep, max, dt, hold){ const T = COOP.trust; rep = Math.max(0, Math.min(max, rep)); if(led < 0) return rep; if(hold) return Math.min(led, max); return rep < led ? rep : Math.min(rep, led + T.healPerS * dt, max); }
+
+// ================= COOP 9 ONE SHARED WORLD · THE PING · THE DIRECTOR FOR TWO · A MAGAZINE THROWN (numbers: config COOP2) =================
+// The events (type · host → guest · guest → host):
+//   BLOCK  a = the block's id (its place in the build order + 1: both pages built the same list — the fingerprint says so), b = 1 gone | 2 p is what is left of
+//          it (0–65535 = none–all of its health), else p = the damage in whole points · a = guest, b = the block's id, y = his weapon's index / 100, p = damage × 10 (a REPORT)
+//   GUARD  a = the tower's id, b = which guard (+ 16: he rides the fall and lives), x / z = the way he is thrown · a = guest, b = tower id × 16 + guard (a REPORT)
+//   SHOT   a = the tower's id, b = which guard, x y z = his muzzle, p = the round's bearing (0–65535 a turn) · (never from the guest)
+//   LOOT   p = COOP2.lootOp: DROP a = the pick-up's id, b = what it is (10 bits: coopLootCode) + its height × 4 << 10 + 32768 stashed, x z = where it is, y = its
+//          climb (m/s), p's upper bits = its flight (bearing in 128ths of a turn << 4, speed × 4 << 11) · TAKEN a = id, b = who ·
+//          GONE a = id · CRATE a = the crate's id, x z · OPEN a = id · from the guest ASK / ASKCRATE a = guest, b = id · NEED a = guest ("I am short of rounds")
+//   PING   a = who, b = kind (0 place, 1 enemy, 2 loot), x y z = where, p = the enemy's / pick-up's id (0 = none) — both ways
+//   GIVE   a = who throws, b = rounds, p = the ammunition class's index (LOGISTICS.start's order), x z = where he stands — both ways
+//   STATE  a = COOP2.stateOp.CORE, b = the Core's health, p = its most · (never from the guest)
+export const NET_LOOT = COOP2.lootOp, NET_STATE = COOP2.stateOp;
+const AMMO_CLS = Object.keys(LOGISTICS.start);
+export function coopAmmoIdx(c){ return AMMO_CLS.indexOf(c); }
+export function coopAmmoCls(i){ return AMMO_CLS[i] || ''; }
+// the gate for those types (coopEventAllowed sends them here): from the guest only a report or a request with his own id on it — what it asks for is judged after
+function coopWorldAllowed(host, type, a, b, p){ const E = NET_EV, G = COOP.ids.guest, L = NET_LOOT, W = COOP2, id = v => v >= 1 && v <= 65535, give = () => b >= 1 && b <= W.give.maxRounds && p >= 0 && p < AMMO_CLS.length;
+  if(host){ if(type === E.BLOCK) return a === G && id(b); if(type === E.GUARD) return a === G && b >= 0 && b <= 65535;
+    if(type === E.LOOT) return a === G && (p === L.NEED || ((p === L.ASK || p === L.ASKCRATE) && id(b)));
+    if(type === E.PING) return a === G && b >= 0 && b < W.ping.kinds; if(type === E.GIVE) return a === G && give(); return false; }   // (STATE: the Core's health is the host's to say)
+  if(type === E.BLOCK) return id(a) && b >= 0 && b <= 3; if(type === E.GUARD) return id(a) && b >= 0 && b < 32;
+  if(type === E.LOOT){ const op = p & 15; return id(a) && (op === L.DROP || (p < 16 && (op === L.TAKEN || op === L.GONE || op === L.CRATE || op === L.OPEN))); }   // (a DROP's upper bits: its flight)
+  if(type === E.PING) return a === COOP.ids.host && b >= 0 && b < W.ping.kinds; if(type === E.GIVE) return a === COOP.ids.host && give();
+  if(type === E.STATE) return a === NET_STATE.CORE && b >= 0 && p >= 1; return false; }
+// ---- a rate: perS a second, `burst` at once ----
+export function makeCoopBucket(perS, burst){ return { tok:burst, perS, burst, at:-1, ok:0, dropped:0 }; }
+export function coopBucketTake(B, now){ if(B.at >= 0){ const dt = Math.max(0, Math.min(10, now - B.at)); B.tok = Math.min(B.burst, B.tok + dt * B.perS); } B.at = now; if(!(B.tok >= 1)){ B.dropped++; return false; } B.tok -= 1; B.ok++; return true; }
+// the host's memory for judging what the guest asks of the shared world (one a battle)
+export function makeCoopWorldTrust(){ const W = COOP2; return { block:makeCoopBucket(W.block.perS, W.block.perS), loot:makeCoopBucket(W.loot.asksPerS, W.loot.asksPerS), guard:makeCoopBucket(W.guard.perS, W.guard.perS),
+  ping:makeCoopBucket(W.ping.perS, W.ping.burst), give:makeCoopBucket(W.give.perS, W.give.burst), ok:0, dropped:0, why:'' }; }
+// ---- a guest's round on a block: q = { now, dmg, weaponOk (his state named that weapon), alive (the host still has the block), dist (m from where he said he
+//   was to its edge), gunDmg, gunRange (the host's own table), guestDown } → out { ok, dmg, why }: dropped ('down' 'no-block' 'no-damage' 'weapon' 'range'
+//   'rate') or taken with its damage cut to what such a gun could do to a structure
+export function coopJudgeBlock(WT, q, out){ const B = COOP2.block; out = out || {}; out.ok = false; out.dmg = 0; let why = '';
+  if(q.guestDown) why = 'down'; else if(!q.alive) why = 'no-block'; else if(!(q.dmg > 0) || !isFinite(q.dmg)) why = 'no-damage'; else if(!q.weaponOk) why = 'weapon';
+  else if(!(q.dist <= Math.max(B.rangeMin, (q.gunRange || 0) * B.rangeK))) why = 'range'; else if(!coopBucketTake(WT.block, q.now)) why = 'rate';
+  out.why = WT.why = why; if(why){ WT.dropped++; return out; } WT.ok++; out.ok = true; out.dmg = Math.min(q.dmg, Math.max(B.dmgMin, (q.gunDmg || 0) * B.dmgK)); return out; }
+// may the guest have what he asks for (a pick-up, the crate, a round on a tower guard): q = { now, alive, dist, guestDown }, r = the reach → '' yes, else why
+export function coopJudgeNear(WT, bucket, q, r){ const why = q.guestDown ? 'down' : !q.alive ? 'gone' : !(q.dist <= r) ? 'range' : !coopBucketTake(bucket, q.now) ? 'rate' : ''; WT.why = why; if(why) WT.dropped++; else WT.ok++; return why; }
+// what the host sends of a damaged block: what is left of it when it keeps a plain health (frac), else the damage itself (whole points: the host keeps the rest for the next one)
+export function coopBlockP(frac, v){ return frac ? Math.max(0, Math.min(65535, Math.round(v * 65535))) : Math.max(1, Math.min(65535, Math.round(v))); }
+// ---- THE PING ----
+// the clock bearing of a point (dx, dz from the listener) for one who looks along yaw (the game's angles: forward = (sin yaw, cos yaw), his right hand = −x when he looks along +z): 12 = dead ahead, 3 = to his right
+export function coopClock(dx, dz, yaw){ const rel = Math.atan2(dx, dz) - (yaw || 0); let h = Math.round(-rel / (Math.PI / 6)) % 12; if(h < 0) h += 12; return h || 12; }
+export function coopPingText(kind, clock, dist){ const Y = COOP2.ping.say; return String(Y[kind] || Y[0]).replace('{h}', clock).replace('{d}', Math.max(5, Math.round((+dist || 0) / 5) * 5)); }
+// one player's pings (oldest first): a new one in, the oldest out past `max` → the one dropped, or null
+export function coopPingPush(list, ping, max){ list.push(ping); return list.length > (max == null ? COOP2.ping.max : max) ? list.shift() : null; }
+// ---- THE DIRECTOR FOR TWO ----
+export function coopCountK(two){ return two ? COOP2.director.countK : 1; }
+// whom the host's director goes for: q = { dist (m between the two), hostMen / guestMen (our men round each), hostDmg / guestDmg (what each dealt lately),
+//   hostDown, guestDown } → out.ambush (the flank entry: the one who is alone) / out.press (whom the enemy leans on: the one hurting it most — or the one
+//   standing over a downed man): 0 = the host's soldier, 1 = the guest's, -1 = nobody in particular
+export function coopDirPick(q, out){ const D = COOP2.director; out = out || {}; out.ambush = -1; out.press = -1;
+  if(q.hostDown || q.guestDown){ out.ambush = out.press = q.hostDown && !q.guestDown ? 1 : q.guestDown && !q.hostDown ? 0 : -1; return out; }   // (a revive draws fire: the one still standing)
+  if(q.dist > D.aloneD) out.ambush = q.guestMen < q.hostMen ? 1 : q.hostMen < q.guestMen ? 0 : q.guestDmg <= q.hostDmg ? 1 : 0;   // (as many men round both: the one fighting less)
+  const hi = Math.max(q.hostDmg || 0, q.guestDmg || 0), lo = Math.min(q.hostDmg || 0, q.guestDmg || 0); if(hi >= D.pressMin && hi > lo * D.pressLead) out.press = q.guestDmg > q.hostDmg ? 1 : 0;
+  return out; }
+// ---- A MAGAZINE THROWN: may this page take the rounds the other says he throws: q = { now, dist (m between the two), down (the thrower), rounds } → '' yes
+export function coopJudgeGive(WT, q){ const Gv = COOP2.give, why = q.down ? 'down' : !(q.dist <= Gv.r * Gv.rK) ? 'range' : !(q.rounds >= 1 && q.rounds <= Gv.maxRounds) ? 'rounds' : !coopBucketTake(WT.give, q.now) ? 'rate' : ''; WT.why = why; if(why) WT.dropped++; else WT.ok++; return why; }

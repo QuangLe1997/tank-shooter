@@ -10,7 +10,7 @@
 //   · a hit ANSWERS: four ticks round the crosshair and a click; a kill, a longer red mark and a lower click (hitConfirm)
 import * as THREE from 'three';
 import { GUNFEEL, GUNHOLD } from '../../config.js';
-import { CV, FIT, MOBILE, S, VIEW, XH, camera, ejectBrass, sfx, spawnPart } from '../hub.js';
+import { CO, coopDmgNote, CV, FIT, MOBILE, S, VIEW, XH, camera, ejectBrass, sfx, spawnPart } from '../hub.js';
 
 const V3 = () => new THREE.Vector3(), clamp = (v, a, b) => Math.max(a, Math.min(b, v)), smooth = k => { k = clamp(k, 0, 1); return k * k * (3 - 2 * k); }, seg = (u, a, b) => clamp((u - a) / (b - a), 0, 1);
 
@@ -67,7 +67,7 @@ function mark(){ if(_hm || typeof document === 'undefined') return _hm; const H 
   e.innerHTML = `<svg viewBox="${-s / 2} ${-s / 2} ${s} ${s}" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="filter:drop-shadow(0 0 1.5px rgba(0,0,0,.9))">${ln(-b, -b, -a, -a)}${ln(b, -b, a, -a)}${ln(-b, b, -a, a)}${ln(b, b, a, a)}</svg>`;
   document.body.appendChild(e); return (_hm = e); }
 // one of his rounds struck an enemy (combat/lock-on.js): the mark at the crosshair (the mouse's own, or where the pad's is drawn), the click — kill = it dropped him
-export function hitConfirm(kill){ const H = GUNFEEL.shot.hit, now = performance.now() / 1000; if(now - SHOTS.at > 0.02){ SHOTS.hit++; SHOTS.at = now; } if(!kill && now - _hmAt < H.gap) return; _hmAt = now; const e = mark(); if(!e) return;
+export function hitConfirm(kill){ if(CO.ai) coopDmgNote(0, 0);   /* COOP 9 the host's own hits, for the director's "who hurts them most" */ const H = GUNFEEL.shot.hit, now = performance.now() / 1000; if(now - SHOTS.at > 0.02){ SHOTS.hit++; SHOTS.at = now; } if(!kill && now - _hmAt < H.gap) return; _hmAt = now; const e = mark(); if(!e) return;
   let x = XH.mx, y = XH.my; if(XH.src !== 'mouse' || x < 0){ if(!S.aimPoint) return; _hv.copy(S.aimPoint).project(camera); if(_hv.z > 1) return; x = (_hv.x + 1) / 2 * VIEW.w; y = (1 - _hv.y) / 2 * VIEW.h; }
   e.style.color = kill ? H.col[1] : H.col[0]; e.style.transform = `translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,0) scale(${kill ? H.killK : 1})`; e.style.transition = 'none'; e.style.opacity = '1'; e.style.display = 'block';
   const ms = kill ? H.killMs : H.ms; clearTimeout(_hmT); void e.offsetWidth; e.style.transition = `opacity ${ms}ms ease-out`; e.style.opacity = '0'; _hmT = setTimeout(() => { e.style.display = 'none'; }, ms + 30);

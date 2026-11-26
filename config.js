@@ -2576,10 +2576,10 @@ export const BACKDROP = { on:true, ground:14000, lead:-Math.PI / 2 + 0.42, snow:
 //     tokens (heavyPerS back a second) and takes heavyDmg at most · stageMax = the highest stage number a cue may name · nadeMs = the longest grenade flight ·
 //     hpMax = the most health the host believes a guest has, healPerS = how fast the host lets his reported health rise (it falls at once), syncS = after the host
 //     stands him up or hurts him it does not follow a staler report for this long
-export const COOP = { proto:1, snapHz:20, inputHz:30,
+export const COOP = { proto:2, snapHz:20, inputHz:30,
   interp:{ delayMs:100, inputDelayMs:70, extrapMs:120, keep:10, teleportM:6, driftMs:0.05, offsetUp:0.25 },
   quant:{ pos:100, head:256, aim:65536 },
-  limits:{ entities:120, events:48, eventQueue:256, players:2, ctlBytes:4096, battleKeys:16, name:24 },
+  limits:{ entities:160, events:48, eventQueue:256, players:2, ctlBytes:4096, battleKeys:16, name:24 },
   delta:{ history:32, maxBack:24 },
   link:{ pingMs:2000, deadMs:8000, queueMax:64, retryBaseMs:400, retryMaxMs:5000, retryK:1.8, retryJitter:0.25, retries:20 },
   session:{ tickMs:250, pingMs:1000, helloMs:3000, peerLostMs:15000 },
@@ -2592,6 +2592,47 @@ export const COOP = { proto:1, snapHz:20, inputHz:30,
   down:{ r:2.6, reviveS:4, hpK:0.4, safeS:2.5, decay:0.5 },
   puppet:{ fireMs:220, fireEvery:0.14, goneS:0.6, blastPerS:6, nadeN:8, hitMax:3000 },
   trust:{ hitsPerS:40, heavyBurst:8, heavyPerS:3, dmgK:16, dmgMin:20, heavyDmg:600, rangeK:1.6, rangeMin:60, stageMax:999, nadeMs:8000, hpMax:600, healPerS:25, syncS:1.2 } };
+// COOP 9 ONE SHARED BATTLE · THE PING · THE DIRECTOR FOR TWO · A MAGAZINE THROWN (game/coop-world.js, game/coop-team.js, game/coop-puppets.js, net/rules.js).
+//   Nothing here is read without a live room. The HOST decides; a guest REPORTS (a round on a block, on a tower guard, "I touch this pick-up") and the host judges it.
+//   world: switches — blocks (cover / towers / gates / the objective damaged and destroyed alike) · loot (pick-ups and the HQ's ammunition crate) · allies (our AI
+//     soldiers as the host's puppets) · guards (tower guards) · drones · core (the Core's health)
+//   block: a damaged block is passed on at most every `every` s (the last state wins; gone = at once) · a guest's report: perS a second, the block within
+//     max(rangeMin, his gun's reach × rangeK) m of where he said he was, its damage cut to max(dmgMin, the gun's round × dmgK) · force = tries to bring down on the
+//     guest what the host says is gone
+//   core: the Core's health is sent when it changed, at most every `every` s
+//   loot: the guest may take a pick-up within takeR m of where he said he was — on HIS page it slid the last 8 m to him, on the host's it lies where it fell —
+//     (he asks every askEvery s while he touches it; asksPerS a second at most) ·
+//     world = pick-ups whose effect is on the shared battle (the host applies it whoever took it) · crateR = the same reach for the ammunition crate (both get its
+//     rounds) · needCd = s between two "I am short of ammunition" from the guest (the host's HQ answers with a crate by parachute near HIM)
+//   guard: a guest's round on a tower guard — perS a second, the tower within max(rangeMin, reach × rangeK) m
+//   ally (our men on the guest): roles = the kind byte's meaning (0 = a Core guard, the rest the fireteam's roles) · fireMs / fireEvery / goneS as COOP.puppet's ·
+//     hex = their tracer's colour
+//   drone: kinds = the airframes (kind byte kind0 + index) · goneS
+//   ping: one key marks what he aims at — snapR m round the aim point an enemy is taken, else lootR m a pick-up, else the place · lifeS s · max alive a player ·
+//     cdS between two of his own · the other page takes perS a second (burst at once) · ringR / hex / css by kind (0 place, 1 enemy, 2 loot) · beamH = the
+//     marker's height (m) · say = the shout, {h} = the clock bearing from the LISTENER's view, {d} = metres
+//   director (the host's, with a guest in the room): countK × the wave's head count · apart by more than aloneD m the flank entry goes at the one with fewer of
+//     our men within menR m · the one who dealt most lately (what he dealt decays over dmgTau s; at least pressMin, pressLead × the other's) is PRESSED: to an
+//     enemy choosing whom to regard he counts as pressK × as far · a revive in progress is heard: every reviveEvery s up to reviveN idle men within reviveR m
+//     go and look
+//   give: one key throws a magazine of the class the other holds to him — within r m (the receiving page allows r × rK), every cdS s, `mags` magazines of his
+//     gun but maxRounds at most, out of the giver's own LOGISTICS reserve · flyS = its flight as drawn · perS / burst = what the other page takes
+//   keys: the two actions' rows for the key sheet (pushed into ACTIONS only once a room is joined; every letter was taken: TAB and the backquote)
+export const COOP2 = {
+  world:{ blocks:true, loot:true, allies:true, guards:true, drones:true, core:true },
+  block:{ every:0.25, perS:30, rangeK:1.6, rangeMin:40, dmgK:40, dmgMin:600, force:4 },
+  core:{ every:0.5 },
+  loot:{ takeR:10, askEvery:0.4, asksPerS:6, world:['repair', 'bomb', 'freeze', 'troops', 'armory'], crateR:8, needCd:60 },
+  lootOp:{ DROP:1, TAKEN:2, GONE:3, ASK:4, CRATE:5, OPEN:6, ASKCRATE:7, NEED:8 },
+  stateOp:{ CORE:1 },
+  guard:{ perS:8, rangeK:1.6, rangeMin:60 },
+  ally:{ roles:['guard', 'rifle', 'mg', 'mortar', 'sapper', 'at'], fireMs:260, fireEvery:0.16, goneS:0.8, hex:0xe8ef86 },
+  drone:{ kinds:['recon', 'fpv', 'spot', 'kami'], kind0:200, goneS:0.6 },
+  ping:{ kinds:3, lifeS:6, max:3, snapR:6, lootR:5, cdS:0.35, perS:2, burst:4, ringR:[1.5, 1.1, 0.9], hex:[0x6fd0ff, 0xff5a3a, 0xffd24a], css:['#6fd0ff', '#ff5a3a', '#ffd24a'], beamH:7,
+    say:['Tới điểm hướng {h} giờ — {d} mét!', 'Địch hướng {h} giờ!', 'Đồ tiếp tế hướng {h} giờ — {d} mét!'], mine:['ĐÃ ĐÁNH DẤU ĐIỂM', 'ĐÃ ĐÁNH DẤU ĐỊCH', 'ĐÃ ĐÁNH DẤU ĐỒ'] },
+  director:{ countK:1.6, aloneD:45, menR:22, pressK:0.72, dmgTau:12, pressMin:40, pressLead:1.25, reviveR:60, reviveEvery:2.5, reviveN:4 },
+  give:{ r:7, rK:1.6, cdS:4, mags:1, maxRounds:250, flyS:0.55, perS:1, burst:2 },
+  keys:[['coopPing', 'Co-op: đánh dấu chỗ đang ngắm cho đồng đội (địch / điểm / đồ)', 'CO-OP', ['tab'], null, 0], ['coopGive', 'Co-op: ném một băng đạn cho đồng đội đứng gần', 'CO-OP', ['`'], null, 0]] };
 // SUPPLY 1 AMMUNITION IS A SUPPLY LINE (game/logistics.js; a gun's ammunition class: data/guns.js ammoKind) — "magazines" = × the gun's own magazine; rounds, s, m, kg.
 //   start: the reserve he sets out with by class, in magazines of the gun he carries in it (× diff by the difficulty setting); a new stage and a new life bring every class
 //     back up to it · capK: a class's reserve holds at most capK × that · warn: the reserve at or under `low` magazines = ÍT ĐẠN, none = BĂNG CUỐI, none and an empty

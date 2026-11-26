@@ -274,6 +274,8 @@ export * from './game/boot-gate.js';
 export * from './ui/coop-lobby.js';   // COOP 4 the co-op lobby's screen (built only when a room is joined)
 export * from './game/coop-remote.js';   // COOP 5 the other player's soldier
 export * from './game/coop-puppets.js';   // COOP 6 the enemy as the host sends it
+export * from './game/coop-world.js';   // COOP 9 the shared world: blocks, loot, tower guards, the Core (asleep without a live room)
+export * from './game/coop-team.js';   // COOP 9 the ping, the director for two, a magazine thrown
 export * from './game/coop-glue.js';   // COOP 4–7 the game's side of two-player co-op (asleep without ?room=)
 export * from './game/startup.js';
 export * from './dev/hooks.js';

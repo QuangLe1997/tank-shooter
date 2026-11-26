@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { GIFTBOX as GIFT } from '../../config.js';
-import { S, burst, heightAt, ringPulse, scene, sfx } from '../hub.js';
+import { CO, coopCrateTouch, S, burst, heightAt, ringPulse, scene, sfx } from '../hub.js';
 
 export const GIFTS = [];
 let K = null;
@@ -71,7 +71,7 @@ export function updateGifts(dt, now){ if(!GIFTS.length) return; const G = GIFT, 
       const fade = u.st === 'wait' ? Math.max(0, 1 - Math.max(0, u.t - G.chuteStay) / 1.5) : c.canopy.material.opacity * (1 - Math.min(1, dt * 3)); c.canopy.material.opacity = fade; c.lines.material.opacity = fade; if(fade <= 0.01) c.g.visible = false; }
     if(u.st === 'wait'){ u.ring.material.opacity = 0.26 + 0.08 * Math.sin(now * 2);
       if((u.puff -= dt) <= 0){ u.puff = G.smoke.every; burst({ x:u.can.position.x, z:u.can.position.z }, G.smoke.col, 2, 0.6, { y:u.gy + 0.25, life:G.smoke.life, size:G.smoke.size, smoke:true, grav:-1.1, drag:0.8, up:1.6, op:0.55 }); }
-      if(p && (p.pos.x - u.x) ** 2 + (p.pos.z - u.z) ** 2 < G.reach * G.reach) openGift(u); continue; }
+      if(u.forceOpen || p && (p.pos.x - u.x) ** 2 + (p.pos.z - u.z) ** 2 < G.reach * G.reach && !(u.cid && CO.live && coopCrateTouch(u, now))) openGift(u); continue; }   // COOP 9 the shared crate: the host opens it for whoever reached it (forceOpen), the guest asks
     u.ring.material.opacity *= 1 - Math.min(1, dt * 4); const o = Math.min(1, u.t / 0.35); u.hinge.rotation.x = -1.9 * ease(o); u.straps.visible = u.t < 0.08;
     if(u.t > G.open){ const s = Math.min(1, (u.t - G.open) / 0.8); r.position.y = u.gy - s * GIFT.size[1] * 1.1; u.can.position.y = u.gy + 0.04 - s * 0.2; if(s >= 1){ disposeGift(u); GIFTS.splice(i, 1); } } } }
 function openGift(u){ u.st = 'open'; u.t = 0; const at = { x:u.x, z:u.z }; sfx('click'); sfx('powerup'); ringPulse(at, 0xd8d0a0, 2.2);

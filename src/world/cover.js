@@ -1,7 +1,7 @@
 // world/cover.js — TERRAIN BLOCKS (cover)
 import * as THREE from 'three';
 import { BALANCE, DEFENSE, FUEL_DRUM, RAM, HARD, OPEN_LAND, REALROCK, SHATTER, FUEL_TANK, BREAKUP } from '../../config.js';
-import { modeSeed, AREA_K, ARENA, BIOME, BUMPS, CONTAINER_PAINT, COVER_HP, COVER_K, COVER_R, COVER_SET, DEF, HEAVY_KINDS, LONE_SET, MOBILE, S, _R, addLootBeacon, dressRock, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildCoreWalls, buildDefense, garrisonDefense, buildLandmarks, buildRidges, buildScenery, buildSupply, buildTowers, buildZones, buildingHit, burst, camera, clearLootBeacons, clearRubble, clearWallMarks, clearWalls, collapseTower, coverGeo, coverMat, coverVariant, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortCoreHit, fortWallHit, freeEnemyBar, garrisonSupply, getEnemyBar, heightAt, hitTunnel, inField, inZone, leaveRubble, makeCoverMesh, placeCaches, planZones, resetSupply, ridgeRockDown, rockSet, scene, sfx, spawnDebris, spawnPart, supplyDamage, trackCover, underHit, wallDamage, clearShatter, shatter, solidKind, blastAllies, dropScenePiece, tentHit, blockTop, shockDome, blastLight, decalAsh, dirtGeyser, dustSkirt, coopSeedStep } from '../hub.js';
+import { CO, coopBlockDamage, modeSeed, AREA_K, ARENA, BIOME, BUMPS, CONTAINER_PAINT, COVER_HP, COVER_K, COVER_R, COVER_SET, DEF, HEAVY_KINDS, LONE_SET, MOBILE, S, _R, addLootBeacon, dressRock, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildCoreWalls, buildDefense, garrisonDefense, buildLandmarks, buildRidges, buildScenery, buildSupply, buildTowers, buildZones, buildingHit, burst, camera, clearLootBeacons, clearRubble, clearWallMarks, clearWalls, collapseTower, coverGeo, coverMat, coverVariant, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortCoreHit, fortWallHit, freeEnemyBar, garrisonSupply, getEnemyBar, heightAt, hitTunnel, inField, inZone, leaveRubble, makeCoverMesh, placeCaches, planZones, resetSupply, ridgeRockDown, rockSet, scene, sfx, spawnDebris, spawnPart, supplyDamage, trackCover, underHit, wallDamage, clearShatter, shatter, solidKind, blastAllies, dropScenePiece, tentHit, blockTop, shockDome, blastLight, decalAsh, dirtGeyser, dustSkirt, coopSeedStep } from '../hub.js';
 
 // ----------------------------- TERRAIN BLOCKS (cover) -----------------------------
 // Brick (destructible) + steel (solid). Block tank movement + bullets → real cover.
@@ -94,7 +94,9 @@ export function breakScar(x, z, r, fire){ const S0=BREAKUP.scar, gy=heightAt(x,z
   decalCrater(x, z, r*S0.crater+0.8, 0.95); decalAsh(x, z, r*S0.ash+1, S0.ashK); dirtGeyser(x, z, Math.min(1.6, S0.geyser*Math.sqrt(r)));
   const n=Math.round(S0.smoke[0]*(MOBILE?0.5:1)); for(let i=0;i<n;i++) spawnPart(x+(Math.random()-0.5)*r, gy+0.4+i*0.5, z+(Math.random()-0.5)*r, (Math.random()-0.5)*0.5, 0.45+Math.random()*0.4, (Math.random()-0.5)*0.5,
     { color:fire ? 0x3a3632 : 0x9c988f, size:(1.4+Math.random())*k, life:S0.smoke[1]*(0.7+Math.random()*0.5), smoke:true, grav:0.12, drag:0.9, grow:2.2, op:S0.smokeOp }); }   // it smokes a while, thinning
-export function damageBlock(b, dmg){
+// COOP 9 with a live co-op room a block's damage is the host's to decide (game/coop-world.js coopBlockDamage: passed on / reported / applied); without one, as ever
+export function damageBlock(b, dmg){ if(CO.live) coopBlockDamage(b, dmg, damageBlock0); else damageBlock0(b, dmg); }
+function damageBlock0(b, dmg){
   if(b.kind==='tent'){ tentHit(b); return; }                             // Z402 a tent catches fire
   if(b.kind==='fueldrum'){ fuelDrumHit(b, dmg); return; }                  // Z402 a fuel drum goes up
   if(b.kind==='building'){ buildingHit(b, dmg); return; }                 // Z216 a city building: floors come down from the top
