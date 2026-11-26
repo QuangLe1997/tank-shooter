@@ -1891,6 +1891,46 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
   ok(/if\(b\.trc\) tracerHit\(b\.x, _gy\+0\.1, b\.z\);/.test(rd('src/combat/lock-on.js')) && /trc:o\.tr===1/.test(rd('src/combat/lock-on.js')) && /export function tracerHit\(/.test(bl) && /function aftermath\(/.test(bl) && /decalAsh\(x, z, 2 \+ s \* 1\.7, 0\.5\); decalScorch\(/.test(bl)
     && F.heat.wisps.life[0] >= 2 && F.he.wisps.born[1] >= 5 && F.kinds.wisp.prio === 0 && F.kinds.ember.prio === 0,
     'fire fx aftermath: a tracer burns on for a moment where it went in; a burst leaves ash under its scorch and crater, wisps for seconds after (the first thing dropped under load)'); }
+// MODE 1 NIGHT DEFENCE (campaign/night-defence.js · campaign/mode-run.js · data/mode-math.js): the night's schedule and the mode's hooks
+{ const C = await import('./config.js'), M = await import('./src/data/mode-math.js'), fs = await import('node:fs'), rd = f => fs.readFileSync(f, 'utf8'), N = C.NIGHTDEF, A = N.assaults, F = N.flare, Y = N.say;
+  const nd = rd('src/campaign/night-defence.js'), mr = rd('src/campaign/mode-run.js'), fl = rd('src/game/flow.js'), hub = rd('src/hub.js'), html = rd('index.html'), kinds = new Set(A.flatMap(a => a.extra.map(x => x.k)));
+  ok(N.len >= 420 && N.len <= 540 && N.h0 === 21 && N.h1 === 5 && A.length >= 5 && A.length <= 6 && N.at.length === A.length && N.lull.min >= 30 && N.lull.max <= 40 && N.lull.min <= N.lull.max && N.fastK >= 2 && N.fastK <= 4 && N.warn >= 5 && N.warn <= 10,
+    'the night: 21:00 → 05:00 in about eight minutes, five or six assaults, lulls of 30–40 s, the side given away a few seconds ahead');
+  ok(N.at[0] >= N.warn && N.at.every((t, i) => i === 0 || t - N.at[i - 1] >= N.lull.min + N.warn + 25) && N.len - N.at[N.at.length - 1] >= N.lull.min + 40,
+    'every assault has time to be fought and a lull before the next is called; the last has more than a minute before dawn');
+  ok(A.every((a, i) => i === 0 || a.n >= A[i - 1].n && (a.tier || 0) >= (A[i - 1].tier || 0)) && A[A.length - 1].n === Math.max(...A.map(a => a.n)) && A[A.length - 1].extra.some(x => x.k === 'general') && A.slice(0, -1).every(a => !a.extra.some(x => x.k === 'general')) && A.every(a => (a.tier || 0) <= 2 && a.rpg >= 0 && a.rpg <= 0.4),
+    'the assaults grow, the tactics tier never falls, and only the last — the hardest — is led by the general');
+  ok(['mortar', 'drone', 'hatch', 'general'].every(k => kinds.has(k)) && [...kinds].every(k => new RegExp("x\\.k === '" + k + "'").test(nd)) && A.every((a, i) => !a.extra.some(x => x.k === 'hatch') || i >= A.length - 2) && A.some(a => a.heli > 0)
+    && A.every(a => a.extra.every(x => x.k !== 'drone' || x.kind in C.DRONEWAR.enemy.kinds)) && N.hatch.types.every(t => ENEMY_DEFS[t] && ENEMY_DEFS[t].inf),
+    'the night mixes what the game has: a mortar barrage, a drone raid of a kind that exists, a troop helicopter, the hatch inside the wire only late, the general');
+  ok(F.burn >= 12 && F.burn <= 18 && F.cd > F.burn && F.R >= 20 && F.R <= 40 && F.mark > F.tick && F.max >= 1 && F.max <= 4 && F.lift > 0.4 && F.lift <= 2 && F.reach >= F.ahead && F.sig.burn < N.warn + 2,
+    'the flare: about 15 s over a sector, never two back to back from one cooldown, its marks outlive a tick');
+  ok(N.sap.r > 24 && N.sap.arm >= 2 && C.CORE_DEF.hp / (N.sap.maxN * N.sap.dps * C.CORE_DEF.armour) >= 25 && C.CORE_DEF.hp / (N.sap.maxN * N.sap.dps * C.CORE_DEF.armour) <= 120 && N.mortar.ring[0] - N.mortar.R >= 8 && N.gun.from >= 2 && N.gun.t > 0.5 && N.gun.t <= 3,
+    'the base under attack: men at the wall take the Core down in half a minute to two if nobody stops them, the barrage never lands on the Core itself');
+  ok(M.ndClock(0, N.h0, N.h1, N.clockStep) === '21:00' && M.ndClock(1, N.h0, N.h1, N.clockStep) === '05:00' && M.ndClock(0.5, N.h0, N.h1, N.clockStep) === '01:00' && M.ndClock(0.126, N.h0, N.h1, 5) === '22:00' && M.ndClock(2, N.h0, N.h1, 5) === '05:00',
+    'the clock on the HUD runs 21:00 → 05:00 across midnight');
+  { const q = M.ndQueue(A[A.length - 1], 1, () => 0.5), q2 = M.ndQueue(A[0], 1.3, () => 0.99), L = A[A.length - 1];
+    ok(q.length === L.n + L.squads + L.heli && q.filter(t => t === 'squad').length === L.squads && q[q.length - 1] === 'heliTroop' && q.every(t => t === 'squad' || ENEMY_DEFS[t]) && q2.filter(t => t !== 'squad').length === Math.round(A[0].n * 1.3) && !q2.includes('rpg'),
+      'an assault\'s queue is what the waves already spawn: riflemen, RPG men, squads, a troop helicopter last'); }
+  { const K = N.score, w = M.ndScore({ base:3000, survived:6, core:0.5, acc:0.4, won:true, general:true, night:1 }, K), l = M.ndScore({ base:3000, survived:3, core:0, acc:0.4, won:false, night:1 }, K);
+    ok(w > l && w === 3000 + 6 * K.assault + K.dawn + 0.5 * K.core + 0.4 * K.acc + K.general && M.ndScore({ base:3000, survived:6, core:0.5, acc:0.4, won:true, general:true, night:2 }, K) > w && M.ndScore({ base:0, acc:9 }, K) === K.acc,
+      'the night\'s score: enemies, assaults seen off, the base\'s health at dawn, accuracy — a later night is worth more'); }
+  ok(Y.dirs.length === 4 && Y.warn.length >= 2 && Y.warn.every(t => /\{d\}/.test(t)) && /\{d\}/.test(Y.warnHeli) && /\{h1\}/.test(Y.obj) && Y.end.stats.length === 4 && !/https?:|www\./.test(JSON.stringify(Y.share)) && /\{name\}/.test(Y.share.by),
+    'the night\'s words: four sides for the sentries, a result of four numbers, a share text with no link');
+  ok(/WAVE\.betweenUntil = 1e12;/.test(nd) && /fixedEdge:ND\.dir/.test(nd) && /modeKnob\(SIDEMISSION, 'on', false\)/.test(nd) && /modeKnob\(a, i, a\[i\]\)/.test(nd) && /TROOPER_SPELLS\.push\(FLARE\); modeUndo\(/.test(nd) && /best\.fireAt = 1e12/.test(nd) && /function gunsBack\(\)\{[^\n]*fireAt = 0/.test(nd) && /end\(\)\{ flaresOff\(\); gunsBack\(\);/.test(nd)
+    && /S\.tod = C\.dawn\.tod; applyAtmosphere\(BIOME\)/.test(nd) && /bossHold\(\)\{ return true; \}/.test(nd) && /stealthLight\(_lit\)/.test(nd) && /e\.markUntil = now \+ F\.mark/.test(nd),
+    'night defence steers the campaign\'s own waves, keeps the general for the last assault, lights and marks with the flare, changes the hour at dawn — and puts back the side missions, the tier, the skill wheel and the guns');
+  ok(/modeBegin\(S\.run\);/.test(fl) && /modeReady\(\);[^\n]*\n\s*startIntro\(\);/.test(fl) && /reportRun\(\{ cleared:false \}\); \}catch\(e\)\{\}[^\n]*\n\s*modeQuit\(\);/.test(fl) && /updateWaves\(dt, now\);[^\n]*\n\s*updateModes\(gdt, now\);/.test(rd('src/game/loop.js'))
+    && /if\(modeOver\(reason\)\) return;[^\n]*\n\s*S\.mode='gameover'/.test(rd('src/game/player-damage.js')) && /\|\| modeBossHold\(\)\) return;/.test(rd('src/campaign/boss.js')) && /bossStageWon\(now, bdef\)\{\n\s*if\(modeStageWon\(now, bdef\)\) return;/.test(rd('src/campaign/boss.js'))
+    && /S\.run && S\.run\.offBoard\) return;/.test(rd('src/core/score-report.js')) && /modeBrief\(\);/.test(rd('src/ui/briefing.js')),
+    'the flow knows the modes through one-line calls: begin / ready / quit, the frame after the waves, the game over, the general, the report, the briefing');
+  ok(/export function modeEnd\(\)\{[^]*?MODE\.undo\[i\]\(\)[^]*?q\[0\]\[q\[1\]\] = q\[2\];[^]*?holdBack\(\);/.test(mr) && /export function modeBegin\(run\)\{ modeEnd\(\);/.test(mr) && /export function modeQuit\(\)\{ modeEnd\(\); \}/.test(mr) && /run\.mode === 'custom'/.test(mr)
+    && /PROFILE\.dirEase = null;/.test(mr) && /PROFILE\.dirEase = m\.hold\.dirEase \|\| null; delete m\.hold;/.test(mr) && !/setTimeout\(/.test(nd) && /launchGame\(\{ mode:'custom', offBoard:true, \.\.\.cfg \}\)/.test(mr),
+    'a mode leaves no trace: a custom battle off the board, every knob and undo put back on a restart / the menu / the next battle, the campaign director\'s memory parked and returned, no timers in the night');
+  ok(/export \* from '\.\/data\/mode-math\.js';/.test(hub) && hub.indexOf("./campaign/mode-run.js") < hub.indexOf("./campaign/night-defence.js") && hub.indexOf("./campaign/night-defence.js") < hub.indexOf("./game/loop.js") && hub.indexOf("./game/flow.js") < hub.indexOf("./campaign/mode-run.js")
+    && /id="modeEnd"/.test(html) && html.indexOf('id="modeEnd"') < html.indexOf('id="xkConfirm"') && /id="nightBtn"/.test(html) && /data-m="night"/.test(html) && ['meKick', 'meBig', 'meWhy', 'meStats', 'meBest', 'meHint', 'meCopy', 'meGo', 'meHome'].every(id => html.includes('id="' + id + '"'))
+    && /BS\.tab==='night'\)\{ saveProfile\(\); nightDefLaunch\(PROFILE\.custom\); \}/.test(rd('src/ui/battle-setup.js')),
+    'night defence is on the home screen and is the battle setup\'s third tab; its result card is the design system\'s end screen, under the confirm dialog'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

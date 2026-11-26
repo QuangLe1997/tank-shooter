@@ -2622,3 +2622,61 @@ export const LOGISTICS = { tick:0.25,
     eye:['ẨN', 'NGHI', 'LỘ'], knife:'DAO GĂM — HẠ GỤC', knifeDown:'HẠ GỤC LẶNG LẼ', knifeHit:'ĐÂM!', body:'CÓ XÁC! CÓ ĐỊCH!', bodyTip:'ĐỊCH THẤY XÁC — CHÚNG ĐANG LÙNG',
     raise:'SẮP BÁO ĐỘNG!', silenced:'BỊT MIỆNG KỊP — KHÔNG BÁO ĐỘNG', alarm:'⚠ BÁO ĐỘNG!',
     alarmSquad:'SCH: Địch đã báo động — một toán tăng viện đang kéo tới chỗ anh!', alarmHold:'SCH: Địch đã báo động — cả vị trí biết anh ở đâu rồi!' } };
+// MODE 1 NIGHT DEFENCE — "THỦ ĐÊM" (campaign/night-defence.js; the run kit both modes share: campaign/mode-run.js; pure arithmetic: data/mode-math.js) — a custom
+//   battle at night on any battlefield: hold our base from h0:00 to h1:00, the night squeezed into len seconds (the clock runs × fastK while the field is quiet and
+//   the next assault is more than lull.max s off). at: when each assault begins (s of the night); warn: s before it its direction is given away — an enemy flare
+//   going up on that side, a sentry on the radio — never a marker. assaults[i]: n men (rpg: the share with a B41), squads, heli (troop helicopters: their engines
+//   are the warning), tier (+ to the tactics tier for this assault: marksmen and MG teams come with tier 3), extra: what else the director plays and when (t s
+//   into the assault) — mortar (a barrage on the base and on him), drone (kind), hatch (men up out of a hatch inside the wire, on the far side), general (the
+//   stage's general leads it). An assault's queue is cut lull.min s before the next: there is always a lull. nightK: head count + per night of the endless run;
+//   the next night is the same battlefield one campaign loop harder (+1 tactics tier, health, damage), at most maxNight.
+//   push: every `every` s the men who have not found him are sent at the base (their report of where we are = a point ringR m round the Core).
+//   sap: an enemy soldier within r m of the Core for arm s is laying charges: dps to the Core each (at most maxN counted) every tick s, said every sayT s.
+//   mortar: n shells gap s apart from t s on (warn s of red ring each), R / dmg; ring m from the Core within arc rad of the assault's side, or (share pP) within
+//     nearP m of him. hatch: r m from the Core, these men. general: he takes the field `inset` m inside the fence on that side.
+//   gun: after an assault (from assault `from` on) the base's gun nearest that side is out of ammunition until he stands within r m of it for t s.
+//   flare (his new skill, in the skill wheel for the night): cd s; it bursts alt m over the point he aims at (at most reach m off; `ahead` m in front of him with no
+//     pointer), climbing `rise` s, burns `burn` s sinking sink m/s and drifting; enemy soldiers within R m of the point under it are marked (as the recon drone
+//     marks, `mark` s a tick) — and inside it he is lit too (game/stealth.js stealthLight); lift: how much the field's fill light rises while it burns (flick: its
+//     flicker); pool: the ground glow's opacity; at most max up at once. sig: the enemy's own signal flare. dawn: the hour really changes at the end
+//     (world/atmosphere.js, tod → `tod`), then hold s of cheering before the result; pre: the last share of the night the east is said to be greying.
+//   score (data/mode-math.js ndScore): the battle's own score + assault a seen-off assault + (dawn + core × the base's health left) on a win + acc × accuracy +
+//     general if he fell, all × (1 + nightK a night after the first).
+export const NIGHTDEF = { len:480, h0:21, h1:5, clockStep:5, fastK:3, warn:7, lull:{ min:30, max:40 }, at:[12, 90, 168, 246, 322, 398], nightK:0.15, maxNight:9,
+  assaults:[
+    { n:5,  rpg:0,    squads:1, heli:0, tier:0, extra:[] },
+    { n:6,  rpg:0.15, squads:1, heli:0, tier:0, extra:[{ k:'mortar', t:0 }] },
+    { n:7,  rpg:0.2,  squads:2, heli:0, tier:1, extra:[{ k:'drone', t:10, kind:'spot' }] },
+    { n:8,  rpg:0.25, squads:2, heli:1, tier:1, extra:[{ k:'mortar', t:0 }, { k:'drone', t:16, kind:'kami' }] },
+    { n:9,  rpg:0.25, squads:2, heli:0, tier:2, extra:[{ k:'hatch', t:14 }, { k:'drone', t:24, kind:'kami' }] },
+    { n:11, rpg:0.3,  squads:3, heli:1, tier:2, extra:[{ k:'mortar', t:0 }, { k:'hatch', t:20 }, { k:'general', t:26 }] } ],
+  push:{ every:1.5, ringR:[16, 30] }, sap:{ r:30, arm:3, dps:2.4, maxN:5, tick:1, sayT:6 },
+  mortar:{ n:8, t:3.2, gap:0.7, warn:2.6, R:5, dmg:38, ring:[16, 36], arc:1.2, pP:0.4, nearP:9 }, hatch:{ r:[32, 40], types:['rifle', 'rifle', 'rifle', 'rpg'] }, general:{ inset:14 },
+  gun:{ from:2, r:6.5, t:1.2 },
+  flare:{ cd:22, reach:60, ahead:32, alt:30, rise:0.9, burn:15, sink:1.1, drift:1.2, R:30, tick:0.3, mark:1.2, lift:1.3, flick:0.12, pool:0.34, size:9, max:3, col:0xfff0c8, sig:{ col:0xff3a22, alt:46, burn:6, size:7 } },
+  dawn:{ tod:'day', hold:5.5, pre:0.92 }, hud:0.25, score:{ assault:400, dawn:1500, core:1500, acc:1000, general:1200, nightK:0.25 },
+  say:{ name:'Thủ đêm', tabSub:'giữ căn cứ đến sáng', dirs:['bắc', 'nam', 'tây', 'đông'], night:'đêm thứ {n}',
+    sum:'<b>Thủ đêm</b> {b} · {wx} · bản đồ {sp} · địch cấp {lvl}', kick:'Thủ đêm · giữ căn cứ từ {h0} đến {h1}',
+    briefOp:'Thủ đêm — giữ căn cứ tới {h1}',
+    brief:'Đêm nay địch đánh {n} đợt, đợt cuối do tướng của chúng dẫn. Không ai báo trước hướng địch tới: nhìn pháo hiệu đỏ của chúng bốc lên phía nào, nghe chòi gác gọi trên máy. Giữa hai đợt có nửa phút — về điểm đạn tiếp đạn, băng bó, nạp lại khẩu pháo vừa hết đạn. Kỹ năng mới trong vòng kỹ năng: PHÁO SÁNG — soi một vùng 15 giây; địch trong vùng sáng bị đánh dấu, và anh đứng trong đó cũng lộ.',
+    obj:'Giữ Lõi căn cứ từ {h0} đến {h1}. Lõi còn đứng lúc trời sáng là thắng; mất Lõi hoặc hết mạng là thua.',
+    first:'SCH: Trời tối rồi. Về giữ căn cứ — đêm nay chúng sẽ tới, chưa biết từ hướng nào.',
+    warn:['Chòi gác {d}: có động ngoài hàng rào — pháo hiệu của chúng vừa bốc lên!', 'Chòi gác {d}: nghe tiếng chân, rất đông — chúng sắp vào từ hướng {d}!', 'Chòi gác {d}: thấy bóng người ngoài rào — chuẩn bị đón chúng!'],
+    warnHeli:'Chòi gác {d}: có tiếng động cơ trực thăng bay thấp — chúng đổ quân từ hướng {d}!',
+    go:['SCH: Chúng xông vào rồi — giữ lấy tường!', 'SCH: Địch vượt rào — đừng để chúng áp sát Lõi!', 'SCH: Chúng tới rồi. Bắn có chọn lọc, giữ đạn!'],
+    lull:['SCH: Chúng lùi rồi. Nửa phút — tiếp đạn, băng bó!', 'SCH: Tạm yên. Về điểm đạn, xem lại các khẩu pháo!', 'SCH: Đẩy lui được một đợt. Tranh thủ nạp đạn — chúng sẽ quay lại.'],
+    cut:'SCH: Đợt này chúng chùn rồi — bọn còn lại bám quanh rào, quét cho sạch!',
+    mortar:'Chòi gác {d}: cối địch bắn! Tránh xa các vòng đỏ!', hatch:'SCH: Nắp hầm bật mở ngay trong hàng rào, phía {d} — quay lại!',
+    general:'SCH: {g} đích thân dẫn đợt cuối — hạ hắn trước khi trời sáng!', generalDown:'ĐÃ HẠ {g} — ĐỢT CUỐI MẤT ĐẦU!',
+    gunDry:'Pháo thủ: khẩu phía {d} hết đạn — ai lại nạp giúp!', gunTag:'HẾT ĐẠN — LẠI GẦN ĐỂ NẠP', gunLoad:'ĐANG NẠP PHÁO…', gunUp:'ĐÃ NẠP — PHÁO BẮN LẠI',
+    sap:'ĐẶT BỘC PHÁ!', sapRadio:'SCH: Địch áp sát tường đặt bộc phá — đánh bật chúng ra!',
+    flare:'PHÁO SÁNG', flareUp:'PHÁO SÁNG LÊN!', flareMax:'ĐÃ ĐỦ PHÁO SÁNG TRÊN TRỜI',
+    predawn:'SCH: Phía đông hửng rồi — giữ thêm chút nữa!', dawn:'TRỜI SÁNG — CĂN CỨ CÒN ĐỨNG!', dawnRadio:'SCH: Trời sáng rồi! Chúng rút — anh em giữ được căn cứ!',
+    hud:{ first:'Trời vừa tối — về giữ căn cứ', lull:'Tạm lắng — tiếp đạn, băng bó', gun:' · nạp {n} khẩu pháo', warn:'Chòi gác {d} báo động', assault:'Đợt {k}/{n} · còn {e} địch', wait:'Chờ trời sáng' },
+    pause:'Thủ đêm · {clock} · đợt {k}/{n}',
+    end:{ kickWon:'Trời sáng — căn cứ còn đứng', kickLost:'Căn cứ thất thủ lúc {clock}', won:'Giữ vững', lost:'Thất thủ',
+      whyWon:'{b}, {night}: đẩy lui {k} đợt, hạ {kills} địch.{gen}', gen:' Tướng địch gục trước tường.', whyCore:'<b>Lõi bị phá.</b> {b}, {night}: trụ được {k}/{n} đợt, hạ {kills} địch. Đừng để địch áp sát tường đặt bộc phá.',
+      whyDead:'<b>Hết mạng.</b> {b}, {night}: trụ được {k}/{n} đợt, hạ {kills} địch.', stats:['Điểm', 'Đợt đẩy lui', 'Lõi còn', 'Chính xác'],
+      best:'Chuỗi dài nhất: {n} đêm · điểm một đêm cao nhất {s}', newBest:'Kỷ lục mới — ', next:'Đêm tiếp theo', retry:'Thủ lại từ đêm 1', hintWon:'Đêm sau: cùng căn cứ, địch tinh hơn một bậc.', hintLost:'Thủ lại bắt đầu từ đêm thứ nhất.' },
+    copy:'Chép kết quả', copied:'Đã chép', copyFail:'Không chép được',
+    share:{ head:'XUNG KÍCH — Thủ đêm', where:'{b} · {wx}', rule:'{night} · đợt đẩy lui {k}/{n}', won:'★ {score} điểm · GIỮ VỮNG · Lõi còn {core}%', lost:'✖ {score} điểm · thất thủ lúc {clock}', stats:'Hạ {kills} · chính xác {acc}% · độ khó {diff}', practice:'', by:'— {name}' } } };

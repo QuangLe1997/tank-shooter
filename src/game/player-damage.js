@@ -1,7 +1,7 @@
 // game/player-damage.js — PLAYER DAMAGE / DEATH
 import * as THREE from 'three';
 import { CAV, RIDE_ACT } from '../../config.js';
-import { reportRun, soldierHitFX, BEST, CV, S, clampField, heightAt, burst, camera, cavDeathStart, cavDeathUpdate, cavRespawn, enemies, floatText, haptic, padHit, recordRun, ringPulse, saveProfile, sayVoice, sfx, show, updateHUD, rideHit, driverBack, driverDone, driverSurrender, dirDeath, nemDeathLine, nemPlayerDied } from '../hub.js';
+import { modeOver, reportRun, soldierHitFX, BEST, CV, S, clampField, heightAt, burst, camera, cavDeathStart, cavDeathUpdate, cavRespawn, enemies, floatText, haptic, padHit, recordRun, ringPulse, saveProfile, sayVoice, sfx, show, updateHUD, rideHit, driverBack, driverDone, driverSurrender, dirDeath, nemDeathLine, nemPlayerDied } from '../hub.js';
 
 // ----------------------------- PLAYER DAMAGE / DEATH -----------------------------
 export function damagePlayer(dmg, now, dx, dz){ if((now||performance.now()/1000)>=(S.player&&S.player.invincibleUntil||0)){ const P=S.player, f=P?P.facing:0, L=Math.hypot(dx||0,dz||0)||1; padHit(dmg, dx||dz ? -Math.sign(((dx||0)*Math.cos(f)-(dz||0)*Math.sin(f))/L) : 0); }   // Z118 shake hardest on the side it came from   // Z117 a hit kicks the heavy motor    // dx/dz = direction the shot travelled (for the hit-spot burn); optional
@@ -55,6 +55,7 @@ export function respawnPlayer(now){
 }
 export function gameOver(reason){
   if(S.mode==='gameover') return;
+  if(modeOver(reason)) return;   // MODE 3 a night defence / a daily challenge ends on its own result card: no campaign record, no report (campaign/mode-run.js)
   S.mode='gameover'; try{ reportRun({ cleared:false }); }catch(e){}
   { const w=document.getElementById('go-why'), L=Math.max(0, S.player ? S.player.lives : 0);   // Z133 say WHY the battle was lost (the base core can fall while you still have lives)
     const nm=t=>{ t=String(t||'').toLocaleLowerCase('vi'); return t.charAt(0).toLocaleUpperCase('vi')+t.slice(1); };   // XK-UI the reason in plain sentence case

@@ -18,7 +18,9 @@ const V3 = () => new THREE.Vector3(), clamp = (v, a, b) => Math.max(a, Math.min(
 export function burstSpread(n){ const B = GUNFEEL.shot.bloom; return B.first + (B.max - B.first) * clamp((n - B.tight) / (B.full - B.tight), 0, 1); }
 export function camKick(n){ const C = GUNFEEL.shot.cam; return n <= C.after ? C.first : C.auto; }
 // which round of a burst this is: a pause longer than bloom.reset starts a new one (p = the player; kept on him)
-export function burstRound(p, now){ const B = GUNFEEL.shot.bloom; p._bN = now - (p._bT || -9) > B.reset ? 1 : (p._bN || 0) + 1; p._bT = now; return p._bN; }
+// MODE 3 what the result cards read (campaign/mode-run.js): n — his trigger pulls · hit — the pulls that struck somebody (a blast of pellets counts once) · at — the last one
+export const SHOTS = { n:0, hit:0, at:-9 };
+export function burstRound(p, now){ SHOTS.n++; const B = GUNFEEL.shot.bloom; p._bN = now - (p._bT || -9) > B.reset ? 1 : (p._bN || 0) + 1; p._bT = now; return p._bN; }
 
 // ---- the muzzle's climb over a burst (holdReal) ----
 // a new shot was seen: rc = holdReal's recoil state, KK = this gun's kick; the clock the bolt / the pump is worked by
@@ -65,7 +67,7 @@ function mark(){ if(_hm || typeof document === 'undefined') return _hm; const H 
   e.innerHTML = `<svg viewBox="${-s / 2} ${-s / 2} ${s} ${s}" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="filter:drop-shadow(0 0 1.5px rgba(0,0,0,.9))">${ln(-b, -b, -a, -a)}${ln(b, -b, a, -a)}${ln(-b, b, -a, a)}${ln(b, b, a, a)}</svg>`;
   document.body.appendChild(e); return (_hm = e); }
 // one of his rounds struck an enemy (combat/lock-on.js): the mark at the crosshair (the mouse's own, or where the pad's is drawn), the click — kill = it dropped him
-export function hitConfirm(kill){ const H = GUNFEEL.shot.hit, now = performance.now() / 1000; if(!kill && now - _hmAt < H.gap) return; _hmAt = now; const e = mark(); if(!e) return;
+export function hitConfirm(kill){ const H = GUNFEEL.shot.hit, now = performance.now() / 1000; if(now - SHOTS.at > 0.02){ SHOTS.hit++; SHOTS.at = now; } if(!kill && now - _hmAt < H.gap) return; _hmAt = now; const e = mark(); if(!e) return;
   let x = XH.mx, y = XH.my; if(XH.src !== 'mouse' || x < 0){ if(!S.aimPoint) return; _hv.copy(S.aimPoint).project(camera); if(_hv.z > 1) return; x = (_hv.x + 1) / 2 * VIEW.w; y = (1 - _hv.y) / 2 * VIEW.h; }
   e.style.color = kill ? H.col[1] : H.col[0]; e.style.transform = `translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,0) scale(${kill ? H.killK : 1})`; e.style.transition = 'none'; e.style.opacity = '1'; e.style.display = 'block';
   const ms = kill ? H.killMs : H.ms; clearTimeout(_hmT); void e.offsetWidth; e.style.transition = `opacity ${ms}ms ease-out`; e.style.opacity = '0'; _hmT = setTimeout(() => { e.style.display = 'none'; }, ms + 30);

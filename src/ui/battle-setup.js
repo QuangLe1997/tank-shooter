@@ -1,6 +1,6 @@
 // ui/battle-setup.js — Z107 BATTLE SETUP: PLAY opens it. CAMPAIGN = a ladder of levels in rising difficulty (win one to open the next; map/hour/weather set per level) · CUSTOM = pick map, hour, weather, space and enemy level · Z181 every battlefield is shown by a real in-game photo (assets/maps), the chosen one fills a hero card with its place, story, hour and weather
 import { CAMPAIGN, SPACE, WEATHER } from '../../config.js';
-import { BIOMES, CAMPAIGN_BIOMES, PROFILE, S, TOD_LABEL, capVi, biomeBlurb, biomePlace, biomeVi, drawTerrainPreview, hide, launchGame, loadoutChips, renderGear, saveProfile, sfx, show, tapBtn, tapEl, todFor } from '../hub.js';
+import { nightDefLaunch, nightDefSetup, BIOMES, CAMPAIGN_BIOMES, PROFILE, S, TOD_LABEL, capVi, biomeBlurb, biomePlace, biomeVi, drawTerrainPreview, hide, launchGame, loadoutChips, renderGear, saveProfile, sfx, show, tapBtn, tapEl, todFor } from '../hub.js';
 
 export const BS = { tab:'campaign', sel:1, bg:0, step:2 };
 export const TOD_KEYS = ['day','noon','sunset','night'];
@@ -55,20 +55,22 @@ export function buildCustom(){ const C=PROFILE.custom, max=campaignMax();
   { const el=document.getElementById('bsMap'); if(el){ el.innerHTML=''; BIOMES.forEach((b,i)=>{ const d=document.createElement('div'); d.className='bs-map'+(i===C.biome?' on':'');
       d.appendChild(photo(b, 'bs-ph')); d.insertAdjacentHTML('beforeend','<span><b>'+capVi(biomeVi(b.name))+'</b><small>'+biomePlace(b.name)+'</small></span>'); d.dataset.biome=b.name.toLowerCase();
       tapEl(d, ()=>{ C.biome=i; buildCustom(); refreshSummary(); sfx('click'); }); el.appendChild(d); }); } }
-  opts('bsTod', TOD_KEYS.map(k=>({ k, html:capVi(TOD_LABEL[k])+'<small>'+TOD_HINT[k]+'</small>' })), C.tod, k=>C.tod=k);
+  const night=BS.tab==='night';   // MODE 1 THỦ ĐÊM: a custom battle whose hour is the night (campaign/night-defence.js)
+  opts('bsTod', TOD_KEYS.map(k=>({ k, html:capVi(TOD_LABEL[k])+'<small>'+TOD_HINT[k]+'</small>', lock:night && k!=='night' })), night?'night':C.tod, k=>{ if(!night) C.tod=k; });
   opts('bsWx', WX_KEYS.map(k=>({ k, html:capVi(WEATHER[k].vi)+'<small>'+(WEATHER[k].range<1?'tầm −'+Math.round((1-WEATHER[k].range)*100)+'%':'tầm đầy đủ')+'</small>' })), C.wx, k=>C.wx=k);
   opts('bsSpace', Object.keys(SPACE).map(k=>({ k, html:capVi(SPACE[k].vi)+'<small>'+SPACE[k].tx+'</small>' })), C.space, k=>C.space=k);
   if(C.lvl>max) C.lvl=max;
   opts('bsLvl', Array.from({ length:Math.min(max, 30) }, (_,i)=>i+1).map(L=>({ k:L, html:'Cấp '+L+'<small>'+'★'.repeat(levelInfo(L).stars)+'</small>' })), C.lvl, k=>C.lvl=k);
-  setHero(BIOMES[C.biome], { kick:'Trận tự chọn · bản đồ '+SPACE[C.space].vi.toLocaleLowerCase('vi'), tod:C.tod, wx:C.wx, stars:levelInfo(C.lvl).stars, lvl:C.lvl, boss:false, loop:0 });
+  setHero(BIOMES[C.biome], { kick:night ? nightDefSetup(C).kick : 'Trận tự chọn · bản đồ '+SPACE[C.space].vi.toLocaleLowerCase('vi'), tod:night?'night':C.tod, wx:C.wx, stars:levelInfo(C.lvl).stars, lvl:C.lvl, boss:false, loop:0 });
 }
 export function refreshSummary(){ const el=document.getElementById('bsSum'); if(!el) return;
   const pw='';
   const lo=t=>String(t||'').toLocaleLowerCase('vi');
+  if(BS.tab==='night'){ el.innerHTML=nightDefSetup(PROFILE.custom).sum; return; }
   if(BS.tab==='campaign'){ const I=levelInfo(BS.sel); el.innerHTML='<b>Cấp '+I.L+'</b> '+capVi(biomeVi(I.biome.name))+' · '+lo(TOD_LABEL[I.tod])+' · '+lo(WEATHER[I.wx].vi)+pw; }
   else { const C=PROFILE.custom; el.innerHTML='<b>Tự chọn</b> '+capVi(biomeVi(BIOMES[C.biome].name))+' · '+lo(TOD_LABEL[C.tod])+' · '+lo(WEATHER[C.wx].vi)+' · bản đồ '+lo(SPACE[C.space].vi)+pw; } }
 export function setSetupTab(t){ BS.tab=t; document.querySelectorAll('#battleSetup .bs-mode').forEach(m=>{ m.classList.toggle('on', m.dataset.m===t); m.setAttribute('aria-selected', m.dataset.m===t?'true':'false'); });
-  document.getElementById('bsCampaign').classList.toggle('hidden', t!=='campaign'); document.getElementById('bsCustom').classList.toggle('hidden', t!=='custom');
+  document.getElementById('bsCampaign').classList.toggle('hidden', t!=='campaign'); document.getElementById('bsCustom').classList.toggle('hidden', t==='campaign');
   if(t==='campaign') buildCampaign(); else buildCustom(); refreshSummary(); }
 // Z354 THE STEPS (no-tanks: BINH CHỦNG is gone — steps 2 and 3, shown as ① ②): TRANG BỊ (the trooper, his ride and its driver) → CHIẾN TRƯỜNG (campaign
 //   ladder or a custom battle). PLAY opens at TRANG BỊ, the battlefield buttons straight at CHIẾN TRƯỜNG; the rail on top and the loadout chips in the footer jump between
@@ -87,6 +89,7 @@ export function openBattleSetup(tab){ BS.sel=Math.min(campaignMax(), Math.max(1,
 export function closeBattleSetup(){ hide('battleSetup'); show('start'); sfx('click'); }
 export function goBattle(){ hide('battleSetup');
   if(BS.tab==='campaign') launchGame({ mode:'campaign', level:BS.sel });   // Z119 behind the deploying veil
+  else if(BS.tab==='night'){ saveProfile(); nightDefLaunch(PROFILE.custom); }
   else { const C=PROFILE.custom; saveProfile(); launchGame({ mode:'custom', level:C.lvl, biome:C.biome, tod:C.tod, wx:C.wx, space:C.space }); } }
 tapBtn('bsBack', closeBattleSetup); tapBtn('bsGo', goBattle); tapBtn('bsNext', () => { sfx('click'); setStep(BS.step + 1); }); tapBtn('bsPrev', () => { sfx('click'); setStep(BS.step - 1); });
 document.querySelectorAll('#battleSetup .bs-mode').forEach(m=>tapEl(m, ()=>{ setSetupTab(m.dataset.m); sfx('click'); }));

@@ -15,7 +15,7 @@ export async function startReports(){ const F=cloudFB(); if(!F || !CLOUDSAVE.uid
     REPORT.call=call; }
   catch(e){ console.warn('score report', e); } REPORT.starting=false; }
 // a stage won / a run over: the score so far, where it stands and whether the stage was cleared — the server takes what the run can be worth
-export async function reportRun(o){ if(!reportOn() || REPORT.inflight) return;
+export async function reportRun(o){ if(!reportOn() || REPORT.inflight || S.run && S.run.offBoard) return;   // (MODE 3 a night defence / a daily challenge keeps its own local board: campaign/mode-run.js)
   const rep={ cleared:!!(o&&o.cleared), stage:S.stage|0, loop:S.loop|0, score:S.score|0, runId:S.runId||'', name:PROFILE.nickname||'', secs:Math.round((Date.now()-REPORT.t0)/1000) };
   REPORT.inflight=true;
   try{ const r=await REPORT.call('econRun')(rep); REPORT.t0=Date.now(); const sc=r && r.data && r.data.score; if(sc && sc.clamped) console.warn('score clamped', sc); }

@@ -1,6 +1,6 @@
 // game/flow.js — GAME FLOW: start / pause / quit-to-menu, loadout guns for the run, menu ↔ HUD state, show/hide panels
 import { CAV, CORE_DEF } from '../../config.js';
-import { clearBigEvents, clearSideMissions, modelEpoch, veilOrder, askConfirm, confirmOpen, opFor, biomeVi, BIOME, SOLDIER, reportRun, CV, GUNS, cavRespawn, clearSoldierWar, driverBack, magCap, makeCavPlayer, rankReset, squadReset, trooperGuns, duelReset, gpuHeld, gpuRelease, clearGifts, VOICE_RULES, ARENA, MOBILE, PROFILE, S, WAVE, __set__alarmAt, __set_soldierLvl, applyBiome, applyContractHUD, audio, buildBlocks, buildCore, buildLava, buildObjective, buildTrails, buildUnderground, bullets, clearAllyOrdnance, clearEnemyMissiles, clearEquip, clearFieldcraft, clearFireteam, clearHeliDown, clearHelis, clearInfDead, clearLadders, clearLootBeacons, clearObjective, clearParadrops, clearPickups, clearRelic, clearSoldiers, clearSquads, clearSurprises, core, deploySoldiers, dropCavPlayer, enemies, enemyPool, freeEnemyBar, preloadVoices, queueResize, recycleBullet, refreshStartUI, reqFs, saveProfile, scene, sfx, showVeil, skipIntro, startIntro, startMusic, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD, openBattleSetup, clearDroneWar, clearLogistics, clearQuiet, clearFireFX } from '../hub.js';
+import { clearBigEvents, clearSideMissions, modelEpoch, veilOrder, askConfirm, confirmOpen, opFor, biomeVi, BIOME, SOLDIER, reportRun, CV, GUNS, cavRespawn, clearSoldierWar, driverBack, magCap, makeCavPlayer, rankReset, squadReset, trooperGuns, duelReset, gpuHeld, gpuRelease, clearGifts, VOICE_RULES, ARENA, MOBILE, PROFILE, S, WAVE, __set__alarmAt, __set_soldierLvl, applyBiome, applyContractHUD, audio, buildBlocks, buildCore, buildLava, buildObjective, buildTrails, buildUnderground, bullets, clearAllyOrdnance, clearEnemyMissiles, clearEquip, clearFieldcraft, clearFireteam, clearHeliDown, clearHelis, clearInfDead, clearLadders, clearLootBeacons, clearObjective, clearParadrops, clearPickups, clearRelic, clearSoldiers, clearSquads, clearSurprises, core, deploySoldiers, dropCavPlayer, enemies, enemyPool, freeEnemyBar, preloadVoices, queueResize, recycleBullet, refreshStartUI, reqFs, saveProfile, scene, sfx, showVeil, skipIntro, startIntro, startMusic, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD, openBattleSetup, clearDroneWar, clearLogistics, clearQuiet, clearFireFX, modeBegin, modeReady, modeQuit, modePauseTx } from '../hub.js';
 
 // ----------------------------- GAME FLOW -----------------------------
 // Z107 startGame(arg): true = CONTINUE the campaign checkpoint · {mode:'campaign'|'custom', level, …} = a battle from the setup screen ·
@@ -21,6 +21,7 @@ export function startGame(arg){
   const stLoop  = resume ? (PROFILE.save.loop|0) : Math.floor((L-1)/5);
   S.runId = Date.now().toString(36)+Math.random().toString(36).slice(2,6);   // Z163 the leaderboard follows one run's score
   S.run = cfg ? { ...cfg, level:L } : { mode:'campaign', level:stLoop*5+stStage }; S.runCfg = { ...S.run };
+  modeBegin(S.run);   // MODE 3 whatever a night defence / a daily challenge changed is put back; this run's mode, if it is one, turns its knobs (campaign/mode-run.js)
   if(!['cav','xeom','bagac','bantai'].includes(PROFILE.unit)) PROFILE.unit = ['cav','xeom','bagac','bantai'].includes(PROFILE.lastRide) ? PROFILE.lastRide : 'xeom';   // (no-tanks: an old profile's tank or xích lô → his last ride, else the xe ôm)
   const cavKind = PROFILE.unit==='cav' ? null : PROFILE.unit;   // Z245 the unit picked in CHUẨN BỊ TRẬN · Z282 or the xe ôm / ba gác / bán tải
   if(S.player && (!S.player.cav || (S.player.bike||null)!==cavKind)){ if(S.player.cav) dropCavPlayer(S.player); else scene.remove(S.player.mesh); S.player=null; }   // a different ride was picked → the new one rolls out
@@ -62,6 +63,7 @@ export function startGame(arg){
   audio(); startMusic(); sfx('click');
   if(MOBILE || PROFILE.autoFs!==false){ reqFs(); setTimeout(queueResize, 300); setTimeout(queueResize, 800); }   // go immersive (Z97: desktop too) + refit after fullscreen/orientation settle
   updateHUD();
+  modeReady();           // MODE 3 a mode's soldier: his guns, his lives, his skills (campaign/mode-run.js)
   startIntro();          // deploy showcase → hands off to gameplay camera, then play begins
 }
 // Z180 a new stage: the soldier goes back to the spawn the world generator keeps clear — the last stage's
@@ -79,13 +81,14 @@ const PAUSE_SUBS = ['settings', 'keysDlg', 'loadout', 'padWiz'];
 // XK-UI the pause screen says where you are: the stage, the battlefield, the wave
 function pauseWhere(){ const el=document.getElementById('pauseWhere'); if(!el) return; let op=null; try{ op=opFor(S.stage); }catch(e){}
   const nm=s=>{ s=String(s||'').toLocaleLowerCase('vi'); return s.charAt(0).toLocaleUpperCase('vi')+s.slice(1); };
-  el.textContent='Màn '+S.stage+(BIOME ? ' · '+nm(biomeVi(BIOME.name)) : '')+(S.wave ? ' · đợt '+S.wave : '')+(op && op.title ? ' — '+nm(op.title) : ''); }
+  el.textContent=modePauseTx() || 'Màn '+S.stage+(BIOME ? ' · '+nm(biomeVi(BIOME.name)) : '')+(S.wave ? ' · đợt '+S.wave : '')+(op && op.title ? ' — '+nm(op.title) : ''); }
 // XK-UI leaving a battle in progress asks first (the stage's progress would be lost); from the end screens it just goes
 export function askLeave(){ askConfirm({ title:'Rời trận?', body:'Tiến độ màn này sẽ mất. Kỷ lục và các màn đã thắng vẫn được giữ.', yes:'Rời trận', no:'Ở lại', danger:true }, quitToMenu); }
 export function askRestart(){ askConfirm({ title:'Chơi lại màn này?', body:'Trận đang đánh dở sẽ bắt đầu lại từ đầu.', yes:'Chơi lại', no:'Ở lại' }, ()=>launchGame()); }
 // end the current match → back to the HOME menu (replay or re-pick terrain/loadout). Mirrors startGame's teardown.
 export function quitToMenu(){
   S.firing=false; try{ reportRun({ cleared:false }); }catch(e){}   // Z163 the run's score goes to the leaderboard
+  modeQuit();   // MODE 3 nothing of a mode stays: its knobs, its HUD text, its result card (campaign/mode-run.js)
   for(let i=bullets.length-1;i>=0;i--) recycleBullet(i);                                   // pool all live bullets
   for(const e of enemies){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); freeEnemyBar(e.bar); e.bar=null; }
   enemies.length=0; clearSideMissions(); clearBigEvents(); clearFireFX(); clearPickups(); clearGifts(); clearLogistics(); clearQuiet(); clearDroneWar(); clearSoldiers(); clearLootBeacons(); clearEnemyMissiles(); clearInfDead(); clearHeliDown(); clearEquip(); clearObjective(); clearParadrops(); clearAllyOrdnance();

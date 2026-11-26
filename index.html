@@ -176,6 +176,10 @@
       <div class="xb xb-sec" id="arsenalBtn" role="button"><span class="ic" data-icon="rifle"></span><span>Kho súng</span></div>
       <div class="xb xb-sec" id="rankBtn" role="button"><span class="ic" data-icon="star"></span><span>Xếp hạng</span></div>
     </div>
+    <!-- MODE 1 night defence (campaign/night-defence.js): the same grid and buttons as the row above -->
+    <div class="xk-grid">
+      <div class="xb xb-sec" id="nightBtn" role="button"><span class="ic" data-icon="bunker"></span><span>Thủ đêm</span></div>
+    </div>
     <div class="xk-util">
       <div class="xb xb-ghost" id="settingsBtn" role="button"><span class="ic" data-icon="gear"></span><span>Cài đặt</span></div>
       <div class="xb xb-ghost" id="guideBtn" role="button"><span class="ic" data-icon="help"></span><span>Hướng dẫn</span></div>
@@ -337,7 +341,7 @@
     <div class="xb xb-ghost xk-back bs-back" id="bsBack" role="button" data-back="1"><span class="ic" data-icon="back"></span><span>Trang chủ</span></div>
     <!-- Z354 the steps into battle: with what, where (a real sequence, so numbered) -->
     <div class="bs-rail" id="bsRail"><div class="bs-rs" data-s="2" role="button"><b>1</b><span>Trang bị</span></div><i></i><div class="bs-rs" data-s="3" role="button"><b>2</b><span>Chiến trường</span></div></div>
-    <div class="bs-modes"><div class="bs-mode on" data-m="campaign" role="tab">Chiến dịch<small>vượt từng cấp</small></div><div class="bs-mode" data-m="custom" role="tab">Tự chọn<small>bản đồ, thời tiết</small></div></div>
+    <div class="bs-modes"><div class="bs-mode on" data-m="campaign" role="tab">Chiến dịch<small>vượt từng cấp</small></div><div class="bs-mode" data-m="custom" role="tab">Tự chọn<small>bản đồ, thời tiết</small></div><div class="bs-mode" data-m="night" role="tab">Thủ đêm<small>giữ căn cứ đến sáng</small></div></div>
   </div>
   <div class="bs-step bs-s2" id="bsS2"></div>
   <div class="bs-main bs-step bs-s3" id="bsS3">
@@ -482,6 +486,21 @@
     <div class="go-stats"><div class="go-stat"><div class="l">Điểm</div><div class="v" id="vic-score">0</div></div></div>
   </div>
   <footer class="xk-foot"><span class="xk-hint">Vòng mới giữ nguyên trang bị, địch mạnh hơn.</span><div class="xb xb-pri" id="ngplusBtn" role="button"><span id="ngplusT">Vào vòng mới</span><span class="ic" data-icon="play"></span></div></footer>
+</div>
+
+<!-- MODE 3 THE RESULT of a night defence / a daily challenge (campaign/mode-run.js modeCard): the design system's end screen, filled by the mode -->
+<div class="overlay hidden xk-screen xk-end" id="modeEnd">
+  <header class="xk-top">
+    <div class="xb xb-ghost xk-back" id="meHome" role="button" data-back="1"><span class="ic" data-icon="back"></span><span>Trang chủ</span></div>
+  </header>
+  <div class="xk-body xk-result">
+    <p class="xk-kick" id="meKick"></p>
+    <h2 class="xk-big" id="meBig"></h2>
+    <p class="go-why" id="meWhy"></p>
+    <div class="go-stats" id="meStats"></div>
+    <p class="go-best" id="meBest"></p>
+  </div>
+  <footer class="xk-foot"><span class="xk-hint" id="meHint"></span><div class="xb xb-sec" id="meCopy" role="button"><span class="ic" data-icon="pack"></span><span id="meCopyT">Chép kết quả</span></div><div class="xb xb-pri" id="meGo" role="button"><span id="meGoT">Thử lại</span><span class="ic" data-icon="play"></span></div></footer>
 </div>
 
 <!-- XK-UI CONFIRM (ui/confirm.js askConfirm): leaving a battle, restarting a stage, wiping progress — the last overlay in the page, so it is

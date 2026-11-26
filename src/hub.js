@@ -9,6 +9,7 @@ export * from './data/guns.js';
 export * from './data/enemies.js';
 export * from './data/bosses.js';
 export * from './data/nemesis-mem.js';   // NEMESIS 1 what a general remembers of the player: the record, its sanitiser, the rules (pure)
+export * from './data/mode-math.js';   // MODE 1–2 the two extra modes' arithmetic: the daily generator, its share text, the night's clock, both scores (pure)
 export * from './net/protocol.js';   // COOP 2 two-player co-op: the wire format (pure — the net layer imports no hub, so it sits here before any system module)
 export * from './net/interp.js';   // COOP 2 the guest's snapshot buffer
 export * from './net/transport.js';   // COOP 2 the line between the two players
@@ -260,6 +261,8 @@ export * from './actors/troop-skin.js';   // Z344 the infantry skinned on the GP
 export * from './actors/ragdoll.js';   // Z254 a real fall for men shot down   // Z249 the Meshy infantryman cut into the batched rig   // Z248 the Meshy war horse, operator and carbine over the procedural rigs   // Z245 the general in full plate
 export * from './game/cavalry.js';   // Z245 cavalry mode
 export * from './world/sidepaint.js';   // Z179 battlefield-aware paint for both sides (runtime only)
+export * from './campaign/mode-run.js';   // MODE 3 the run kit of the extra modes: knobs turned and put back, the HUD text, the result card, the flow's five calls
+export * from './campaign/night-defence.js';   // MODE 1 THỦ ĐÊM: hold the base from dusk to dawn — assaults with lulls, the flare, sappers at the wall
 export * from './game/loop.js';
 export * from './game/viewport.js';
 export * from './game/boot-gate.js';
