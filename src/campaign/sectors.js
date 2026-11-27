@@ -18,7 +18,8 @@
 //   built at night (rebuild turns the run's hour for it). The rail carries the sector's objective line (g.sub) beside its clock; the side missions' card stays hidden.
 //   Co-op: host-only for now — a co-op room plays the ordinary battle (sectorBegin stays off).
 import * as THREE from 'three';
-import { SECTOR, SIDEMISSION, CONTRACTS, OBJECTIVES, SECROUTE } from '../../config.js';
+import { SECTOR, SIDEMISSION, CONTRACTS, OBJECTIVES, SECROUTE, CONQSTORY } from '../../config.js';
+import { sectorStoryCard } from '../hub.js';   // SECTOR 6
 import { FORTS, startBoss } from '../hub.js';   // SECTOR 4
 import { enemies, bullets, parts, renderer } from '../hub.js';
 import { sectorDeal, forkOpen, forkTake, consWon, consRefillK, routeLive, routeTick, routeEnd } from '../hub.js';   // SECTOR 4 (campaign/sector-route.js)
@@ -67,7 +68,7 @@ let _decl = null, _starting = false;
 export function sectorBegin(run){ sectorEnd(); _starting = true; const d = _decl; _decl = null; if(!T.on || !run || coopActive()) return;
   const spec = d ? d.spec : run.sectors != null ? run.sectors : devSpec(); if(spec == null || spec === false) return; openRun(spec, d && d.onWon); }
 const runTag = on => { if(typeof document !== 'undefined' && document.body) document.body.classList.toggle('sectrun', !!on); };   // (css/sector.css: the side missions' card hidden — the rail carries the goal)
-function openRun(spec, onWon){ runTag(true); const sd = devSeed();   // SECTOR 4 the attempt's seed: a new one each battle (a checkpoint keeps the dealt list)
+function openRun(spec, onWon){ runTag(true); const sd = devSeed(); SECT.story = null; SECT.opened = false;   // SECTOR 4 the attempt's seed: a new one each battle (a checkpoint keeps the dealt list)
   Object.assign(SECT, { on:true, spec, list:[], i:0, state:'arm', t:0, tries:0, snap:null, g:null, tr:null, dark:false, onWon:onWon || null, seed:sd != null ? sd : (Math.random() * 4294967296) >>> 0, cons:new Set(), forks:[] }); SECT.seq++;
   SECT.stats = { won:0, lost:0, restarts:0, transits:[], climax:0 }; SECT.log.length = 0; note('begin', String(spec)); }
 // THE CONQUEST HOOK: this battle is a sector run (spec: true = the land's sample run · 'hold,sabotage,boss' · [{ place, type, obj }]) and its win is onWon(now, bdef),
@@ -76,8 +77,11 @@ function openRun(spec, onWon){ runTag(true); const sd = devSeed();   // SECTOR 4
 export function sectorBattle(spec, onWon){ const d = spec == null || spec === false ? null : { spec, onWon:typeof onWon === 'function' ? onWon : null };
   if(_starting && T.on && !coopActive()){ if(d) openRun(d.spec, d.onWon); else sectorEnd(); return true; }   // the battle is being set up: it applies at once
   _decl = d; return false; }   // else the next battle's
+// SECTOR 6 a run's story (campaign/conq-story.js — a conquest fort's): { open:[lines] before the first sector, go(c) a sector live, won(c) a sector won } — set after
+//   sectorBattle for that battle (a new run starts with none)
+export function sectorStory(hooks){ if(SECT.on) SECT.story = hooks || null; }
 // nothing of a run is left: its knobs, its rail, its overlay (a new battle · quitting to the menu)
-export function sectorEnd(){ unknob(); SECT.on = false; SECT.spec = null; SECT.state = ''; SECT.tr = null; SECT.g = null; SECT.onWon = null; SECT.seq++; _starting = false; goQuiet(false); sectorGoalClear(); routeEnd(); railFree(); runTag(false); sectorRail(null); sectorTransitShow(null); }
+export function sectorEnd(){ unknob(); SECT.on = false; SECT.spec = null; SECT.state = ''; SECT.tr = null; SECT.g = null; SECT.onWon = null; SECT.seq++; _starting = false; goQuiet(false); sectorGoalClear(); routeEnd(); railFree(); sectorStoryCard(null); runTag(false); sectorRail(null); sectorTransitShow(null); }
 
 // ---- the checkpoint ----
 function snapTake(){ const p = S.player; if(!p) return null;
@@ -106,12 +110,13 @@ function sectorLive(now){ const c = sectorCur(); _starting = false; { const q = 
   conqSectorLive();   // SECTOR 2 a conquest's fort: what it lays on each field (its poison clouds)
   routeLive(c, g, now);   // SECTOR 4 the battle's consequences on this sector, its event card (campaign/sector-route.js)
   if(c.type === 'boss') g.noFort = !FORTS.some(f => f.tier === 3 && !f.captured);   // SECTOR 4 no citadel stood on this field (a crowded land): the general comes out in the open
-  edgeNote(fill(T.say.go, { n:SECT.i + 1, place:c.vi }), '#ffd27a'); radio('SCH: ' + goalTx(c)); note('live', c.type); rail(); }
+  edgeNote(fill(T.say.go, { n:SECT.i + 1, place:c.vi }), '#ffd27a'); radio('SCH: ' + goalTx(c)); note('live', c.type); rail();
+  if(SECT.story && SECT.story.go) SECT.story.go(c, SECT.i); }   // SECTOR 6 the fort's line for this sector, its beats (campaign/conq-story.js)
 function goalTx(c){ const Y = T.types[c.type]; return fill(T.say[c.type], { s:Y.hold, who:c.type === 'rescue' ? (Y.who[c.obj] || Y.who.civ) : '', obj:c.obj && c.type !== 'rescue' ? String((OBJECTIVES[c.obj] || {}).vi || c.obj).toLocaleLowerCase('vi') : '' }); }   // (the target's own name: the transit tells it before the field is built)
 function climax(now){ const g = SECT.g; if(g.climax || !g.Y.climax) return; g.climax = true; const ev = g.Y.climax.ev; if(sectorClimax(ev, g) || bigEventStart(ev, now, true)) SECT.stats.climax++; note('climax', ev); }   // SECTOR 2 a squad at the goal, a patrol at the target — else a big event
 // every frame of play (game/loop.js, after the waves)
 export function updateSectors(dt, now){ _starting = false; if(!SECT.on || !S.player) return;   // (a frame of play: the battle is set up, a late sectorBattle waits for the next)
-  if(SECT.state === 'arm'){ sectorLive(now); return; }
+  if(SECT.state === 'arm'){ if(SECT.i === 0 && !SECT.opened && SECT.story && SECT.story.open && SECT.story.open.length){ openingStart(SECT.story.open); return; } sectorLive(now); return; }   // SECTOR 6 the fort's opening lines first
   if(SECT.state === 'won'){ if((SECT.t -= dt) <= 0) transitStart(false); return; }
   if(SECT.state !== 'fight') return; SECT.t += dt; const g = SECT.g; routeTick(g, dt, now);   // SECTOR 4 (an air strike owed, a card's big event)
   if(g.type === 'hold'){ const M = SIDEM.cur;
@@ -129,7 +134,7 @@ export function updateSectors(dt, now){ _starting = false; if(!SECT.on || !S.pla
   rail(); }
 // campaign/boss.js bossStageWon: true in a sector run (the boss sector's goal — any other sector has no general to fall)
 export function sectorStageWon(now, bdef){ if(!SECT.on) return false; const c = sectorCur(); if(c && c.type === 'boss' && SECT.state === 'fight') goalDone(now, bdef); return true; }
-function goalDone(now, bdef){ const last = SECT.i >= SECT.list.length - 1; SECT.stats.won++; consWon(sectorCur()); note('won', last ? 'last' : '');   /* SECTOR 4 the route's reward */
+function goalDone(now, bdef){ const last = SECT.i >= SECT.list.length - 1; SECT.stats.won++; consWon(sectorCur()); if(SECT.story && SECT.story.won) SECT.story.won(sectorCur(), SECT.i); note('won', last ? 'last' : '');   /* SECTOR 4 the route's reward */
   if(last){ const cb = SECT.onWon; SECT.state = 'done'; sectorEnd(); if(cb) cb(now, bdef); else if(!modeStageWon(now, bdef)) stageWon(now, bdef); return; }   // the battle's one win: the declared one (sectorBattle) · a mode's · the stage's (campaign/boss.js)
   SECT.state = 'won'; SECT.t = T.transit.hold; S.awaitingUpgrade = true; S.wave = 0; const p = S.player; if(p) p.invincibleUntil = now + T.transit.hold + 2;   // the director, the waves and the events stop; nothing touches him now
   edgeNote(fill(T.say.won, { n:SECT.i + 1 }), '#8cbf3f'); sfx('levelup'); rail(SECT.i + 1); }
@@ -178,6 +183,7 @@ function warm(){ const tr = SECT.tr, seq = SECT.seq; tr.ph = 'warming';
   Promise.race([P, new Promise(r => setTimeout(r, ms))]).catch(() => {}).then(() => requestAnimationFrame(() => requestAnimationFrame(go))); }
 // every frame of the transit (game/loop.js, S.mode 'transit')
 export function updateSectorTransit(dt, now){ const tr = SECT.tr; if(!tr){ S.mode = 'playing'; return; } tr.t += dt;
+  if(tr.ph === 'story'){ openingStep(tr, dt); return; }   // SECTOR 6
   const L = tr.retry ? T.transit.retry : T.transit.lines; if((tr.lineT += dt) >= T.transit.lineGap && tr.lineI < L.length){ tr.lineT = 0; sectorTransitLine(L[tr.lineI++]); }
   if(tr.ph === 'fade'){ if(tr.t >= T.transit.fade + 0.05){ if(tr.fork){ tr.ph = 'fork'; tr.F = forkOpen(sectorCur(), k => forkDone(tr, k)); } else tr.ph = 'build'; } return; }
   if(tr.ph === 'fork'){ tr.F.tick(dt); return; }   // SECTOR 4 the card up (the lines go on under it)
@@ -188,6 +194,12 @@ export function updateSectorTransit(dt, now){ const tr = SECT.tr; if(!tr){ S.mod
     camera.position.lerpVectors(tr.p0, tr.p1, u); _look.lerpVectors(tr.l0, tr.l1, u); camera.lookAt(_look);
     if(tr.rideT >= tr.ride){ transitEnd(); } } }
 let _look = null;
+// SECTOR 6 THE OPENING: the fort's lines one by one over its field before the first sector (the fight not begun: S.mode 'transit', letterboxed; a centred card is
+//   fine here) — each lineT s, or the next at a tap / click / Enter / Space / the pad's A; Esc skips the rest. Then the first sector goes live as ever.
+function openingStart(lines){ SECT.opened = true; S.mode = 'transit'; S.firing = false; SECT.tr = { ph:'story', t:0, lines, k:-1, left:0, seq:SECT.seq }; note('opening', lines.length + ' lines'); openingNext(SECT.tr); }
+function openingNext(tr){ if(SECT.tr !== tr) return; tr.k++; if(tr.k >= tr.lines.length){ sectorStoryCard(null); SECT.tr = null; S.mode = 'playing'; return; }
+  tr.left = CONQSTORY.lineT; sectorStoryCard({ line:tr.lines[tr.k], i:tr.k, n:tr.lines.length, hint:CONQSTORY.skip, next:() => openingNext(tr), skip:() => { tr.k = tr.lines.length; openingNext(tr); } }); }
+function openingStep(tr, dt){ if((tr.left -= dt) <= 0) openingNext(tr); }
 // SECTOR 4 a route picked: the sector is that route now, the card says where the column goes, the field is built
 function forkDone(tr, k){ if(SECT.tr !== tr || tr.ph !== 'fork') return; const c = forkTake(SECT.i, k); tr.ph = 'build'; tr.took = k; note('fork', (k ? 'B ' : 'A ') + (c ? c.place + ':' + c.type : ''));
   if(c) sectorTransitShow({ kick:'HÀNH QUÂN', ttl:'KHU ' + (SECT.i + 1) + ' · ' + c.vi, goal:goalTx(c) }); }

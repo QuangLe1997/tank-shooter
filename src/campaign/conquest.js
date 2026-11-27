@@ -15,7 +15,7 @@ import { CONQUEST, REAL, DIRECTOR, FORT, FORTBOSS, BALANCE, INFGUN } from '../..
 import { BIOMES, FORTS, GUNS, PROFILE, RECON, S, SURP, TROOPER_SPELLS, ammoOnGive, celebrate, damageBlock, damageGate, damagePlayer, enemies, escapeHtml, fillTx, floatText, fortBossFreeze, heightAt, hide,
   knobApply, knobRefs, magCap, modeCard, modeDefine, modeKnob, modeLaunch, modeSay, modeStats, modeTime, openBattleSetup, quitToMenu, ringPulse, saveProfile, sfx, showBanner, spawnBullet,
   spawnPart, svgMarkup, tapEl, updateGunHUD, updateSpellHUD } from '../hub.js';
-import { sectorBattle } from '../hub.js';   // SECTOR 2 (campaign/sectors.js)
+import { sectorBattle, sectorStory, cqStoryHooks, cqStoryClose, cqEnding } from '../hub.js';   // SECTOR 6 (campaign/conq-story.js)   // SECTOR 2 (campaign/sectors.js)
 
 const C = CONQUEST, Y = C.say, T = C.treasures, N = C.forts.length, NOW = () => performance.now() / 1000;
 const ROOTS = { REAL, DIRECTOR, FORT, FORTBOSS, BALANCE };
@@ -119,7 +119,7 @@ export function conqSectorLive(){ if(!CQ.on || CQ.won) return; const th = C.fort
 export function conqWon(now){ if(!CQ.on || CQ.won) return; CQ.won = true; const q = conqStore(), i = CQ.i, f = C.forts[i];
   CQ.fresh = i >= q.cap; if(CQ.fresh) q.cap = i + 1; q.sel = Math.min(i + 1, N - 1);
   if(PROFILE.campaign && typeof PROFILE.campaign === 'object') PROFILE.campaign.max = Math.max(PROFILE.campaign.max | 0, f.lvl + 1); saveProfile();   // (Tự chọn's enemy levels open as the forts fall, as the old ladder's did)
-  showBanner(fillTx(Y.wonKick, { fort:f.name }).toLocaleUpperCase('vi'), '#ffd24a', true); celebrate('victory', 0, 0); sfx('levelup'); CQ.cardIn = C.next; }
+  showBanner(fillTx(Y.wonKick, { fort:f.name }).toLocaleUpperCase('vi'), '#ffd24a', true); celebrate('victory', 0, 0); sfx('levelup'); CQ.cardIn = C.next + cqStoryClose(i); }   // (SECTOR 6 the fort's two closing lines first)
 function card(won){ const st = modeStats(), q = conqStore(), i = CQ.i, f = C.forts[i], P = f.prize && T[f.prize], nf = C.forts[i + 1];
   let why;
   if(won && P){ why = '<span class="cq-prize"><span class="cq-pi">' + svgMarkup(P.icon, 1.6) + '</span><span class="cq-pt"><small>' + escapeHtml(CQ.fresh ? Y.prizeTag : Y.taken) + '</small><b>' + escapeHtml(P.name) + '</b><span>' + escapeHtml(P.fx) + '</span></span></span>'
@@ -135,12 +135,12 @@ function card(won){ const st = modeStats(), q = conqStore(), i = CQ.i, f = C.for
 modeDefine('conq', {
   begin(run){ const i = Math.max(0, Math.min(N - 1, (run.conq && run.conq.i) | 0)), f = C.forts[i];
     Object.assign(CQ, { on:true, i, won:false, cardIn:0, thAt:0, gasAt:0, fxAt:0, saveAt:-1e9, lavaUntil:0, lavaN:0, fresh:false, gasSay:0 }); CQ.gas.length = 0; for(const k in CQ.st) CQ.st[k] = 0;
-    CQ.carry = new Set(conqCarryFor(i)); if(f.run) sectorBattle(f.run.split(' '), n => conqWon(n));   // SECTOR 2 the fort as a chain of sectors: its win comes from the last one
+    CQ.carry = new Set(conqCarryFor(i)); if(f.run){ sectorBattle(f.run.split(' '), n => conqWon(n)); sectorStory(cqStoryHooks(i, i >= conqStore().cap)); }   // SECTOR 2 the fort as a chain of sectors: its win comes from the last one · SECTOR 6 its story (campaign/conq-story.js)
     const th = f.threat; if(th) for(const [path, op, x] of th.knobs){ const [root, ...rest] = String(path).replace('$d', PROFILE.difficulty || 'soldier').split('.'); if(!ROOTS[root]) continue;
       for(const [o, k] of knobRefs(ROOTS[root], rest.join('.'))) modeKnob(o, k, knobApply(o[k], op, x)); } },
   ready(p){ conqArm(p); const th = C.forts[CQ.i].threat; if(th && th.gas) gasPlace(th.gas); },
   live(){ const f = C.forts[CQ.i]; modeSay(fillTx(Y.open, { fort:f.name, boss:f.boss }), 1.2); },
-  frame(dt, now){ if(CQ.won){ if(CQ.cardIn > 0 && (CQ.cardIn -= dt) <= 0) card(true); return; }
+  frame(dt, now){ if(CQ.won){ if(CQ.cardIn > 0 && (CQ.cardIn -= dt) <= 0){ if(!(CQ.i === N - 1 && cqEnding())) card(true); } return; }   // SECTOR 6 the last fort: the war's ending, then the map
     if(has('thermal') && (CQ.thAt -= dt) <= 0){ CQ.thAt = T.thermal.tick; thermal(now); }
     const th = C.forts[CQ.i].threat; if(th && th.gas && (CQ.gasAt -= dt) <= 0){ CQ.gasAt = th.gas.tick; gasTick(now, th.gas); }
     if(now < CQ.lavaUntil && (CQ.fxAt -= dt) <= 0){ CQ.fxAt = 0.08; const p = S.player, a = Math.random() * 6.283; spawnPart(p.pos.x + Math.cos(a) * 1.3, heightAt(p.pos.x, p.pos.z) + 0.4 + Math.random() * 1.6, p.pos.z + Math.sin(a) * 1.3, 0, 1.4, 0, { tex:'fire', color:0xffd080, color2:0xff4a10, size:0.7, life:0.45, grav:0.6, drag:2, grow:0.6 }); } },
@@ -164,4 +164,4 @@ export function conqLootNode(){ const el = document.createElement('div'), f = C.
     tapEl(c, () => { conqToggle(id); sfx('click'); el.replaceWith(conqLootNode()); }); row.appendChild(c); }
   return el; }
 // campaign/fort-boss.js fortBossDef, the capital's: in a conquest battle he is the fort's general (his name on the bar, his look; the last fort's keeps the capital's)
-export function conqBossDef(d){ if(!CQ.on) return d; const f = C.forts[CQ.i]; if(!f) return d; d.name = f.boss; if(f.look && FORTBOSS.looks[f.look]) d.lookId = f.look; d.conq = true; return d; }
+export function conqBossDef(d){ if(!CQ.on) return d; const f = C.forts[CQ.i]; if(!f) return d; d.name = f.boss; if(f.look && FORTBOSS.looks[f.look]) d.lookId = f.look; d.conq = true; if(f.look === 'tyrant') d.tyrant = true; return d; }   // (SECTOR 6 the last fort's BẠO CHÚA: campaign/tyrant.js)

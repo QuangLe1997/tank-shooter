@@ -17,6 +17,7 @@
 //   of each move (ATK) and the fort taken (TAKEN) — CUE events, FORTBOSS.cue, allowed host → guest only (net/rules.js).
 import * as THREE from 'three';
 import { FORT, FORTBOSS, TROOPS } from '../../config.js';
+import { tyrantStep } from '../hub.js';   // SECTOR 6
 import { fortBossAct, fortBossAnim, fortBossCorpseTick, fortBossCorpsesClear, fortBossFlash, fortBossLookId, fortBossPreload, fortBossWarm } from '../hub.js';   // BOSS 2 (actors/fort-boss-glb.js)
 import { BIOME, CO, FORTS, MATE, NET_EV, S, ammoCrate, animateSoldier, bigExplode, blastAllies, bossForStage, bossStageWon, burst, clampFieldXZ, coopEnemyById, coopHostCrate, coopHurtMate, coopSendEvent, damagePlayer, diffHpMul, disposeArtZone, enemies, floatText, fortBossGlow, fortBossLook, fortBossLookClear, fortBossLookTick, fortBossPlateOff, fortBossStrip, fortFlagsTick, fortIntactCross, fortTake, freeEnemyBar, heightAt, infPushBlocks, launchEnemyMissile, loopHpMul, losBlocked, makeArtLock, nemFell, nemMeet, nemPlateEl, poseSoldier, radio, ringPulse, scene, sfx, showBanner, soldierStagePerks, spawnBullet, spawnEnemy, spawnGift, spawnPart, storyCue, tickArtLock, wakeFort, killEnemy } from '../hub.js';
 import { muzzleFX } from '../hub.js';   // GUNFX 1 (fx/gunfx.js)
@@ -122,6 +123,7 @@ export function updateFortBoss(dt, now){ fortBossLookTick(dt); fortBossCorpseTic
 function step(B, dt, now){ const e = B.e, f = B.f, H = home(f), fo = foe(e), ox = e.pos.x, oz = e.pos.z, k = e.hp / e.maxHp;
   e.dazeUntil = 0; if(e.burn) e.burn.k = 0.3; e.stunUntil = 0;
   if(B.phase < 2 && k < C.phase[0]) phase(B, 2, now); if(B.phase < 3 && k < C.phase[1]) phase(B, 3, now);
+  if(B.def.tyrant) tyrantStep(B, dt, now);   // SECTOR 6 BẠO CHÚA's steel rain and last stand (campaign/tyrant.js)
   if(B.st === 'intro'){ const D = B.door; e.pos.x += D.ux * C.intro.walk * dt; e.pos.z += D.uz * C.intro.walk * dt; infPushBlocks(e.pos); place(e, Math.atan2(D.ux, D.uz), dt, 'stand', false, ox, oz);
     if(now >= B.until){ B.st = 'free'; e.held = false; } }
   else if(B.st === 'stagger'){ place(e, e.facing, dt, 'crouch', false, ox, oz); const u = e.mesh.userData; if(u.head) u.head.rotation.z = Math.sin(now * 3.1) * 0.3;

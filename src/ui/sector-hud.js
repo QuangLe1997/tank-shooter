@@ -5,6 +5,7 @@
 //   SECTOR 4 the rail's tail: the battle's carried consequences as small icons (green good, red bad) and the sector's event card as a chip; and THE FORK CARD in the
 //   transit (a menu moment: the fight is stopped and under the black, so it stands in the middle) — two routes, tap / click / pad / keys 1·2, a clock to the default pick.
 import { svgMarkup } from '../hub.js';   // SECTOR 4
+import { STORY } from '../../config.js';   // SECTOR 6 (the speakers' names)
 let _rail = null, _railSig = '', _tr = null, _trLine = '', _main = null, _cons = null, _chip = null;
 const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
 function railEl(){ if(_rail || typeof document === 'undefined') return _rail; const hud = document.getElementById('hud'); if(!hud) return null;
@@ -63,3 +64,20 @@ export function sectorForkCard(o, part){ const T = trEl(); if(!T) return;
   _fkKey = e => { if(e.key === '1' || e.key === '2'){ e.preventDefault(); e.stopPropagation(); o.onPick(+e.key - 1); } else if(e.key === 'Enter'){ const f = _fk.querySelector('.sf-r.padfocus, .sf-r:focus'); if(f){ e.preventDefault(); o.onPick(+f.dataset.k); } } };
   addEventListener('keydown', _fkKey, true); try{ if(document.pointerLockElement) document.exitPointerLock(); }catch(e){} }
 export const sectorForkShown = () => !!(_fk && !_fk.classList.contains('hidden'));
+
+// SECTOR 6 THE STORY CARD — a fort's opening (and its closing lines): letterboxed, the field dimmed behind, the speaker's name over the line, dots for the lines,
+//   a hint. o = { line:'who|text', i, n, hint, next(), skip() } (next / skip: the card takes taps, clicks, Enter / Space, Esc and the pad's A) · null = gone
+let _sy = null, _syKey = null;
+const speaker = who => who === 'boss' ? 'TƯỚNG GIỮ THÀNH' : String(((STORY.cast[who] || STORY.cast.cmd).name) || '').toLocaleUpperCase('vi');
+export function sectorStoryCard(o){ const T = trEl(); if(!T) return;
+  if(!_sy){ _sy = document.createElement('div'); _sy.className = 'st-story overlay hidden'; T.d.appendChild(_sy); }
+  if(_syKey){ removeEventListener('keydown', _syKey, true); _syKey = null; }
+  if(!o){ if(!_sy.classList.contains('hidden')){ _sy.classList.add('hidden'); _sy.replaceChildren(); T.d.classList.remove('story'); if(!T.d.classList.contains('black')){ T.d.classList.remove('on'); document.body.classList.remove('sectx'); } } return; }
+  const b = o.line.indexOf('|'), who = b > 0 ? o.line.slice(0, b) : 'cmd', tx = b > 0 ? o.line.slice(b + 1) : o.line;
+  _sy.innerHTML = '<div class="ss-card"><p class="ss-who">' + esc(speaker(who)) + '</p><p class="ss-tx">' + esc(tx) + '</p><p class="ss-dots">' +
+    Array.from({ length:o.n }, (_, k) => '<i' + (k === o.i ? ' class="on"' : k < o.i ? ' class="done"' : '') + '></i>').join('') + '</p>' +
+    (o.next ? '<p class="ss-hint">' + esc(o.hint || '') + '</p><span class="ss-next" data-pad role="button" tabindex="0">›</span>' : '') + '</div>';
+  T.d.classList.add('on', 'story'); document.body.classList.add('sectx'); _sy.classList.remove('hidden');
+  if(o.next){ _sy.onclick = () => o.next(); _syKey = e => { if(e.key === 'Escape'){ e.preventDefault(); e.stopPropagation(); o.skip && o.skip(); } else if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); e.stopPropagation(); o.next(); } };
+    addEventListener('keydown', _syKey, true); } else _sy.onclick = null; }
+export const sectorStoryShown = () => !!(_sy && !_sy.classList.contains('hidden'));

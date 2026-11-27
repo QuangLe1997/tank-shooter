@@ -25,6 +25,11 @@ export function planForts(){ clearForts(); const st=Math.min(4, Math.max(0, S.st
     if(!inField(x, z, R+7) || !homeClear(x, z, R, false, hk) || Math.hypot(x, z-ARENA*0.55)<R+40) continue;
     if(cand.some(c=>Math.hypot(c.x-x, c.z-z) < c.R+R+34)) continue;   // Z144 wide gaps between strongholds
     cand.push({ x, z, R, tier }); }
+  if(SL && cap0 && n > 0 && !cand.some(c => c.tier === 3)){ const T = FORT.tiers[3];   // SECTOR 6 a general's sector must have its citadel: a crowded land gets a smaller one, anywhere on the far half, before it gets none
+    for(let t = 0; t < 500; t++){ const R = Math.max(FORT.minR, T.r[0] * 0.8 * (MOBILE ? FORT.mobileR * CAM_ROOM.yard.rKMobile : CAM_ROOM.yard.rK)), a = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.7, FR = fieldR(a), hk = HOME_GAP.minK;
+      const dMin = HOME_GAP.wall + R + (MOBILE ? HOME_GAP.gapMobile : HOME_GAP.gap) * hk + 1, dMax = FR - R - 6; if(dMax < dMin) continue; const d = dMin + Math.random() * (dMax - dMin), x = Math.cos(a) * d, z = Math.sin(a) * d;
+      if(!inField(x, z, R + 5) || !homeClear(x, z, R, false, hk) || Math.hypot(x, z - ARENA * 0.55) < R + 30 || cand.some(c => Math.hypot(c.x - x, c.z - z) < c.R + R + 20)) continue;
+      cand.length = Math.min(cand.length, Math.max(0, n - 1)); cand.unshift({ x, z, R, tier:3 }); break; } }
   for(const c of cand){ const f={ ...c, name:FORT.tiers[c.tier].name+' '+NM[(_nameI++)%NM.length], chief:'TƯỚNG '+FORT.chiefs[(Math.random()*FORT.chiefs.length)|0],
       captured:false, breached:false, active:false, units:[], cmd:null, sallyAt:0, g:null };
     FORTS.push(f); ZONES.push({ kind:'fort', x:f.x, z:f.z, r:f.R+7, fort:f }); }
