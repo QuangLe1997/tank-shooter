@@ -3744,6 +3744,7 @@ export const ASSETDIET = { ktx2:true, basis:'assets/lib/basis/', simplifier:'ass
 //     breach: the charge set at the gate (or the wall) of a fort within reach m of him: it is blown in; wall pieces within wallR m of the blast fall; cd s ·
 //     lava: shield dur s (no round gets through), each round it stops is thrown back at its shooter for ret damage (at most retMax a shield); cd s.
 //   run (SECTOR 2): the fort's battle as a chain of sectors (config SECTOR, campaign/sectors.js: place:type[:obj] tokens) — its approach missions, then the general
+//     — SECTOR 4: '*' a free slot dealt from the land's deck (SECROUTE: a different route each attempt, a fork card at some)
 //   carry: treasures taken into a battle at most · migrate: forts taken = min(cap, the old campaign's levels cleared) · next: the treasure screen's delay s
 //   after the general falls · say: the radio and the screens' words ({fort} {boss} {t} {n}).
 // ============================================================================
@@ -3752,42 +3753,42 @@ export const CONQUEST = { on:true, carry:3, migrate:{ cap:9 }, next:4.2,
   forts:[
     { biome:'DESERT', name:'Thành Cát Đỏ', boss:'CÁT ĐỘC', look:'raider', act:0, lvl:1, tod:'day', wx:'sand', prize:'thermal', rec:null,
       blurb:'Bão cát nuốt cả chân trời. Một phi công của ta rơi giữa đồi cát — phải tới trước Hắc Thiết.',
-      go:{ kind:'rescue', tx:'Cứu phi công rơi giữa bão cát trước khi địch tới' }, run:'outskirts:hold village:rescue:pilot hq:boss', threat:null },
+      go:{ kind:'rescue', tx:'Cứu phi công rơi giữa bão cát trước khi địch tới' }, run:'outskirts:hold * village:rescue:pilot * hq:boss', threat:null },
     { biome:'SAVANNA', name:'Đồn Sư Tử', boss:'NỮ HỔ', look:'soldierF', act:0, lvl:2, tod:'noon', wx:'clear', prize:'scale', rec:'thermal',
       blurb:'Đoàn xe chở tù binh của ta đang lăn bánh qua đồng cỏ. Chặn nó lại trước khi nó vào đồn.',
-      go:{ kind:'rescue', tx:'Chặn đoàn xe chở tù binh, giải thoát họ' }, run:'outskirts:hold outskirts:pursuit village:rescue:civ hq:boss',
+      go:{ kind:'rescue', tx:'Chặn đoàn xe chở tù binh, giải thoát họ' }, run:'outskirts:hold outskirts:pursuit * village:rescue:civ hq:boss',
       threat:{ id:'grass', vi:'Phục kích trong cỏ cao', tx:'Địch nằm trong cỏ, trồi lên sau lưng gấp ba lần.', knobs:[['REAL.surprise.w.ambush', '*', 3], ['REAL.surprise.first.*', '*', 0.45], ['REAL.surprise.every.*', '*', 0.6]] } },
     { biome:'RUINS', name:'Thành Tro', boss:'BÓNG MA HANG', look:'stalker', act:0, lvl:3, tod:'sunset', wx:'fog', prize:'ghost', rec:'scale',
       blurb:'Minh theo một hẻm "đã quét sạch" về phía bắc rồi mất tín hiệu. Dân thường còn kẹt trong toà nhà sập.',
-      go:{ kind:'rescue', tx:'Theo dấu Minh vào hẻm bắc; cứu dân kẹt trong toà nhà sập' }, run:'outskirts:hold village:rescue:civ bridge:sabotage:radio hq:boss',
+      go:{ kind:'rescue', tx:'Theo dấu Minh vào hẻm bắc; cứu dân kẹt trong toà nhà sập' }, run:'outskirts:hold village:rescue:civ * bridge:sabotage:radio * hq:boss',
       threat:{ id:'sniper', vi:'Bắn tỉa trên cao', tx:'Xạ thủ bắn tỉa dày gấp ba, mỗi phát đau hơn.', knobs:[['DIRECTOR.tactics.marksman.chance', '=', 0.9], ['DIRECTOR.tactics.marksman.max', '=', 3], ['DIRECTOR.tactics.marksman.dmg', '*', 1.2]] } },
     { biome:'CITY', name:'Thành Sắt', boss:'NỮ QUỶ', look:'demon', act:1, lvl:4, tod:'sunset', wx:'rain', prize:'storm', rec:'ghost',
       blurb:'Một trạm tiếp sóng giữa thành phố đang đọc vị trí của tổ cho địch. Bịt miệng nó.',
-      go:{ kind:'destroy', tx:'Phá trạm tiếp sóng đang báo vị trí của tổ' }, run:'outskirts:hold bridge:sabotage:radio gate:breach hq:boss',
+      go:{ kind:'destroy', tx:'Phá trạm tiếp sóng đang báo vị trí của tổ' }, run:'outskirts:hold bridge:sabotage:radio * gate:breach hq:boss',
       threat:{ id:'nest', vi:'Ụ súng sau bao cát', tx:'Tổ đại liên ở khắp nơi, núp sau bao cát và thùng hàng.', knobs:[['DIRECTOR.tactics.mg.chance', '=', 0.95], ['DIRECTOR.tactics.mg.max', '=', 4], ['DIRECTOR.tactics.mg.hpK', '*', 1.3]] } },
     { biome:'MEADOW', name:'Đồn Sương Độc', boss:'BÓNG ĐỘC', look:'cbrn', act:1, lvl:5, tod:'day', wx:'fog', prize:'mask', rec:'storm',
       blurb:'Đồng cỏ trống trải, quân địch đông như kiến. Chúng thả khí độc xuống làng ven đồi.',
-      go:{ kind:'rescue', tx:'Cứu dân làng khỏi khu thả khí độc' }, run:'outskirts:pursuit village:rescue:civ bridge:sabotage:depot hq:boss',
+      go:{ kind:'rescue', tx:'Cứu dân làng khỏi khu thả khí độc' }, run:'outskirts:pursuit village:rescue:civ * * hq:boss',
       threat:{ id:'horde', vi:'Quân đông trên đồng trống', tx:'Mỗi đợt thêm ba lính, đông lên nhanh gấp rưỡi.', knobs:[['BALANCE.wave.base', '+', 3], ['BALANCE.wave.perWave', '*', 1.5]] } },
     { biome:'FOUNDRY', name:'Thành Lò Thép', boss:'VỆ BINH THÉP', look:'guardian', act:1, lvl:6, tod:'night', wx:'clear', prize:'molten', rec:'mask',
       blurb:'Tiếng huýt sáo yếu ớt trên sóng — Minh còn sống, bị giam trong lò. Đường vào ngập khói độc.',
-      go:{ kind:'rescue', tx:'Cứu Minh khỏi lò giam — anh tự đi theo khi được thả' }, run:'outskirts:hold bridge:pursuit village:infiltrate:depot yard:rescue:minh gate:breach hq:boss',
+      go:{ kind:'rescue', tx:'Cứu Minh khỏi lò giam — anh tự đi theo khi được thả' }, run:'outskirts:hold * village:infiltrate:depot yard:rescue:minh gate:breach hq:boss',
       threat:{ id:'gas', vi:'Khói độc và hơi nóng', tx:'Bốn đám khí độc chắn đường vào thành.', knobs:[], gas:{ n:4, R:9, dps:9, tick:0.25, from:[0.25, 0.7] } } },
     { biome:'ARCTIC', name:'Thành Băng', boss:'NỮ BĂNG CƠ', look:'cyborgF', act:1, lvl:7, tod:'day', wx:'snow', prize:'ice', rec:'molten',
       blurb:'Trạm radar trên băng dẫn đường cho trực thăng địch. Trên bộ đàm, Khang nói nhiều hơn mọi khi.',
-      go:{ kind:'destroy', tx:'Phá trạm radar dẫn đường trực thăng' }, run:'outskirts:hold bridge:sabotage:radar outskirts:pursuit hq:boss',
+      go:{ kind:'destroy', tx:'Phá trạm radar dẫn đường trực thăng' }, run:'outskirts:hold bridge:sabotage:radar * outskirts:pursuit * hq:boss',
       threat:{ id:'armour', vi:'Lính giáp nặng', tx:'Lính địch dày máu hơn 35%.', knobs:[['BALANCE.difficulty.$d.hp', '*', 1.35]] } },
     { biome:'QUARRY', name:'Thành Đá Xám', boss:'TITAN', look:'titan', act:2, lvl:8, tod:'noon', wx:'clear', prize:'breach', rec:'ice',
       blurb:'Thợ mỏ bị bắt làm phu đào Lõi. Hai gã khổng lồ giữ mỏ: Titan và Người Sắt Xanh.',
-      go:{ kind:'rescue', tx:'Giải thoát thợ mỏ bị bắt làm phu' }, run:'outskirts:hold village:rescue:miner gate:breach hq:boss',
+      go:{ kind:'rescue', tx:'Giải thoát thợ mỏ bị bắt làm phu' }, run:'outskirts:hold * village:rescue:miner gate:breach hq:boss',
       threat:{ id:'titan', vi:'Titan', tx:'Tướng giữ mỏ nhanh hơn và dày máu hơn — phải ghim hắn đứng yên.', knobs:[['FORTBOSS.hp.*', '*', 1.3], ['FORTBOSS.move.speed', '*', 1.25], ['FORTBOSS.charge.cd.*', '*', 0.75]] } },
     { biome:'VOLCANO', name:'Thành Dung Nham', boss:'HOẢ THẠCH', look:'magma', act:2, lvl:9, tod:'sunset', wx:'clear', prize:'lava', rec:'breach',
       blurb:'Trận địa pháo trên miệng núi lửa nã về phía Thành Luỹ Cuối. Cổng thành dày như vách đá.',
-      go:{ kind:'destroy', tx:'Phá trận địa pháo bắn về phía Thành Luỹ Cuối' }, run:'outskirts:hold bridge:sabotage:battery gate:breach hq:boss',
+      go:{ kind:'destroy', tx:'Phá trận địa pháo bắn về phía Thành Luỹ Cuối' }, run:'outskirts:hold bridge:sabotage:battery * gate:breach hq:boss',
       threat:{ id:'gate', vi:'Cổng không thể vượt', tx:'Cổng thành dày gấp năm lần.', knobs:[['FORT.tiers.1.gate', '*', 5], ['FORT.tiers.2.gate', '*', 5], ['FORT.tiers.3.gate', '*', 5]] } },
     { biome:'CITADEL', name:'Thành Luỹ Cuối', boss:'BẠO CHÚA', look:null, act:2, lvl:10, tod:'night', wx:'rain', prize:null, rec:'lava',
       blurb:'Theo tin giả của Khang, đánh vào cổng tây. Vợ con anh bị giam dưới hầm. Bạo Chúa chờ trên đỉnh thành.',
-      go:{ kind:'rescue', tx:'Đánh vào cổng tây; cứu vợ con Khang dưới hầm' }, run:'outskirts:infiltrate:command gate:breach yard:rescue:family hq:boss',
+      go:{ kind:'rescue', tx:'Đánh vào cổng tây; cứu vợ con Khang dưới hầm' }, run:'outskirts:infiltrate:command * gate:breach yard:rescue:family hq:boss',
       threat:{ id:'fire', vi:'Hoả lực dày nhất', tx:'Địch bắn đau hơn 25%.', knobs:[['BALANCE.difficulty.$d.dmg', '*', 1.25]] } } ],
   treasures:{
     thermal:{ name:'Kính Nhiệt Sa Long', icon:'tqThermal', kind:'passive', fx:'Thấy địch qua cát, khói, cỏ cao; đánh dấu xạ thủ ẩn', why:'Savan đầy cỏ cao và phục kích.', R:42, snipeR:95, tick:0.5, mark:2.2 },
@@ -3836,7 +3837,7 @@ export const CONQUEST = { on:true, carry:3, migrate:{ cap:9 }, next:4.2,
 export const SECTOR = { on:true, retries:3,
   types:{ hold:{ vi:'GIỮ ĐẦU CẦU', hold:75, t:900, overrunT:9, first:4, again:6, climax:{ at:0.5, ev:'bombing' } },
           sabotage:{ vi:'PHÁ MỤC TIÊU', time:300, climax:{ at:0.5, ev:'crash' } },
-          boss:{ vi:'HẠ TƯỚNG THÀNH', climax:null },
+          boss:{ vi:'HẠ TƯỚNG THÀNH', climax:null, wait:4 },   // (SECTOR 4 no citadel stood on the field: the general comes out at its far end wait s in)
           rescue:{ vi:'GIẢI CỨU', time:300, d:[70, 115], clear:11, gap:3.2, wallHp:6000, ring:6, guards:5, rpg:1, reach:2.6, free:3, walk:5.5, follow:2.4, hp:100, fireR:14, dps:5, evacR:8,
             who:{ civ:'dân thường', pilot:'phi công', minh:'Minh', miner:'thợ mỏ', family:'vợ con Khang' }, climax:{ at:0.5, ev:'squad' } },
           breach:{ vi:'PHÁ CỔNG', time:420, gateK:3, gateMax:4000, fallback:'command', climax:{ at:0.5, ev:'squad' } },
@@ -3872,3 +3873,43 @@ export const SECTOR = { on:true, retries:3,
     infilAlarm:'BÁO ĐỘNG TOÀN KHU — GIỮ VỮNG CHỜ TRỰC THĂNG', infilAlarmR:'Lộ rồi! Giữ vững, trực thăng đang tới đón.', infilHold:'Bị lộ — giữ vững chờ trực thăng',
     infilHeli:'TRỰC THĂNG ĐÃ TỚI — LÊN MÁY BAY', infilHeliR:'Trực thăng ở bãi đáp, chạy ra ngay!', infilBoard:'Chạy ra bãi đáp · {m} m', infilLeft:'TRỰC THĂNG ĐÃ RỜI ĐI',
     pursuitLeft:'Chặn đoàn xe · còn {n}/{of} xe', pursuitBurn:'XE ĐỊCH BỐC CHÁY — CÒN {n}', pursuitGone:'ĐOÀN XE ĐÃ THOÁT' } };
+// SECTOR 4 THE ROUTE (campaign/sector-route.js · the fork card, the icons and the chip: ui/sector-hud.js). A run's token '*' is a FREE SLOT, dealt from the land's deck
+//   (decks[land], else _) by a seed fixed for the attempt (a checkpoint replays the same deal; a new attempt deals again); an infiltration is dealt only into a night battle.
+//   fork: at a free slot once every[0]…every[1] sectors have passed (and at the last free slot when none has come yet) the transit stops on a FORK CARD — two routes, each
+//     its difficulty, its reward, its consequence; a tap / click / the pad / keys 1·2 pick; pickT s without one takes the easier. pick: the easier is the default (a tie: the first).
+//   meta (by type:obj, place:type or type): diff 1–3 · win = the consequence its sector won leaves · skip = the one the route NOT taken leaves · reward = the card's line when it has no win
+//   cons — carried to the end of the battle, an icon each by the rail: strike — one air strike `at` s into the general's sector · mate — one more man with him in every sector ·
+//     ammoLess — his reserves × k now and each refill's ammo × refill · guards — the general's bodyguards + add · noColumn — every wave `wave` men fewer (at least 1)
+//   events — a card at a sector's start (not the first), chance by difficulty, drawn by weight (w), the same card on a replay: storm — the fog's reach × fog, the enemy's eyes × see ·
+//     marksmen — the director's marksmen: chance at least `chance`, max + add, dmg × · wounded — on foot run / sprint × speed · blackout — no radio · early — our fireteam now and n more men ·
+//     bombing / crash / fire / jam — that big event `at` s in. Shown as a chip by the rail.
+export const SECROUTE = { on:true,
+  fork:{ every:[1, 2], pickT:12 },
+  decks:{ _:['bridge:sabotage:radio', 'village:rescue:civ', 'outskirts:pursuit', 'village:sabotage:depot', 'village:rescue:pilot', 'gate:breach', 'outskirts:hold', 'village:infiltrate:command'],
+          DESERT:['village:rescue:pilot', 'village:sabotage:depot', 'outskirts:pursuit', 'bridge:sabotage:radar', 'outskirts:hold', 'village:rescue:civ'],
+          SAVANNA:['outskirts:pursuit', 'village:rescue:civ', 'bridge:sabotage:radar', 'village:sabotage:depot', 'outskirts:hold', 'village:rescue:pilot'],
+          RUINS:['village:rescue:civ', 'bridge:sabotage:radio', 'gate:breach', 'outskirts:hold', 'village:sabotage:depot', 'outskirts:pursuit'],
+          CITY:['bridge:sabotage:radio', 'village:rescue:civ', 'gate:breach', 'outskirts:pursuit', 'village:sabotage:depot', 'village:infiltrate:command'],
+          MEADOW:['village:rescue:civ', 'outskirts:pursuit', 'bridge:sabotage:battery', 'village:sabotage:depot', 'outskirts:hold', 'village:rescue:pilot'],
+          FOUNDRY:['village:sabotage:depot', 'outskirts:pursuit', 'gate:breach', 'village:infiltrate:command', 'village:rescue:civ', 'bridge:sabotage:radio'],
+          ARCTIC:['bridge:sabotage:radar', 'outskirts:pursuit', 'village:rescue:pilot', 'outskirts:hold', 'village:sabotage:depot', 'gate:breach'],
+          QUARRY:['village:rescue:civ', 'gate:breach', 'village:sabotage:depot', 'outskirts:pursuit', 'bridge:sabotage:battery', 'outskirts:hold'],
+          VOLCANO:['bridge:sabotage:battery', 'gate:breach', 'outskirts:pursuit', 'village:sabotage:depot', 'village:rescue:civ', 'outskirts:hold'],
+          CITADEL:['village:infiltrate:command', 'gate:breach', 'village:rescue:civ', 'bridge:sabotage:radio', 'outskirts:pursuit', 'village:sabotage:depot'] },
+  meta:{ 'rescue:pilot':{ diff:2, win:'strike' }, 'rescue':{ diff:2, win:'mate' }, 'sabotage:depot':{ diff:2, skip:'ammoLess', reward:'Giữ đủ cơ số đạn tới cuối trận' },
+         'pursuit':{ diff:3, skip:'guards', reward:'Sĩ quan địch không thoát về thành' }, 'bridge:sabotage':{ diff:3, win:'noColumn' }, 'sabotage':{ diff:2, reward:'Địch mất liên lạc khu này' },
+         'hold':{ diff:1, reward:'Quân ta tới đúng giờ' }, 'breach':{ diff:3, reward:'Mở đường vào thành' }, 'infiltrate':{ diff:2, reward:'Đánh mà địch không hay' } },
+  cons:{ strike:{ vi:'Phi công được cứu', tx:'Một lượt không kích yểm trợ ở khu tướng', icon:'target', good:true, at:20 },
+         mate:{ vi:'Dân được cứu', tx:'Thêm một người theo tổ tới cuối trận', icon:'team', good:true },
+         ammoLess:{ vi:'Bỏ kho đạn', tx:'Ít đạn hơn tới cuối trận', icon:'mag', good:false, k:0.6, refill:0.5 },
+         guards:{ vi:'Sĩ quan thoát', tx:'Tướng có thêm cận vệ', icon:'star', good:false, add:3 },
+         noColumn:{ vi:'Cầu đã sập', tx:'Đoàn tăng viện địch bị chặn: mỗi đợt bớt lính', icon:'bolt', good:true, wave:-2 } },
+  events:{ from:1, chance:{ recruit:0.3, soldier:0.45, veteran:0.6 }, w:{ storm:1, marksmen:1, wounded:0.8, blackout:0.8, early:0.8, bombing:0.6, crash:0.5, fire:0.4, jam:0.5 },
+    storm:{ vi:'TRỜI ĐỔ BÃO', tx:'Tầm nhìn giảm', icon:'bolt', good:false, fog:0.5, see:0.7 },
+    marksmen:{ vi:'XẠ THỦ ƯU TÚ', tx:'Địch có xạ thủ bắn tỉa giỏi', icon:'target', good:false, chance:0.9, add:2, dmg:1.25 },
+    wounded:{ vi:'CÕNG THƯƠNG BINH', tx:'Đi bộ chậm hơn', icon:'heart', good:false, speed:0.8 },
+    blackout:{ vi:'MẤT SÓNG BỘ ĐÀM', tx:'Bộ đàm câm cả khu', icon:'mag', good:false },
+    early:{ vi:'VIỆN BINH TA TỚI SỚM', tx:'Tổ bộ binh tới ngay', icon:'team', good:true, n:3 },
+    bombing:{ vi:'NÉM BOM THẢM', tx:'Máy bay địch rải bom', icon:'bolt', good:false, at:14 }, crash:{ vi:'MÁY BAY RƠI', tx:'Một chiếc máy bay sắp rơi', icon:'bolt', good:false, at:14 },
+    fire:{ vi:'CHÁY CỎ', tx:'Lửa lan trên đồng', icon:'bolt', good:false, at:14 }, jam:{ vi:'NHIỄU SÓNG', tx:'Địch phá sóng', icon:'mag', good:false, at:14 } },
+  say:{ fork:'NGÃ RẼ', pick:'Chọn hướng tiến', auto:'Tự chọn sau {s} giây', diff:'Độ khó', reward:'Phần thưởng', cons:'Hệ quả', none:'—', key:'Phím {k}', took:'Đã chọn: {r}' } };

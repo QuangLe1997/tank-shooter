@@ -6,7 +6,8 @@
   font:700 11px/1 var(--k-ui,'Saira Condensed',sans-serif);letter-spacing:.12em;text-transform:uppercase;color:rgba(238,231,210,.42);white-space:nowrap;
   text-shadow:0 1px 3px rgba(0,0,0,.85);opacity:.92;padding:3px 8px;background:linear-gradient(90deg,transparent,rgba(9,11,8,.5) 12%,rgba(9,11,8,.5) 88%,transparent);}
 #secRail.hidden{display:none;}
-#secRail > i{width:16px;height:1px;margin:0 5px;background:rgba(214,226,196,.32);}
+#secRail .sr-m{display:flex;align-items:center;}
+#secRail .sr-m > i{width:16px;height:1px;margin:0 5px;background:rgba(214,226,196,.32);}
 #secRail .sr-s{display:flex;align-items:center;gap:5px;}
 #secRail .sr-s b{width:16px;height:16px;display:grid;place-items:center;font:400 10px/1 var(--k-mono,'Share Tech Mono',monospace);letter-spacing:0;
   border:1px solid rgba(214,226,196,.35);background:rgba(9,11,8,.55);color:rgba(238,231,210,.6);}
@@ -19,7 +20,7 @@
 body.sectrun #sideChip{display:none!important;}   /* SECTOR 2 a sector run: the rail carries the goal (the hold sector's truck card sat on the rail) */
 body.touch #secRail .sr-g{max-width:38vw;font-size:10.5px;}
 body.touch #secRail{top:calc(env(safe-area-inset-top,0px) + 46px);font-size:10px;}
-body.touch #secRail .sr-s:not(.on) > span{display:none;} body.touch #secRail > i{width:8px;margin:0 3px;}
+body.touch #secRail .sr-s:not(.on) > span{display:none;} body.touch #secRail .sr-m > i{width:8px;margin:0 3px;}
 
 #secTransit{position:fixed;inset:0;z-index:40;pointer-events:none;visibility:hidden;}
 #secTransit.on{visibility:visible;}
@@ -39,3 +40,36 @@ body.touch #secRail .sr-s:not(.on) > span{display:none;} body.touch #secRail > i
 body.sectx #hud,body.sectx #touch{opacity:0;pointer-events:none;}
 body.sectgo #countdown,body.sectgo #cdSub{display:none!important;}   /* a sector's 3-2-1: heard, not shown (campaign/sectors.js goQuiet) */
 @media (orientation:landscape) and (max-height:520px){ #secTransit .st-bar{height:18vh;} #secTransit .st-card{top:calc(env(safe-area-inset-top,0px) + 9vh);} #secTransit .st-kick{font-size:9px;margin-bottom:3px;} #secTransit .st-ttl{font-size:19px;} #secTransit .st-goal{font-size:11px;margin-top:3px;} #secTransit .st-line{bottom:9vh;font-size:12px;} }
+
+/* SECTOR 4 the rail's tail: the carried consequences (small icons) and the sector's event card (a chip) — the top band, beside the steps */
+#secRail .sr-x{display:flex;gap:4px;margin-left:9px;padding-left:9px;border-left:1px solid rgba(214,226,196,.3);}
+#secRail .sr-x.hidden,#secRail .sr-c.hidden{display:none;}
+#secRail .sr-x i{width:16px;height:16px;display:grid;place-items:center;border:1px solid currentColor;background:rgba(9,11,8,.6);}
+#secRail .sr-x i svg{width:11px;height:11px;}
+#secRail .sr-x i.ok{color:#9fdc58;} #secRail .sr-x i.bad{color:#ff8a6a;}
+#secRail .sr-c{display:inline-flex;align-items:center;gap:5px;margin-left:9px;padding:2px 7px 2px 5px;font:700 10.5px/1 var(--k-ui,'Saira Condensed',sans-serif);letter-spacing:.1em;
+  border:1px solid currentColor;background:rgba(9,11,8,.62);}
+#secRail .sr-c svg{width:11px;height:11px;} #secRail .sr-c.ok{color:#9fdc58;} #secRail .sr-c.bad{color:#ffb27a;}
+body.touch #secRail .sr-c b{max-width:22vw;overflow:hidden;text-overflow:ellipsis;}
+/* SECTOR 4 THE FORK CARD — a menu moment in the transit (the fight stopped, the field black): two routes side by side, the default one marked, a clock to the auto pick */
+#secTransit .st-fork{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);width:min(760px,92vw);pointer-events:auto;text-align:center;}
+#secTransit .st-fork.hidden{display:none;}
+#secTransit .sf-kick{margin:0 0 4px;font:600 11px/1 var(--k-ui,'Saira Condensed',sans-serif);letter-spacing:.32em;color:var(--k-acc,#ffae34);}
+#secTransit .sf-ttl{margin:0 0 14px;font:400 clamp(20px,2.6vw,32px)/1 var(--k-stencil,'Saira Stencil One',sans-serif);letter-spacing:.05em;color:#ece0c2;}
+#secTransit .sf-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+#secTransit .sf-r{position:relative;display:flex;flex-direction:column;gap:7px;text-align:left;padding:14px 16px 16px;cursor:pointer;border:1px solid rgba(214,226,196,.28);
+  background:linear-gradient(180deg,rgba(28,32,22,.92),rgba(12,14,10,.94));color:#e6e0cc;transition:border-color .15s,transform .15s;}
+#secTransit .sf-r:hover,#secTransit .sf-r.padfocus,#secTransit .sf-r:focus{border-color:var(--k-acc-hi,#ffd27a);transform:translateY(-2px);outline:none;}
+#secTransit .sf-r.def{box-shadow:inset 0 2px 0 var(--k-acc,#ffae34);}
+#secTransit .sf-r em{position:absolute;right:12px;top:10px;font:400 22px/1 var(--k-stencil,'Saira Stencil One',sans-serif);color:rgba(255,210,122,.35);font-style:normal;}
+#secTransit .sf-r b{font:700 15px/1.15 var(--k-ui,'Saira Condensed',sans-serif);letter-spacing:.08em;text-transform:uppercase;color:#f2e6c6;padding-right:24px;}
+#secTransit .sf-d{font:600 11px/1 var(--k-ui,'Saira Condensed',sans-serif);letter-spacing:.14em;text-transform:uppercase;color:rgba(230,224,204,.6);}
+#secTransit .sf-d i{font-style:normal;letter-spacing:.1em;color:var(--k-acc-hi,#ffd27a);} #secTransit .sf-d s{text-decoration:none;color:rgba(230,224,204,.22);}
+#secTransit .sf-l{font:500 12.5px/1.3 var(--k-ui,'Saira Condensed',sans-serif);color:#d8d2bc;}
+#secTransit .sf-l u{display:block;text-decoration:none;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:rgba(230,224,204,.5);margin-bottom:1px;}
+#secTransit .sf-l.ok{color:#bfe39a;} #secTransit .sf-l.bad{color:#ffb08a;}
+#secTransit .sf-r kbd{position:absolute;right:12px;bottom:10px;font:400 11px/1 var(--k-mono,'Share Tech Mono',monospace);color:rgba(230,224,204,.45);border:1px solid rgba(230,224,204,.25);padding:2px 5px;}
+#secTransit .sf-auto{margin:12px 0 0;font:500 12px/1 var(--k-mono,'Share Tech Mono',monospace);color:rgba(191,227,154,.75);}
+body.touch #secTransit .sf-r kbd{display:none;}
+@media (orientation:landscape) and (max-height:520px){ #secTransit .st-fork{top:54%;width:94vw;} #secTransit .sf-ttl{font-size:17px;margin-bottom:8px;} #secTransit .sf-r{padding:9px 11px 10px;gap:4px;}
+  #secTransit .sf-r b{font-size:13px;} #secTransit .sf-l{font-size:11px;} #secTransit .sf-auto{margin-top:6px;font-size:10.5px;} }

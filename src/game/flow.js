@@ -99,7 +99,7 @@ export function askRestart(){ askConfirm({ title:'Chơi lại màn này?', body:
 // end the current match → back to the HOME menu (replay or re-pick terrain/loadout). Mirrors startGame's teardown.
 export function quitToMenu(){
   S.firing=false; try{ reportRun({ cleared:false }); }catch(e){} medalEnd('quit'); medalHush();   // MEDAL 2 what he earned before leaving is kept · MEDAL 4 his radio stops with the battle · Z163 the run's score goes to the leaderboard
-  modeQuit(); sectorEnd();   // SECTOR 1 nothing of a sector run stays: its knobs, its rail, its transit · MODE 3 nothing of a mode stays: its knobs, its HUD text, its result card (campaign/mode-run.js)
+  sectorEnd(); modeQuit();   // (SECTOR 4 the run's knobs back first: they were turned after the mode's) SECTOR 1 nothing of a sector run stays: its knobs, its rail, its transit · MODE 3 nothing of a mode stays: its knobs, its HUD text, its result card (campaign/mode-run.js)
   for(let i=bullets.length-1;i>=0;i--) recycleBullet(i);                                   // pool all live bullets
   for(const e of enemies){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); freeEnemyBar(e.bar); e.bar=null; }
   enemies.length=0; clearSideMissions(); clearBigEvents(); clearFireFX(); clearPickups(); clearGifts(); clearLogistics(); clearQuiet(); clearDroneWar(); clearSoldiers(); clearLootBeacons(); clearEnemyMissiles(); clearInfDead(); clearHeliDown(); clearEquip(); clearObjective(); clearParadrops(); clearAllyOrdnance();
