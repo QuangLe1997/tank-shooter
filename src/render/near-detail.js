@@ -59,6 +59,7 @@ function wear(e, src){ for(const t of [...e.R.tex]) if(t.source !== src && (t.so
 //   same sampling, put in the map's place on every material that wears it; handing back puts the KTX2 map back and frees the twin's upload
 function twin(e, t, src){ const hi = src === e.hi, lo = hi ? t : null;
   if(hi && !e.twin){ const w = e.twin = new THREE.Texture(); w.source = e.hi; for(const k of ['flipY', 'colorSpace', 'wrapS', 'wrapT', 'magFilter', 'minFilter', 'anisotropy', 'channel']) w[k] = t[k]; w.repeat.copy(t.repeat); w.offset.copy(t.offset); w.userData.lo = t; w.needsUpdate = true; }
+  if(hi && e.twin.source !== e.hi){ e.twin.dispose(); e.twin.source = e.hi; e.twin.needsUpdate = true; }   // DIET 5 each swap-in fetches a fresh sharp picture (the last one was closed 2 s after its hand-back): the twin wears the new one, never the closed one (a black tree)
   const from = hi ? lo : e.twin, to = hi ? e.twin : e.twin && e.twin.userData.lo; if(!from || !to) return;
   for(const m of e.R.mats) if(m[e.slot] === from) m[e.slot] = to; e.R.tex.delete(from); e.R.tex.add(to); if(!hi) e.twin.dispose(); }
 const bitmap = f => fetch(f).then(r => r.ok ? r.blob() : null).then(b => b && window.createImageBitmap(b, { imageOrientation:'none' })).catch(() => null);   // (as three's GLTFLoader reads its own)
