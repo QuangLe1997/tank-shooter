@@ -1,0 +1,1 @@
+{ "v":1, "id":"horde", "name":"Biển người", "seed":8808, "macro":{ "density":90, "quality":15 }, "world":{ "land":"RUINS", "tod":"noon", "wx":"clear", "level":3 } }

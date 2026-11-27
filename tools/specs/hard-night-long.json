@@ -1,0 +1,1 @@
+{ "v":1, "id":"hard-night-long", "name":"Đêm dài ở Lò Đúc", "seed":3303, "macro":{ "difficulty":72, "density":65, "tempo":60, "length":80, "chaos":55, "bounty":45, "drama":75, "variety":70, "quality":65 }, "world":{ "land":"FOUNDRY", "tod":"night", "wx":"fog", "level":4 }, "structure":{ "sectors":["outskirts:hold", "*", "village:rescue:pilot", "*", "hq:boss"] } }

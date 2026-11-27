@@ -1,0 +1,1 @@
+{ "v":1, "id":"fast-forward", "name":"Tua nhanh", "seed":6606, "macro":{ "speed":100 }, "world":{ "land":"DESERT", "tod":"noon", "wx":"clear", "level":3 } }

@@ -1,0 +1,1 @@
+{ "v":1, "id":"chaos-rescue", "name":"Giải cứu giữa hỗn loạn", "seed":4404, "macro":{ "difficulty":55, "density":55, "tempo":70, "length":60, "chaos":90, "bounty":50, "drama":70, "variety":80 }, "world":{ "land":"CITY", "tod":"sunset", "wx":"rain", "level":4 }, "structure":{ "sectors":["*", "village:rescue:civ", "hq:boss"] }, "events":{ "big":4 } }

@@ -9,7 +9,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { HELI, ROSTER, TROOPS } from '../../config.js';
-import { objMod, BIOME, HELI_DOWN, MOBILE, S, _canvasTex, _mergeColored, blocksNear, bullets, cMod, clampField, clampFieldXZ, decal, decalScorch, deformCrater, diffDmgMul, diffScale, dirtGeyser, enemies, enemyGroundStrike, floatText, heightAt, insigniaMat, loopDmgMul, makeSoldierMesh, numMat, radio, scene, sfx, spawnBullet, spawnEnemy, spawnPart, updateGunship, wrapAngle, realAir, playerSeen } from '../hub.js';
+import { BIOME, HELI_DOWN, MOBILE, S, _canvasTex, _mergeColored, blocksNear, bullets, cMod, clampField, clampFieldXZ, decal, decalScorch, deformCrater, diffDmgMul, diffScale, dirtGeyser, enemies, enemyGroundStrike, floatText, heightAt, insigniaMat, loopDmgMul, makeSoldierMesh, numMat, radio, scene, sfx, spawnBullet, spawnEnemy, spawnPart, updateGunship, wrapAngle, realAir, playerSeen } from '../hub.js';
 import { muzzleFX } from '../hub.js';   // GUNFX 1 (fx/gunfx.js)
 
 const _r=(a,b)=>a+Math.random()*(b-a), _ra=a=>_r(a[0],a[1]);
@@ -112,7 +112,7 @@ export function buildHip(){ const M=hmats('hip'), g=new THREE.Group(), body=new 
 
 // ===== flight =====
 const _w=new THREE.Vector3();
-function dmul(){ const ds=diffScale(); return (0.75+0.25*ds)*loopDmgMul()*cMod('enemyDmgMul')*objMod('enemyDmgMul')*diffDmgMul(); }
+function dmul(){ const ds=diffScale(); return (0.75+0.25*ds)*loopDmgMul()*cMod('enemyDmgMul')*diffDmgMul(); }   // MIX 1 (the objective's bonus once: cMod carries it)
 // steer along a heading with a limited turn rate (a real turn, banked), arrive gently when asked to stop
 function fly(e, tx, tz, spd, alt, dt, edt, turn, arrive){
   const dx=tx-e.pos.x, dz=tz-e.pos.z, d=Math.hypot(dx,dz)||1e-3, want=Math.atan2(dx,dz); e.hd=e.hd??e.facing; const da=wrapAngle(want-e.hd);

@@ -1,0 +1,1 @@
+{ "v":1, "id":"bounty-farm", "name":"Mùa gặt chiến lợi phẩm", "seed":5505, "macro":{ "difficulty":40, "density":75, "tempo":55, "length":45, "chaos":35, "bounty":95, "drama":30, "variety":45, "quality":25 }, "world":{ "land":"SAVANNA", "tod":"day", "wx":"sand", "level":3 }, "foe":{ "tough":20 } }

@@ -3993,3 +3993,108 @@ export const CONQSTORY = { on:true, lineT:3.6, closeT:6, skip:'Chạm / Enter: t
       'Mười lá cờ cắm trên mười thành. Con đường từ biên giới tới Thành Luỹ Cuối, giờ là đường về nhà.'],
     credits:['XUNG KÍCH — CHINH PHẠT 10 THÀNH', 'Tổ Xung Kích: Hùng · Lan · Sơn · Minh', 'Chỉ huy: Đại Bàng', 'Sĩ quan tình báo: Khang — người đã gửi bức điện cuối', 'Cảm ơn bạn đã chiến đấu tới cùng.'],
     go:'BẢN ĐỒ CHINH PHẠT', skip:'Chạm / Enter: tiếp' } };
+
+// MIX 1 THE BATTLE MIXER (src/data/mixer-math.js normalizeSpec / scoreBattle — pure, node-runnable · src/campaign/mixer.js composeBattle · tools/spec.mjs · mapping:
+//   tank-shooter-audit/mixer-mapping.md). A BattleSpec { v, seed, macro{…0–100}, world{land,tod,wx,space,level}, structure{sectors}, <channel>{param: value}, advanced{path: v} }
+//   resolves to a PLAN: every channel param from its macros (drive: 50 + Σ w·(macro − 50), clamped 0–100) through its curve [at 0, at 50 = today, at 100], then each
+//   param's knobs folded leaf by leaf on the pristine config ('*' x = k^e · '+' x = e·(k − 1) · '=' x = value), each leaf clamped (bounds, else 0.25×–4× of today).
+//   in: 'dial' the spec gives 0–100 (k = curve(dial)) · 'k' the spec gives the multiplier · 'abs' the spec gives the value. Knob flags: b read at the build (turned in the
+//   mode's begin, the rest at the first GO) · t seconds of the game's wall clock `now` (÷ the sim's time scale, once per leaf — dt-driven clocks follow it by
+//   themselves) · i an integer. '{d}' = each difficulty.
+//   Every value 50 / unset = today's "Tự chọn" battle: no knob turns (test.js).
+export const MIXER = { v:1,
+  live:{ simK:1, haste:1, infDrop:0.04 },   // read by code: game/loop.js (the sim's dt), actors/enemies.js (an infantryman's loot chance)
+  lands:['DESERT', 'RUINS', 'ARCTIC', 'FOUNDRY', 'CITADEL', 'MEADOW', 'CITY', 'SAVANNA', 'VOLCANO', 'QUARRY'], tods:['day', 'noon', 'sunset', 'night'], wxs:['clear', 'rain', 'sand', 'snow', 'fog'],
+  spaces:['small', 'mid', 'wide'], diffs:['recruit', 'soldier', 'veteran'], defaults:{ level:3, tod:'noon', wx:'clear', space:'wide', diff:'soldier' }, levels:[1, 30], seedMax:4294967295,
+  macros:{ difficulty:'Độ khó', density:'Mật độ', tempo:'Nhịp độ', length:'Chiều dài', chaos:'Hỗn loạn', bounty:'Hào phóng', drama:'Kịch tính', variety:'Đa dạng', speed:'Tốc độ', quality:'Tinh nhuệ' },
+  channels:{ world:'Chiến trường', structure:'Cấu trúc', enemy:'Quân địch', boss:'Tướng', player:'Người chơi', mate:'Đồng đội', pace:'Đạo diễn & nhịp', events:'Biến cố', loot:'Vật phẩm',
+    story:'Cốt truyện', feel:'Cảm giác', random:'Ngẫu nhiên', speed:'Tốc độ', quality:'Chất lượng quân' },
+  params:{
+    'enemy.count':{ in:'dial', drive:{ density:1 }, curve:[0.5, 1, 1.7], knobs:[['BALANCE.wave.base', '*', 1], ['BALANCE.wave.perWave', '*', 1], ['INFANTRY.squad.base', '*', 1], ['INFANTRY.squad.perWave', '*', 1]] },
+    'enemy.cap':{ in:'dial', drive:{ density:1 }, curve:[0.75, 1, 1.3], knobs:[['INFANTRY.squad.maxOnField', '*', 1], ['INFANTRY.squad.maxMobile', '*', 1], ['BALANCE.wave.capBase', '*', 1], ['FORT.liveInf', '*', 1, 'bi'], ['FORT.liveInfMobile', '*', 1, 'bi']] },
+    'enemy.cadence':{ in:'k', drive:{ tempo:0.6, density:0.4 }, curve:[0.7, 1, 1.4], lo:0.5, hi:1.8, knobs:[['BALANCE.wave.cadence', '*', -1, 't']] },
+    'enemy.air':{ in:'dial', drive:{ chaos:0.5, difficulty:0.3 }, curve:[0.4, 1, 1.8], knobs:[['CAV.soldier.war.w.heli', '*', 1], ['PARA.every.*', '*', -1, 't'], ['PARA.everyMobile.*', '*', -1, 't']] },
+    'enemy.rpg':{ in:'dial', drive:{ difficulty:0.6 }, curve:[0.5, 1, 1.8], knobs:[['CAV.soldier.war.w.rpg', '*', 1]] },
+    'enemy.waveEvents':{ in:'abs', drive:{ chaos:0.7, variety:0.3 }, curve:[0.1, 0.34, 0.6], lo:0, hi:0.7, knobs:[['BALANCE.wave.eventChance', '=']] },
+    'enemy.waves':{ in:'abs', int:true, drive:{ length:1 }, curve:[3, 5, 8], lo:2, hi:9, knobs:[['WAVE.perStage', '=']] },
+    'enemy.hp':{ in:'k', drive:{ difficulty:1 }, curve:[0.65, 1, 1.6], lo:0.5, hi:2.2, knobs:[['BALANCE.difficulty.{d}.hp', '*', 1, 'b']] },
+    'enemy.dmg':{ in:'k', drive:{ difficulty:1 }, curve:[0.55, 1, 1.6], lo:0.4, hi:2.2, knobs:[['BALANCE.difficulty.{d}.dmg', '*', 1]] },
+    'enemy.haste':{ in:'k', drive:{ speed:1 }, curve:[0.9, 1, 1.15], lo:0.8, hi:1.6, knobs:[['BALANCE.aggro.rateBase', '*', -1, 't'], ['BALANCE.aggro.rateDrop', '*', -1, 't'], ['AWARE.fire.gap', '*', -1, 't'],
+      ['AWARE.fire.rest.*', '*', -1, 't'], ['AWARE.react.*', '*', -1, 't'], ['ENEMY_DEFS.rifle.speed', '*', 1, 'b'], ['ENEMY_DEFS.rpg.speed', '*', 1, 'b'], ['ENEMY_DEFS.rpg.fireCd', '*', -1, 'bt'],
+      ['ROSTER.gunship.gunCd', '*', -1, 't'], ['ROSTER.gunship.burstCd', '*', -1, 't'], ['FIELDCRAFT.nade.cdE.*', '*', -1, 't'], ['DIRECTOR.tactics.marksman.cd', '*', -1, 't'], ['FORTBOSS.fire.fireCd', '*', -1, 't'], ['TROOPER.general.fireCd', '*', -1, 't']] },
+    'sim.timeScale':{ in:'k', drive:{ speed:1 }, curve:[0.9, 1, 1.25], lo:0.8, hi:1.4, knobs:[['MIXER.live.simK', '=']] },
+    'clock.events':{ in:'k', drive:{ speed:1 }, curve:[0.85, 1, 1.3], lo:0.6, hi:1.8, knobs:[['REAL.surprise.first.*', '*', -1, 't'], ['REAL.surprise.every.*', '*', -1, 't'], ['BIGEVENT.gap', '*', -1],
+      ['SIDEMISSION.first.*', '*', -1], ['SIDEMISSION.every.*', '*', -1], ['DIRECTOR.build.min', '*', -1, 't'], ['DIRECTOR.lull.t.*', '*', -1, 't'], ['BALANCE.wave.cadence', '*', -1, 't'], ['PARA.every.*', '*', -1, 't'],
+      ['PARA.everyMobile.*', '*', -1, 't'], ['DRONEWAR.enemy.gap', '*', -1, 't'], ['FORTBOSS.charge.cd.*', '*', -1, 't'], ['TROOPER.general.fan.cd', '*', -1], ['TROOPER.general.nade.cd', '*', -1], ['SECTOR.types.hold.hold', '*', -1]] },
+    'foe.iq':{ in:'dial', drive:{ quality:1, difficulty:0.3 }, curve:[0.6, 1, 1.5], knobs:[['TACTICS.iq.base', '+', 0.5], ['FIELDCRAFT.nade.cdE.*', '*', -1, 't'], ['SQUAD_AI.flankMax', '*', 1], ['DIRECTOR.tactics.pin.share', '*', 1]] },
+    'foe.aware':{ in:'dial', drive:{ quality:1, difficulty:0.3 }, curve:[0.6, 1, 1.45], knobs:[['AWARE.see.r', '*', 1], ['AWARE.hear.shot', '*', 1], ['AWARE.react.*', '*', -1, 't'], ['AWARE.spot.t.*', '*', -1], ['AWARE.shout.r', '*', 1]] },
+    'foe.aim':{ in:'dial', drive:{ quality:1, difficulty:0.3 }, curve:[0.6, 1, 1.5], knobs:[['AWARE.fire.tight', '*', -1], ['AWARE.fire.wide', '*', -1], ['AWARE.zero.gain', '*', 1], ['BALANCE.aggro.spreadBase', '*', -1]] },
+    'foe.tough':{ in:'dial', drive:{ quality:1, difficulty:0.3 }, curve:[0.6, 1, 1.6], knobs:[['ENEMY_DEFS.rifle.hp', '*', 1, 'b'], ['ENEMY_DEFS.rpg.hp', '*', 1, 'b']] },
+    'foe.move':{ in:'dial', drive:{ quality:1 }, curve:[0.8, 1, 1.25], knobs:[['ENEMY_DEFS.rifle.speed', '*', 1, 'b'], ['ENEMY_DEFS.rpg.speed', '*', 1, 'b'], ['SQUAD_AI.boundT.*', '*', -1]] },
+    'foe.aggro':{ in:'dial', drive:{ quality:0.5, tempo:0.3 }, curve:[0.7, 1, 1.4], knobs:[['ENEMY_DEFS.rifle.keep', '*', -1, 'b'], ['ENEMY_DEFS.rpg.keep', '*', -1, 'b'], ['SQUAD_AI.assaultR', '*', 1], ['AWARE.idle.max', '*', -1]] },
+    'foe.morale':{ in:'dial', drive:{ quality:1 }, curve:[0.6, 1, 1.5], knobs:[['SQUAD_AI.breakMorale', '*', -1], ['DIRECTOR.tactics.surrender.chance.*', '*', -1]] },
+    'elite.iq':{ in:'dial', drive:{ quality:1, difficulty:0.4 }, curve:[0.5, 1, 1.8], knobs:[['DIRECTOR.tactics.marksman.chance', '*', 1], ['DIRECTOR.tactics.mg.chance', '*', 0.5]] },
+    'elite.aware':{ in:'dial', drive:{ quality:1 }, curve:[1, 1, 1], knobs:[], wired:false },
+    'elite.aim':{ in:'dial', drive:{ quality:1, difficulty:0.4 }, curve:[0.6, 1, 1.5], knobs:[['DIRECTOR.tactics.marksman.err', '*', -1], ['DIRECTOR.tactics.marksman.tel', '*', -0.5], ['DIRECTOR.tactics.mg.spreadK', '*', -1]] },
+    'elite.tough':{ in:'dial', drive:{ quality:1, difficulty:0.4 }, curve:[0.6, 1, 1.6], knobs:[['DIRECTOR.tactics.mg.hpK', '*', 1], ['FORTBOSS.guards.hpK', '*', 1], ['TROOPER.general.guardHpK', '*', 1]] },
+    'elite.move':{ in:'dial', drive:{ quality:1 }, curve:[1, 1, 1], knobs:[], wired:false },
+    'elite.aggro':{ in:'dial', drive:{ quality:1 }, curve:[1, 1, 1], knobs:[], wired:false },
+    'elite.morale':{ in:'dial', drive:{ quality:1 }, curve:[1, 1, 1], knobs:[], wired:false },
+    'boss.iq':{ in:'dial', drive:{ quality:0.6, difficulty:0.5 }, curve:[0.6, 1, 1.5], knobs:[['TROOPER.general.callAt', '*', 1]] },
+    'boss.aware':{ in:'dial', drive:{ quality:0.6 }, curve:[1, 1, 1], knobs:[], wired:false },
+    'boss.aim':{ in:'dial', drive:{ quality:0.6, difficulty:0.5 }, curve:[0.6, 1, 1.5], knobs:[['TROOPER.general.fan.arc', '*', -1], ['TROOPER.general.nade.scatter', '*', -1]] },
+    'boss.tough':{ in:'dial', drive:{ quality:0.6, difficulty:0.5, length:0.4 }, curve:[0.6, 1, 1.6], knobs:[['FORTBOSS.hp.*', '*', 1, 'b'], ['TROOPER.general.hpK', '*', 1]] },
+    'boss.move':{ in:'dial', drive:{ quality:0.6 }, curve:[0.8, 1, 1.25], knobs:[['FORTBOSS.move.speed', '*', 1], ['TROOPER.general.speed', '*', 1]] },
+    'boss.aggro':{ in:'dial', drive:{ quality:0.6, tempo:0.3 }, curve:[0.7, 1, 1.4], knobs:[['FORTBOSS.charge.cd.*', '*', -1, 't'], ['TROOPER.general.fan.cd', '*', -1], ['TROOPER.general.nade.cd', '*', -1]] },
+    'boss.morale':{ in:'dial', drive:{ quality:0.6 }, curve:[1, 1, 1], knobs:[], wired:false },
+    'boss.guards':{ in:'abs', int:true, drive:{ difficulty:0.5, density:0.3 }, curve:[-1, 0, 2], lo:-2, hi:3, knobs:[['FORTBOSS.guards.n.*', '+', 1, 'bi']] },
+    'mate.iq':{ in:'dial', drive:{}, curve:[1, 1, 1], knobs:[], wired:false },
+    'mate.aware':{ in:'dial', drive:{ difficulty:-0.2 }, curve:[0.7, 1, 1.3], knobs:[['TROOPS.fireteam.detect', '*', 1]] },
+    'mate.aim':{ in:'dial', drive:{ difficulty:-0.2 }, curve:[0.7, 1, 1.4], knobs:[['TROOPS.fireteam.dmg', '*', 1]] },
+    'mate.tough':{ in:'dial', drive:{ difficulty:-0.2 }, curve:[0.6, 1, 1.6], knobs:[['TROOPS.fireteam.hp', '*', 1, 'b']] },
+    'mate.move':{ in:'dial', drive:{}, curve:[0.85, 1, 1.2], knobs:[['TROOPS.fireteam.speed', '*', 1], ['TROOPS.fireteam.sprint', '*', 1]] },
+    'mate.aggro':{ in:'dial', drive:{}, curve:[1, 1, 1], knobs:[], wired:false },
+    'mate.morale':{ in:'dial', drive:{}, curve:[1, 1, 1], knobs:[], wired:false },
+    'pace.ease':{ in:'k', drive:{ difficulty:0.5, tempo:0.5 }, curve:[0.88, 1, 1.14], lo:0.8, hi:1.25, knobs:[['DIRECTOR.diff.{d}.ease', '*', 1]] },
+    'pace.lull':{ in:'k', drive:{ tempo:-1 }, curve:[0.6, 1, 1.5], lo:0.5, hi:2, knobs:[['DIRECTOR.lull.t.*', '*', 1, 't'], ['DIRECTOR.lull.extra', '*', 1, 't']] },
+    'pace.build':{ in:'k', drive:{ tempo:-1 }, curve:[0.75, 1, 1.4], lo:0.6, hi:1.8, knobs:[['DIRECTOR.build.min', '*', 1, 't'], ['DIRECTOR.build.first', '*', 1, 't'], ['DIRECTOR.build.escalate', '*', 1, 't']] },
+    'pace.peak':{ in:'k', drive:{ tempo:1 }, curve:[0.8, 1, 1.25], lo:0.6, hi:1.3, knobs:[['DIRECTOR.peak.max', '*', 1, 't']] },
+    'events.surprise':{ in:'k', drive:{ chaos:1 }, curve:[0.5, 1, 1.8], lo:0.3, hi:2.2, knobs:[['REAL.surprise.first.*', '*', -1, 't'], ['REAL.surprise.every.*', '*', -1, 't']] },
+    'events.big':{ in:'abs', int:true, drive:{ chaos:1 }, curve:[1, 3, 4], lo:0, hi:4, knobs:[['BIGEVENT.perStage', '=']] },
+    'events.side':{ in:'abs', int:true, drive:{ variety:0.5, chaos:0.5 }, curve:[1, 2, 3], lo:0, hi:3, knobs:[['SIDEMISSION.perStage', '=']] },
+    'events.drones':{ in:'k', drive:{ chaos:1 }, curve:[0.5, 1, 1.6], lo:0, hi:2, knobs:[['DRONEWAR.enemy.gap', '*', -1, 't'], ['DRONEWAR.enemy.w', '*', 1]] },
+    'events.cards':{ in:'k', drive:{ chaos:1 }, curve:[0.3, 1, 1.6], lo:0, hi:2, knobs:[['SECROUTE.events.chance.*', '*', 1]] },
+    'loot.drop':{ in:'k', drive:{ bounty:1 }, curve:[0.4, 1, 2.2], lo:0, hi:3, knobs:[['MIXER.live.infDrop', '*', 1], ['BALANCE.drop.enemy', '*', 1], ['BALANCE.drop.brick', '*', 1, 'b']] },
+    'loot.relief':{ in:'k', drive:{ bounty:1 }, curve:[0.6, 1, 1.4], lo:0, hi:1.6, knobs:[['DIRECTOR.lull.drop.hp', '*', 1], ['DIRECTOR.lull.drop.cd', '*', -1, 't'], ['SECTOR.refill.hp', '*', 1]] },
+    'loot.ammo':{ in:'k', drive:{ bounty:0.6, difficulty:-0.4 }, curve:[0.7, 1, 1.4], lo:0.5, hi:1.8, knobs:[['LOGISTICS.start.*', '*', 1, 'b']] },
+    'player.hp':{ in:'abs', int:true, drive:{ difficulty:-1 }, curve:[115, 150, 200], lo:80, hi:300, knobs:[['CAV.soldier.hp', '=', 0, 'b']] },
+    'player.lives':{ in:'abs', int:true, drive:{ difficulty:-1 }, curve:[2, 5, 7], lo:0, hi:9, knobs:[] },   // (set on the soldier in the mode's ready: game/flow.js hard-codes 5)
+    'player.squad':{ in:'abs', int:true, drive:{ difficulty:-0.5 }, curve:[4, 6, 6], lo:2, hi:6, knobs:[['TROOPER.squad.max', '=', 0, 'b']] },
+    'story.radio':{ in:'k', drive:{ drama:1 }, curve:[0.6, 1, 1.5], lo:0.4, hi:1.8, knobs:[['STORY.gap', '*', -1], ['DIRECTOR.radio.gap', '*', -1]] },
+    'story.finale':{ in:'k', drive:{ drama:1 }, curve:[0.7, 1, 1.4], lo:0.5, hi:1.6, knobs:[['DIRECTOR.finale.lull', '*', 1, 't']] } },
+  // a leaf's hard range (a '*' in a path = every entry); a leaf not listed: 0.25×–4× of today's value
+  bounds:{ 'DIRECTOR.peak.max':[5, 20], 'DIRECTOR.lull.t.0':[5, 30], 'DIRECTOR.lull.t.1':[8, 40], 'DIRECTOR.build.min':[6, 30], 'DIRECTOR.build.escalate':[4, 20], 'DIRECTOR.diff.*.ease':[0.7, 1.3],
+    'TACTICS.iq.base':[0, 0.6], 'SECROUTE.events.chance.*':[0, 0.95], 'DIRECTOR.tactics.marksman.chance':[0, 0.95], 'DIRECTOR.tactics.mg.chance':[0, 0.95], 'DIRECTOR.tactics.pin.share':[0, 0.8],
+    'DIRECTOR.tactics.marksman.tel':[0.6, 2], 'DIRECTOR.lull.drop.hp':[0, 0.6], 'SQUAD_AI.breakMorale':[0.05, 0.6], 'TROOPER.general.callAt':[0.1, 0.9], 'MIXER.live.infDrop':[0, 0.15], 'MIXER.live.simK':[0.8, 1.4],
+    'BALANCE.drop.enemy':[0, 0.5], 'BALANCE.drop.brick':[0, 0.5], 'SECTOR.refill.hp':[0, 1], 'INFANTRY.squad.maxOnField':[10, 30], 'INFANTRY.squad.maxMobile':[8, 18], 'BALANCE.wave.cadence':[0.4, 3],
+    'FORTBOSS.guards.n.*':[1, 8], 'WAVE.perStage':[2, 9], 'SIDEMISSION.perStage':[0, 3], 'BIGEVENT.perStage':[0, 4], 'BIGEVENT.gap':[30, 120], 'CAV.soldier.hp':[80, 300], 'TROOPER.squad.max':[2, 6],
+    'BALANCE.wave.eventChance':[0, 0.7], 'AWARE.see.r':[24, 80], 'AWARE.fire.tight':[0.02, 0.1], 'ENEMY_DEFS.rifle.speed':[3, 6.5], 'ENEMY_DEFS.rpg.speed':[2.6, 5.6] },
+  // the spec's advanced keys: only these, set (=) and clamped
+  advanced:{ 'SIDEMISSION.perStage':[0, 3], 'BIGEVENT.perStage':[0, 4], 'BIGEVENT.gap':[30, 120], 'BALANCE.wave.eventChance':[0, 0.7], 'BALANCE.wave.hordeMul':[0, 1], 'REAL.surprise.w.ambush':[0, 3],
+    'REAL.surprise.w.heli':[0, 2], 'DIRECTOR.thr.high':[0.45, 0.75], 'DIRECTOR.lull.drop.hp':[0, 0.6], 'INFANTRY.squad.size.0':[3, 6], 'INFANTRY.squad.size.1':[4, 8], 'FORT.sally.0':[6, 24], 'FORT.sally.1':[8, 30],
+    'PARA.troops.0':[3, 8], 'PARA.troops.1':[4, 10], 'DRONEWAR.enemy.from':[1, 5], 'CORE_DEF.hp':[200, 800], 'SECTOR.types.hold.hold':[40, 120], 'SECTOR.types.sabotage.time':[150, 420], 'SECTOR.retries':[0, 5] },
+  // the run's sector chain when the spec gives none: from this length on, n sectors (by length), the last the general's
+  auto:{ sectorsFrom:65, n:[[65, 2], [75, 3], [88, 4], [97, 5]], fixedBelow:35 },
+  sectors:{ max:6, coop:false },
+  // DEVICE BUDGETS (MOBILE = phone): live infantry at once, the head-count multiplier, the sim's time scale, events in any 5 minutes, live units at the peak
+  budget:{ desktop:{ liveInf:30, countK:1.7, simK:1.4, events5:11, peakUnits:64 }, phone:{ liveInf:18, countK:1.4, simK:1.2, events5:10, peakUnits:36 } },
+  // CROSS-RULES (src/data/mixer-math.js rules): thresholds
+  rules:{ hardStingy:{ diff:75, bounty:30 }, denseLull:{ density:75, lull:0.85 }, speedDense:{ speed:75, density:70, lull:0.8 }, longTypes:{ min:15, types:3 }, nightMarks:{ aim:70 },
+    unfair:{ aware:80, aim:80, density:70, aimCap:75 }, mateGap:25, ttk:{ budget:2.2 }, effClock:2.2 },
+  // SCORING (first-principles, to be calibrated — tank-shooter-audit/mixer-mapping.md §6): neutral = level 3, every param at 50
+  score:{ ref:{ stage:3, ttk:0.55, kpm:6, waveMin:1.25, bossMin:2, transitMin:0.4 }, typeMin:{ hold:3, sabotage:4.5, boss:4, rescue:4.5, breach:4, infiltrate:4.5, pursuit:3.5 },
+    diffK:20, intK:24, warn:{ flat:40, grind:{ diff:85, joy:30 }, unreadable:75, unfair:45, short:4, long:30, samey:25, hot:{ int:85, fair:50 } } },
+  // the mixer battle's own words (campaign/mixer.js: the briefing, the radio, the result card — never in the aim zone)
+  say:{ op:'TRẬN TỰ DỰNG', kick:'TRẬN TỰ DỰNG', won:'THẮNG TRẬN', lost:'THẤT THỦ', again:'ĐÁNH LẠI', why:'Dự báo: độ khó {d} · khoảng {m} phút',
+    brief:'Trận dựng từ bàn trộn — dự báo độ khó {d}, độ căng {i}, khoảng {m} phút.', obj:'Hạ tướng địch', objSect:'Chiếm từng khu, tới khu cuối',
+    radio:'SCH: Trận này do bàn trộn dựng — độ khó dự báo {d}, chừng {m} phút. Vào vị trí!', st:{ time:'Thời gian', kills:'Hạ địch', acc:'Chính xác', dmg:'Máu đã mất' } } };

@@ -61,6 +61,8 @@ export function launchParadrop(now, opt){ const fr=!!(opt&&opt.friendly), [dx,dz
   radio(nH>1 ? 'SCH: Cả một đội hình trực thăng vận tải địch đang tới — đổ bộ đường không ồ ạt xuống chỗ khói đỏ!' : 'SCH: Trực thăng vận tải địch đang tới — chúng sẽ thả lính dù xuống chỗ vòng đỏ!'); floatText(nH>1?'⚠ ĐỔ BỘ ĐƯỜNG KHÔNG':'⚠ LÍNH DÙ ĐỊCH', '#ff7a5a', {x:dx, y:heightAt(dx,dz)+3, z:dz}, 22); sfx('alarm'); tip('paradrop'); }
 export const SMOKE_ZONES=[], CANOPIES=[];
 export function clearParadrops(){ for(const h of HELOS){ scene.remove(h.g); if(h.mark) scene.remove(h.mark); } HELOS.length=0; for(const q of PARAS) scene.remove(q.g); PARAS.length=0; for(const c of CANOPIES) scene.remove(c.g); CANOPIES.length=0; SMOKE_ZONES.length=0; _nextAt=0; }
+// MIX 1 the enemy's paradrop clock starts again at every GO (ui/briefing.js goLive): a stage after the perk pick no longer opens on the last stage's overdue drop
+export function paradropReset(){ _nextAt=0; }
 export function updateParadrops(dt, now){
   if(!_nextAt) _nextAt=now+R(MOBILE?PARA.everyMobile:PARA.every)*0.6;
   const infN=enemies.reduce((n,e)=>n+(e.def.inf?1:0),0), cap=(MOBILE?INFANTRY.squad.maxMobile:INFANTRY.squad.maxOnField)+(MOBILE?6:14);   // Z199 an airborne assault may overfill the field

@@ -1,7 +1,7 @@
 // actors/enemies.js — ENEMY units: spawn (infantry, helicopters; elites, loot), pooled meshes and floating HP bars (no-tanks: no armoured vehicles)
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { BALANCE, RAMP, ROSTER, TROOPS, LOOT } from '../../config.js';
+import { BALANCE, RAMP, ROSTER, TROOPS, LOOT, MIXER } from '../../config.js';
 import { diceSeeded, AIR_SCALE, reviveSoldierMesh, ENEMY_DEFS, GLOW, S, WAVE, addLootBeacon, barWanted, buildGunship, buildHind, buildHip, cMod, camera, diffHpMul, heightAt, heliRoll, infMesh, loopHpMul, makeSoldierBar, scene, stanceBarK, tip, entryCheck, CO, netRand } from '../hub.js';
 
 export const enemies=[]; export const enemyPool={};
@@ -48,7 +48,7 @@ export function spawnEnemy(type, x, z, how){
     fireAt:performance.now()/1000 + Math.random()*1.2, burstLeft:0, stunUntil:0, kbx:0, kbz:0, hitT:0,
     loot: Math.random()<BALANCE.drop.enemy*cMod('lootChanceMul')*Math.min(LOOT.source.chanceCap, LOOT.source.chanceBase+def.hp*LOOT.source.chancePerHp), elite:false };   // Z93 tougher hulls carry loot more often  // some tanks carry a power-up (CONTRACT can boost loot)
   // elite: forced by an ELITE wave, else a small chance that grows with stage/loop (not on a man)
-  if(def.inf){ e.r=0.55; e.ph=Math.random()*6; e.aimT=0; e.loot=Math.random()<0.04; e.fireAt+=0.8; }
+  if(def.inf){ e.r=0.55; e.ph=Math.random()*6; e.aimT=0; e.loot=Math.random()<MIXER.live.infDrop;   /* MIX 1 the infantryman's loot chance is a knob now (was a bare 0.04; contracts still reach helicopters only) */ e.fireAt+=0.8; }
   if(def.air){ e.ph=Math.random()*6; e.dir=Math.random()<0.5?-1:1; e.pos.y=ROSTER.gunship.alt; e.r=1.9; e.fireAt+=1.5; e.rocketAt=performance.now()/1000+3; }
   e.aimT=0;
   const eliteChance = def.inf ? 0 : Math.min(BALANCE.elite.capChance, BALANCE.elite.chancePerStage*(S.stage-1) + BALANCE.elite.chancePerLoop*(S.loop||0));

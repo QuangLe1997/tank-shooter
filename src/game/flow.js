@@ -3,6 +3,7 @@ import { CAV, CORE_DEF } from '../../config.js';
 import { fieldWait, modeSeed, clearBigEvents, clearSideMissions, modelEpoch, veilOrder, askConfirm, confirmOpen, opFor, biomeVi, BIOME, SOLDIER, reportRun, CV, GUNS, cavRespawn, clearSoldierWar, driverBack, magCap, makeCavPlayer, rankReset, squadReset, trooperGuns, duelReset, gpuHeld, gpuRelease, clearGifts, VOICE_RULES, ARENA, MOBILE, PROFILE, S, WAVE, __set__alarmAt, __set_soldierLvl, applyBiome, applyContractHUD, audio, buildBlocks, buildCore, buildLava, buildObjective, buildTrails, buildUnderground, bullets, clearAllyOrdnance, clearEnemyMissiles, clearEquip, clearFieldcraft, clearFireteam, clearHeliDown, clearHelis, clearInfDead, clearLadders, clearLootBeacons, clearObjective, clearParadrops, clearPickups, clearRelic, clearSoldiers, clearSquads, clearSurprises, core, deploySoldiers, dropCavPlayer, enemies, enemyPool, freeEnemyBar, preloadVoices, queueResize, recycleBullet, refreshStartUI, reqFs, saveProfile, scene, sfx, showVeil, skipIntro, startIntro, startMusic, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD, openBattleSetup, clearDroneWar, clearLogistics, clearQuiet, clearFireFX, modeBegin, modeReady, modeQuit, modePauseTx, coopActive, coopFieldBuilt, coopBuildField, medalEnd, medalHush } from '../hub.js';
 import { loadMark } from '../hub.js';   // SPLIT 3 (render/quality.js)
 import { sectorBegin, sectorEnd } from '../hub.js';   // SECTOR 1 (campaign/sectors.js)
+import { SHOTS } from '../hub.js';   // MIX 1 (actors/gun-feel.js)
 
 // ----------------------------- GAME FLOW -----------------------------
 // Z107 startGame(arg): true = CONTINUE the campaign checkpoint · {mode:'campaign'|'custom', level, …} = a battle from the setup screen ·
@@ -52,6 +53,7 @@ export function startGame(arg){
   document.getElementById('bossbar').style.display='none';
   S.timeScale=1; S.awaitingUpgrade=false; S.cmd=null; S.contract=null; applyContractHUD();   // fresh run → no contract until the stage-1 briefing
   core.maxHp=CORE_DEF.hp; core.hp=CORE_DEF.hp; core.shieldReady=0; core.shieldUntil=0;
+  S.kills=0; SHOTS.n=SHOTS.hit=0;   // MIX 1 every battle counts its own kills and shots (they were reset only by the modes: a custom / campaign run carried the last one's)
   S.score=stScore; S.stage=stStage; S.loop=stLoop; S.wave=0; S.firing=false; S.combo=0; S.comboUntil=0; S.shake=0;
   S.weapon=0; S.spell=0; S.enemySlowUntil=0;
   if(coopActive()){ coopBuildField(stStage, false); gpuRelease(held); }   // COOP 4 a co-op battle: the same builders, each on its own dice, then the fingerprint for the other page (game/coop-glue.js)

@@ -25,7 +25,7 @@
 //   and every shot leave from the rifle that is seen); the dead, the flung, the climbing and every man past TROOPLOD.far are the rig's (its far body
 //   swap untouched). FOE: what a probe reads.
 import * as THREE from 'three';
-import { FOEANIM, REALTROOP, TROOPLOD } from '../../config.js';
+import { FOEANIM, REALTROOP, TROOPLOD, MIXER } from '../../config.js';
 import { MOBILE, S, SHADOW_EXT, SOLDIER_KIT, bakeFoeRig, camera, dazed, enemies, heightAt, foeBoneRows, foeCrowdMesh, foeFK, foeMeshFree, foeNearMesh, foeRootAt, foeSample, foeSkin, foeVatData, foeVatTex, fqLerp, fqMul, fqYaw, loadAnimGroup, loadGLTF, scene } from '../hub.js';
 
 export const FOE = { f:0, ready:false, booting:false, failed:false, near:0, crowd:0, ms:0, msSum:0, msMax:0, frames:0, cuts:0, turns:0, layers:0, trans:0, leans:0, throws:0, signals:0,
@@ -232,7 +232,7 @@ export function foeBatch(now){ FOE.f++; if(!C.on){ if(NEAR) hideAll(); return; }
   if(!K || !K.real || !K.skin){ hideAll(); return; }
   if(K !== KIT) build(K);
   for(const m of [NEAR, CROWD, GUN]) if(m && m.parent !== scene) scene.add(m);
-  const t0 = performance.now(), dtR = Math.min(0.05, Math.max(0, now - _last)); _last = now; const dt = S.mode === 'paused' ? 0 : dtR * (S.timeScale || 1);
+  const t0 = performance.now(), dtR = Math.min(0.05, Math.max(0, now - _last)); _last = now; const dt = S.mode === 'paused' ? 0 : Math.min(dtR * MIXER.live.simK, 0.05) * (S.timeScale || 1);   // MIX 1 the clips follow the sim's time scale
   const pl = S.player && S.player.pos, px = pl ? pl.x : camera.position.x, pz = pl ? pl.z : camera.position.z, far2 = TROOPLOD.on ? TROOPLOD.far * TROOPLOD.far : BIG, sr = SHADOW_EXT.r * TROOPLOD.shadowK + TROOPLOD.shadowPad, sh2 = MOBILE ? -1 : sr * sr;
   camera.updateMatrixWorld(); _fr.setFromProjectionMatrix(_pm.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
   CANDS.length = 0;

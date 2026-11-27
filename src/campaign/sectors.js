@@ -20,6 +20,7 @@
 import * as THREE from 'three';
 import { SECTOR, SIDEMISSION, CONTRACTS, OBJECTIVES, SECROUTE, CONQSTORY } from '../../config.js';
 import { sectorStoryCard } from '../hub.js';   // SECTOR 6
+import { knobTurn, knobBack } from '../hub.js';   // MIX 1
 import { FORTS, startBoss } from '../hub.js';   // SECTOR 4
 import { enemies, bullets, parts, renderer } from '../hub.js';
 import { sectorDeal, forkOpen, forkTake, consWon, consRefillK, routeLive, routeTick, routeEnd } from '../hub.js';   // SECTOR 4 (campaign/sector-route.js)
@@ -31,15 +32,15 @@ import { ARENA, BIOME, CV, LOGI, OBJ, S, SIDEM, SOLDIER, WAVE, ammoStart, applyB
 const T = SECTOR, NOW = () => performance.now() / 1000, DEF_PLACE = { hold:'outskirts', sabotage:'bridge', boss:'hq', rescue:'village', breach:'gate', infiltrate:'village', pursuit:'outskirts' };
 // the run (dev / probes read it): list = the sectors [{ place, type, obj, vi, lay }] · i = the one in hand · state '' off | arm (built, waiting for the fight) | fight |
 //   won (the goal done, the hold before the transit) | transit | done (the battle won) · tr = the transit under way · snap = the checkpoint · stats: what happened
-export const SECT = { on:false, spec:null, list:[], i:0, state:'', t:0, tries:0, snap:null, g:null, tr:null, knobs:[], seq:0, onWon:null,
+export const SECT = { on:false, spec:null, list:[], i:0, state:'', t:0, tries:0, snap:null, g:null, tr:null, seq:0, onWon:null,
   stats:{ won:0, lost:0, restarts:0, transits:[], climax:0 }, log:[] };
 function note(k, why){ const L = SECT.log; if(L.length >= 40) L.shift(); L.push({ k, why:why || '', i:SECT.i, t:+NOW().toFixed(1) }); }
 const fill = (t, o) => String(t ?? '').replace(/\{(\w+)\}/g, (m, k) => o && o[k] != null ? o[k] : '');
 const clock = s => { s = Math.max(0, Math.ceil(s)); return ((s / 60) | 0) + ':' + String(s % 60).padStart(2, '0'); };
 // a config number turned for the run and put back by sectorEnd (last turned, first back)
-function knob(o, k, v){ SECT.knobs.push([o, k, o[k]]); o[k] = v; }
+function knob(o, k, v){ knobTurn(o, k, v, 'sector'); }   // MIX 1 the one knob stack (data/knob-stack.js): a sector's entries, put back at each sector's start
 export const sectorKnob = knob;   // SECTOR 4 (campaign/sector-route.js: a consequence's or a card's number, put back with the sector's)
-function unknob(){ for(let i = SECT.knobs.length - 1; i >= 0; i--){ const q = SECT.knobs[i]; q[0][q[1]] = q[2]; } SECT.knobs.length = 0; }
+function unknob(){ knobBack('sector'); }
 
 // ---- the run's list ----
 // one entry: 'hold' · 'bridge:sabotage' · 'bridge:sabotage:radar' · { place, type, obj } → { place, type, obj, vi, lay } (null: not a sector)
@@ -66,16 +67,16 @@ export function sectorBossHold(){ const c = sectorCur(); return !!c && c.type !=
 //   (a declared run first — sectorBattle — then run.sectors, then the dev query)
 let _decl = null, _starting = false;
 export function sectorBegin(run){ sectorEnd(); _starting = true; const d = _decl; _decl = null; if(!T.on || !run || coopActive()) return;
-  const spec = d ? d.spec : run.sectors != null ? run.sectors : devSpec(); if(spec == null || spec === false) return; openRun(spec, d && d.onWon); }
+  const spec = d ? d.spec : run.sectors != null ? run.sectors : devSpec(); if(spec == null || spec === false) return; openRun(spec, d && d.onWon, d && d.seed); }
 const runTag = on => { if(typeof document !== 'undefined' && document.body) document.body.classList.toggle('sectrun', !!on); };   // (css/sector.css: the side missions' card hidden — the rail carries the goal)
-function openRun(spec, onWon){ runTag(true); const sd = devSeed(); SECT.story = null; SECT.opened = false;   // SECTOR 4 the attempt's seed: a new one each battle (a checkpoint keeps the dealt list)
+function openRun(spec, onWon, seed){ runTag(true); const sd = devSeed() ?? (Number.isFinite(seed) ? seed >>> 0 : null);   /* MIX 1 a mixer battle's deal / forks / cards come from its master seed */ SECT.story = null; SECT.opened = false;   // SECTOR 4 the attempt's seed: a new one each battle (a checkpoint keeps the dealt list)
   Object.assign(SECT, { on:true, spec, list:[], i:0, state:'arm', t:0, tries:0, snap:null, g:null, tr:null, dark:false, onWon:onWon || null, seed:sd != null ? sd : (Math.random() * 4294967296) >>> 0, cons:new Set(), forks:[] }); SECT.seq++;
   SECT.stats = { won:0, lost:0, restarts:0, transits:[], climax:0 }; SECT.log.length = 0; note('begin', String(spec)); }
 // THE CONQUEST HOOK: this battle is a sector run (spec: true = the land's sample run · 'hold,sabotage,boss' · [{ place, type, obj }]) and its win is onWon(now, bdef),
 //   called once when the last sector is won (the battle's win condition, nowhere else). Call it before launchGame or from the mode's begin (game/flow.js startGame runs
 //   sectorBegin first, then modeBegin); it holds for that one battle — a restart from the game-over screen asks the mode's begin again. spec null / false: no sector run.
-export function sectorBattle(spec, onWon){ const d = spec == null || spec === false ? null : { spec, onWon:typeof onWon === 'function' ? onWon : null };
-  if(_starting && T.on && !coopActive()){ if(d) openRun(d.spec, d.onWon); else sectorEnd(); return true; }   // the battle is being set up: it applies at once
+export function sectorBattle(spec, onWon, seed){ const d = spec == null || spec === false ? null : { spec, onWon:typeof onWon === 'function' ? onWon : null, seed };   // MIX 1 seed: the attempt's route seed (else a fresh one)
+  if(_starting && T.on && !coopActive()){ if(d) openRun(d.spec, d.onWon, d.seed); else sectorEnd(); return true; }   // the battle is being set up: it applies at once
   _decl = d; return false; }   // else the next battle's
 // SECTOR 6 a run's story (campaign/conq-story.js — a conquest fort's): { open:[lines] before the first sector, go(c) a sector live, won(c) a sector won } — set after
 //   sectorBattle for that battle (a new run starts with none)

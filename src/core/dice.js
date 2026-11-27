@@ -53,7 +53,7 @@ try{ uuidHook(); }catch(e){ console.warn('[dice] uuid hook not set:', e && e.mes
 
 // ---- 3. a seeded battle waits for the real cover pieces (game/flow.js launchGame): null = no wait ----
 export function fieldWait(run){ if(DICE.off || !(FIELD_SYNC.waitMs > 0) || REAL_COVER.done || typeof window === 'undefined') return null;
-  if(!(globalThis.__seed > 0 || coopActive() || (run && typeof run === 'object' && run.daily))) return null;
+  if(!(globalThis.__seed > 0 || coopActive() || (run && typeof run === 'object' && (run.daily || run.mix)))) return null;   // MIX 1 a mixer battle is seeded too
   return Promise.race([loadRealCover(), new Promise(ok => setTimeout(ok, FIELD_SYNC.waitMs))]).catch(() => {}); }
 
 // ---- 4. the build's steps, when asked ----

@@ -13,11 +13,12 @@
 //   clocks count the frames' own dt (a pause stops them); a delayed line is a frame count too (modeSay), never a timer. The campaign director's memory of deaths
 //   (PROFILE.dirEase) is parked in PROFILE.modes.hold for the run and put back — at the next page load if the tab was closed in the middle of one.
 import { DIRECTOR, DRONEWAR, LOGISTICS, SIDEMISSION } from '../../config.js';
-import { fieldMark, coopSeedStep, BIOME, DIFF_META, PROFILE, S, SHOTS, TOD_LABEL, biomeVi, capVi, hide, knobApply, knobRefs, launchGame, modeClockTx, quitToMenu, radio, saveProfile, sfx, show, tapBtn, medalEnd } from '../hub.js';
+import { knobTurn, knobPath, knobBack } from '../hub.js';   // MIX 1 the one knob stack (data/knob-stack.js)
+import { fieldMark, coopSeedStep, BIOME, DIFF_META, PROFILE, S, SHOTS, TOD_LABEL, biomeVi, capVi, hide, launchGame, modeClockTx, quitToMenu, radio, saveProfile, sfx, show, tapBtn, medalEnd } from '../hub.js';
 
 const KNOBS = { DIRECTOR, DRONEWAR, LOGISTICS, SIDEMISSION };   // the config objects a modifier's `set` may name (test.js holds DAILY.mods to this list)
 const DEFS = {};                                                // id → the mode's handlers (modeDefine)
-export const MODE = { id:'', H:null, cfg:null, seq:0, live:false, over:false, t:0, knobs:[], undo:[], sayQ:[], card:null };
+export const MODE = { id:'', H:null, cfg:null, seq:0, live:false, over:false, went:false, t:0, undo:[], sayQ:[], card:null };
 export function modeDefine(id, handlers){ DEFS[id] = handlers; }
 export function modeOn(id){ return id ? MODE.id === id : !!MODE.id; }
 export const fillTx = (t, o) => String(t ?? '').replace(/\{(\w+)\}/g, (m, k) => o && o[k] != null ? o[k] : '');
@@ -25,8 +26,8 @@ export const pickTx = L => Array.isArray(L) ? L[(Math.random() * L.length) | 0] 
 export const lowVi = t => String(t || '').toLocaleLowerCase('vi');
 
 // ---- what a mode changes, and how it is put back ----
-export function modeKnob(o, k, v){ MODE.knobs.push([o, k, o[k]]); o[k] = v; }
-export function modeSet(path, op, x){ const R = knobRefs(KNOBS, path); for(let i = 0; i < R.length; i++) modeKnob(R[i][0], R[i][1], knobApply(R[i][0][R[i][1]], op, x)); return R.length; }
+export function modeKnob(o, k, v){ knobTurn(o, k, v, 'mode'); }   // MIX 1 one stack for modes and sectors (data/knob-stack.js), the mode's entries put back by modeEnd
+export function modeSet(path, op, x){ return knobPath(KNOBS, path, op, x, 'mode'); }
 export function modeUndo(fn){ MODE.undo.push(fn); }
 // the profile's own corner for the modes: { nd:{ nights, score }, daily:{ hist:[…], cur:{ d } }, hold:{ dirEase } }
 export function modeStore(){ let m = PROFILE.modes; if(!m || typeof m !== 'object') m = PROFILE.modes = {};
@@ -36,8 +37,8 @@ holdBack();   // a run the tab was closed on: the campaign's director gets its m
 
 // ---- the flow's calls ----
 // a battle begins (game/flow.js startGame, the run known, the world not yet built): the last mode's traces go, this run's mode — if it is one — turns its knobs
-export function modeBegin(run){ modeEnd(); const id = run && run.mode === 'custom' ? (run.nd ? 'nd' : run.daily ? 'daily' : run.conq ? 'conq' : '') : '';   /* (CONQ 1 a fort of the conquest: campaign/conquest.js) */ if(!id || !DEFS[id]) return;
-  Object.assign(MODE, { id, H:DEFS[id], cfg:run, live:false, over:false, t:0 }); MODE.seq++;
+export function modeBegin(run){ modeEnd(); const id = run && run.mode === 'custom' ? (run.nd ? 'nd' : run.daily ? 'daily' : run.conq ? 'conq' : run.mix ? 'mix' : '') : '';   /* (CONQ 1 a fort of the conquest: campaign/conquest.js) */ if(!id || !DEFS[id]) return;
+  Object.assign(MODE, { id, H:DEFS[id], cfg:run, live:false, over:false, went:false, t:0 }); MODE.seq++;
   modeStore().hold = { dirEase:PROFILE.dirEase || null }; PROFILE.dirEase = null; saveProfile(true);   // the same director for everyone; the campaign's own easing waits outside
   S.kills = 0; SHOTS.n = SHOTS.hit = 0;
   MODE.H.begin && MODE.H.begin(run); }
@@ -47,6 +48,8 @@ export function modeBegin(run){ modeEnd(); const id = run && run.mode === 'custo
 export function modeSeed(k){ fieldMark(k, 0); if(MODE.id && MODE.H.seed) MODE.H.seed(k); else coopSeedStep(32 + k); fieldMark(k, 1); }
 // the soldier stands ready, the battlefield is built (startGame, just before the intro)
 export function modeReady(){ if(MODE.id && MODE.H.ready) MODE.H.ready(S.player); }
+// MIX 1 the fight goes live (ui/briefing.js goLive, before the director, the surprises and the events read their numbers — every stage / sector): first = the battle's first GO
+export function modeGo(now){ if(!MODE.id || !MODE.H.go) return; const first = !MODE.went; MODE.went = true; MODE.H.go(now, first); }
 // every frame of play, after the waves (game/loop.js): the first one is the fight going live
 export function updateModes(dt, now){ if(!MODE.id || MODE.over) return;
   if(!MODE.live){ MODE.live = true; MODE.t = 0; S.kills = 0; SHOTS.n = SHOTS.hit = 0; MODE.H.live && MODE.H.live(now); }
@@ -73,7 +76,7 @@ export function modeBrief(){ const B = MODE.id && MODE.H.brief ? MODE.H.brief() 
 export function modeEnd(){ const was = MODE.id; MODE.id = ''; MODE.live = false; MODE.over = false; MODE.sayQ.length = 0; MODE.seq++;
   if(was && MODE.H && MODE.H.end){ try{ MODE.H.end(); }catch(e){ console.error('mode end', e); } }
   for(let i = MODE.undo.length - 1; i >= 0; i--){ try{ MODE.undo[i](); }catch(e){ console.error('mode undo', e); } } MODE.undo.length = 0;
-  for(let i = MODE.knobs.length - 1; i >= 0; i--){ const q = MODE.knobs[i]; q[0][q[1]] = q[2]; } MODE.knobs.length = 0;
+  knobBack('mode');
   modeChip(null); MODE.card = null; MODE.H = null; MODE.cfg = null; holdBack();
   { const e = typeof document !== 'undefined' && document.getElementById('modeEnd'); if(e && !e.classList.contains('hidden')) hide('modeEnd'); } }
 // back to the home menu (game/flow.js quitToMenu)

@@ -1,0 +1,1 @@
+{ "v":1, "id":"easy-short-day", "name":"Sáng yên — tập dượt", "seed":1101, "macro":{ "difficulty":20, "density":35, "tempo":40, "length":20, "chaos":25, "bounty":70, "drama":40, "variety":40 }, "world":{ "land":"MEADOW", "tod":"day", "wx":"clear", "space":"mid", "level":2 } }
