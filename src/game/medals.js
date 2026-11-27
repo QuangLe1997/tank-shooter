@@ -7,7 +7,7 @@
 //   battle's experience to xp.cap.
 import { MEDALS } from '../../config.js';
 import { AMBST, CO, CV, MATE, NEM, PROFILE, S, battleXp, carRank, carRankName, gunsOpenedBy, medalBoardLater, medalCareerAdd, medalCareerClean, medalCreditRead, medalCreditWord, medalLedger, medalLedgerClean,
-  medalRankCard, medalTierOf, medalToast, paintChip, saveProfile } from '../hub.js';
+  medalRankCard, medalTierOf, medalToast, paintChip, saveProfile, voiceStage, radio, radioType } from '../hub.js';
 
 const M = () => MEDALS, NOW = () => performance.now() / 1000;
 export const MDL = { L:medalLedger(), kr:null, ks:0, kl:0, on:false, done:false, base:0, rank:0, live:0, tiers:{}, lastKill:-9, multiN:0, lastHp:-1, low:0, armed:true, ride:null, rx:0, rz:0,
@@ -73,5 +73,10 @@ function check(){ const L = medalLedgerClean(MDL.L);
 export function medalEnd(outcome){ if(!M().on || !MDL.on || MDL.done) return null; MDL.done = true; if(MDL.ride && MDL.ride.m >= M().rideM){ MDL.L.rides++; MDL.L.rideM += Math.round(MDL.ride.m); } MDL.ride = null;
   const c = medalCareer(), L = Object.assign({}, MDL.L), res = medalCareerAdd(c, L, outcome, L.t); PROFILE.career = c; saveProfile();
   MDL.last = { res, L, outcome, stage:S.stage || 1, score:S.score | 0, t:L.t }; if(outcome !== 'quit') medalBoardLater(MDL.last); return MDL.last; }
+// MEDAL 4 the battle is left (the report opens, the battle is quit, the career screen opens): nothing of its radio goes on — the voice queue cleared and the
+//   line playing cut (audio/voice.js voiceStage: the banter too), the SCH panel down, its typing stopped, the spoken line's subtitle gone
+export function medalHush(){ try{ voiceStage(); }catch(e){} if(typeof document === 'undefined') return; clearTimeout(radio._t); clearInterval(radioType._t);
+  const r = document.getElementById('radio'); if(r){ r.classList.remove('show'); const t = r.querySelector('.rd-txt'); if(t) t.textContent = ''; }
+  const s = document.getElementById('voiceSub'); if(s){ s.style.opacity = '0'; s.textContent = ''; } }
 // what a probe reads
 export function medalProbe(){ return { on:MDL.on, done:MDL.done, stage:MDL.ks, rank:MDL.rank, live:MDL.live, L:Object.assign({}, MDL.L), tiers:Object.assign({}, MDL.tiers), stats:Object.assign({}, MDL.stats), career:medalCareer() }; }

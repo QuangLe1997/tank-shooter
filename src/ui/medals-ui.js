@@ -4,7 +4,7 @@
 //   shell), styled by css/medals.css in the XK-UI palette (olive, sand, brass; bronze / silver / gold only on the medals).
 import { MEDALS } from '../../config.js';
 import { GUNS, MEDAL_TIER_VI, carInsignia, carRank, carRankName, carTop, escapeHtml, gunOpen, gunRankReq, hide, medalCareer, medalDef, medalMoments, sfx, show, svgMarkup,
-  tapEl } from '../hub.js';
+  tapEl, medalHush } from '../hub.js';
 
 const M = () => MEDALS, fmt = n => Math.round(n).toLocaleString('vi-VN'), TIER_CLS = ['none', 'bronze', 'silver', 'gold'];
 // ---- glyphs: the icon set's, plus two of the career's own ----
@@ -71,7 +71,7 @@ export function medalBoardOpen(rep){ if(!rep || typeof document === 'undefined')
     + '<div class="mdl-lines">' + shown.map(l => '<div><span>' + escapeHtml(l.vi) + (l.n > 1 ? ' <small>×' + l.n + '</small>' : '') + '</span><b>+' + fmt(l.xp) + '</b></div>').join('') + (rest > 0 ? '<div><span>Khác</span><b>+' + fmt(rest) + '</b></div>' : '') + '</div>'
     + '</section></div></div>'
     + '<footer class="xk-foot"><span class="xk-hint">Kinh nghiệm và huân chương đã ghi vào hồ sơ.</span><div class="xb xb-sec" id="mdlBoardMed" role="button"><span class="ic">' + medalGlyph('star') + '</span><span>Huân chương</span></div><div class="xb xb-pri" id="mdlBoardGo" role="button" data-back="1"><span>Tiếp tục</span><span class="ic">' + svgMarkup('play') + '</span></div></footer>';
-  show('mdlBoard'); B.dataset.open = '1'; fillXp(B, R);
+  medalHush(); show('mdlBoard'); B.dataset.open = '1'; fillXp(B, R);   // MEDAL 4 the battle's radio stops here
   tapEl(B.querySelector('#mdlBoardGo'), () => medalBoardClose()); tapEl(B.querySelector('#mdlBoardMed'), () => { medalBoardClose(); openMedals('board'); }); }
 // the bar: from where the rank stood to where it stands; a rank crossed fills to the end, the board changes, and it fills again from the start
 function fillXp(B, R){ const bar = B.querySelector('.mdl-xp i'), a = B.querySelector('.mdl-xpl .a'), b = B.querySelector('.mdl-xpl .b'), F = M().board.fill, b0 = R.before, b1 = R.after, top = b1.r >= carTop();
@@ -86,7 +86,7 @@ export function medalBoardClose(){ const B = board(); B.dataset.open = ''; hide(
 // ---- the screen: Quân hàm & huân chương ----
 let _scr = null, _from = 'start';
 function screen(){ if(_scr && _scr.isConnected) return _scr; _scr = el('div', 'overlay hidden xk-screen mdl-screen'); _scr.id = 'mdlScreen'; document.body.appendChild(_scr); return _scr; }
-export function openMedals(from){ _from = from || 'start'; if(_from === 'start') hide('start'); renderMedals(); show('mdlScreen'); try{ sfx('click'); }catch(e){} }
+export function openMedals(from){ _from = from || 'start'; medalHush(); if(_from === 'start') hide('start'); renderMedals(); show('mdlScreen'); try{ sfx('click'); }catch(e){} }
 export function closeMedals(){ hide('mdlScreen'); if(_from === 'start') show('start'); try{ sfx('click'); }catch(e){} }
 export function renderMedals(){ const E = screen(), c = medalCareer(), k = carRank(c.xp), got = M().list.filter(d => c.m[d.id]).length, nx = k.r < carTop() ? capName(carRankName(k.r + 1)) : '';
   const next = Object.keys(M().unlock).filter(id => GUNS[id] && gunRankReq(id) === k.r + 1).map(id => escapeHtml(GUNS[id].name)).join(' · ');
@@ -106,8 +106,10 @@ export function renderMedals(){ const E = screen(), c = medalCareer(), k = carRa
   tapEl(E.querySelector('#mdlBack'), closeMedals); }
 // ---- home: the rank under the call-sign (ui/menus.js refreshStartUI), the button into the screen ----
 export function medalHomeLine(){ if(typeof document === 'undefined' || !M().on) return; const h = document.getElementById('hello'); if(!h) return; let s = document.getElementById('mdlHome');
-  if(!s){ s = el('div', 'mdl-home'); s.id = 'mdlHome'; s.setAttribute('role', 'button'); s.tabIndex = 0; h.insertAdjacentElement('afterend', s); tapEl(s, () => openMedals('start')); }
-  const c = medalCareer(), k = carRank(c.xp); s.innerHTML = insigniaSVG(k.r) + '<span><small>Quân hàm · huân chương ›</small><b>' + escapeHtml(capName(carRankName(k.r))) + '</b><i><u style="width:' + (k.need ? Math.min(100, 100 * k.into / k.need) : 100).toFixed(1) + '%"></u></i></span>'; }
+  if(!s){ const row = el('div', 'mdl-homerow'); s = el('div', 'mdl-home'); s.id = 'mdlHome'; s.setAttribute('role', 'button'); s.tabIndex = 0; tapEl(s, () => openMedals('start'));
+    const b = el('div', 'xb xb-ghost mdl-homebtn', '<span class="ic">' + medalGlyph('star') + '</span><span>Huân chương</span>'); b.id = 'medalsBtn'; b.setAttribute('role', 'button'); tapEl(b, () => openMedals('start'));   // MEDAL 4 a plain way in beside the rank
+    row.append(s, b); h.insertAdjacentElement('afterend', row); }
+  const c = medalCareer(), k = carRank(c.xp); s.innerHTML = insigniaSVG(k.r) + '<span><small>Quân hàm</small><b>' + escapeHtml(capName(carRankName(k.r))) + '</b><i><u style="width:' + (k.need ? Math.min(100, 100 * k.into / k.need) : 100).toFixed(1) + '%"></u></i></span>'; }
 // ---- the gun strips: is this gun his to carry in, and what does a locked one say ----
 export function medalGunLock(id){ const c = medalCareer(); if(gunOpen(id, c)) return ''; return 'Mở ở ' + capName(carRankName(gunRankReq(id))); }
 // (Esc / B: the nav takes the screen's data-back — the last open overlay is the report or this screen; the home's way in is the rank strip itself)

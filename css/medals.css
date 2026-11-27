@@ -97,6 +97,11 @@ body.inmenu .mdl-toasts,body.inmenu .mdl-rankup{display:none;}
 .mdl-home .mdl-ins{width:64px;} .mdl-home > span{display:flex;flex-direction:column;min-width:120px;line-height:1.1;}
 .mdl-home small{font-size:12px;color:var(--xk-mute);} .mdl-home b{font-size:17px;font-weight:700;color:var(--xk-sand);}
 .mdl-home i{display:block;height:3px;margin-top:4px;background:rgba(236,224,194,.14);} .mdl-home u{display:block;height:100%;background:var(--xk-brass);text-decoration:none;}
+.mdl-homerow{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap;} .mdl-homerow .mdl-home{margin-top:0;}
+.mdl-homebtn{--h:40px;padding:0 12px;font-size:15px;border:1px solid var(--xk-line);background:rgba(15,18,11,.45);} .mdl-homebtn:hover{border-color:var(--xk-line2);}
+/* MEDAL 4 a battle's radio and its spoken line's subtitle never show over a screen that ends or leaves it (home, pause, an end screen, the report, the career
+   screen) — not body.inmenu: a first-time tip is an overlay too, and its radio line must still be read */
+body:has(:is(#start,#pause,#gameover,#victory,#upgrade,#modeEnd,#mdlBoard,#mdlScreen):not(.hidden)) :is(#voiceSub,#radio){display:none !important;}
 /* a gun the rank has not opened (ui/loadout.js, ui/setup-units.js) */
 .mdl-locked{opacity:.5;filter:grayscale(.85);cursor:default !important;} .mdl-locked:hover{transform:none !important;}
 .mdl-lk{color:var(--xk-brass) !important;font-weight:600;}
@@ -117,6 +122,7 @@ body.inmenu .mdl-toasts,body.inmenu .mdl-rankup{display:none;}
   .mdl-me{gap:14px;padding:10px 14px;} .mdl-me .mdl-ins{width:110px;} .mdl-cst b{font-size:17px;} .mdl-cst{gap:2px 12px;}
   .mdl-cards{grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px;} .mdl-card{padding:8px 10px;gap:10px;} .mdl-card .mdl-disc{--d:36px;}
   .mc-tx b{font-size:15px;} .mc-tx > span{font-size:12px;} .mc-tiers .tp{font-size:11.5px;}
+  .mdl-homerow{margin-top:4px;gap:6px;} .mdl-homebtn{--h:34px;font-size:13.5px;padding:0 10px;}
   .mdl-home{margin-top:4px;padding:4px 10px 4px 6px;} .mdl-home .mdl-ins{width:48px;} .mdl-home b{font-size:14.5px;} .mdl-home small{font-size:11px;}
 }
 /* ---------- a narrow screen: one column ---------- */
