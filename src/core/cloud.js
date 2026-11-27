@@ -14,8 +14,8 @@ function set(st, err){ CLOUDSAVE.state=st; if(err!=null) CLOUDSAVE.err=String(er
 export function cloudProfile(){ const out={}; for(const k in PROFILE){ if(CLOUD_CFG.localOnly.includes(k) || PROFILE[k]===undefined || typeof PROFILE[k]==='function') continue; out[k]=PROFILE[k]; }
   return JSON.parse(JSON.stringify(out)); }
 // how far a save has got — decides which side wins when both changed
-export function progressOf(p){ if(!p) return -1; const c=p.campaign&&p.campaign.max|0;
-  return c*1e7 + Math.min(9999999, (p.best&&p.best.score)|0); }   // (no-tanks: was also the arsenal and the wallet)
+export function progressOf(p){ if(!p) return -1; const c=p.campaign&&p.campaign.max|0, q=p.conquest&&p.conquest.cap|0;   // CONQ 1 the forts taken count first
+  return (q*100 + Math.min(99, c))*1e7 + Math.min(9999999, (p.best&&p.best.score)|0); }   // (no-tanks: was also the arsenal and the wallet)
 
 export async function initCloud(){ if(FB || CLOUDSAVE.state==='connecting') return; if(typeof navigator!=='undefined' && navigator.onLine===false){ set('offline'); addEventListener('online', ()=>initCloud(), { once:true }); return; }
   set('connecting');

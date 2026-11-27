@@ -408,3 +408,58 @@
   .bs-lv.on,.bs-map.on,.su-man.on,.su-ride.on,#loadout .ldcard.on{transform:none !important;}
   .xk-rpanel{animation:none !important;}
 }
+
+/* ======================= CONQ 1 · CHINH PHẠT 10 THÀNH — the road, a fort's card, the treasure picks, the treasure's screen =======================
+   The road (ui/conquest-map.js) is one column of the kit's photo selection cards on a line: a node per fort (our flag · its number lit · a lock), the line
+   between filled up to the next fort. The treasures are the kit's selection cards (#briefing .brcard), their icons the line-art set on a chamfered plate. */
+#bsLadder.cq-road{display:flex !important;flex-direction:column;gap:7px;position:relative;padding-left:2px;}
+#bsLadder.cq-road::before{content:'';position:absolute;left:16px;top:22px;bottom:22px;width:2px;background:linear-gradient(180deg,var(--k-ok),var(--k-acc) var(--cq-fill,30%),rgba(214,226,196,.16) var(--cq-fill,30%));opacity:.8;}
+.cq-step{display:grid;grid-template-columns:30px minmax(0,1fr);align-items:center;gap:9px;position:relative;}
+.cq-node{position:relative;z-index:1;width:30px;height:30px;display:grid;place-items:center;color:var(--k-faint);background:var(--k-p1);border:1px solid var(--k-edge2);
+  clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px);font:700 14px/1 var(--k-mono);}
+.cq-node svg{width:17px;height:17px;}
+.cq-step.taken .cq-node{color:var(--k-ok);border-color:rgba(159,220,88,.55);background:rgba(20,32,12,.95);}
+.cq-step.next .cq-node{color:var(--k-acc-ink);background:linear-gradient(180deg,var(--k-acc-hi),var(--k-acc));border-color:var(--k-acc-hi);box-shadow:0 0 16px var(--k-acc-a);animation:cqLit 1.6s ease-in-out infinite;}
+@keyframes cqLit{50%{filter:brightness(1.25);}}
+.bs-lv.cq-fort{height:76px;cursor:pointer;}
+.bs-lv.cq-fort.lock{cursor:pointer;}
+.cq-fort .cq-ft{left:12px;right:56px;bottom:8px;display:flex;flex-direction:column;gap:1px;min-width:0;}
+.cq-fort .cq-ft small{font:700 10.5px/1.1 var(--k-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--k-acc-hi);}
+.cq-fort .cq-ft b{font:700 17px/1.05 var(--k-ui);letter-spacing:.05em;text-transform:uppercase;color:var(--k-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cq-fort .cq-ft span{font:600 11.5px/1.2 var(--k-ui);color:var(--k-mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cq-fort .bs-st{top:6px;right:6px;font-size:10px;padding:3px 7px;}
+.cq-fort .bs-st.lk{color:var(--k-faint);background:rgba(6,8,5,.7);border:1px solid var(--k-edge);}
+.cq-fort .cq-tqi{right:8px;bottom:8px;}
+.cq-tqi{display:inline-grid;place-items:center;width:30px;height:30px;color:var(--k-acc-hi);background:rgba(10,12,8,.82);border:1px solid rgba(255,174,52,.45);
+  clip-path:polygon(5px 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%,0 5px);}
+.cq-tqi svg{width:20px;height:20px;} .cq-tqi.got{color:var(--k-ok);border-color:rgba(159,220,88,.5);}
+.cq-fort.lock .cq-tqi{opacity:.55;}
+.cq-fact b{display:flex;align-items:center;gap:6px;} .cq-fact .cq-tqi{width:20px;height:20px;flex:none;} .cq-fact .cq-tqi svg{width:14px;height:14px;}
+.bs-badge.cq-taken{background:rgba(40,70,20,.9) !important;color:var(--k-ok) !important;} .bs-badge.cq-lock{background:rgba(10,12,8,.85) !important;color:var(--k-mute) !important;}
+/* the briefing: the threat and its meter, the treasures to take */
+#briefing .cq-loot{margin-top:10px;display:flex;flex-direction:column;gap:8px;}
+#briefing .cq-loot .br-pick{margin:0;}
+.cq-threat{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:8px 11px;background:rgba(40,12,8,.55);border:1px solid rgba(229,70,44,.4);border-left:3px solid var(--k-danger);}
+.cq-threat b{font:700 13px/1.2 var(--k-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--k-danger-hi);} .cq-threat span{grid-column:1;font-size:12.5px;color:var(--k-mute);}
+.cq-threat em{grid-column:2;grid-row:1;font:700 11.5px/1.2 var(--k-ui);font-style:normal;letter-spacing:.06em;text-transform:uppercase;color:var(--k-danger-hi);align-self:center;}
+.cq-meter{grid-column:1 / -1;display:block;height:5px;background:rgba(255,255,255,.08);margin-top:4px;} .cq-meter > i{display:block;height:100%;background:linear-gradient(90deg,var(--k-acc),var(--k-danger));}
+.cq-threat.ok{background:rgba(16,30,10,.6);border-color:rgba(159,220,88,.4);border-left-color:var(--k-ok);} .cq-threat.ok em,.cq-threat.ok b{color:var(--k-ok);} .cq-threat.ok .cq-meter > i{background:linear-gradient(90deg,var(--k-ok),var(--k-acc));}
+.cq-tqs{display:grid;grid-template-columns:repeat(auto-fit,minmax(176px,1fr));gap:8px;}
+#briefing .brcard.cq-tq{width:auto !important;min-width:0;padding:10px 10px 9px !important;text-align:left;display:grid !important;grid-template-columns:32px minmax(0,1fr);column-gap:9px;align-items:start;align-content:start;}
+#briefing .brcard.cq-tq .ic{display:block !important;width:32px;height:32px;margin:0;grid-row:1 / span 2;color:var(--k-acc-hi);} #briefing .brcard.cq-tq .nm,#briefing .brcard.cq-tq .ds{grid-column:2;}
+#briefing .brcard.cq-tq .nm{font-size:13px !important;letter-spacing:.04em !important;margin:0 0 2px;text-transform:uppercase;} #briefing .brcard.cq-tq .ds{font-size:11px !important;line-height:1.3 !important;}
+#briefing .brcard.cq-tq .cq-rec{position:absolute;top:-9px;right:6px;z-index:3;margin:0;white-space:nowrap;width:auto !important;line-height:1.25;padding:2px 7px !important;font-size:9.5px !important;background:var(--k-acc) !important;color:var(--k-acc-ink) !important;border-color:var(--k-acc-hi) !important;border-radius:0 !important;}
+#briefing .brcard.cq-tq:not(.on){opacity:.72;} #briefing .brcard.cq-tq:not(.on) .ic{color:var(--k-mute);}
+.cq-none{font-size:12.5px;color:var(--k-mute);margin:0;}
+/* the treasure's screen (#modeEnd with .cq-won): the treasure on a big plate, what it does, the next fort */
+#modeEnd.cq-won .go-why{display:flex;flex-direction:column;gap:10px;align-items:flex-start;}
+.cq-prize{display:flex;align-items:center;gap:14px;text-align:left;padding:12px 16px;background:linear-gradient(90deg,rgba(255,174,52,.14),rgba(255,174,52,.02));border:1px solid rgba(255,174,52,.4);}
+.cq-pi{flex:none;width:84px;height:84px;display:grid;place-items:center;color:var(--k-acc-ink);background:radial-gradient(circle at 50% 40%,var(--k-acc-hi),var(--k-acc) 60%,var(--k-acc-lo));
+  clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px);box-shadow:0 0 30px var(--k-acc-a);animation:kPop .4s var(--k-ease) both;}
+.cq-pi svg{width:54px;height:54px;}
+.cq-pt{display:flex;flex-direction:column;gap:3px;min-width:0;} .cq-pt small{font:700 11px/1 var(--k-ui);letter-spacing:.16em;text-transform:uppercase;color:var(--k-acc-hi);}
+.cq-pt b{font:700 19px/1.1 var(--k-ui);letter-spacing:.05em;text-transform:uppercase;color:var(--k-text);} .cq-pt span{font-size:13px;color:var(--k-mute);}
+.cq-next{font-size:13px;color:var(--k-info);}
+@media (max-width:700px){ .bs-lv.cq-fort{height:64px;} .cq-fort .cq-ft b{font-size:15px;} .cq-pi{width:64px;height:64px;} .cq-pi svg{width:40px;height:40px;} .cq-tqs{grid-template-columns:1fr 1fr;} }
+@media (orientation:landscape) and (max-height:560px){ .bs-lv.cq-fort{height:56px;} .cq-fort .cq-ft span{display:none;} .cq-step{grid-template-columns:24px minmax(0,1fr);gap:6px;} .cq-node{width:24px;height:24px;font-size:12px;} #bsLadder.cq-road::before{left:13px;} }
+@media (prefers-reduced-motion:reduce){ .cq-step.next .cq-node,.cq-pi{animation:none !important;} }

@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { BALANCE, REALCITY } from '../../config.js';
 import { bladeCycle, bladeSelect, S, _RUP, _rdir, armorOf, bigExplode, blocks, damageBlock, damageEnemy, decalScorch, deformCrater, enemies, fortIntactCross, fortShellHit, heightAt, ringPulse, rockets, scene, sfx, spawnPart, typeMul, updateGunHUD, trafficCone, fireFxOn, flameJet, lobTrail, medalHit } from '../hub.js';
+import { CQ } from '../hub.js';   // CONQ 1 the molten launcher's hits counted (campaign/conquest.js)
 
 // FLAMETHROWER — short-range cone of fire that sets enemies ALIGHT (a burn DoT applied/refreshed in updateEnemies)
 export function fireFlame(now, g, x, z, ang, k=1, y){
@@ -47,7 +48,7 @@ export function updateRockets(dt, now){
         bigExplode(pos, 0xffae5c, aoeR/3.2); if(!r.small) deformCrater(x, z, aoeR*0.5, 0.45+aoeR*0.06); else decalScorch(x, z, aoeR*0.6, 0.7);   // mortar / howitzer shell crater (grenades only scorch)
         if(!fireFxOn()){ ringPulse({x,z}, 0xffffff, aoeR*0.9); ringPulse({x,z}, 0xffd27a, aoeR*0.6); }   // FIRE 3 (no flat rings of light on the ground, no balls of fire: the burst is fx/blasts.js heBlast)
         if(!fireFxOn()) for(let k=0;k<5;k++){ const aa=Math.random()*6.28, rr=Math.random()*aoeR*0.7; spawnPart(x+Math.cos(aa)*rr,1,z+Math.sin(aa)*rr,(Math.random()-0.5)*4,2+Math.random()*3,(Math.random()-0.5)*4,{color:0xfff0c0,color2:0xff4a14,size:0.8,grow:1.4,life:0.4,grav:3,drag:2}); }
-        for(const e of enemies.slice()){ if(e.def.air) continue; const dx=e.pos.x-x, dz=e.pos.z-z; if(dx*dx+dz*dz < aoeR*aoeR){ medalHit(e, 1, 'nade', 0); damageEnemy(e, (r.dmg||30)*(r.small?typeMul('HE',armorOf(e)):1)); } }   // shells can't reach aircraft
+        for(const e of enemies.slice()){ if(e.def.air) continue; const dx=e.pos.x-x, dz=e.pos.z-z; if(dx*dx+dz*dz < aoeR*aoeR){ medalHit(e, 1, 'nade', 0); damageEnemy(e, (r.dmg||30)*(r.small&&!r.pen?typeMul('HE',armorOf(e)):1)); if(r.pen) CQ.st.salvo++; } }   // shells can't reach aircraft
         for(const bl of blocks.slice()) if((bl.kind==='obj'||bl.kind==='tower'||bl.kind==='brick'||bl.kind==='camp'||bl.kind==='pylon') && Math.hypot(bl.x-x,bl.z-z) < aoeR+bl.r) damageBlock(bl, (r.dmg||30)*0.8);   // shells wreck structures too
         if(r.small){ S.shake=Math.min(1.4, S.shake+0.18); sfx('explode', {x,z}); } else { S.shake=Math.min(3.0, S.shake + 0.5 + aoeR*0.08); sfx('bigexplode'); }   // ground burst: earth clods come from fireball(), no metal debris   // bigger AoE → bigger boom (howitzer > mortar)
       }

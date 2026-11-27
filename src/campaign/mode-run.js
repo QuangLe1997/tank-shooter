@@ -36,7 +36,7 @@ holdBack();   // a run the tab was closed on: the campaign's director gets its m
 
 // ---- the flow's calls ----
 // a battle begins (game/flow.js startGame, the run known, the world not yet built): the last mode's traces go, this run's mode — if it is one — turns its knobs
-export function modeBegin(run){ modeEnd(); const id = run && run.mode === 'custom' ? (run.nd ? 'nd' : run.daily ? 'daily' : '') : ''; if(!id || !DEFS[id]) return;
+export function modeBegin(run){ modeEnd(); const id = run && run.mode === 'custom' ? (run.nd ? 'nd' : run.daily ? 'daily' : run.conq ? 'conq' : '') : '';   /* (CONQ 1 a fort of the conquest: campaign/conquest.js) */ if(!id || !DEFS[id]) return;
   Object.assign(MODE, { id, H:DEFS[id], cfg:run, live:false, over:false, t:0 }); MODE.seq++;
   modeStore().hold = { dirEase:PROFILE.dirEase || null }; PROFILE.dirEase = null; saveProfile(true);   // the same director for everyone; the campaign's own easing waits outside
   S.kills = 0; SHOTS.n = SHOTS.hit = 0;
@@ -64,7 +64,9 @@ export function modeBossHold(){ return !!(MODE.id && MODE.H.bossHold && MODE.H.b
 // the pause screen's line (game/flow.js pauseWhere): '' = the campaign's own
 export function modePauseTx(){ return MODE.id && MODE.H.pauseTx ? MODE.H.pauseTx() : ''; }
 // the briefing's operation, story and objective (ui/briefing.js openBriefing, after it has written the stage's)
-export function modeBrief(){ if(!MODE.id || !MODE.H.brief) return; const B = MODE.H.brief(), put = (id, f) => { const e = document.getElementById(id); if(e) f(e); }; if(!B) return;
+export function modeBrief(){ const B = MODE.id && MODE.H.brief ? MODE.H.brief() : null, put = (id, f) => { const e = document.getElementById(id); if(e) f(e); };
+  put('br-loot', e => { e.hidden = !(B && B.loot); if(B && B.loot) e.replaceChildren(B.loot); else e.replaceChildren(); });   // CONQ 1 a mode's own block under the order (the conquest's treasure picks)
+  if(!B) return; if(B.sub) put('br-sub', e => { e.innerHTML = B.sub; });
   put('br-op', e => { e.textContent = B.op; }); put('br-brief', e => { e.replaceChildren(B.brief); });
   put('br-obj', e => { const b = document.createElement('b'), s = document.createElement('span'); b.textContent = 'Mục tiêu'; s.textContent = B.obj; e.replaceChildren(b, s); }); }
 // nothing of a mode is left: its knobs back (last turned, first back), its undo list run, its HUD pieces and its result card away

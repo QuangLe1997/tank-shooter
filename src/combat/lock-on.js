@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { LETHAL, SQUAD, FORT, TREEFALL, AIRAIM, LINE, GUNFX, GUNFEEL } from '../../config.js';
 import { hitConfirm, sfx, wrapAngle, ARC_G, ARENA, BVIS, DW, droneShot, FT, GLOW, MOBILE, S, UGRID, UNDER, _hot, addTrail, armorOf, ballisticInit, ballisticStep, ballisticTrailK, bloodSpurt, bulletFalloff, bulletPool, bullets, core, damageAlly, damageBlock, damageCore, damageEnemy, damagePlayer, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, fortIntactCross, fortWallCross, groundHit, heightAt, impactFX, lightning, nearMiss, orientShell, ringPulse, rocketExhaust, shellStretch, shellTrail, shootGuard, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, sweepPoint, tunnelBlast, typeMul, unitsNear, vaporWake, shotTree, trafficShot, dodgeShot, stealthShot, lineHit, inShape, dressRound, sandProof, bulletImpact, hitMat, climbPerch, tracerHit, fireFxOn, CO, coopBulletMate, medalShot, shotLook } from '../hub.js';
+import { COVER_HP, CQ, conqShieldHit } from '../hub.js';   // CONQ 1 the ghost rifle's round passes thin cover (thin = the most health a piece it passes may have) · the lava shield (campaign/conquest.js)
 
 // Z238 how high a block stands (world y of its top), measured once from its mesh and again after it has been damaged
 const _tb=new THREE.Box3();
@@ -59,7 +60,7 @@ export function spawnBullet(x, z, angle, o={}){
   const B0={ mesh:m, x, z, ox:x, oz:z, vx:Math.sin(angle)*sp, vz:Math.cos(angle)*sp,
     owner:o.owner||'p', dmg:o.dmg||20, r:o.r||0.45, life:o.life||2.2, pierce:o.pierce||0,
     homing:o.homing||0, angle, aoe:o.aoe||0, aoeDmg:o.aoeDmg||0, maxDist:o.maxDist||0, color:col, _py:null, _tx:null,
-    airAim:o.airAim||null, line:lineRound, wy0, slope, by:y0, vy, arc:(vy>0.5), vyl:(o.dropTo!=null && (o.dropDist||D)>0.5 ? (o.dropTo-y0)/((o.dropDist||D)/sp) : 0), ignore:o.ignore||null, type:o.type||null, reach:o.reach||0, fall:o.fall??1, chain:o.chain||0, chainR:o.chainR||0, knock:o.knock||1, fx:o.fx||'spark', inf:!!o.inf, tk:o.trailK||1, sa, dark, trc:o.tr===1 };
+    airAim:o.airAim||null, line:lineRound, wy0, slope, by:y0, vy, arc:(vy>0.5), vyl:(o.dropTo!=null && (o.dropDist||D)>0.5 ? (o.dropTo-y0)/((o.dropDist||D)/sp) : 0), ignore:o.ignore||null, thin:o.thin||0, type:o.type||null, reach:o.reach||0, fall:o.fall??1, chain:o.chain||0, chainR:o.chainR||0, knock:o.knock||1, fx:o.fx||'spark', inf:!!o.inf, tk:o.trailK||1, sa, dark, trc:o.tr===1 };
   if(o.owner==='p' && o.reach!=null && !dark){ B0._lx=x; B0._ly=wy0; B0._lz=z; }   // GUN 3 its tracer starts AT the muzzle: fired after the frame's bullet step it was first drawn a frame's flight (1.5–3 m) out, nothing behind it
   shotLook(B0, o);   // GUNFX 1 a small-arms round: a tracer streak or unseen (fx/gunfx.js), no sphere + sprite of its own
   bullets.push(B0);
@@ -142,7 +143,7 @@ export function updateBullets(dt, now){
       sweepPoint(b._hx, b._hz, b.x, b.z, p.pos.x, p.pos.z, _sw); const dpx=p.pos.x-_sw.x, dpz=p.pos.z-_sw.z;   // Z228b swept
       if(!b.dodged && !(wb && pastFace(b, p.pos.x, p.pos.z)) && dpx*dpx+dpz*dpz < (b.r+p.radius*2.2)**2 && Math.hypot(_sw.x-p.pos.x, _sw.z-p.pos.z) < p.radius+b.r && lineH(b, _wy, p) && !(dodgeShot(p) && (b.dodged=true))){ const _was=now>=p.invincibleUntil; damagePlayer(b.dmg, now, b.vx, b.vz, b.aoe>0 ? 'blast' : 'shot', _wy-heightAt(p.pos.x,p.pos.z)-(p.lift||0));   /* HIT 1 a shell that bursts on him is a blast; a round: how high it struck (his plate carrier) */   // Z377 a roll (or a hard run) makes it miss: it flies on past him
         if(_was){ const _bl=Math.hypot(b.vx,b.vz)||1, _imp=Math.min(11,2.8+b.dmg*0.12); p.kbx+=(b.vx/_bl)*_imp; p.kbz+=(b.vz/_bl)*_imp; }   // shoved clearly back along the shot — feel the hit
-        else if(now < p.shieldUntil){ p.shieldHit=now; ringPulse({x:b.x,z:b.z}, 0x9ff0ff, 1.5);   // shield absorbs the shot → flash + ripple at the impact point
+        else if(now < p.shieldUntil){ p.shieldHit=now; ringPulse({x:b.x,z:b.z}, 0x9ff0ff, 1.5); conqShieldHit(b, now);   /* CONQ 1 the lava shield throws it back */   // shield absorbs the shot → flash + ripple at the impact point
           spawnPart(b.x,1.3,b.z,(Math.random()-0.5)*5,3,(Math.random()-0.5)*5,{color:0xbff2ff,size:0.7,life:0.22,grav:0,drag:5}); }
         hit=true; }
       if(!hit && CO.ai && coopBulletMate(b, _wy)) hit=true;   // COOP 5 on a co-op host the guest's soldier is struck like the host's own (the damage is sent to him)
@@ -162,7 +163,7 @@ export function updateBullets(dt, now){
 
 // Z380 what a round in flight leaves out: what its shooter stands on or in (the guard's own tower, the wall under a rifleman), our own walls for
 //   our rounds, a fortress wall above its parapet, anything at all while it is lofted high
-const _bk={ b:null, low:false, air:false }, _bskip=bl=>{ const b=_bk.b; return bl===b.ignore || (b.owner==='e' && bl===climbPerch()) || (bl.ours && b.owner==='p') || (bl.fort ? !_bk.low : _bk.air) || inShape(bl, b.ox, b.oz); };
+const _bk={ b:null, low:false, air:false }, _bskip=bl=>{ const b=_bk.b; return bl===b.ignore || (b.thin && COVER_HP[bl.kind]<=b.thin && ++CQ.st.thru) || (b.owner==='e' && bl===climbPerch()) || (bl.ours && b.owner==='p') || (bl.fort ? !_bk.low : _bk.air) || inShape(bl, b.ox, b.oz); };
 // a body beyond the face the round stopped at this frame (behind the tree, the wall, the cover): out of its reach, however close to the face
 function pastFace(b, x, z){ const dx=b.x-b._hx, dz=b.z-b._hz; return (x-b._hx)*dx+(z-b._hz)*dz > dx*dx+dz*dz; }
 // a round strikes the solid thing it reached: their fire never hurts their own objective; it chips stone it cannot break; anything else takes it

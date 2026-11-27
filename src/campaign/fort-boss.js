@@ -20,6 +20,7 @@ import { FORT, FORTBOSS, TROOPS } from '../../config.js';
 import { fortBossAct, fortBossAnim, fortBossCorpseTick, fortBossCorpsesClear, fortBossFlash, fortBossLookId, fortBossPreload, fortBossWarm } from '../hub.js';   // BOSS 2 (actors/fort-boss-glb.js)
 import { BIOME, CO, FORTS, MATE, NET_EV, S, ammoCrate, animateSoldier, bigExplode, blastAllies, bossForStage, bossStageWon, burst, clampFieldXZ, coopEnemyById, coopHostCrate, coopHurtMate, coopSendEvent, damagePlayer, diffHpMul, disposeArtZone, enemies, floatText, fortBossGlow, fortBossLook, fortBossLookClear, fortBossLookTick, fortBossPlateOff, fortBossStrip, fortFlagsTick, fortIntactCross, fortTake, freeEnemyBar, heightAt, infPushBlocks, launchEnemyMissile, loopHpMul, losBlocked, makeArtLock, nemFell, nemMeet, nemPlateEl, poseSoldier, radio, ringPulse, scene, sfx, showBanner, soldierStagePerks, spawnBullet, spawnEnemy, spawnGift, spawnPart, storyCue, tickArtLock, wakeFort, killEnemy } from '../hub.js';
 import { muzzleFX } from '../hub.js';   // GUNFX 1 (fx/gunfx.js)
+import { conqBossDef } from '../hub.js';   // CONQ 1 (campaign/conquest.js)
 
 const C = FORTBOSS, NOW = () => performance.now() / 1000, PL = ['helmet', 'chest', 'shL', 'shR', 'pack'];
 // the page's bosses (dev / probes read it): list = this battle's (host / solo) · guest = the host's, as this guest's page draws them (by fort index) ·
@@ -39,6 +40,7 @@ export function fortBossBits(pl, phase, stag){ let b = 0; for(let i = 0; i < PL.
 // who he is, by his fort: name, gun, colour (the capital's: the stage's general)
 export function fortBossDef(f){ const L = C.lands[BIOME.name] || C.lands._, K = C.kinds[f.tier] || C.kinds[1], cap = f.tier === 3, bd = cap ? bossForStage(S.stage || 1) : null;
   const d = { tier:f.tier, land:L, kind:K, capital:cap, bdef:bd, id:bd ? bd.id : '', name:bd ? bd.name : L.t + ' · ' + (f.chief || 'TƯỚNG GIỮ THÀNH'), sub:K.gun + ' · GIÁP NẶNG' };
+  if(cap) conqBossDef(d);   // CONQ 1 a fort of the conquest: its general's name and look (campaign/conquest.js)
   const LK = C.model === 'glb' && C.looks[fortBossLookId(d)]; if(LK){ if(LK.name && !bd) d.name = LK.name + ' ' + String(f.chief || '').replace(/^TƯỚNG /, ''); if(LK.sub) d.sub = LK.sub; if(LK.glow != null) d.land = { ...L, glow:LK.glow }; } return d; }   // BOSS 2 a look's own name / gun line / glow
 
 function emit(p, a, b, x, z){ FBOSS.log.push([p, a, b]); if(FBOSS.log.length > 60) FBOSS.log.shift(); if(CO.host && CO.live) coopSendEvent(NET_EV.CUE, a, b, x || 0, 0, z || 0, p); }
@@ -233,6 +235,8 @@ function down(B, now){ const e = B.e, f = B.f, def = B.def; B.st = 'dead'; B.tDo
     const u = spawnGift({ x, z }, () => { const c = soldierStagePerks()[0]; if(c){ c.apply(S.player); showBanner('CHIẾN LỢI PHẨM: ' + c.nm, '#ffd86a'); } ammoCrate(1); }); if(u && CO.ai) coopHostCrate(u); FBOSS.crate = !!u; }
   const k = FBOSS.seq; setTimeout(() => { if(k !== FBOSS.seq || S.mode === 'gameover') return; emit(C.cue.TAKEN, B.fi, 0, f.x, f.z);
     if(def.capital) bossStageWon(NOW(), def.bdef); else fortTake(f, false); B.st = 'gone'; }, 1400); }
+// CONQ 1 the ice core: he stands frozen T s (a stagger: his plates, his pack and the blade's finish open to him)
+export function fortBossFreeze(e, now, T){ const B = e && e.fortBoss; if(!B || B.st === 'dead' || B.st === 'intro' || B.st === 'pending') return false; stagger(B, now, T); return true; }
 // the boss bar (index.html #bossbar): his name, his health, what is going on
 function bar(B, on){ const bb = document.getElementById('bossbar'); if(!bb) return; if(!on){ if(FBOSS.barB === B){ bb.style.display = 'none'; FBOSS.barB = null; } return; }
   if(FBOSS.barB !== B){ FBOSS.barB = B; FBOSS.barK = ''; bb.style.display = 'block'; const nm = document.getElementById('boss-name'); if(nm){ if(B.def.capital) nemPlateEl(nm, B.def.id, B.def.name); else nm.textContent = B.def.name; } }

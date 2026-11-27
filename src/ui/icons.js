@@ -93,6 +93,19 @@ export const GLYPH={
   help:'<circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 0 1 4.8 1c0 1.7-2.4 2-2.4 3.6"/><path d="M12 17.2v.3"/>',
   keys:'<rect x="2.5" y="6.5" width="19" height="11" rx="1.6"/><path d="M6 10h1M9.5 10h1M13 10h1M16.5 10h1.5M6 13.6h1M17 13.6h1M9.5 13.8h5"/>',
   undo:'<path d="M8.5 5 4.5 9l4 4"/><path d="M4.5 9h9a5.5 5.5 0 0 1 0 11H9"/>',
+  // CONQ 1 the conquest's road (a fort, our flag, a lock) and its nine treasures (config CONQUEST.treasures[id].icon)
+  fort:'<path d="M3.5 20h17M5 20V9h2.5v2H10V9h4v2h2.5V9H19v11"/><path d="M10 20v-4.5a2 2 0 0 1 4 0V20"/>',
+  flag:'<path d="M6 21V3.5"/><path d="M6 4h11l-2.4 3.6L17 11H6"/>',
+  lock:'<rect x="5.5" y="10.5" width="13" height="10" rx="1.4"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3M12 14.5v2.4"/>',
+  tqThermal:'<circle cx="7.5" cy="13" r="3.6"/><circle cx="16.5" cy="13" r="3.6"/><path d="M11.1 12.4h1.8M3.9 12.4 2.5 9.5M20.1 12.4l1.4-2.9"/><path d="M6 13h3M15 13h3M7.5 11.5v3M16.5 11.5v3"/>',
+  tqScale:'<path d="M12 3 5 5.8v5.2c0 4.5 3 7.6 7 9 4-1.4 7-4.5 7-9V5.8L12 3Z"/><path d="M8 9.5a2 2 0 0 0 4 0 2 2 0 0 0 4 0M8 13.5a2 2 0 0 0 4 0 2 2 0 0 0 4 0M10 17a2 2 0 0 0 4 0"/>',
+  tqGhost:'<path d="M2.5 14.5h12l2-1.5h5M6 14.5l-1.5 3.5M14 13V10.5h-4"/><circle cx="12" cy="9" r="1.4"/><path d="M17 9.5c1-1.6 2.6-2.4 4.5-2.4M15.5 7c.8-2.2 2.6-3.5 5-3.5"/>',
+  tqStorm:'<rect x="7" y="8" width="8" height="13" rx="1.2"/><path d="M9.5 8V3M9.5 12h3M9.5 15h3"/><path d="M17.5 4.5a5 5 0 0 1 0 6M19.8 2.5a8 8 0 0 1 0 10"/><path d="M12.5 16.5l-1.5 2.4h2l-1.5 2.4"/>',
+  tqMask:'<path d="M4.5 8.5C6 5.5 9 4 12 4s6 1.5 7.5 4.5L18 14l-3 2.5H9L6 14 4.5 8.5Z"/><circle cx="9" cy="10" r="1.8"/><circle cx="15" cy="10" r="1.8"/><rect x="9.8" y="16.5" width="4.4" height="4" rx="1"/><path d="M11 18.5h2"/>',
+  tqMolten:'<path d="M2.5 13.5h7l2-2h4.5v4h-4.5l-2-2"/><path d="M6 13.5v3.5"/><circle cx="19" cy="7" r="1.6"/><circle cx="21" cy="11" r="1.2"/><circle cx="18.5" cy="12.6" r="1"/><path d="M16 13.5c1.5-.4 2.2-1.6 2.4-3.4"/>',
+  tqIce:'<path d="M12 2.5 19.5 7v10L12 21.5 4.5 17V7L12 2.5Z"/><path d="M12 7v10M8 9.5l8 5M16 9.5l-8 5"/>',
+  tqBreach:'<rect x="4" y="9" width="11" height="9" rx="1"/><path d="M4 12.5h11M4 15.5h11M8 9v3.5M11 12.5v3"/><path d="M15 11l2.5-2.5M17.5 8.5l1-2.5M17.5 8.5l2.6-.6M19.5 13.5l2 .5M18.8 16.2l1.6 1.3"/>',
+  tqLava:'<path d="M12 3 5 5.8v5.2c0 4.5 3 7.6 7 9 4-1.4 7-4.5 7-9V5.8L12 3Z"/><path d="M12 7.5c-1.8 2.2-2.8 3.8-2.8 5.3a2.8 2.8 0 0 0 5.6 0c0-1-.6-2-1.4-2.9-.2 1-.7 1.6-1.4 1.8.4-1.3.3-2.7 0-4.2Z"/>',
 };
 export function svgMarkup(name, sw){
   const g=GLYPH[name]||GLYPH.spark;

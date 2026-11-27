@@ -3710,3 +3710,87 @@ export const HUDCLEAN2 = {
 //   DIET 6 offThread: render/far-lod.js welds and simplifies in a worker (one big geometry held a frame 690 ms)
 export const ASSETDIET = { ktx2:true, basis:'assets/lib/basis/', simplifier:'assets/lib/meshopt/meshopt_simplifier.module.js', workers:4, probeMs:8000, offThread:true, pxFrom:['/tree/'], late:{ on:!(typeof location !== 'undefined' && /[?&]nolate\b/.test(location.search)), waitMs:4000, linkMs:900, upMs:4, maxMs:2500, matWait:6, matEvery:0.5, matBatch:16 }, drop:!(typeof location !== 'undefined' && /[?&]nodrop\b/.test(location.search)), pxHold:20,
   treeFar:{ on:!(typeof location !== 'undefined' && /[?&]notreefar\b/.test(location.search)), dir:'assets/models/real/tree/m/', at:80, max:0.6 } };
+// ============================================================================
+// CONQ 1 CHINH PHẠT 10 THÀNH (campaign/conquest.js · its map: ui/conquest-map.js) — the campaign is a road of ten forts of Hắc Thiết, taken one by one; each
+//   fort's general guards a TREASURE (báu vật) the next fort needs. A fort is a battle (a mode of campaign/mode-run.js: run.conq = the fort's index): its
+//   capital's boss is the fort's general (name, look); his fall takes the fort → the treasure's screen, the next fort opens. Kept in PROFILE.conquest
+//   { cap: forts taken (the road is in order), carry: the treasures taken into battle, sel }; an old save's campaign reach is mapped once (migrate).
+//   forts[i]: biome · name · boss (the general's name on the boss bar) · look (his model: FORTBOSS.looks) · act (index into acts) · lvl (the enemy level:
+//     stage = (lvl−1)%5+1, the NG+ loop = ⌊(lvl−1)/5⌋) · tod / wx · blurb · go (the approach mission: kind rescue | destroy, its words; PHASE 2 plays it) ·
+//     prize (the treasure won; none on the last) · rec (the treasure recommended: the one that answers its threat) · threat: what makes it hard without
+//     rec — vi / tx (the briefing), knobs [path, op, x] turned for the battle on the config roots REAL DIRECTOR FORT FORTBOSS BALANCE ($d = the difficulty;
+//     op * + =; a trailing * = every number of that object), gas (the FOUNDRY's poison clouds: n clouds of R m on the way in, dps to a man inside).
+//   treasures[id]: name · icon (ui/icons.js) · kind passive (always on) | skill (on the skill wheel, its own clock: combat/spells.js own) | gun (into his
+//     rack, combat/soldier-fire.js) · fx (what it does, the cards) · why (the next fort's line, the treasure's screen) + its numbers:
+//     thermal: every tick s each enemy soldier within R m (a marksman within snipeR) is marked mark s (a diamond through any wall, a blip on the map) ·
+//     scale: damage × k; a blow that would kill leaves him saveHp, once every saveCd s · ghost: the rifle (gun: GUNS[base] with set over it) —
+//       pierce men through, and its round passes cover pieces of at most thin health (COVER_HP: sandbags, crates, drums, tyres, logs) ·
+//     storm: n shells of R m, dmg each, over spread m round the aim point, the first at t0 s then gap s apart (campaign/surprises.js's own fire mission); cd s ·
+//     mask: the heat of lava and fire, smoke and gas × fireK (0: none) · molten: the launcher (gun) — salvo shells a pull, scat m apart, pen: full damage
+//       through heavy armour · ice: a grenade at the aim point: every man within R m held hold s (a boss staggered bossHold s); cd s ·
+//     breach: the charge set at the gate (or the wall) of a fort within reach m of him: it is blown in; wall pieces within wallR m of the blast fall; cd s ·
+//     lava: shield dur s (no round gets through), each round it stops is thrown back at its shooter for ret damage (at most retMax a shield); cd s.
+//   carry: treasures taken into a battle at most · migrate: forts taken = min(cap, the old campaign's levels cleared) · next: the treasure screen's delay s
+//   after the general falls · say: the radio and the screens' words ({fort} {boss} {t} {n}).
+// ============================================================================
+export const CONQUEST = { on:true, carry:3, migrate:{ cap:9 }, next:4.2,
+  acts:['Hồi I · Tràn biên', 'Hồi II · Truy kích', 'Hồi III · Lật ngược'],
+  forts:[
+    { biome:'DESERT', name:'Thành Cát Đỏ', boss:'CÁT ĐỘC', look:'raider', act:0, lvl:1, tod:'day', wx:'sand', prize:'thermal', rec:null,
+      blurb:'Bão cát nuốt cả chân trời. Một phi công của ta rơi giữa đồi cát — phải tới trước Hắc Thiết.',
+      go:{ kind:'rescue', tx:'Cứu phi công rơi giữa bão cát trước khi địch tới' }, threat:null },
+    { biome:'SAVANNA', name:'Đồn Sư Tử', boss:'NỮ HỔ', look:'soldierF', act:0, lvl:2, tod:'noon', wx:'clear', prize:'scale', rec:'thermal',
+      blurb:'Đoàn xe chở tù binh của ta đang lăn bánh qua đồng cỏ. Chặn nó lại trước khi nó vào đồn.',
+      go:{ kind:'rescue', tx:'Chặn đoàn xe chở tù binh, giải thoát họ' },
+      threat:{ id:'grass', vi:'Phục kích trong cỏ cao', tx:'Địch nằm trong cỏ, trồi lên sau lưng gấp ba lần.', knobs:[['REAL.surprise.w.ambush', '*', 3], ['REAL.surprise.first.*', '*', 0.45], ['REAL.surprise.every.*', '*', 0.6]] } },
+    { biome:'RUINS', name:'Thành Tro', boss:'BÓNG MA HANG', look:'stalker', act:0, lvl:3, tod:'sunset', wx:'fog', prize:'ghost', rec:'scale',
+      blurb:'Minh theo một hẻm "đã quét sạch" về phía bắc rồi mất tín hiệu. Dân thường còn kẹt trong toà nhà sập.',
+      go:{ kind:'rescue', tx:'Theo dấu Minh vào hẻm bắc; cứu dân kẹt trong toà nhà sập' },
+      threat:{ id:'sniper', vi:'Bắn tỉa trên cao', tx:'Xạ thủ bắn tỉa dày gấp ba, mỗi phát đau hơn.', knobs:[['DIRECTOR.tactics.marksman.chance', '=', 0.9], ['DIRECTOR.tactics.marksman.max', '=', 3], ['DIRECTOR.tactics.marksman.dmg', '*', 1.2]] } },
+    { biome:'CITY', name:'Thành Sắt', boss:'NỮ QUỶ', look:'demon', act:1, lvl:4, tod:'sunset', wx:'rain', prize:'storm', rec:'ghost',
+      blurb:'Một trạm tiếp sóng giữa thành phố đang đọc vị trí của tổ cho địch. Bịt miệng nó.',
+      go:{ kind:'destroy', tx:'Phá trạm tiếp sóng đang báo vị trí của tổ' },
+      threat:{ id:'nest', vi:'Ụ súng sau bao cát', tx:'Tổ đại liên ở khắp nơi, núp sau bao cát và thùng hàng.', knobs:[['DIRECTOR.tactics.mg.chance', '=', 0.95], ['DIRECTOR.tactics.mg.max', '=', 4], ['DIRECTOR.tactics.mg.hpK', '*', 1.3]] } },
+    { biome:'MEADOW', name:'Đồn Sương Độc', boss:'BÓNG ĐỘC', look:'cbrn', act:1, lvl:5, tod:'day', wx:'fog', prize:'mask', rec:'storm',
+      blurb:'Đồng cỏ trống trải, quân địch đông như kiến. Chúng thả khí độc xuống làng ven đồi.',
+      go:{ kind:'rescue', tx:'Cứu dân làng khỏi khu thả khí độc' },
+      threat:{ id:'horde', vi:'Quân đông trên đồng trống', tx:'Mỗi đợt thêm ba lính, đông lên nhanh gấp rưỡi.', knobs:[['BALANCE.wave.base', '+', 3], ['BALANCE.wave.perWave', '*', 1.5]] } },
+    { biome:'FOUNDRY', name:'Thành Lò Thép', boss:'VỆ BINH THÉP', look:'guardian', act:1, lvl:6, tod:'night', wx:'clear', prize:'molten', rec:'mask',
+      blurb:'Tiếng huýt sáo yếu ớt trên sóng — Minh còn sống, bị giam trong lò. Đường vào ngập khói độc.',
+      go:{ kind:'rescue', tx:'Cứu Minh khỏi lò giam — anh tự đi theo khi được thả' },
+      threat:{ id:'gas', vi:'Khói độc và hơi nóng', tx:'Bốn đám khí độc chắn đường vào thành.', knobs:[], gas:{ n:4, R:9, dps:9, tick:0.25, from:[0.25, 0.7] } } },
+    { biome:'ARCTIC', name:'Thành Băng', boss:'NỮ BĂNG CƠ', look:'cyborgF', act:1, lvl:7, tod:'day', wx:'snow', prize:'ice', rec:'molten',
+      blurb:'Trạm radar trên băng dẫn đường cho trực thăng địch. Trên bộ đàm, Khang nói nhiều hơn mọi khi.',
+      go:{ kind:'destroy', tx:'Phá trạm radar dẫn đường trực thăng' },
+      threat:{ id:'armour', vi:'Lính giáp nặng', tx:'Lính địch dày máu hơn 35%.', knobs:[['BALANCE.difficulty.$d.hp', '*', 1.35]] } },
+    { biome:'QUARRY', name:'Thành Đá Xám', boss:'TITAN', look:'titan', act:2, lvl:8, tod:'noon', wx:'clear', prize:'breach', rec:'ice',
+      blurb:'Thợ mỏ bị bắt làm phu đào Lõi. Hai gã khổng lồ giữ mỏ: Titan và Người Sắt Xanh.',
+      go:{ kind:'rescue', tx:'Giải thoát thợ mỏ bị bắt làm phu' },
+      threat:{ id:'titan', vi:'Titan', tx:'Tướng giữ mỏ nhanh hơn và dày máu hơn — phải ghim hắn đứng yên.', knobs:[['FORTBOSS.hp.*', '*', 1.3], ['FORTBOSS.move.speed', '*', 1.25], ['FORTBOSS.charge.cd.*', '*', 0.75]] } },
+    { biome:'VOLCANO', name:'Thành Dung Nham', boss:'HOẢ THẠCH', look:'magma', act:2, lvl:9, tod:'sunset', wx:'clear', prize:'lava', rec:'breach',
+      blurb:'Trận địa pháo trên miệng núi lửa nã về phía Thành Luỹ Cuối. Cổng thành dày như vách đá.',
+      go:{ kind:'destroy', tx:'Phá trận địa pháo bắn về phía Thành Luỹ Cuối' },
+      threat:{ id:'gate', vi:'Cổng không thể vượt', tx:'Cổng thành dày gấp năm lần.', knobs:[['FORT.tiers.1.gate', '*', 5], ['FORT.tiers.2.gate', '*', 5], ['FORT.tiers.3.gate', '*', 5]] } },
+    { biome:'CITADEL', name:'Thành Luỹ Cuối', boss:'BẠO CHÚA', look:null, act:2, lvl:10, tod:'night', wx:'rain', prize:null, rec:'lava',
+      blurb:'Theo tin giả của Khang, đánh vào cổng tây. Vợ con anh bị giam dưới hầm. Bạo Chúa chờ trên đỉnh thành.',
+      go:{ kind:'rescue', tx:'Đánh vào cổng tây; cứu vợ con Khang dưới hầm' },
+      threat:{ id:'fire', vi:'Hoả lực dày nhất', tx:'Địch bắn đau hơn 25%.', knobs:[['BALANCE.difficulty.$d.dmg', '*', 1.25]] } } ],
+  treasures:{
+    thermal:{ name:'Kính Nhiệt Sa Long', icon:'tqThermal', kind:'passive', fx:'Thấy địch qua cát, khói, cỏ cao; đánh dấu xạ thủ ẩn', why:'Savan đầy cỏ cao và phục kích.', R:42, snipeR:95, tick:0.5, mark:2.2 },
+    scale:{ name:'Giáp Vảy Hổ', icon:'tqScale', kind:'passive', fx:'Giảm 25% sát thương; đỡ một phát chí mạng mỗi 60 giây', why:'Phế tích có bắn tỉa từ trên cao.', k:0.75, saveCd:60, saveHp:1 },
+    ghost:{ name:'Súng Tỉa Bóng Ma', icon:'tqGhost', kind:'gun', fx:'Một phát xuyên hai người, bắn xuyên tấm chắn mỏng', why:'Thành phố có ụ súng núp sau bao cát.', gun:'q_ghost', base:'t_dmr', thin:120,
+      set:{ name:'SÚNG TỈA BÓNG MA', dmg:80, fireCd:0.8, mag:8, reload:2.6, pierce:1, spread:0.002, color:0xb8f0ff } },
+    storm:{ name:'Bộ Đàm Mắt Bão', icon:'tqStorm', kind:'skill', fx:'Gọi pháo kích vào điểm ngắm, 90 giây một lần', why:'Đồng cỏ trống trải, địch đông.', cd:90, n:10, R:5, dmg:90, spread:7, t0:1.6, gap:0.22 },
+    mask:{ name:'Mặt Nạ Lọc Độc', icon:'tqMask', kind:'passive', fx:'Miễn nhiễm khí độc, khói và hơi nóng', why:'Lò luyện ngập khói độc và hơi nóng.', fireK:0 },
+    molten:{ name:'Súng Phóng Lựu Thép Nung', icon:'tqMolten', kind:'gun', fx:'Bắn chùm 3 quả, phá được giáp nặng', why:'Bắc Cực có cyborg và lính giáp nặng.', gun:'q_molten', base:'t_gl',
+      set:{ name:'PHÓNG LỰU THÉP NUNG', dmg:55, fireCd:1.1, mag:9, reload:3.2, salvo:3, scat:2.6, pen:true, aoeR:3.2, bossDmg:40, color:0xff7a2a } },
+    ice:{ name:'Lõi Băng', icon:'tqIce', kind:'skill', fx:'Lựu đạn đóng băng: địch đứng im 3 giây', why:'Mỏ đá có titan, phải ghim hắn đứng im mới bắn trúng điểm yếu.', cd:25, R:7, hold:3, bossHold:3 },
+    breach:{ name:'Thuốc Nổ Phá Thạch', icon:'tqBreach', kind:'skill', fx:'Phá cổng và tường thành, mở lối tắt', why:'Thành núi lửa có cổng không thể vượt.', cd:40, reach:18, wallR:7 },
+    lava:{ name:'Khiên Dung Nham', icon:'tqLava', kind:'skill', fx:'Khiên chắn đạn trong 6 giây, bắn ngược lửa', why:'Thành Luỹ Cuối có hoả lực dày nhất.', cd:35, dur:6, ret:40, retMax:30 } },
+  say:{ tab:'chinh phạt 10 thành', hint:'Chiếm từng thành — mỗi thành cho một báu vật cần để phá thành sau', taken:'Đã chiếm', next:'Đánh tiếp', locked:'Chiếm thành trước để mở', fort:'Thành {n}/10',
+    recTag:'Khuyên dùng', carry:'Báu vật mang theo', carryTx:'Tối đa {n} món. Món khuyên dùng khắc chế mối đe doạ của thành này.', none:'Chưa có báu vật. Hạ tướng giữ thành để nhận món đầu tiên.',
+    threatOn:'Thiếu {t}: rất khó', threatOff:'Có {t}: vừa sức', briefOp:'{act} — {fort}', obj:'Hạ hết quân giữ thành, rồi hạ tướng {boss} để chiếm {fort}.',
+    open:'SCH: {fort}. Tướng giữ thành là {boss}. Dọn quân giữ thành, hắn sẽ phải ra mặt.', gas:'SCH: Khí độc phía trước — đừng đứng trong làn khói vàng!', saved:'GIÁP VẢY HỔ ĐỠ PHÁT CHÍ MẠNG!',
+    wonKick:'Đã chiếm {fort}', wonBig:'Chiếm thành', lostKick:'{fort} vẫn đứng', lost:'Rút lui', lostWhy:'Tổ phải rút khỏi {fort}. Tướng {boss} vẫn giữ thành.', retry:'Đánh lại', toMap:'Bản đồ chinh phạt',
+    prizeTag:'Báu vật mới', nextLine:'Thành kế tiếp: {fort} — {t}', replay:'Chiếm lại thành. Báu vật {t} đã có trong kho.', end:'Thành Luỹ Cuối đã đổ. Lõi được giữ, chiến tranh dừng ở đây.',
+    stats:['Hạ địch', 'Chính xác', 'Thời gian', 'Thành đã chiếm'], noAim:'Không có thành nào trong tầm', placed:'ĐẶT THUỐC NỔ!', frozen:'ĐÓNG BĂNG ×{n}', storm:'PHÁO MẮT BÃO — CHÚ Ý!' } };

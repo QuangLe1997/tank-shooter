@@ -299,6 +299,8 @@ export * from './world/sidepaint.js';   // Z179 battlefield-aware paint for both
 export * from './campaign/mode-run.js';   // MODE 3 the run kit of the extra modes: knobs turned and put back, the HUD text, the result card, the flow's five calls
 export * from './campaign/night-defence.js';   // MODE 1 THỦ ĐÊM: hold the base from dusk to dawn — assaults with lulls, the flare, sappers at the wall
 export * from './campaign/daily.js';   // MODE 2 THỬ THÁCH HÔM NAY: one battle a day for everyone — the date's seed, a modifier, a result to copy
+export * from './campaign/conquest.js';   // CONQ 1 CHINH PHẠT 10 THÀNH: ten forts in order, a treasure each, the treasures' effects, the fort's battle as a mode
+export * from './ui/conquest-map.js';   // CONQ 1 the conquest's road on the battle setup's Chiến dịch tab, a fort's card
 export * from './game/loop.js';
 export * from './game/viewport.js';
 export * from './game/boot-gate.js';

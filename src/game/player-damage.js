@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { BODYHIT, CAV, HUDCLEAN, HUDCLEAN2, RIDE_ACT } from '../../config.js';
 import { bladeGuardK, bodyHitSound, modeOver, reportRun, soldierHitFX, BEST, CV, S, clampField, heightAt, camera, cavDeathStart, cavDeathUpdate, cavRespawn, enemies, floatText, haptic, padHit, recordRun, ringPulse, saveProfile, sayVoice, sfx, show, updateHUD, rideHit, driverBack, driverDone, driverSurrender, dirDeath, nemDeathLine, nemPlayerDied, coopDie, coopGameOver, coopHurtMate, medalEnd } from '../hub.js';
+import { conqHurt } from '../hub.js';   // CONQ 1 (campaign/conquest.js)
 
 // ----------------------------- PLAYER DAMAGE / DEATH -----------------------------
 // kind = what struck him: 'shot' (a round, the default) | 'blast' | 'fire' | 'fall'; hy = how high over his feet a round arrived (m, optional: the plate carrier's tick)
@@ -12,6 +13,7 @@ export function damagePlayer(dmg, now, dx, dz, kind, hy){ if(S.player && S.playe
   dmg *= (1 - (p.armor||0));                 // ARMOR upgrade soaks a fraction of incoming damage
   dmg *= p.defK||1;                          // Z245 plate armour, and lying flat / kneeling makes a smaller target
   dmg *= bladeGuardK(dx, dz);                // BLADE 2 the blade held across him takes the edge off what comes at his front
+  dmg = conqHurt(p, dmg, now || performance.now()/1000, kind); if(!(dmg > 0)) return;   // CONQ 1 the scale armour, the gas mask (campaign/conquest.js; nothing outside a conquest battle)
   p.hp -= dmg; if(p.cav && p.bike && !fire) rideHit(dmg, dx, dz);   // Z296 the driver ducks — a heavy hit may bring the bike down
   if(p.hp > 0 && p.hp < p.maxHp*0.3 && p.hp+dmg >= p.maxHp*0.3) sayVoice('lowhp');
   // HIT REACTION — every hit is FELT: a flinch + shake scaled by the blow; HIT 1 what he hears and shows is a man's body struck — never a hull's ring, never fire on him

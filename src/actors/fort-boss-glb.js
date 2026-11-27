@@ -15,7 +15,7 @@ const C = FORTBOSS, GL = {}, CORPSES = [], _a = new THREE.Vector3(), _b = new TH
 const GUNS = {};
 const keyOf = k => 'boss_' + k;
 // which look a fort's boss wears: the capital's and some lands' are the revenant, the rest the titan (open for more: add a row to FORTBOSS.looks)
-export function fortBossLookId(def){ const P = C.pick, L = (def.capital && P.capital) || (def.tier === 2 && P.second && P.second[BIOME.name]) || P.lands[BIOME.name] || P._;
+export function fortBossLookId(def){ const P = C.pick, L = def.lookId || (def.capital && P.capital) || (def.tier === 2 && P.second && P.second[BIOME.name]) || P.lands[BIOME.name] || P._;
   for(const id of [].concat(L)) if(C.looks[id] && C.looks[id].file) return id; return P._; }   // (BOSS 3 a land's list: the first whose file is in — a row still to come stands aside for the next)   // (BOSS 3 a row whose file is still to come: the default look)
 // the battle's looks fetched ahead (and the heavy gun): ids → their glTF once in
 export function fortBossPreload(ids){ for(const id of ids){ const L = C.looks[id]; if(!L || GL[id] !== undefined) continue; GL[id] = null; MODEL_FILES[keyOf(id)] = L.file; loadGLTF(keyOf(id)).then(gl => { GL[id] = gl || false; }); }

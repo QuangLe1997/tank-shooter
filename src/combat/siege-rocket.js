@@ -59,13 +59,13 @@ export function updateRocketAim(now){
     d.scale.setScalar(0.28+f*0.14); d.material.opacity=0.62*(1-f*0.25); d.visible=true; }   // small + faint (just visible), gently fading toward the impact point
 }
 // ARC MORTAR — same lob as the rocket (cursor/nearest aim, over walls) but the shell BURSTS ON IMPACT (no fuse); rapid + lower power
-export function fireMortar(now, g, dmg){
+export function fireMortar(now, g, dmg, ox, oz){
   const p=S.player;
-  const t=rocketTarget(), tx=t.x, tz=t.z;
+  const t=rocketTarget(), tx=t.x+(ox||0), tz=t.z+(oz||0);   // (CONQ 1 ox / oz: a salvo's shell off the aim point)
   p.muzzle.getWorldPosition(_v); const sx=_v.x, sy=_v.y, sz=_v.z;   // launch from the tube mouth, same arc as the rocket
   const a=rocketArc(sx,sy,sz,tx,tz, MORTAR_ELEV, MORTAR_G);   // flatter + faster arc than the SIEGE rocket → lands quickly (low delay)
   const mesh=makeMortarShell(); mesh.position.set(sx,sy,sz); if(g.small) mesh.scale.setScalar(0.5); scene.add(mesh);
-  rockets.push({ mesh, x:sx,y:sy,z:sz, vx:a.vx, vz:a.vz, vy:a.vy, G:a.G, tx, tz, aoeR:g.aoeR||5, dmg, bossDmg:g.bossDmg||60, wipe:false, impact:true, tt:0, small:!!g.small });   // impact:true → detonate on landing, no fuse
+  rockets.push({ mesh, x:sx,y:sy,z:sz, vx:a.vx, vz:a.vz, vy:a.vy, G:a.G, tx, tz, aoeR:g.aoeR||5, dmg, bossDmg:g.bossDmg||60, wipe:false, impact:true, tt:0, small:!!g.small, pen:!!g.pen });   // (CONQ 1 pen: the armour does not take its share)   // impact:true → detonate on landing, no fuse
   if(fireFxOn()){ lobLaunchFX(sx, sy, sz, a.vx, a.vy, a.vz); return; }   // FIRE 3 the tube's thump: a small flash, grey gas along the bore (fx/blasts.js)
   for(let i=0;i<6;i++){ const sp=3+Math.random()*5; spawnPart(sx, sy, sz, a.vx*0.1+(Math.random()-0.5)*sp, a.vy*0.1+Math.random()*2, a.vz*0.1+(Math.random()-0.5)*sp, {color:0xfff0c0, color2:0xff8a20, size:0.4+Math.random()*0.3, grow:1.3, life:0.18+Math.random()*0.12, grav:5, drag:3}); }   // muzzle puff at the tube mouth
   muzzleLight.position.set(sx,sy,sz); muzzleLight.color.setHex(0xffd24a); muzzleLight.intensity=Math.max(muzzleLight.intensity,2.4);
