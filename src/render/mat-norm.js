@@ -10,7 +10,7 @@
 //   During a fight a newly loaded model is measured only once its maps are on the GPU anyway (PERF 4: no upload hitch); MATSW.norm / ?nomatnorm: off.
 import * as THREE from 'three';
 import { MATLOOK } from '../../config.js';
-import { S, renderer } from '../hub.js';
+import { S, renderer, tileSet } from '../hub.js';
 
 const N = MATLOOK.norm, TS = 16, AT = 8, RW = TS * AT;   // a tile per material, an 8×8 atlas of tiles per read-back
 const URL_OFF = typeof location !== 'undefined' && /nomatnorm/.test((location.search || '') + (location.hash || ''));
@@ -18,7 +18,7 @@ const URL_OFF = typeof location !== 'undefined' && /nomatnorm/.test((location.se
 export const MATSW = { norm:N.on && !URL_OFF, pfx:true, tile:true };
 export const MN_U = { k:{ value:MATSW.norm ? 1 : 0 } };          // 0 = every material as made, 1 = normalised
 export const MATN = { measured:0, reads:0, ms:0, stats:[] };
-export function matSwitch(){ MN_U.k.value = MATSW.norm ? 1 : 0; for(const f of SWH) try{ f(MATSW); }catch(e){} }
+export function matSwitch(){ MN_U.k.value = MATSW.norm ? 1 : 0; try{ tileSet(MATSW.tile); }catch(e){} for(const f of SWH) try{ f(MATSW); }catch(e){} }   // (MAT 2 MATSW.pfx is read where it is used)
 const SWH = []; export const onMatSwitch = f => { SWH.push(f); };
 
 // ---- the kind of a model, and its band ----

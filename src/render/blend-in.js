@@ -5,7 +5,7 @@
 //   stands). The ground, the grass carpet, glass / water, our own tank and anything already done are left alone. Same light, same air, one place.
 import * as THREE from 'three';
 import { BLEND } from '../../config.js';
-import { ARENA, BIOME, GRASS_FAR, GROUND_READY, HF, MN_GLSL_MAP, MN_GLSL_METAL, MN_GLSL_ROUGH, MN_U, S, avgOf, grassReady, groundMat, matNormRefresh, matNormStage, matNormUniform, paintContact } from '../hub.js';
+import { ARENA, BIOME, GRASS_FAR, GROUND_READY, HF, MACRO, MN_GLSL_MAP, MN_GLSL_METAL, MN_GLSL_ROUGH, MN_U, S, avgOf, grassReady, groundMat, matNormRefresh, matNormStage, matNormUniform, paintContact, TILE_U, tileRockUniform, tileStage } from '../hub.js';
 
 // a = (hue share, desaturation, dust height m, dust share) · tint = the field's hue (its colour over its brightness) · dust = the ground's colour
 export const BLEND_U = { a:{ value:new THREE.Vector4(BLEND.hue, BLEND.desat, BLEND.dustH, BLEND.dust) }, tint:{ value:new THREE.Color(1, 1, 1) }, dust:{ value:new THREE.Color(0.3, 0.28, 0.24) },
@@ -24,10 +24,14 @@ const FS = `{ vec3 c = diffuseColor.rgb; float l = dot(c, vec3(0.2126, 0.7152, 0
   c = mix(c, blendDust * (0.55 + 0.9 * l), foot * blendA.w);
   c *= 1.0 - (1.0 - smoothstep(0.0, max(blendAO.x, 1e-3), hT)) * blendAO.y;   // Z400 its foot in its own shade where it meets the ground
   diffuseColor.rgb = c; }`;
-function patch(sh, m){ sh.uniforms.blendA = BLEND_U.a; sh.uniforms.blendN = matNormUniform(m); sh.uniforms.mnK = MN_U.k; sh.uniforms.blendTint = BLEND_U.tint; sh.uniforms.blendDust = BLEND_U.dust; sh.uniforms.blendTT = BLEND_U.tt; sh.uniforms.blendTH = BLEND_U.th; sh.uniforms.blendAO = BLEND_U.ao;   // (MAT 1 blendN / mnK: the model's own correction, render/mat-norm.js, before the field's grade)
+// MAT 3 the one scan repeated across the field: lighter / darker and warmer / cooler by where it stands (world metres, the ground's own patch noise; big rocks most)
+const ROCK_GLSL = `
+if(blendV > 0.0 && tileRk.w > 0.5){ float rn = texture2D(tilePatch, vBlendW.xz * tileRk.x + vBlendW.y * tileRk.x * 0.5).r * 2.0 - 1.0, rw = texture2D(tilePatch, vBlendW.xz * tileRk.y + 0.37).r * 2.0 - 1.0;
+  diffuseColor.rgb *= (1.0 + rn * blendV) * mix(vec3(1.0), vec3(1.0 + tileRk.z, 1.0, 1.0 - tileRk.z), clamp(rw * blendV * 2.5, -1.0, 1.0)); }`;
+function patch(sh, m){ sh.uniforms.blendA = BLEND_U.a; sh.uniforms.blendN = matNormUniform(m); sh.uniforms.mnK = MN_U.k; sh.uniforms.blendV = tileRockUniform(m); sh.uniforms.tilePatch = MACRO.patch; sh.uniforms.tileRk = TILE_U.rk; sh.uniforms.blendTint = BLEND_U.tint; sh.uniforms.blendDust = BLEND_U.dust; sh.uniforms.blendTT = BLEND_U.tt; sh.uniforms.blendTH = BLEND_U.th; sh.uniforms.blendAO = BLEND_U.ao;   // (MAT 1 blendN / mnK: the model's own correction, render/mat-norm.js, before the field's grade)
   sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying float vBlendH; varying vec3 vBlendW;').replace('#include <project_vertex>', '#include <project_vertex>\n' + VS);
-  let fs = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vBlendH; varying vec3 vBlendW; uniform vec4 blendA, blendN; uniform float mnK; uniform vec3 blendTint, blendDust, blendTH; uniform vec2 blendAO; uniform sampler2D blendTT;');
-  fs = fs.includes('#include <map_fragment>') ? fs.replace('#include <map_fragment>', '#include <map_fragment>\n' + MN_GLSL_MAP) : fs.replace('#include <color_fragment>', MN_GLSL_MAP + '\n#include <color_fragment>');
+  let fs = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vBlendH; varying vec3 vBlendW; uniform vec4 blendA, blendN, tileRk; uniform float mnK, blendV; uniform sampler2D tilePatch; uniform vec3 blendTint, blendDust, blendTH; uniform vec2 blendAO; uniform sampler2D blendTT;');
+  fs = fs.includes('#include <map_fragment>') ? fs.replace('#include <map_fragment>', '#include <map_fragment>\n' + MN_GLSL_MAP + ROCK_GLSL) : fs.replace('#include <color_fragment>', MN_GLSL_MAP + ROCK_GLSL + '\n#include <color_fragment>');
   sh.fragmentShader = fs.replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n' + MN_GLSL_ROUGH).replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\n' + MN_GLSL_METAL).replace('#include <color_fragment>', '#include <color_fragment>\n' + FS); }
 // Z400 the terrain's heights as a texture (half floats, one texel a heightfield vertex — linear filtering is heightAt's own bilinear), rebuilt per stage
 function terrainTex(){ const W = HF.W, n = W * W, d = new Uint16Array(n); for(let i = 0; i < n; i++) d[i] = THREE.DataUtils.toHalfFloat(HF.h[i]);
@@ -46,7 +50,7 @@ export function blendScene(root){ try{ paintContact(); }catch(e){ console.warn('
   if(!BLEND.on) return 0; try{ terrainTex(); }catch(e){} const f = fieldColour(), l = Math.max(0.02, f.r * 0.2126 + f.g * 0.7152 + f.b * 0.0722);
   BLEND_U.tint.value.setRGB(...[f.r, f.g, f.b].map(v => Math.min(BLEND.tintMax, Math.max(BLEND.tintMin, v / l))));
   BLEND_U.dust.value.copy(f);
-  try{ matNormStage(BIOME.name); }catch(e){}   // MAT 1 this field's gain per kind of model
+  try{ matNormStage(BIOME.name); tileStage(BIOME.name); }catch(e){}   // MAT 1 this field's gain per kind of model · MAT 3 its land's colours
   const skip = S.player && S.player.mesh; let n = 0; const seen = new Set();
   root.traverse(o => { if(!o.isMesh || o.isSkinnedMesh || seen.has(o.material)) return; let p = o; while(p){ if(p === skip) return; p = p.parent; }
     for(const m of Array.isArray(o.material) ? o.material : [o.material]){ if(seen.has(m)) continue; seen.add(m); if(m) matNormRefresh(m); if(blendIn(m)) n++; } });

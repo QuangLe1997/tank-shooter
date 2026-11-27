@@ -1,6 +1,6 @@
 // world/ground.js — ARENA ground: procedural ground maps per biome, macro variation + patch textures (cached)
 import * as THREE from 'three';
-import { GROUND_PHOTO, RELIEF } from '../../config.js';
+import { GROUND_PHOTO, MATLOOK, RELIEF } from '../../config.js';
 import { cosmetic, APPLE, ARENA, GROUND_STYLE, MOBILE, _heightToNormal } from '../hub.js';
 
 // ----------------------------- ARENA -----------------------------
@@ -185,12 +185,42 @@ function decalGround(sh){ sh.uniforms.decalS = DECAL_U.decalS; sh.uniforms.decal
 //   repeats never line up), nrm: the normal from the strongest of the three hexes (as roughness already was); the base colour keeps its three
 const liteKey = () => { const L = (GROUND_PHOTO.hex || {}).lite || {}; return '|L' + (L.alt ? 'a' : '') + (L.dual ? 'd' : '') + (L.nrm ? 'n' : ''); };
 function liteDefs(){ const L = (GROUND_PHOTO.hex || {}).lite || {}; return (L.nrm ? '#define GR_LITE_NRM\n' : '') + '#define HX_ALT(s, st) ' + (L.alt ? 'hxTex1' : 'hxTex') + '(s, st)\n#define HX_DUAL(s, st) ' + (L.dual ? 'hxTex1' : 'hxTex') + '(s, st)\n'; }
+// MAT 3 NO TWO STRETCHES ALIKE: the hexes (Z405) took the photo's grid away, but from 50–150 m the field still read as one flat colour with round blotches —
+//   a lawn, a sandpit. Three more layers in the floor's own shader, all in world metres and from the two noise maps already made once (MACRO.tex / patch, baked
+//   at start): a broad drift between the land's dry and lush hue (sun-burnt and green grass, pale and red sand, ~250 m across), damp ground (darker and
+//   glossier, gathering in the hollows) and bare dirt (the land's own earth showing through, ~40 m patches). The land's colours per battlefield
+//   (MATLOOK.tile.biome); phones take the hue drift only. Big rocks and masonry get the same world-space drift in their own shader (render/blend-in.js):
+//   the one scan repeated across the field is lighter / warmer here, darker there. MATSW.tile (and ?notile) switch it off.
+const TL = MATLOOK.tile, TILE_OFF = typeof location !== 'undefined' && /notile/.test((location.search || '') + (location.hash || ''));
+export const TILE_U = { tileK:{ value:new THREE.Vector4(1 / TL.hueM, 1 / TL.dampM, 1 / TL.dirtM, TL.on && !TILE_OFF ? 1 : 0) }, tileA:{ value:new THREE.Vector4(TL.hue, 0.5, TL.dampAt, TL.hollow) },
+  tileB:{ value:new THREE.Vector4(0.3, TL.gloss, 0, 0) }, tileDry:{ value:new THREE.Color(1, 1, 1) }, tileLush:{ value:new THREE.Color(1, 1, 1) }, tileDirt:{ value:new THREE.Color(0.3, 0.25, 0.2) },
+  rk:{ value:new THREE.Vector4(1 / TL.rock.m[0], 1 / TL.rock.m[1], TL.rock.warm, TL.on && !TILE_OFF ? 1 : 0) } };
+// a battlefield's land colours (render/blend-in.js blendScene, once the stage is built)
+export function tileStage(biome){ const B = Object.assign({}, TL.biome._, TL.biome[biome] || {}); TILE_U.tileDry.value.setRGB(...B.dry); TILE_U.tileLush.value.setRGB(...B.lush); TILE_U.tileDirt.value.setHex(B.dirt);
+  TILE_U.tileA.value.y = B.damp; TILE_U.tileB.value.x = B.dirtK; }
+export function tileSet(on){ TILE_U.tileK.value.w = TILE_U.rk.value.w = on && TL.on && !TILE_OFF ? 1 : 0; }
+// a model's share of the world-space drift by its kind (MAT 1 sets userData.mcat as it loads): big rocks most, masonry less, the rest none
+const _rkU = new WeakMap();
+export function tileRockUniform(m){ let u = _rkU.get(m); if(!u){ u = { value:(TL.rock.kinds[m.userData.mcat] || 0) }; _rkU.set(m, u); } return u; }
+const TILE_GLSL = `{ vec3 c = diffuseColor.rgb; float l = dot(c, vec3(0.2126, 0.7152, 0.0722)), on = tileK.w;   // MAT 3 the land's broad dry / lush drift, damp hollows, bare dirt
+  float h = texture2D(macroMap, vWXZ * tileK.x + vec2(0.13, 0.71)).g * 2.0 - 1.0; c *= mix(vec3(1.0), h > 0.0 ? tileDry : tileLush, min(1.0, abs(h) * 1.8) * tileA.x * on);
+#ifndef TILE_LITE
+  float dn = texture2D(patchMap, vWXZ * tileK.y + vec2(0.41, 0.07)).r + max(0.0, -vRelief.x) * tileA.w; matDamp = smoothstep(tileA.z, tileA.z + 0.14, dn) * tileA.y * on;
+  c *= 1.0 - matDamp * 0.3;
+  float dr = smoothstep(0.6, 0.7, texture2D(patchMap, vWXZ * tileK.z + vec2(0.77, 0.29)).r + (texture2D(macroMap, vWXZ * tileK.z * 4.1).b - 0.5) * 0.25) * tileB.x * on;
+  c = mix(c, tileDirt * (0.75 + 0.5 * l / max(dot(tileDirt, vec3(0.2126, 0.7152, 0.0722)), 0.03) * 0.5), dr);
+#endif
+  diffuseColor.rgb = c; }`;
+function tileGround(sh){ for(const k of ['tileK', 'tileA', 'tileB', 'tileDry', 'tileLush', 'tileDirt']) sh.uniforms[k] = TILE_U[k];
+  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\n' + (MOBILE ? '#define TILE_LITE\n' : '') + 'uniform vec4 tileK, tileA, tileB; uniform vec3 tileDry, tileLush, tileDirt; float matDamp = 0.0;')
+    .replace('#include <color_fragment>', '#include <color_fragment>\n' + TILE_GLSL)
+    .replace('#include <lights_physical_fragment>', 'roughnessFactor *= 1.0 - matDamp * tileB.y;\n#include <lights_physical_fragment>'); }
 export function macroGround(mat){
   mat.onBeforeCompile=(sh)=>{ sh.uniforms.macroMap=MACRO.tex; sh.uniforms.macroAmt=MACRO.amt; sh.uniforms.macroSpan=MACRO.span; sh.uniforms.patchMap=MACRO.patch; sh.uniforms.patchCol=MACRO.pcol; sh.uniforms.patchAmt=MACRO.pamt;
     sh.uniforms.altMap=PHOTO_U.altMap; sh.uniforms.altOn=PHOTO_U.altOn; sh.uniforms.altScale=PHOTO_U.altScale; sh.uniforms.dual=PHOTO_U.dual; sh.uniforms.hxP=PHOTO_U.hex; sh.uniforms.wetK=WET_U.k; sh.uniforms.nrmVar=PHOTO_U.nrmVar; sh.uniforms.grassCol=GRASS_FAR.col; sh.uniforms.grassC=GRASS_FAR.c; sh.uniforms.grassK=GRASS_FAR.k; sh.uniforms.rel0=RELIEF_U.rel0; sh.uniforms.rel1=RELIEF_U.rel1; sh.uniforms.bowlTint=RELIEF_U.bowlTint; sh.uniforms.earthCol=RELIEF_U.earth;
     sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float macroSpan; varying vec2 vMacroUv; attribute vec2 aRelief; varying vec2 vRelief; varying vec2 vWXZ; varying float vWY;').replace('#include <project_vertex>','#include <project_vertex>\nvec4 mwp = modelMatrix * vec4(transformed,1.0); vMacroUv = mwp.xz*macroSpan + 0.5; vRelief = aRelief; vWXZ = mwp.xz; vWY = mwp.y;');
     sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform vec4 rel0, rel1; uniform vec3 bowlTint, earthCol; varying vec2 vRelief;\nuniform sampler2D macroMap, patchMap; uniform float macroAmt, patchAmt; uniform vec3 patchCol; varying vec2 vMacroUv;\nuniform sampler2D altMap; uniform float altOn, altScale, dual, nrmVar; varying vec2 vWXZ;\nuniform vec3 grassCol; uniform vec4 grassC, grassK; uniform vec4 wetK; varying float vWY; float wetR = 0.0;')
       .replace('#include <map_fragment>','#include <map_fragment>\nvec3 altC = vec3(0.0);\n#ifdef USE_MAP\nif(altOn>0.5){ altC = HX_ALT(altMap, vWXZ*altScale).rgb; float dm = texture2D(macroMap, vMacroUv*5.0).g; diffuseColor.rgb = mix(diffuseColor.rgb, HX_DUAL(map, vMapUv*0.29 + vec2(0.37, 0.11)).rgb, smoothstep(0.38, 0.62, dm)*dual); }\nhxNv = clamp(1.0 + nrmVar*(texture2D(macroMap, vMacroUv*3.7 + 0.31).b*2.0 - 1.0)*1.8, 0.3, 1.8);\n#endif\n{ float gw = grassK.x * smoothstep(grassC.z, grassC.w, distance(vWXZ, grassC.xy)); if(gw > 0.001){ float gl = clamp(dot(diffuseColor.rgb, vec3(0.333)) / max(grassK.y, 1e-3), 0.55, 1.5); diffuseColor.rgb = mix(diffuseColor.rgb, grassCol * gl, gw); } }\n{ vec3 mc = texture2D(macroMap, vMacroUv).rgb; float dl = dot(diffuseColor.rgb, vec3(0.333)); float pv = texture2D(patchMap, vMacroUv*1.6).r + (dl-0.35)*0.5;\n  float pm = smoothstep(0.56, 0.66, pv)*patchAmt; diffuseColor.rgb = mix(diffuseColor.rgb, altOn>0.5 ? altC : patchCol*(0.7+dl*0.9), pm);\n  diffuseColor.rgb *= mix(vec3(1.0), mc*2.0, macroAmt); }\n'+RELIEF_GLSL+'\n{ wetR = wetK.y * (1.0 - smoothstep(wetK.x, wetK.x + wetK.z, vWY)); diffuseColor.rgb *= 1.0 - wetK.w * wetR; }').replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.3, wetR * 0.85);'); sh.fragmentShader=noTile(sh.fragmentShader); };   // Z405 the wet banks
-  { const f0=mat.onBeforeCompile; mat.onBeforeCompile=(sh, r)=>{ f0(sh, r); decalGround(sh); }; }
+  { const f0=mat.onBeforeCompile; mat.onBeforeCompile=(sh, r)=>{ f0(sh, r); decalGround(sh); tileGround(sh); }; }   // (MAT 3 after the hexes and the scars)
   mat.customProgramCacheKey=()=>'macroGround5'+liteKey(); return mat;
 }

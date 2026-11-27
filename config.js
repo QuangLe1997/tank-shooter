@@ -2282,6 +2282,16 @@ export const MATLOOK = {
     ramps:{ pGlow:[[0, 0xffffff, 1, 1], [0.45, 0xffffff, 1, 1], [1, 0xffffff, 0, 1]] },
     kinds:{ pSpark:{ ramp:'pGlow', cells:[14, 1], layer:1, s:[1.6, 0.1], hot:0.8, stretch:0.025, prio:1 }, pFlash:{ ramp:'pGlow', cells:[13, 1], layer:1, s:[1, 0.05], hot:0.7, prio:2 },
       pFire:{ ramp:'pGlow', cells:[0, 7], layer:1, s:[1, 0.55], sit:0.42, spin:0.6, hot:0.55, prio:1 } } },
+  // MAT 3 no two stretches alike (world/ground.js; render/blend-in.js for big rocks): hue = how far the land drifts between its dry and lush colour over hueM
+  //   metres; damp patches over dampM m (from dampAt of the noise, hollows pulled in by hollow), darker and glossier (gloss = roughness taken off); bare dirt over
+  //   dirtM m; biome = the land's colours (dry / lush × its colour, dirt colour, damp share, dirt share; _ = the rest); rock = the world-space drift on a kind
+  //   of model (kinds: share of brightness swing, m = [blotch, warmth] scale in metres, warm = the warm / cool swing)
+  tile:{ on:true, hue:0.34, hueM:260, dampM:70, dampAt:0.58, hollow:0.6, gloss:0.45, dirtM:38,
+    biome:{ _:{ dry:[1.1, 1.04, 0.88], lush:[0.92, 0.98, 1.0], dirt:0x5a4a38, damp:0.4, dirtK:0.35 },
+      MEADOW:{ dry:[1.24, 1.12, 0.7], lush:[0.82, 1.0, 0.8], dirt:0x4a3a28, damp:0.6, dirtK:0.5 }, SAVANNA:{ dry:[1.14, 1.06, 0.82], lush:[0.9, 1.0, 0.86], dirt:0x6a4a30, damp:0.25, dirtK:0.3 },
+      DESERT:{ dry:[1.08, 1.04, 0.94], lush:[1.04, 0.9, 0.8], dirt:0x6e5840, damp:0.12, dirtK:0.22 }, ARCTIC:{ dry:[1.02, 1.02, 1.04], lush:[0.92, 0.96, 1.03], dirt:0x5c6066, damp:0.3, dirtK:0.15 },
+      VOLCANO:{ dry:[1.1, 1.0, 0.92], lush:[0.9, 0.9, 0.95], dirt:0x2a2522, damp:0.1, dirtK:0.3 }, CITY:{ dry:[1.04, 1.02, 0.98], lush:[0.95, 0.97, 1.0], dirt:0x3e3a34, damp:0.45, dirtK:0.2 } },
+    rock:{ kinds:{ stone:0.2, masonry:0.1 }, m:[22, 70], warm:0.06 } },
 };
 // Z400 CONTACT (world/decals.js paintContact, read by the ground's shader): things stood on the floor like cut-outs — a hard line where a wall met the grass, no
 //   shade under a rock, the same clean sand right up to a pipe. Once a stage is built every solid footprint (blocks: walls, cover, rocks, camps,
