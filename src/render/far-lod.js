@@ -76,6 +76,8 @@ export function farLOD(m, far){ if(!FARLOD.on || !m || !m.isMesh || m.isInstance
 //   frame) for a 2048² depth map in which a 6k-triangle prop and its 1k-triangle copy cast the same shade. Every opaque caster above SHADOWLOD.min
 //   triangles gets a position-only copy (welded, so the simplifier can really collapse it) at SHADOWLOD.keep of its triangles; during the shadow
 //   pass the caster wears it, then its own geometry again. Skinned / custom-depth / cut-out (alpha-tested) casters keep their own.
+// SECTOR 1 a geometry's shadow copy, if it has one (render/renderer.js gpuHeld: a copy is drawn only inside the shadow pass, so a scene walk never meets it — the field torn down left every copy on the GPU)
+export function shadowCopy(geo){ return SH.get(geo) || null; }
 const SH = new WeakMap(), SH_BY = new WeakMap();   // geometry → its shadow copy · scene → { casters, passes } (each scene its own list: the radar / showroom renders draw other scenes)
 function shadowGeo(geo){ if(SH.has(geo)) return SH.get(geo); SH.set(geo, null);
   simplifier().then(S => S && job(() => { const A = geo.attributes.position, f = new Float32Array(A.count * 3); for(let i = 0; i < A.count; i++){ f[i * 3] = A.getX(i); f[i * 3 + 1] = A.getY(i); f[i * 3 + 2] = A.getZ(i); }   // (plain floats, a meshopt-packed glTF's interleaved / quantized positions too)

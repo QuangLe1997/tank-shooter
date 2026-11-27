@@ -224,7 +224,7 @@ function brickSlices(){ if(BRK.p) return BRK.p; const C = SCENERY.bricks;
     g.dispose(); return { slices:out, mat:L.mat }; })); }
 function realBricks(gen){ if(MOBILE || !blocks.some(b => b.kind === 'brick')) return; brickSlices().then(W => { if(!W || gen !== GEN) return; let k = 0;
     for(const b of blocks){ if(b.kind !== 'brick' || !b.wall || b.dead || b.mesh.userData.real) continue; b.mesh.userData.real = true; const sl = W.slices[(k++ * 7 + 3) % W.slices.length];
-      b.wall.bands.forEach((m, i) => { if(!m) return; if(sl[i]){ m.geometry = sl[i]; m.material = W.mat; } else m.visible = false; }); } }); }
+      b.wall.bands.forEach((m, i) => { if(!m) return; if(sl[i]){ const o = m.geometry; m.geometry = sl[i]; m.material = W.mat; if(o !== sl[i]) o.dispose(); } else m.visible = false; }); } }); }   // SECTOR 1 the procedural band it replaces is let go (drawn once while the slices loaded, it stayed on the GPU field after field)
 
 // Z386 THE CITY'S STREET FURNITURE FOR REAL (world/city.js): the concrete power poles that carry the sagging lines become the scanned transformer
 //   pole (lamp arm, transformer can, crossarm — one instanced draw, still toppling with its wires), and roofs get their water tanks and masts

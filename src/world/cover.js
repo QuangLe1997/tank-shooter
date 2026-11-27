@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { BALANCE, DEFENSE, FUEL_DRUM, RAM, HARD, OPEN_LAND, REALROCK, SHATTER, FUEL_TANK, BREAKUP } from '../../config.js';
 import { CO, coopBlockDamage, modeSeed, AREA_K, ARENA, BIOME, BUMPS, CONTAINER_PAINT, COVER_HP, COVER_K, COVER_R, COVER_SET, DEF, HEAVY_KINDS, LONE_SET, MOBILE, S, _R, addLootBeacon, dressRock, aoeDamage, bigExplode, buildBrickWalls, buildCamps, buildCoreWalls, buildDefense, garrisonDefense, buildLandmarks, buildRidges, buildScenery, buildSupply, buildTowers, buildZones, buildingHit, burst, camera, clearLootBeacons, clearRubble, clearWallMarks, clearWalls, collapseTower, coverGeo, coverMat, coverVariant, damageCamp, damageEnemy, damageGate, damageObjective, damagePlayer, decalCrater, decalScorch, deformCrater, dropPowerup, enemies, fireball, flashMat, floatText, fortCoreHit, fortWallHit, freeEnemyBar, garrisonSupply, getEnemyBar, heightAt, hitTunnel, inField, inZone, leaveRubble, makeCoverMesh, placeCaches, planZones, resetSupply, ridgeRockDown, rockSet, scene, sfx, spawnDebris, spawnPart, supplyDamage, trackCover, underHit, wallDamage, clearShatter, shatter, solidKind, blastAllies, dropScenePiece, tentHit, blockTop, shockDome, blastLight, decalAsh, dirtGeyser, dustSkirt, coopSeedStep } from '../hub.js';
+import { sectorLay, pruneCover } from '../hub.js';   // SECTOR 1
 
 // ----------------------------- TERRAIN BLOCKS (cover) -----------------------------
 // Brick (destructible) + steel (solid). Block tank movement + bullets → real cover.
@@ -22,7 +23,7 @@ export function buildBlocks(){
   modeSeed(5); coopSeedStep(11); buildLandmarks();                                                      // Z139 city buildings · hill woods · village houses + paddies (they claim their ground before cover is scattered)
   modeSeed(6); coopSeedStep(12); buildDefense();                                                        // Z420 the enemy's belt, checkpoints and fighting positions — laid before the scatter, which keeps off them
   modeSeed(7); coopSeedStep(13); const set=COVER_SET[BIOME.name]||COVER_SET.DESERT;
-  const shapeCount = Math.round((4 + Math.floor(S.stage*1.2))*AREA_K*((OPEN_LAND[BIOME.name]||{}).cover||1));   // Z242 town / countryside: more open ground   // Z104 more cover on the wider field (soldiers need somewhere to hide)
+  const shapeCount = Math.round((4 + Math.floor(S.stage*1.2))*AREA_K*((OPEN_LAND[BIOME.name]||{}).cover||1)*((sectorLay()||{}).cover||1));   // SECTOR 1 × the sector's cover   // Z242 town / countryside: more open ground   // Z104 more cover on the wider field (soldiers need somewhere to hide)
   const centers=[];
   let tries=0;
   while(centers.length<shapeCount && tries++<260){
@@ -81,6 +82,7 @@ export function buildBlocks(){
   modeSeed(13); buildScenery();                                                                          // Z141 trees · bushes · flowers · reeds · haystacks
   modeSeed(14); garrisonSupply();   // Z194 guards + guard tanks (after buildZones cleared its own)
   garrisonDefense();   // Z423 the men at the defence's posts
+  pruneCover(scene);   // SECTOR 1 the last field's cover pieces let go (world/real-props.js)
   modeSeed(15);   // MODE 2 (every modeSeed in here: the daily challenge's battlefield, each step from its own stream of the day's seed — campaign/mode-run.js; a no-op in every other battle)
 }
 // hit feedback + staged damage per material; destruction is material-specific (fuel drums EXPLODE and hurt everything around)

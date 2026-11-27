@@ -1,0 +1,37 @@
+/* SECTOR 1 a long battle's sectors (ui/sector-hud.js): THE RAIL — small, at the top, the menus' step rail at HUD size (square numbers, tracked
+   capitals, amber for the one in hand, green ticks behind) — and THE TRANSIT between two sectors: letterbox bars, a black that fades, the card, the radio.
+   Only opacity / transform animate. NOTHING in the aim zone (the central ~60% × 55%): the rail sits in the top band under the score bar and the contract chip,
+   the transit's card inside the top letterbox bar, its radio inside the bottom one. */
+#secRail{position:absolute;left:50%;top:calc(env(safe-area-inset-top,0px) + 136px);transform:translateX(-50%);display:flex;align-items:center;gap:0;pointer-events:none;
+  font:700 11px/1 var(--k-ui,'Saira Condensed',sans-serif);letter-spacing:.12em;text-transform:uppercase;color:rgba(238,231,210,.42);white-space:nowrap;
+  text-shadow:0 1px 3px rgba(0,0,0,.85);opacity:.92;padding:3px 8px;background:linear-gradient(90deg,transparent,rgba(9,11,8,.5) 12%,rgba(9,11,8,.5) 88%,transparent);}
+#secRail.hidden{display:none;}
+#secRail > i{width:16px;height:1px;margin:0 5px;background:rgba(214,226,196,.32);}
+#secRail .sr-s{display:flex;align-items:center;gap:5px;}
+#secRail .sr-s b{width:16px;height:16px;display:grid;place-items:center;font:400 10px/1 var(--k-mono,'Share Tech Mono',monospace);letter-spacing:0;
+  border:1px solid rgba(214,226,196,.35);background:rgba(9,11,8,.55);color:rgba(238,231,210,.6);}
+#secRail .sr-s.done{color:rgba(159,220,88,.75);} #secRail .sr-s.done b{background:#4f8a24;border-color:transparent;color:#fff;}
+#secRail .sr-s.on{color:var(--k-acc-hi,#ffd27a);} #secRail .sr-s.on b{background:linear-gradient(180deg,var(--k-acc-hi,#ffd27a),var(--k-acc,#ffae34));border-color:transparent;color:var(--k-acc-ink,#1b1104);}
+#secRail .sr-t{margin-left:9px;font:400 11px/1 var(--k-mono,'Share Tech Mono',monospace);letter-spacing:.04em;color:var(--k-acc-hi,#ffd27a);font-style:normal;}
+#secRail .sr-t.hidden{display:none;}
+body.touch #secRail{top:calc(env(safe-area-inset-top,0px) + 46px);font-size:10px;}
+body.touch #secRail .sr-s:not(.on) > span{display:none;} body.touch #secRail > i{width:8px;margin:0 3px;}
+
+#secTransit{position:fixed;inset:0;z-index:40;pointer-events:none;visibility:hidden;}
+#secTransit.on{visibility:visible;}
+#secTransit .st-bar{position:absolute;left:0;right:0;height:16vh;background:#000;transform:scaleY(0);transition:transform .6s cubic-bezier(.2,.8,.2,1);}
+#secTransit .st-top{top:0;transform-origin:50% 0;} #secTransit .st-bot{bottom:0;transform-origin:50% 100%;}
+#secTransit.on .st-bar{transform:scaleY(1);}
+#secTransit .st-black{position:absolute;inset:0;background:#050604;opacity:0;transition:opacity .7s ease;}
+#secTransit.black .st-black{opacity:1;}
+#secTransit .st-card{position:absolute;left:50%;top:calc(env(safe-area-inset-top,0px) + 8vh);transform:translate(-50%,-50%);width:max-content;max-width:92vw;text-align:center;opacity:0;transition:opacity .5s ease;}
+#secTransit.on .st-card{opacity:1;}
+#secTransit .st-kick{margin:0 0 5px;font:600 11px/1 var(--k-ui,'Saira Condensed',sans-serif);letter-spacing:.32em;color:var(--k-acc,#ffae34);}
+#secTransit .st-ttl{margin:0;font:400 clamp(20px,3vw,40px)/1 var(--k-stencil,'Saira Stencil One',sans-serif);letter-spacing:.05em;color:#ece0c2;text-shadow:0 4px 24px rgba(0,0,0,.7);}
+#secTransit .st-goal{margin:5px 0 0;font:600 clamp(11px,1.1vw,15px)/1.2 var(--k-ui,'Saira Condensed',sans-serif);letter-spacing:.06em;color:rgba(236,224,194,.82);}
+#secTransit .st-line{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 8vh);transform:translate(-50%,50%);margin:0;max-width:80vw;text-align:center;opacity:0;
+  font:500 clamp(13px,1.25vw,17px)/1.3 var(--k-mono,'Share Tech Mono',monospace);color:#bfe39a;text-shadow:0 1px 6px #000;transition:opacity .35s ease;}
+#secTransit .st-line.on{opacity:1;}
+body.sectx #hud,body.sectx #touch{opacity:0;pointer-events:none;}
+body.sectgo #countdown,body.sectgo #cdSub{display:none!important;}   /* a sector's 3-2-1: heard, not shown (campaign/sectors.js goQuiet) */
+@media (orientation:landscape) and (max-height:520px){ #secTransit .st-bar{height:18vh;} #secTransit .st-card{top:calc(env(safe-area-inset-top,0px) + 9vh);} #secTransit .st-kick{font-size:9px;margin-bottom:3px;} #secTransit .st-ttl{font-size:19px;} #secTransit .st-goal{font-size:11px;margin-top:3px;} #secTransit .st-line{bottom:9vh;font-size:12px;} }

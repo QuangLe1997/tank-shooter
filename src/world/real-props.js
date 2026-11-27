@@ -7,6 +7,9 @@ export const REAL_COVER = { live:new Set(), done:false, fits:{} };
 let _p = null;
 // every cover mesh, however it was made, registers here (added → tracked, removed → dropped)
 export function trackCover(m){ m.addEventListener('added', () => REAL_COVER.live.add(m)); m.addEventListener('removed', () => REAL_COVER.live.delete(m)); return m; }
+// SECTOR 1 a piece that left the battle inside its group (a fort, a camp, a wall run taken down whole) never hears 'removed': once the new field stands
+//   (world/cover.js buildBlocks) every piece no longer under the scene is let go (it held its whole old group alive)
+export function pruneCover(scene){ for(const m of REAL_COVER.live){ let q = m; while(q.parent) q = q.parent; if(q !== scene) REAL_COVER.live.delete(m); } }
 export function loadRealCover(){
   if(_p) return _p;
   if(typeof window === 'undefined') return (_p = Promise.resolve(false));

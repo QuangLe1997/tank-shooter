@@ -2,15 +2,20 @@
 //   the commander of the stage waits in his citadel and meets the soldier on foot with his bodyguards (campaign/general-duel.js); his fall wins the stage —
 //   the payout, the citadel falls, the next stage opens, the pick of rewards — and the last one wins the campaign
 
+import { sectorBossHold, sectorStageWon } from '../hub.js';   // SECTOR 1 (campaign/sectors.js)
 import { modeBossHold, modeStageWon, dirWin, reportRun, ARENA, BOSS_ALT, BOSS_DEFS, BOSS_NEW, PROFILE, S, campaignCleared, celebrate, duelOn, fortBossDown, generalStart, nemWinBanner, nemWon, openUpgrade, recordRun, refreshStartUI, saveProfile, saveProgress, show, showBanner, sfx, storyEpilogue, updateHUD, coopStageWon, medalEnd } from '../hub.js';
 
 export function bossForStage(st){ const alt=(S.loop||0)%2===1 && BOSS_ALT[st]; return (alt && BOSS_NEW.find(b=>b.id===alt)) || BOSS_DEFS[Math.min(st-1, BOSS_DEFS.length-1)]; }   // Z161 odd NG+ loops bring the new generals
 // the general takes the field: in the citadel f (its yard), else (a field without forts) at the far end of the field
-export function startBoss(now, f){ if(duelOn() || !S.player || modeBossHold()) return;   /* MODE 1 on a night defence he leads the last assault instead (campaign/night-defence.js) */ const def = bossForStage(S.stage), at = f ? { x:f.x, z:f.z } : { x:0, z:-ARENA * 0.5 };
+export function startBoss(now, f){ if(duelOn() || !S.player || sectorBossHold() || modeBossHold()) return;   /* SECTOR 1 a sector whose goal is not the general keeps him away */   /* MODE 1 on a night defence he leads the last assault instead (campaign/night-defence.js) */ const def = bossForStage(S.stage), at = f ? { x:f.x, z:f.z } : { x:0, z:-ARENA * 0.5 };
   generalStart(at, def, n => bossStageWon(n, def)); }
 // the stage is won: the citadel falls, the next stage opens, the pick of rewards
 export function bossStageWon(now, bdef){
+  if(sectorStageWon(now, bdef)) return;   // SECTOR 1 a sector run: his fall is the boss sector's goal — the run's win comes once its LAST sector is done (its sectorBattle onWon, else the mode's, else stageWon) (campaign/sectors.js)
   if(modeStageWon(now, bdef)) return;   // MODE 3 a mode's battle ends here: no next stage, no campaign progress, no report (campaign/mode-run.js)
+  stageWon(now, bdef); }
+// SECTOR 1 THE BATTLE IS WON — the one place a stage's win goes through (the general's fall · the last sector of a sector run · bdef null: the stage's general)
+export function stageWon(now, bdef){ bdef = bdef || bossForStage(S.stage);
   showBanner(nemWinBanner(bdef.id) || 'ĐÃ HẠ '+bdef.name+'!', '#8cbf3f', true); sfx('levelup');   // NEMESIS 1 (the stage is won all the same when its general got away)
   fortBossDown();                                   // Z107 the citadel falls with its commander
   dirWin();                                         // DIR 3 the stage is won: the director's easing after two deaths is taken back

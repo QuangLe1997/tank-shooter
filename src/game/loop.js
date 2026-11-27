@@ -5,6 +5,7 @@ import { updateWaterSpray } from '../hub.js';   // HSWIM 2 (fx/water-spray.js)
 import { updateFortBoss } from '../hub.js';   // BOSS 1 (campaign/fort-boss.js)
 import { tierDprTop } from '../hub.js';   // SPLIT 3 (render/quality.js)
 import { comboTick } from '../hub.js';   // HUDCLEAN 2 (game/score.js)
+import { updateSectors, updateSectorTransit } from '../hub.js';   // SECTOR 1 (campaign/sectors.js)
 
 // ----------------------------- MAIN LOOP -----------------------------
 const NOGOV=typeof location!=='undefined' && /[?&]nogov\b/.test(location.search);   // PERF 1 ?nogov holds the governor still (the resolution and the occlusion pass stay as they start): for measuring
@@ -68,6 +69,7 @@ export function loop(nowMs){
     updateBridges(gdt, now); updateCamps(gdt, now);   // Z90 rope bridges + enemy camps
     updateWaves(dt, now);               // wave timers run real-time
     updateModes(gdt, now);              // MODE 3 night defence / the daily challenge, right after the waves they steer (campaign/mode-run.js)
+    updateSectors(gdt, now);            // SECTOR 1 the sector's goal, its clock, its climax (campaign/sectors.js)
     updatePickups(gdt, now); updateGifts(gdt, now); updateRelic(gdt, now); updateLogistics(gdt, now); updateQuiet(gdt, now);   // SUPPLY 1 ammunition reserves (game/logistics.js) · SUPPLY 3 the knife, bodies, the alarm, the eye (game/quiet.js)
     updateLootBeacons(dt);               // glowing markers on bricks/tanks that hide a power-up
     updateDroneWar(gdt, now);   // DRONE 1 the drones of both sides (actors/drone.js)
@@ -93,6 +95,7 @@ export function loop(nowMs){
   else if(S.mode==='intro'){ S.timeNow=now; updateIntro(dt, now); updateWildlife(dt, now); cavIdle(dt); updateTraffic(dt); }   // Z288 the city's traffic moves under the opening shots
   else if(S.mode==='countdown'){ S.timeNow=now; updateCountdown(dt); updateCamera(dt, now); cavIdle(dt); }   // Z136 3 · 2 · 1: the world waits
   else if(S.mode==='dying'){ S.timeNow=now; updateDeath(dt, now); }   // death → respawn cinematic (flip + burn + close cam)
+  else if(S.mode==='transit'){ S.timeNow=now; updateSectorTransit(dt, now); }   // SECTOR 1 between two sectors: the black, the build, the drop onto the new field
   coopTick(dt, now, nowMs);   // COOP 5 each page's soldier to the other, the host's snapshot (returns at once without a room)
   // always-on FX + core idle
   if(S.mode!=='playing'){ droneWarIdle(); updateSquadHud(now); gradePass.uniforms.aberr.value*=0.85; rangeRing.visible=false; radarCtx.clearRect(0,0,radarCanvas.width,radarCanvas.height); }

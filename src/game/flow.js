@@ -2,6 +2,7 @@
 import { CAV, CORE_DEF } from '../../config.js';
 import { fieldWait, modeSeed, clearBigEvents, clearSideMissions, modelEpoch, veilOrder, askConfirm, confirmOpen, opFor, biomeVi, BIOME, SOLDIER, reportRun, CV, GUNS, cavRespawn, clearSoldierWar, driverBack, magCap, makeCavPlayer, rankReset, squadReset, trooperGuns, duelReset, gpuHeld, gpuRelease, clearGifts, VOICE_RULES, ARENA, MOBILE, PROFILE, S, WAVE, __set__alarmAt, __set_soldierLvl, applyBiome, applyContractHUD, audio, buildBlocks, buildCore, buildLava, buildObjective, buildTrails, buildUnderground, bullets, clearAllyOrdnance, clearEnemyMissiles, clearEquip, clearFieldcraft, clearFireteam, clearHeliDown, clearHelis, clearInfDead, clearLadders, clearLootBeacons, clearObjective, clearParadrops, clearPickups, clearRelic, clearSoldiers, clearSquads, clearSurprises, core, deploySoldiers, dropCavPlayer, enemies, enemyPool, freeEnemyBar, preloadVoices, queueResize, recycleBullet, refreshStartUI, reqFs, saveProfile, scene, sfx, showVeil, skipIntro, startIntro, startMusic, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD, openBattleSetup, clearDroneWar, clearLogistics, clearQuiet, clearFireFX, modeBegin, modeReady, modeQuit, modePauseTx, coopActive, coopFieldBuilt, coopBuildField, medalEnd, medalHush } from '../hub.js';
 import { loadMark } from '../hub.js';   // SPLIT 3 (render/quality.js)
+import { sectorBegin, sectorEnd } from '../hub.js';   // SECTOR 1 (campaign/sectors.js)
 
 // ----------------------------- GAME FLOW -----------------------------
 // Z107 startGame(arg): true = CONTINUE the campaign checkpoint · {mode:'campaign'|'custom', level, …} = a battle from the setup screen ·
@@ -23,7 +24,7 @@ export function startGame(arg){
   const stLoop  = resume ? (PROFILE.save.loop|0) : Math.floor((L-1)/5);
   S.runId = Date.now().toString(36)+Math.random().toString(36).slice(2,6);   // Z163 the leaderboard follows one run's score
   S.run = cfg ? { ...cfg, level:L } : { mode:'campaign', level:stLoop*5+stStage }; S.runCfg = { ...S.run };
-  modeBegin(S.run);   // MODE 3 whatever a night defence / a daily challenge changed is put back; this run's mode, if it is one, turns its knobs (campaign/mode-run.js)
+  sectorBegin(S.run); modeBegin(S.run);   // SECTOR 1 a run that carries sectors: the first one's layout is known before the field is built; first, so a mode's begin can declare one (sectorBattle) (campaign/sectors.js) · MODE 3 whatever a night defence / a daily challenge changed is put back; this run's mode, if it is one, turns its knobs (campaign/mode-run.js)
   if(!['cav','xeom','bagac','bantai'].includes(PROFILE.unit)) PROFILE.unit = ['cav','xeom','bagac','bantai'].includes(PROFILE.lastRide) ? PROFILE.lastRide : 'xeom';   // (no-tanks: an old profile's tank or xích lô → his last ride, else the xe ôm)
   const cavKind = PROFILE.unit==='cav' ? null : PROFILE.unit;   // Z245 the unit picked in CHUẨN BỊ TRẬN · Z282 or the xe ôm / ba gác / bán tải
   if(S.player && (!S.player.cav || (S.player.bike||null)!==cavKind)){ if(S.player.cav) dropCavPlayer(S.player); else scene.remove(S.player.mesh); S.player=null; }   // a different ride was picked → the new one rolls out
@@ -47,10 +48,7 @@ export function startGame(arg){
   rankReset(); squadReset(); duelReset();   // Z350 Binh nhì again · Z351 his two men · Z353 no duel left over
   p.buffUntil.range=0; p.scale=1;
   // clear combat
-  for(let i=bullets.length-1;i>=0;i--) recycleBullet(i);
-  for(const e of enemies){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); freeEnemyBar(e.bar); e.bar=null; }
-  enemies.length=0; clearSquads(); clearFieldcraft(); clearHelis(); clearSurprises(); clearSideMissions(); clearBigEvents(); clearFireFX(); clearPickups(); clearGifts(); clearLogistics(); clearQuiet(); clearDroneWar(); clearSoldiers(); clearFireteam(); clearLootBeacons(); clearEnemyMissiles(); clearInfDead(); clearHeliDown(); clearEquip(); clearObjective(); clearParadrops(); clearAllyOrdnance(); __set_soldierLvl(0); deploySoldiers(SOLDIER.base); document.body.classList.remove('corelow'); __set__alarmAt(0);
-  duelReset();   // (no-tanks: the stage's general, on foot)
+  clearField(); __set_soldierLvl(0); deploySoldiers(SOLDIER.base);
   document.getElementById('bossbar').style.display='none';
   S.timeScale=1; S.awaitingUpgrade=false; S.cmd=null; S.contract=null; applyContractHUD();   // fresh run → no contract until the stage-1 briefing
   core.maxHp=CORE_DEF.hp; core.hp=CORE_DEF.hp; core.shieldReady=0; core.shieldUntil=0;
@@ -68,6 +66,16 @@ export function startGame(arg){
   updateHUD();
   modeReady();           // MODE 3 a mode's soldier: his guns, his lives, his skills (campaign/mode-run.js)
   startIntro();          // deploy showcase → hands off to gameplay camera, then play begins
+}
+// SECTOR 1 nothing of the fight is left on the field: rounds, enemies (back to their pools), squads, helicopters, the side mission, the big event, fire, pickups, crates,
+//   the supply line's drops, the quiet kills, drones, our guard squad and fireteam, beacons, missiles, the dead, the objective, paratroopers, our ordnance, the general's duel
+//   (startGame before a new battle · campaign/sectors.js before the next sector's field is built)
+export function clearField(){
+  for(let i=bullets.length-1;i>=0;i--) recycleBullet(i);
+  for(const e of enemies){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); freeEnemyBar(e.bar); e.bar=null; }
+  enemies.length=0; clearSquads(); clearFieldcraft(); clearHelis(); clearSurprises(); clearSideMissions(); clearBigEvents(); clearFireFX(); clearPickups(); clearGifts(); clearLogistics(); clearQuiet(); clearDroneWar(); clearSoldiers(); clearFireteam(); clearLootBeacons(); clearEnemyMissiles(); clearInfDead(); clearHeliDown(); clearEquip(); clearObjective(); clearParadrops(); clearAllyOrdnance();
+  document.body.classList.remove('corelow'); __set__alarmAt(0);
+  duelReset();   // (no-tanks: the stage's general, on foot)
 }
 // Z180 a new stage: the soldier goes back to the spawn the world generator keeps clear — the last stage's
 // position may be inside a fort, a wall or a building of the next battlefield. Ladder parties let go of the old walls.
@@ -91,7 +99,7 @@ export function askRestart(){ askConfirm({ title:'Chơi lại màn này?', body:
 // end the current match → back to the HOME menu (replay or re-pick terrain/loadout). Mirrors startGame's teardown.
 export function quitToMenu(){
   S.firing=false; try{ reportRun({ cleared:false }); }catch(e){} medalEnd('quit'); medalHush();   // MEDAL 2 what he earned before leaving is kept · MEDAL 4 his radio stops with the battle · Z163 the run's score goes to the leaderboard
-  modeQuit();   // MODE 3 nothing of a mode stays: its knobs, its HUD text, its result card (campaign/mode-run.js)
+  modeQuit(); sectorEnd();   // SECTOR 1 nothing of a sector run stays: its knobs, its rail, its transit · MODE 3 nothing of a mode stays: its knobs, its HUD text, its result card (campaign/mode-run.js)
   for(let i=bullets.length-1;i>=0;i--) recycleBullet(i);                                   // pool all live bullets
   for(const e of enemies){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); freeEnemyBar(e.bar); e.bar=null; }
   enemies.length=0; clearSideMissions(); clearBigEvents(); clearFireFX(); clearPickups(); clearGifts(); clearLogistics(); clearQuiet(); clearDroneWar(); clearSoldiers(); clearLootBeacons(); clearEnemyMissiles(); clearInfDead(); clearHeliDown(); clearEquip(); clearObjective(); clearParadrops(); clearAllyOrdnance();

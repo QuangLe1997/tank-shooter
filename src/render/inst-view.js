@@ -76,12 +76,15 @@ function rebuild(R, px, pz, k){ const im = R.im, N = R.count, A = im.instanceMat
   R.cx = px; R.cz = pz; R.k = k; R.dirty = false; }
 
 // every frame (game/loop.js): find new field-wide meshes now and then, follow the soldier
+// SECTOR 1 is it still in the battle? A source taken down inside its group (a fort, a camp, a whole field rebuilt) keeps its parent and never hears
+//   'removed': its record held the old group — views, source, every mesh beside it — for good (~900 objects, ~20 MB of JS heap a field rebuilt)
+const inScene = o => { while(o.parent) o = o.parent; return o === scene; };
 export function updateInstViews(){ if(!C.on){ if(RECS.size) for(const R of [...RECS.values()]) unwrap(R); return; } const now = performance.now() / 1000;   // (INSTVIEW.on switched off while playing: every source draws itself again)
   if(now > _scanT || (S.mode === 'playing' && _was !== 'playing')){ _scanT = now + C.scan; scene.traverse(o => { if(eligible(o)) wrap(o); }); } _was = S.mode;
   if(!RECS.size) return; const pl = S.player && S.player.pos, px = pl ? pl.x : camera.position.x, pz = pl ? pl.z : camera.position.z;
   const k = pl ? Math.min(C.maxK, Math.max(1, Math.hypot(camera.position.x - px, camera.position.y - (pl.y || 0), camera.position.z - pz) / C.ref)) : 1; let budget = C.perFrame;
   for(const R of RECS.values()){ const im = R.im;
-    if(!im.parent || im.geometry !== R.geo || im.material !== R.mat || !!im.instanceColor !== R.hasCol || im.instanceMatrix.count !== R.cap){ unwrap(R); continue; }   // (changed under us: wrapped anew at the next scan)
+    if(!im.parent || !inScene(im) || im.geometry !== R.geo || im.material !== R.mat || !!im.instanceColor !== R.hasCol || im.instanceMatrix.count !== R.cap){ unwrap(R); continue; }   // (changed under us: wrapped anew at the next scan)
     R.G.visible = im.visible; if(R.dyn){ if(im.visible){ positions(R); rebuild(R, px, pz, k); } continue; }   // VIEW 4 moving things: sorted afresh every frame (a few dozen instances)
     const s = sigOf(im, R);
     if(s !== R.sig){ R.sig = s; positions(R); R.dirty = true; }

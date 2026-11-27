@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { fortBossReset, fortBossWake } from '../hub.js';   // BOSS 1 (campaign/fort-boss.js)
+import { sectorLay } from '../hub.js';   // SECTOR 1
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { CAM_ROOM, FORT, FORTBOSS, FORT_CMD, COMMAND, HOME_GAP, HUDCLEAN, HUDCLEAN2, HUMAN_SCALE, REALFORT, FORT_GAP, BREAKUP, SCENERY, WORLD_FLAGS } from '../../config.js';
 import { cosmetic, edgeNote, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, HF, MOBILE, S, UNDER, ZONES, bigExplode, biomePlace, blocks, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, propTex, radio, rallyFlagTex, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, bannerTex, wallMat, loadGLTF, buildOutpost, farLOD, landTone, sceneDims, scenePiece, decalAsh, breakScar, decalScorch, hillCfg, paveYard, raiseFortHills, raiseWard , riseHere, dirSallyOk } from '../hub.js';
@@ -14,9 +15,9 @@ export function mainFort(){ return FORTS.find(f=>f.tier===3); }
 let _nameI=0, _fhT=0;
 
 // ---- plan: reserve ground first (called at the top of planZones) — far side + flanks, the biggest one farthest from our spawn ----
-export function planForts(){ clearForts(); const st=Math.min(4, Math.max(0, S.stage-1)), n=(MOBILE?FORT.countMobile:FORT.count)[st];
+export function planForts(){ clearForts(); const st=Math.min(4, Math.max(0, S.stage-1)), SL=sectorLay(), n=SL ? SL.forts|0 : (MOBILE?FORT.countMobile:FORT.count)[st], cap0=!SL || SL.capital!==false;   // SECTOR 1 a sector's layout: how many forts, the citadel or not (campaign/sectors.js)
   const cand=[], NM=(BIOME_PLACE[BIOME.name]||{}).forts||FORT.names; _nameI=(Math.random()*NM.length)|0;   // Z170 real place names of this land
-  for(let t=0;t<600 && cand.length<n;t++){ const tier = cand.length===0 ? 3 : (cand.length===1 && n>=4 ? 2 : (Math.random()<0.35?2:1)), T=FORT.tiers[tier], late=t>=220, R=Math.max(FORT.minR, (late?T.r[0]:R2(T.r))*(MOBILE?FORT.mobileR*CAM_ROOM.yard.rKMobile:CAM_ROOM.yard.rK));   // CAM 5 twice the yard (CAM_ROOM.yard.rK)   // Z234 phones: the small field takes smaller forts (so they stand clear of our citadel)
+  for(let t=0;t<600 && cand.length<n;t++){ const tier = cand.length===0 ? (cap0 ? 3 : 2) : (cand.length===1 && n>=4 ? 2 : (Math.random()<0.35?2:1)), T=FORT.tiers[tier], late=t>=220, R=Math.max(FORT.minR, (late?T.r[0]:R2(T.r))*(MOBILE?FORT.mobileR*CAM_ROOM.yard.rKMobile:CAM_ROOM.yard.rK));   // CAM 5 twice the yard (CAM_ROOM.yard.rK)   // Z234 phones: the small field takes smaller forts (so they stand clear of our citadel)
     const a=-Math.PI/2+(Math.random()-0.5)*Math.PI*(cand.length===0?(late?1.1:0.7):1.55), FR=fieldR(a), fr=cand.length===0?0.6+Math.random()*0.15:0.45+Math.random()*0.35, hk=t<220?1:t<380?0.85:HOME_GAP.minK;
     const dMin=HOME_GAP.wall+R+(MOBILE?HOME_GAP.gapMobile:HOME_GAP.gap)*hk+1, dMax=FR-R-9; if(dMax<dMin) continue;   // Z234 between our home ground and the fence (big forts keep the whole ring inside it)
     const d=late ? dMin+Math.random()*(dMax-dMin) : Math.max(dMin, Math.min(FR*fr, dMax));   // a crowded / watery field: try the whole band, not only the preferred depth

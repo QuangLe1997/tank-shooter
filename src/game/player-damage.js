@@ -1,5 +1,6 @@
 // game/player-damage.js — PLAYER DAMAGE / DEATH
 import * as THREE from 'three';
+import { sectorOver } from '../hub.js';   // SECTOR 1
 import { BODYHIT, CAV, HUDCLEAN, HUDCLEAN2, RIDE_ACT } from '../../config.js';
 import { bladeGuardK, bodyHitSound, modeOver, reportRun, soldierHitFX, BEST, CV, S, clampField, heightAt, camera, cavDeathStart, cavDeathUpdate, cavRespawn, enemies, floatText, haptic, padHit, recordRun, ringPulse, saveProfile, sayVoice, sfx, show, updateHUD, rideHit, driverBack, driverDone, driverSurrender, dirDeath, nemDeathLine, nemPlayerDied, coopDie, coopGameOver, coopHurtMate, medalEnd } from '../hub.js';
 import { conqHurt } from '../hub.js';   // CONQ 1 (campaign/conquest.js)
@@ -61,6 +62,7 @@ export function respawnPlayer(now){
 }
 export function gameOver(reason){
   if(S.mode==='gameover') return;
+  if(sectorOver(reason)) return;   // SECTOR 1 a sector run: the battle lost inside a sector replays that sector from its checkpoint (campaign/sectors.js)
   if(modeOver(reason)) return;   // MODE 3 a night defence / a daily challenge ends on its own result card: no campaign record, no report (campaign/mode-run.js)
   S.mode='gameover'; medalEnd('lost'); coopGameOver();   /* COOP 6 (the guest's battle ends with the host's; nothing without a room) */ try{ reportRun({ cleared:false }); }catch(e){}
   { const w=document.getElementById('go-why'), L=Math.max(0, S.player ? S.player.lives : 0);   // Z133 say WHY the battle was lost (the base core can fall while you still have lives)

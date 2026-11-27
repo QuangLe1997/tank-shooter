@@ -11,6 +11,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { GROUNDED, LIGHT, LOOK, SHAFTS } from '../../config.js';
 import { ARENA, BIOME, MOBILE, MSAA, NATIVE, S, SHADOW_MAP, arena, beamMat, makeShaftPass, releaseModels, shadowLOD, shadowSplit } from '../hub.js';
+import { shadowCopy } from '../hub.js';   // SECTOR 1 (render/far-lod.js)
    // Z83: a standing COMMAND BUNKER also buffs enemy damage
 
 // ----------------------------- THREE SETUP -----------------------------
@@ -189,5 +190,5 @@ export function skyEnvTexture(name, A){
 //   left ~700 geometries and ~30 maps behind (+50–60 MB a battle, the frame rate sinking battle after battle). Safe to reuse: three uploads a
 //   released one again the next time it is drawn. Never a render target's texture (an environment map has no pixels of its own to upload again).
 const _maps = (m, out) => { for(const k in m){ const t = m[k]; if(t && t.isTexture && !t.isRenderTargetTexture && !t.isVideoTexture && t.image && (t.isDataTexture || t.image.width)) out.add(t); } };
-export function gpuHeld(){ const g = new Set(), t = new Set(); scene.traverse(o => { if(o.geometry) g.add(o.geometry); if(o.material) for(const m of Array.isArray(o.material) ? o.material : [o.material]) _maps(m, t); }); return { g, t }; }
+export function gpuHeld(){ const g = new Set(), t = new Set(); scene.traverse(o => { if(o.geometry){ g.add(o.geometry); const c = shadowCopy(o.geometry); if(c) g.add(c); }   /* SECTOR 1 its shadow copy goes with it */ if(o.material) for(const m of Array.isArray(o.material) ? o.material : [o.material]) _maps(m, t); }); return { g, t }; }
 export function gpuRelease(was){ const now = gpuHeld(); let n = 0; for(const x of was.g) if(!now.g.has(x)){ x.dispose(); n++; } for(const x of was.t) if(!now.t.has(x)){ x.dispose(); n++; } return n + releaseModels(now); }   // (MEM 1 + the models the new field neither asks for nor draws)

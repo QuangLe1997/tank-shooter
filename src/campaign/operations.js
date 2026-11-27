@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { ENTRY, RAMP, OPERATIONS, OBJECTIVES, OBJ_REWARD } from '../../config.js';
 import { ARENA, S, WAVE, _canvasTex, realObjective, addScore, aoeDamage, bigExplode, blocks, camera, clampFieldXZ, decalScorch, deformCrater, diffHpMul, fireball, freeEnemyBar, getEnemyBar, heightAt, hitFlash, inField, loopHpMul, makeFlag, panelTex, propTex, radioType, ringPulse, sayVoice, scene, sfx, showBanner, spawnPart, spawnSquad, storyOp, unwave, bannerTex, voiceKeyFor, CO, coopRadio } from '../hub.js';
+import { sectorObj } from '../hub.js';   // SECTOR 1
 
 // ===== Z83 · CAMPAIGN OPERATIONS — named operation per stage: briefing, radio chatter, scripted waves and a high-value objective =====
 export let OBJ=null; export const OBJ_SCALE=1.5;   // objectives read as big, important structures
@@ -62,7 +63,7 @@ export function buildObjMesh(kind){
 }
 export function clearObjective(){ if(!OBJ) return; unwave(OBJ.g); scene.remove(OBJ.g); freeEnemyBar(OBJ.bar); const i=blocks.indexOf(OBJ.b); if(i>=0) blocks.splice(i,1); OBJ=null; updateObjHUD(); }
 export function buildObjective(){
-  clearObjective(); const op=opFor(S.stage), def=OBJECTIVES[op.obj]; if(!def) return;
+  clearObjective(); const so=sectorObj(), op0=opFor(S.stage), op=so ? { ...op0, obj:so } : op0, def=so==='' ? null : OBJECTIVES[op.obj]; if(!def) return;   // SECTOR 1 a sector run: only a sabotage sector has a target, of its own kind (sectorObj '' none)
   let x=0, z=-ARENA*0.6;
   for(let t=0;t<200;t++){ const w=t<50, cx=(Math.random()*2-1)*ARENA*(w?0.5:0.75), cz=-ARENA*(w?0.48+Math.random()*0.22:0.3+Math.random()*0.5); if(inField(cx, cz, def.r+8) && !blocks.some(b=>Math.hypot(b.x-cx,b.z-cz)<b.r+def.r+2)){ x=cx; z=cz; break; } }   // Z106 inside the irregular fence   // Z405 a river across its usual band: look wider before falling back
   if(!inField(x, z, def.r+4)) [x,z]=clampFieldXZ(x, z, def.r+8);

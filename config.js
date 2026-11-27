@@ -3724,8 +3724,7 @@ export const NOCENTER = {
 //   DIET 6 offThread: render/far-lod.js welds and simplifies in a worker (one big geometry held a frame 690 ms)
 export const ASSETDIET = { ktx2:true, basis:'assets/lib/basis/', simplifier:'assets/lib/meshopt/meshopt_simplifier.module.js', workers:4, probeMs:8000, offThread:true, pxFrom:['/tree/'], late:{ on:!(typeof location !== 'undefined' && /[?&]nolate\b/.test(location.search)), waitMs:4000, linkMs:900, upMs:4, maxMs:2500, matWait:6, matEvery:0.5, matBatch:16 }, drop:!(typeof location !== 'undefined' && /[?&]nodrop\b/.test(location.search)), pxHold:20,
   treeFar:{ on:!(typeof location !== 'undefined' && /[?&]notreefar\b/.test(location.search)), dir:'assets/models/real/tree/m/', at:80, max:0.6 } };
-// ============================================================================
-// CONQ 1 CHINH PHẠT 10 THÀNH (campaign/conquest.js · its map: ui/conquest-map.js) — the campaign is a road of ten forts of Hắc Thiết, taken one by one; each
+// =====================================================================// CONQ 1 CHINH PHẠT 10 THÀNH (campaign/conquest.js · its map: ui/conquest-map.js) — the campaign is a road of ten forts of Hắc Thiết, taken one by one; each
 //   fort's general guards a TREASURE (báu vật) the next fort needs. A fort is a battle (a mode of campaign/mode-run.js: run.conq = the fort's index): its
 //   capital's boss is the fort's general (name, look); his fall takes the fort → the treasure's screen, the next fort opens. Kept in PROFILE.conquest
 //   { cap: forts taken (the road is in order), carry: the treasures taken into battle, sel }; an old save's campaign reach is mapped once (migrate).
@@ -3808,3 +3807,42 @@ export const CONQUEST = { on:true, carry:3, migrate:{ cap:9 }, next:4.2,
     wonKick:'Đã chiếm {fort}', wonBig:'Chiếm thành', lostKick:'{fort} vẫn đứng', lost:'Rút lui', lostWhy:'Tổ phải rút khỏi {fort}. Tướng {boss} vẫn giữ thành.', retry:'Đánh lại', toMap:'Bản đồ chinh phạt',
     prizeTag:'Báu vật mới', nextLine:'Thành kế tiếp: {fort} — {t}', replay:'Chiếm lại thành. Báu vật {t} đã có trong kho.', end:'Thành Luỹ Cuối đã đổ. Lõi được giữ, chiến tranh dừng ở đây.',
     stats:['Hạ địch', 'Chính xác', 'Thời gian', 'Thành đã chiếm'], noAim:'Không có thành nào trong tầm', placed:'ĐẶT THUỐC NỔ!', frozen:'ĐÓNG BĂNG ×{n}', storm:'PHÁO MẮT BÃO — CHÚ Ý!' } };
+=======
+// SECTOR 1 A LONG BATTLE IS A CHAIN OF SECTORS (campaign/sectors.js · its HUD: ui/sector-hud.js). A run that carries `sectors` (launchGame({…, sectors:[…]}) or true for the land's
+//   sample run; dev: ?sectors=1 or ?sectors=hold,sabotage,boss) is fought one sector at a time on the same land: each sector a new layout of the field (`places`: how many forts,
+//   whether the citadel stands, cover / towers ×, the objective) + a mission (`types`) + its climax (a forced big event once the goal is `at` done). Only one sector exists at a
+//   time: the last one is cleared (game/flow.js clearField) and the next built while the TRANSIT hides it (letterbox, black, the radio, then a camera drop onto the new field).
+//   Every sector is a checkpoint: the battle lost inside one replays that sector from the state it began with (up to `retries` times); between two, `refill` tops him up.
+//   The last sector's goal is the battle's win, behind ONE hook — sectorBattle(spec, onWon) (a conquest battle: onWon = conqWon); without one, the mode's stageWon, else
+//   campaign/boss.js stageWon. Nothing in the aim zone: start / end at the top edge, the rail under the score bar, the card in the transit's bars, the 3-2-1 unseen.
+//   Host-only for now: a co-op room plays the ordinary battle.
+//   types: hold — the bogged-truck side mission (SIDEMISSION.truck) is the goal, its hold / timer / overrun replaced by these; lost = the truck burns · aborted (a life lost) or
+//     expired: offered again after `again` s · sabotage — the sector's OBJECTIVES target down before `time` s · boss — the citadel's general (FORTBOSS) falls
+//   transit: hold s of play after the goal (the banner, he cannot be hurt) · fade s to black · then the build (measured) · the warm-up (shaders, ≤ warmMs) · the ride: a camera
+//     drop from (rideH, rideBack) m onto his spawn, at least `ride` s, the whole transit ≥ min and ≤ max s · lines: the radio under the black (one per lineGap s)
+export const SECTOR = { on:true, retries:3,
+  types:{ hold:{ vi:'GIỮ ĐẦU CẦU', hold:75, t:900, overrunT:9, first:4, again:6, climax:{ at:0.5, ev:'bombing' } },
+          sabotage:{ vi:'PHÁ MỤC TIÊU', time:300, climax:{ at:0.5, ev:'crash' } },
+          boss:{ vi:'HẠ TƯỚNG THÀNH', climax:null } },
+  places:{ outskirts:{ vi:'NGOẠI VI', forts:0, capital:false, cover:1.25, towers:0.7 },
+           village:{ vi:'LÀNG', forts:1, capital:false, cover:1.0, towers:1.0 },
+           bridge:{ vi:'CẦU', forts:1, capital:false, cover:0.85, towers:1.3 },
+           gate:{ vi:'CỔNG THÀNH', forts:2, capital:false, cover:0.8, towers:1.4 },
+           yard:{ vi:'TRONG THÀNH', forts:2, capital:false, cover:1.1, towers:1.0 },
+           hq:{ vi:'TƯỚNG', forts:1, capital:true, cover:0.9, towers:1.2 } },
+  runs:{ _:[{ place:'outskirts', type:'hold' }, { place:'bridge', type:'sabotage', obj:'radio' }, { place:'hq', type:'boss' }],
+         DESERT:[{ place:'outskirts', type:'hold' }, { place:'village', type:'sabotage', obj:'depot' }, { place:'hq', type:'boss' }],
+         RUINS:[{ place:'outskirts', type:'hold' }, { place:'village', type:'sabotage', obj:'radio' }, { place:'hq', type:'boss' }],
+         CITY:[{ place:'outskirts', type:'hold' }, { place:'bridge', type:'sabotage', obj:'radio' }, { place:'hq', type:'boss' }],
+         MEADOW:[{ place:'village', type:'hold' }, { place:'bridge', type:'sabotage', obj:'battery' }, { place:'hq', type:'boss' }],
+         FOUNDRY:[{ place:'outskirts', type:'hold' }, { place:'gate', type:'sabotage', obj:'depot' }, { place:'hq', type:'boss' }],
+         ARCTIC:[{ place:'outskirts', type:'hold' }, { place:'bridge', type:'sabotage', obj:'radar' }, { place:'hq', type:'boss' }],
+         QUARRY:[{ place:'outskirts', type:'hold' }, { place:'gate', type:'sabotage', obj:'battery' }, { place:'hq', type:'boss' }],
+         VOLCANO:[{ place:'outskirts', type:'hold' }, { place:'gate', type:'sabotage', obj:'battery' }, { place:'hq', type:'boss' }],
+         SAVANNA:[{ place:'village', type:'hold' }, { place:'bridge', type:'sabotage', obj:'radar' }, { place:'hq', type:'boss' }],
+         CITADEL:[{ place:'outskirts', type:'hold' }, { place:'gate', type:'sabotage', obj:'command' }, { place:'hq', type:'boss' }] },
+  refill:{ hp:0.5, ammo:0.6, squad:1 },
+  transit:{ hold:3, fade:0.7, min:10, max:20, ride:4.5, warmMs:2500, rideH:46, rideBack:62, lineGap:2.6,
+    lines:['SCH: Khu vực đã sạch. Lên xe, hành quân tiếp!', 'Lái xe: Đường xóc, bám chắc vào!', 'SCH: Trinh sát báo phía trước có ổ đề kháng.', 'SCH: Kiểm tra súng đạn, sắp tới nơi.'],
+    retry:['SCH: Rút lui! Tập hợp lại ở điểm xuất phát.', 'SCH: Đánh lại khu này, lần này chắc tay hơn.'] },
+  say:{ won:'KHU VỰC {n} HOÀN THÀNH', lost:'KHU VỰC THẤT THỦ — ĐÁNH LẠI', go:'KHU {n} · {place}', hold:'Giữ chốt quanh xe {s} giây — quân ta đang tới', sabotage:'Phá {obj} trước khi hết giờ', boss:'Hạ tướng giữ thành' } };
