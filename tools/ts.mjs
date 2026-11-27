@@ -9,6 +9,7 @@
 //   --gpumem      DIET 1 what the page holds on the GPU, counted from its first WebGL call (every texture level / buffer / renderbuffer allocated,
 //                 less those deleted; compressed formats at their real size): out.gpu = { texMB, bufMB, rbMB, tex, buf, fmt, footprintMB:{ gpu-process, renderer, … } }
 //                 (the last: macOS's footprint of this Chrome's processes at the end), and window.__gpuMem() for a probe.
+//   --gc          DIET 4 window.gc() for a probe (collect before reading the JS heap)
 //   --novsync     frames as fast as the GPU allows (to compare frame times; with vsync every frame over 16.7 ms falls to 33).
 //   Out: { ok, biome, load, frame:{ p50, p95, max, n }, calls, tris, errors:[…], eval, shot } — exit code 0 only when the page logged no error.
 // It serves the repo itself (code never cached, assets cached), keeps ONE Chrome profile between runs (compiled shaders and the files stay, so the
@@ -50,7 +51,7 @@ async function done(code){ clearTimeout(kill); try{ if(ctx) await ctx.close(); }
 process.on('SIGINT', () => done(2)); process.on('SIGTERM', () => done(2));
 try{
   ctx = await chromium.launchPersistentContext(path.join(os.tmpdir(), 'ts-chrome-profile'), { channel:'chrome', headless:true, viewport:{ width:W, height:Hh }, deviceScaleFactor:+opt('--dpr', 1),
-    args:['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist', '--mute-audio', '--autoplay-policy=no-user-gesture-required', ...(has('--novsync') ? ['--disable-gpu-vsync', '--disable-frame-rate-limit'] : [])] });
+    args:['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist', '--mute-audio', '--autoplay-policy=no-user-gesture-required', ...(has('--novsync') ? ['--disable-gpu-vsync', '--disable-frame-rate-limit'] : []), ...(has('--gc') ? ['--js-flags=--expose-gc'] : [])] });
   const p = ctx.pages()[0] || await ctx.newPage();
   p.on('pageerror', e => out.errors.length < 8 && out.errors.push('pageerror: ' + e.message.slice(0, 300)));
   p.on('console', m => { if(m.type() === 'error' && out.errors.length < 8 && !/favicon|ERR_|404/.test(m.text())) out.errors.push('console: ' + m.text().slice(0, 300)); });
