@@ -2747,6 +2747,12 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   ok(/prewarmStage\(\); fightWarm\(\);/.test(br) && /renderer\.initTexture\(t\)/.test(fw) && /__version !== t\.version/.test(fw) && /const counting = \(\) => S\.mode === 'countdown'/.test(fw) && /if\(run !== FWARM\.run \|\| !counting\(\)\) return;/.test(fw)
     && /renderer\.compile\(g, camera, scene\)/.test(fw) && /export function relicWarm\(\)\{ return build\(\); \}/.test(fs.readFileSync('src/loot/relic.js','utf8')) && /PH\.long\.push\(/.test(ph),
     'started beside the shader prewarm at the countdown and stopped when it ends (the load never waits); the relic compiled off the scene with the battle\'s lights; the fight\'s long frames in PH.long'); }
+// SPLIT 3 (A9) Thấp / Vừa / Cao + one level down after a load that never finished
+{ const fs=await import('node:fs'), C=await import('./config.js'), P=C.PERF_SPLIT, T=P.tiers, q=fs.readFileSync('src/render/quality.js','utf8'), st=fs.readFileSync('src/game/startup.js','utf8'), fl=fs.readFileSync('src/game/flow.js','utf8'), se=fs.readFileSync('src/ui/settings.js','utf8'), pr=fs.readFileSync('src/core/profile.js','utf8');
+  ok(T.low && T.medium && T.high && T.low.dpr<=T.medium.dpr && T.medium.dpr<=T.high.dpr && T.high.ao===true && T.low.ao===false && T.low.shadow>=512 && T.low.detailK>=T.medium.detailK && T.medium.detailK>=T.high.detailK && T.high.detailK===1 && C.SETTINGS_DEF.quality==='high',
+    'three levels of the same world: render scale '+T.low.dpr+' / '+T.medium.dpr+' / '+T.high.dpr+', occlusion only on Cao, Thấp a '+T.low.shadow+' shadow map, small pieces fade '+T.low.detailK+'× / '+T.medium.detailK+'× earlier');
+  ok(P.crash.on===true && typeof P.crash.key==='string' && P.crash.okS>0 && /tierBoot\(\);[^\n]*\n[^\n]*\nbuildCore\(1\);/.test(st) && /launchGame\(arg\)\{ loadMark\(\);/.test(fl) && /_setQ\('medium'\)/.test(se) && /pr\.quality==='medium'/.test(pr) && /TIER_ORDER\[i - 1\]/.test(q),
+    'a load that never finished (the note '+P.crash.key+' still there at the next start) → one level down before anything is built; the note goes after '+P.crash.okS+' s of fight; Vừa in Settings and in the saved profile'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

@@ -1,12 +1,13 @@
 // game/flow.js — GAME FLOW: start / pause / quit-to-menu, loadout guns for the run, menu ↔ HUD state, show/hide panels
 import { CAV, CORE_DEF } from '../../config.js';
 import { fieldWait, modeSeed, clearBigEvents, clearSideMissions, modelEpoch, veilOrder, askConfirm, confirmOpen, opFor, biomeVi, BIOME, SOLDIER, reportRun, CV, GUNS, cavRespawn, clearSoldierWar, driverBack, magCap, makeCavPlayer, rankReset, squadReset, trooperGuns, duelReset, gpuHeld, gpuRelease, clearGifts, VOICE_RULES, ARENA, MOBILE, PROFILE, S, WAVE, __set__alarmAt, __set_soldierLvl, applyBiome, applyContractHUD, audio, buildBlocks, buildCore, buildLava, buildObjective, buildTrails, buildUnderground, bullets, clearAllyOrdnance, clearEnemyMissiles, clearEquip, clearFieldcraft, clearFireteam, clearHeliDown, clearHelis, clearInfDead, clearLadders, clearLootBeacons, clearObjective, clearParadrops, clearPickups, clearRelic, clearSoldiers, clearSquads, clearSurprises, core, deploySoldiers, dropCavPlayer, enemies, enemyPool, freeEnemyBar, preloadVoices, queueResize, recycleBullet, refreshStartUI, reqFs, saveProfile, scene, sfx, showVeil, skipIntro, startIntro, startMusic, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD, openBattleSetup, clearDroneWar, clearLogistics, clearQuiet, clearFireFX, modeBegin, modeReady, modeQuit, modePauseTx, coopActive, coopFieldBuilt, coopBuildField, medalEnd, medalHush } from '../hub.js';
+import { loadMark } from '../hub.js';   // SPLIT 3 (render/quality.js)
 
 // ----------------------------- GAME FLOW -----------------------------
 // Z107 startGame(arg): true = CONTINUE the campaign checkpoint · {mode:'campaign'|'custom', level, …} = a battle from the setup screen ·
 // anything else (a click Event from RETRY/RESTART, or nothing) = the same battle again (S.runCfg), else campaign level 1
 // Z119 from the menus: put the DEPLOYING veil up, let it paint, then build the world (it used to freeze on the menu)
-export function launchGame(arg){ S.launchFrom = (arg && typeof arg==='object' && arg.mode) ? 'setup' : 'home';   // XK-UI where the stage-1 briefing's back button goes
+export function launchGame(arg){ loadMark(); S.launchFrom = (arg && typeof arg==='object' && arg.mode) ? 'setup' : 'home';   // XK-UI where the stage-1 briefing's back button goes
   veilOrder(arg); showVeil(true); const go=()=>requestAnimationFrame(()=>requestAnimationFrame(()=>{ try{ startGame(arg); }catch(e){ showVeil(false); throw e; } }));
   const w=fieldWait(arg); if(w) w.then(go); else go(); }   // SYNC 1 a seeded battle (daily, co-op, ?seed) waits — under the veil, bounded — for the real cover pieces: a collider sized off a model must not depend on what had loaded (core/dice.js)
 export function startGame(arg){

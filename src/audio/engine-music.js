@@ -1,6 +1,7 @@
 // audio/engine-music.js — DIESEL ENGINE + TRACK CLATTER (player): idle burble → roar under load; climbing a mound makes it SCREAM, coasting downhill it backs off
 import { APPLE, MOBILE, NOW, NZ, PROFILE, S, afxBus, afxSend, __set_musicBus, __set_musicSrc, __set_muted, __set_songBuf, actx, audio, buildScore, composer, doResize, master, musicBus, musicSrc, muted, padCfg, padHaptic, renderer, setIcon, sfxLevel, songBuf, verbSend, rideHealth } from '../hub.js';
 import { RIDE } from '../../config.js';
+import { applyTier, tierDprTop } from '../hub.js';   // SPLIT 3 (render/quality.js)
 
 // ---- DIESEL ENGINE + TRACK CLATTER (player): idle burble → roar under load; climbing a mound makes it SCREAM, coasting downhill it backs off ----
 export const ENG={ on:false, nodes:null, rpm:0 };
@@ -62,7 +63,7 @@ export function setMusicOn(on){ if(musicBus) musicBus.gain.value = on?0.5:0; for
 // draws at 2× instead of 1.5×, a third sharper; the FPS governor in game/loop.js still steps down if a phone can't hold 60), never below 1×.
 export function dprCap(){ const d=devicePixelRatio||1; if(!MOBILE) return Math.max(1, Math.min(d, 2, Math.sqrt(2.2e6/Math.max(1, innerWidth*innerHeight))));   // Z150 desktop gets a pixel budget too: a full-screen Retina window at 2× is 4× the fill rate
   const px=Math.max(1, innerWidth*innerHeight); return Math.max(1, Math.min(d, APPLE?2:1.5, Math.sqrt((APPLE?2.4e6:1.8e6)/px))); }
-export function setQuality(q){ S.dpr = q==='low' ? (MOBILE?0.8:1) : Math.min(dprCap(), PROFILE.perfDpr||9);   // Z150 start where the FPS governor settled last time → no stepping down in the first seconds of a battle   // explicit Low/High override (adaptive FPS may still lower High later)
+export function setQuality(q){ S.dpr = q==='low' ? tierDprTop(q) : Math.min(tierDprTop(q), PROFILE.perfDpr||9); applyTier(q);   // SPLIT 3 the level's own top (render/quality.js) + all it turns   // Z150 start where the FPS governor settled last time → no stepping down in the first seconds of a battle   // explicit Low/High override (adaptive FPS may still lower High later)
   try{ renderer.setPixelRatio(S.dpr); composer.setPixelRatio?.(S.dpr); doResize(true); }catch(e){} }
 export function startMusic(){
   const a=audio(); if(!a) return;

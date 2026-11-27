@@ -3594,10 +3594,16 @@ export const BODYFULL = {
   twist:{ upper:{ keep:0.25, max:1.4 } },
   ride:true,
   tube:{ pouch:[0.0, -0.05, 0.22], palm:true } };
-// SPLIT 1–2 RUNTIME PERFORMANCE (plan A1 · A6): the sun's shadow in a still part drawn once + the movers every frame, nothing uploaded in a fight's first seconds
+// SPLIT 1–3 RUNTIME PERFORMANCE (plan A1 · A6 · A9): the sun's shadow in a still part drawn once + the movers every frame, nothing uploaded in a fight's first seconds, three quality levels + one down after a crashed load
 export const PERF_SPLIT = {
   // A1 render/shadow-split.js: re-centre the box `step` m off (and `pad` m wider) · a caster still for `settle` frames joins the still part (doubled, up to settleMax, each time it moves again)
   //   · the still part is drawn again ≥ minGap s after something in it changed, ≥ promoteGap s for newly still ones · edited twice inside editWin s = it moves · casters re-listed every `rescan` frames
   shadow:{ on:true, step:3, pad:1.5, settle:20, settleMax:600, minGap:0.2, promoteGap:1.5, editWin:2, rescan:30 },
   // A6 render/fight-warm.js: the battlefield's maps the GPU does not hold yet, uploaded during the 3-2-1 only — ms of work a frame; what rises at GO compiled then, its models awaited ≤ propWait s · render/perfhud.js PH.long: a fight's frames over hitchMs (hitchKeep kept)
-  warm:{ on:true, ms:6, propWait:1.5 }, hitchMs:50, hitchKeep:24 };
+  warm:{ on:true, ms:6, propWait:1.5 }, hitchMs:50, hitchKeep:24,
+  // A9 render/quality.js: Thấp / Vừa / Cao — top render scale (desktop / phone), the occlusion pass, the sun's map size (0 = SHADOW_MAP), light shafts, × LOD.detailPx
+  tiers:{ low:{ dpr:1, dprPhone:0.8, ao:false, shadow:1024, shafts:false, detailK:1.6 },
+    medium:{ dpr:1.25, dprPhone:1.25, ao:false, shadow:0, shafts:true, detailK:1.25 },
+    high:{ dpr:2, dprPhone:2, ao:true, shadow:0, shafts:true, detailK:1 } },
+  // a load that never finished (the note still in localStorage[key] at the next start) → one level down; the note goes once the fight has run okS s; the notice stays sayS s
+  crash:{ on:true, key:'xk.loading', okS:4, sayS:7 } };

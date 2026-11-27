@@ -34,7 +34,7 @@ export function loadProfile(){
   pr.onboarded = !!pr.onboarded; pr.coached = !!pr.coached;     // first-launch guide + first-match coach shown?
   pr.difficulty = (pr.difficulty && BALANCE.difficulty[pr.difficulty]) ? pr.difficulty : 'soldier';   // RECRUIT/SOLDIER/VETERAN
   pr.sound = pr.sound!==false; pr.music = pr.music!==false;     // audio prefs (default on)
-  pr.quality = (pr.quality==='low'||pr.quality==='high') ? pr.quality : 'high';
+  pr.quality = (pr.quality==='low'||pr.quality==='medium'||pr.quality==='high') ? pr.quality : 'high';   // SPLIT 3 + Vừa
   return pr;
 }
 export function saveProfile(quiet){ try{ localStorage.setItem(PROFILE_KEY, JSON.stringify(PROFILE)); }catch(e){} if(!quiet) cloudDirty(); }   // Z162 every save also queues a (rate-limited) cloud write

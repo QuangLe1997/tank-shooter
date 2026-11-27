@@ -1,6 +1,7 @@
 // ui/settings.js — Z103 split from ui/menus.js · XK-UI SETTINGS in tabs (Trò chơi · Hình ảnh · Âm thanh · Điều khiển · Tay cầm · Camera · Tài khoản): one row per option, a plain hint under its name, Mặc định resets the open tab, Xong goes back to home or to the pause menu.
 import { PAD_CFG, CLOUD_CFG, CAM_TUNE, SHAKE, SETTINGS_DEF } from '../../config.js';
 import { banterPreview, CLOUDSAVE, MOBILE, PAD, PROFILE, S, afxOn, audio, camParams, controlScheme, hide, linkGoogle, onCloud, openPadWizard, padCfg, padDiagram, padMapFor, padRumble, padTest, refreshStartUI, resetPadMap, saveProfile, sayVoice, setMusicOn, setMuted, setQuality, sfx, show, syncNow, tapBtn, tapEl, toggleFullscreen, isFs, hudOn, setHud, applyHud, askConfirm, openKeys, openNick, escapeHtml, refreshBestLine, __set_BEST } from '../hub.js';
+import { QUAL } from '../hub.js';   // SPLIT 3 (render/quality.js)
 
 export const SET = { tab:'game', from:'start' };
 export const SET_TABS = ['game', 'video', 'audio', 'ctrl', 'pad', 'cam', 'account'];
@@ -18,7 +19,7 @@ export function buildSettings(){
   onOff('setGore', PROFILE.gore!==false, on=>{ PROFILE.gore=on; saveProfile(); redo(); });   // BLADE 10 blood and severing (actors/blade.js goreOn / goreK; unset = on)
   for(const [id, k] of [['setHudTalk','talk'], ['setHudCards','cards'], ['setHudBanners','banners']]) onOff(id, hudOn(k), on=>{ setHud(k, on); redo(); });   // Z324 what the battle HUD shows (ui/hud-prefs.js)
   // ---- Hình ảnh ----
-  { const Q=box('setQual'); if(Q){ Q.appendChild(_segChip('Cao', PROFILE.quality==='high', ()=>_setQ('high'))); Q.appendChild(_segChip('Thấp', PROFILE.quality==='low', ()=>_setQ('low'), 'máy yếu')); } }
+  { const Q=box('setQual'); if(Q){ Q.appendChild(_segChip('Cao', PROFILE.quality==='high', ()=>_setQ('high'))); Q.appendChild(_segChip('Vừa', PROFILE.quality==='medium', ()=>_setQ('medium'), QUAL.fell&&QUAL.fell.to==='medium'?'tự hạ':'')); Q.appendChild(_segChip('Thấp', PROFILE.quality==='low', ()=>_setQ('low'), QUAL.fell&&QUAL.fell.to==='low'?'tự hạ':'máy yếu')); } }   // SPLIT 3 three levels; 'tự hạ' = lowered after a load that never finished
   { const F=box('setFps'), cur=PROFILE.fps==='60'||PROFILE.fps==='30' ? PROFILE.fps : 'auto';   // XK-UI game/loop.js paceMode() reads it every frame
     if(F) for(const [k, t, s] of [['auto','Tự động','khuyên dùng'], ['60','60 FPS',''], ['30','30 FPS','đỡ tốn pin']]) F.appendChild(_segChip(t, cur===k, ()=>{ PROFILE.fps=k; saveProfile(); redo(); }, s)); }
   { const Sh=box('setShake'), cur=PROFILE.shake||SHAKE.def;   // Z239 screen-shake level

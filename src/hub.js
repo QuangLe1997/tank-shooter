@@ -35,6 +35,7 @@ export * from './fx/searchlight.js';   // Z146 (before world/biome.js: the flood
 export * from './render/lod.js';
 export * from './render/far-lod.js';   // Z328 big static models swap to a simplified copy far away
 export * from './render/shadow-split.js';   // SPLIT 1 the sun's shadow: the still part drawn once, the movers every frame
+export * from './render/quality.js';   // SPLIT 3 Thấp / Vừa / Cao + one level down after a load that never finished
 export * from './render/fight-warm.js';   // SPLIT 2 every map of the battlefield uploaded during the 3-2-1
 export * from './render/inst-view.js';   // VIEW 1 a field-wide instanced mesh draws only what is near (its own detail near, a light copy far, nothing past sight)
 export * from './render/near-detail.js';   // Z395 the originals' sharp maps on whatever the camera is close to

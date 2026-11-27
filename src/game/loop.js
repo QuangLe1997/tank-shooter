@@ -3,6 +3,7 @@ import { updateFootfall, updateBigEvents, updateSideMissions, updateDirector, up
 import { FRAME_PACE } from '../../config.js';
 import { updateWaterSpray } from '../hub.js';   // HSWIM 2 (fx/water-spray.js)
 import { updateFortBoss } from '../hub.js';   // BOSS 1 (campaign/fort-boss.js)
+import { tierDprTop } from '../hub.js';   // SPLIT 3 (render/quality.js)
 
 // ----------------------------- MAIN LOOP -----------------------------
 const NOGOV=typeof location!=='undefined' && /[?&]nogov\b/.test(location.search);   // PERF 1 ?nogov holds the governor still (the resolution and the occlusion pass stay as they start): for measuring
@@ -110,7 +111,7 @@ export function loop(nowMs){
   perfRenderBegin(); composer.render(); perfFrameEnd(rawMs);
   // adaptive quality: drop internal resolution one-way if frames get heavy
   _fpsAcc+=dt; _fpsN++;
-  if(_fpsAcc>=1){ const fps=_fpsN/_fpsAcc; _fpsAcc=0; _fpsN=0; const dprFloor=MOBILE?(APPLE?1.25:0.8):1, dprTop=(PROFILE.quality==='low')?(MOBILE?0.8:1):dprCap();
+  if(_fpsAcc>=1){ const fps=_fpsN/_fpsAcc; _fpsAcc=0; _fpsN=0; const dprFloor=MOBILE?(APPLE?1.25:0.8):1, dprTop=tierDprTop();   // SPLIT 3 the quality level's top (render/quality.js)
     const calib = S.mode==='countdown';                                      // Z150 the 3-2-1 countdown is the calibration window: the world is static, a resize there costs nothing you can feel
     if(S.mode!=='playing' && !calib) AO.on = AO.want && PROFILE.quality!=='low' && PROFILE.perfAO!==false;   // re-armed between battles — unless this machine already proved it can't afford it
     const capK=paceCap()/60, paceFirst=paceMode()==='auto' && PACE.cap===60, warm=S.mode==='playing' && now-PACE.playAt<FRAME_PACE.warmS;   // PERF 8 at 30 the governor wants 27, not 54; at auto-60 the lock to 30 comes first; a fight's first seconds (loading hitches) are not judged

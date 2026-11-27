@@ -53,7 +53,7 @@ tools/
 test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 ```
 
-### 2.1 Danh mục module (307 module theo thứ tự hub · 32.808 dòng)
+### 2.1 Danh mục module (308 module theo thứ tự hub · 32.858 dòng)
 
 <!-- MODULES:BEGIN (npm run modmap) -->
 | # | Module | Dòng | Nội dung |
@@ -80,10 +80,10 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 17 | `src/core/config.js` | 29 | runtime constants derived from config + device: arena size, MOBILE, the aircraft's draw scale, player range,… |
 | 18 | `src/core/dice.js` | 82 | SYNC 1 TWO DICE: in a seeded battle (the daily challenge, a co-op room, ?seed) the battlefield's LAYOUT is t… |
 | 21 | `src/core/state.js` | 21 | S — the single runtime game state (mode, stage, wave, score, player, spell, recall …) |
-| 248 | `src/core/helpers.js` | 72 | shared helpers: control scheme + tank input → move direction, main HUD refresh, world-space HP bars |
-| 255 | `src/core/profile.js` | 50 | PLAYER PROFILE (nickname · campaign save · settings) |
-| 256 | `src/core/cloud.js` | 63 | Z162 CLOUDSAVE SAVE: Firebase Auth (anonymous first, Google link later) + the profile mirrored to Firestore … |
-| 257 | `src/core/score-report.js` | 24 | Z163 THE LEADERBOARD'S RUN REPORT: at the end of each stage (and when a run ends) the score so far goes to t… |
+| 249 | `src/core/helpers.js` | 72 | shared helpers: control scheme + tank input → move direction, main HUD refresh, world-space HP bars |
+| 256 | `src/core/profile.js` | 50 | PLAYER PROFILE (nickname · campaign save · settings) |
+| 257 | `src/core/cloud.js` | 63 | Z162 CLOUDSAVE SAVE: Firebase Auth (anonymous first, Google link later) + the profile mirrored to Firestore … |
+| 258 | `src/core/score-report.js` | 24 | Z163 THE LEADERBOARD'S RUN REPORT: at the end of each stage (and when a run ends) the score so far goes to t… |
 | | **render/** — Three.js renderer + hậu kỳ | | |
 | 23 | `src/render/clouds.js` | 33 | Z145 CLOUD LIGHT: big cloud shadows drift across the whole battlefield (forts, tanks, fields go dim and brig… |
 | 24 | `src/render/aerial.js` | 76 | Z427 AIR AND DISTANCE: the haze every fogged material draws through is rebuilt (the stock fog chunk replaced… |
@@ -95,292 +95,293 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 32 | `src/render/lod.js` | 54 | Z107 RENDER BUDGET: trims draw calls where the eye can't tell — soldier shadows only near the tank, tower / … |
 | 33 | `src/render/far-lod.js` | 78 | Z328 FAR LOD: a big static model (a fort's towers and gatehouse, our HQ) swaps to a simplified copy of itsel… |
 | 34 | `src/render/shadow-split.js` | 85 | SPLIT 1 (A1) THE SUN'S SHADOW IN TWO PARTS: what stands still (ground, walls, houses, rocks, trees, the fiel… |
-| 35 | `src/render/fight-warm.js` | 41 | SPLIT 2 (A6) NOTHING COMPILED OR UPLOADED IN THE FIGHT'S FIRST FRAMES, AND THE LOAD NEVER WAITS FOR IT. Two … |
-| 36 | `src/render/inst-view.js` | 94 | VIEW 1 AN INSTANCED MESH SPREAD OVER THE WHOLE FIELD DRAWS ONLY WHAT IS NEAR. One InstancedMesh of 2000 ston… |
-| 37 | `src/render/near-detail.js` | 119 | Z395 NEAR DETAIL: every model the game ships was packed small (1K maps), so up close a palm's fronds fray wh… |
-| 38 | `src/render/cover-batch.js` | 51 | Z338 COVER IN A FEW DRAWS: every piece of cover (sandbags, crates, drums, concrete, HESCO, jersey, pipes, te… |
-| 39 | `src/render/see-through.js` | 44 | CAM 3 SEE-THROUGH: what stands between the follow camera and the soldier — a fort's wall, tower or keep, its… |
-| 40 | `src/render/perfhud.js` | 37 | Z240 PERFORMANCE PROBE + HUD: per-frame logic / draw-submit / GPU time (EXT_disjoint_timer_query_webgl2), wo… |
-| 46 | `src/render/mat-norm.js` | 129 | MAT 1 ONE LIGHT FOR EVERY MODEL: the field is furnished from Poly Haven scans, Sketchfab scans, Meshy and Tr… |
-| 47 | `src/render/blend-in.js` | 60 | Z325 EVERYTHING BELONGS TO THE FIELD: forts, the real city, ruins, wonders, props and the 3D models were eac… |
-| 69 | `src/render/materials.js` | 49 | procedural textures the world shares: the welded-panel albedo (panelTex), a height map → normal map (_height… |
-| 97 | `src/render/night-marks.js` | 23 | Z137 NIGHT VISIBILITY: at night every tank wears lamps so it can be read in the dark — enemy hulls: white he… |
+| 35 | `src/render/quality.js` | 44 | SPLIT 3 (A9) THREE QUALITY LEVELS + A FALL-BACK AFTER A CRASHED LOAD. Thấp / Vừa / Cao are the same battlefi… |
+| 36 | `src/render/fight-warm.js` | 41 | SPLIT 2 (A6) NOTHING COMPILED OR UPLOADED IN THE FIGHT'S FIRST FRAMES, AND THE LOAD NEVER WAITS FOR IT. Two … |
+| 37 | `src/render/inst-view.js` | 94 | VIEW 1 AN INSTANCED MESH SPREAD OVER THE WHOLE FIELD DRAWS ONLY WHAT IS NEAR. One InstancedMesh of 2000 ston… |
+| 38 | `src/render/near-detail.js` | 119 | Z395 NEAR DETAIL: every model the game ships was packed small (1K maps), so up close a palm's fronds fray wh… |
+| 39 | `src/render/cover-batch.js` | 51 | Z338 COVER IN A FEW DRAWS: every piece of cover (sandbags, crates, drums, concrete, HESCO, jersey, pipes, te… |
+| 40 | `src/render/see-through.js` | 44 | CAM 3 SEE-THROUGH: what stands between the follow camera and the soldier — a fort's wall, tower or keep, its… |
+| 41 | `src/render/perfhud.js` | 37 | Z240 PERFORMANCE PROBE + HUD: per-frame logic / draw-submit / GPU time (EXT_disjoint_timer_query_webgl2), wo… |
+| 47 | `src/render/mat-norm.js` | 129 | MAT 1 ONE LIGHT FOR EVERY MODEL: the field is furnished from Poly Haven scans, Sketchfab scans, Meshy and Tr… |
+| 48 | `src/render/blend-in.js` | 60 | Z325 EVERYTHING BELONGS TO THE FIELD: forts, the real city, ruins, wonders, props and the 3D models were eac… |
+| 70 | `src/render/materials.js` | 49 | procedural textures the world shares: the welded-panel albedo (panelTex), a height map → normal map (_height… |
+| 98 | `src/render/night-marks.js` | 23 | Z137 NIGHT VISIBILITY: at night every tank wears lamps so it can be read in the dark — enemy hulls: white he… |
 | | **audio/** — Âm thanh tổng hợp | | |
-| 73 | `src/audio/synth.js` | 276 | AUDIO (Web Audio synth) |
-| 74 | `src/audio/engine-music.js` | 103 | DIESEL ENGINE + TRACK CLATTER (player): idle burble → roar under load; climbing a mound makes it SCREAM, coa… |
-| 75 | `src/audio/voice.js` | 58 | Z161 RADIO VOICES: the commander (SCH) and the generals speak Vietnamese over the radio · Z169 only danger c… |
-| 76 | `src/audio/banter.js` | 132 | VOICE 2 THE FUN TALK: the xe ôm driver, the soldier, his squad and the enemy SPEAK (the commander's radio st… |
-| 77 | `src/audio/music.js` | 73 | Z161 ADAPTIVE BATTLE SCORE: five looped stems rendered offline (pad · war drums · bass ostinato · string spi… |
-| 78 | `src/audio/ambience.js` | 197 | NATURE AMBIENCE (AMBIENCE): a quiet bed under the battle (wind · leaves on the green fields · the sea's wash… |
-| 79 | `src/audio/afx-math.js` | 190 | AUDIO 1 the battle sound layer's PURE maths (no AudioContext, no hub, no DOM — it runs in Node: tools/audio-… |
-| 80 | `src/audio/afx.js` | 150 | AUDIO 1 THE BATTLE'S SOUND LAYER over audio/synth.js: every world sound becomes a VOICE with a place — level… |
-| 81 | `src/audio/afx-space.js` | 42 | AUDIO 2 THE SPACE THE LISTENER STANDS IN: a ring of rays round him (one ray a tick, never a burst) and the l… |
-| 82 | `src/audio/afx-move.js` | 35 | AUDIO 2 MEN ON THE MOVE: a footstep by the ground under it (sand hisses, rock scrapes, the shallows splash, … |
-| 83 | `src/audio/afx-mix.js` | 66 | AUDIO 3 THE MIXER, THE SCORE AND THE SQUAD'S CALLS: the music dips under gunfire and under a close blast and… |
-| 84 | `src/audio/body-math.js` | 36 | HIT 1 the takes of a man's body struck, pure maths (no imports: runs in Node, test.js): each returns a mono … |
-| 85 | `src/audio/body-hit.js` | 45 | HIT 1 A MAN IS HIT, NOT A HULL: what HE hears when he is struck (game/player-damage.js), synthesised, no fil… |
+| 74 | `src/audio/synth.js` | 276 | AUDIO (Web Audio synth) |
+| 75 | `src/audio/engine-music.js` | 104 | DIESEL ENGINE + TRACK CLATTER (player): idle burble → roar under load; climbing a mound makes it SCREAM, coa… |
+| 76 | `src/audio/voice.js` | 58 | Z161 RADIO VOICES: the commander (SCH) and the generals speak Vietnamese over the radio · Z169 only danger c… |
+| 77 | `src/audio/banter.js` | 132 | VOICE 2 THE FUN TALK: the xe ôm driver, the soldier, his squad and the enemy SPEAK (the commander's radio st… |
+| 78 | `src/audio/music.js` | 73 | Z161 ADAPTIVE BATTLE SCORE: five looped stems rendered offline (pad · war drums · bass ostinato · string spi… |
+| 79 | `src/audio/ambience.js` | 197 | NATURE AMBIENCE (AMBIENCE): a quiet bed under the battle (wind · leaves on the green fields · the sea's wash… |
+| 80 | `src/audio/afx-math.js` | 190 | AUDIO 1 the battle sound layer's PURE maths (no AudioContext, no hub, no DOM — it runs in Node: tools/audio-… |
+| 81 | `src/audio/afx.js` | 150 | AUDIO 1 THE BATTLE'S SOUND LAYER over audio/synth.js: every world sound becomes a VOICE with a place — level… |
+| 82 | `src/audio/afx-space.js` | 42 | AUDIO 2 THE SPACE THE LISTENER STANDS IN: a ring of rays round him (one ray a tick, never a burst) and the l… |
+| 83 | `src/audio/afx-move.js` | 35 | AUDIO 2 MEN ON THE MOVE: a footstep by the ground under it (sand hisses, rock scrapes, the shallows splash, … |
+| 84 | `src/audio/afx-mix.js` | 66 | AUDIO 3 THE MIXER, THE SCORE AND THE SQUAD'S CALLS: the music dips under gunfire and under a close blast and… |
+| 85 | `src/audio/body-math.js` | 36 | HIT 1 the takes of a man's body struck, pure maths (no imports: runs in Node, test.js): each returns a mono … |
+| 86 | `src/audio/body-hit.js` | 45 | HIT 1 A MAN IS HIT, NOT A HULL: what HE hears when he is struck (game/player-damage.js), synthesised, no fil… |
 | | **world/** — Bản đồ: địa hình, khí quyển, vật cản, công trình | | |
 | 22 | `src/world/field.js` | 63 | Z106 FIELD BOUNDARY: the playable area is an irregular outline (radius per bearing around the Core) — bays, … |
-| 41 | `src/world/atmosphere.js` | 166 | Z97 VISIBLE SKY: a real gradient dome (zenith → horizon haze that melts into the fog), sun glow by day, moon… |
-| 42 | `src/world/sky-photo.js` | 27 | Z255 PHOTOGRAPHED SKY: a real pure-sky HDRI (Poly Haven, CC0; tools/sky-hdri.mjs → assets/sky) laid into the… |
-| 43 | `src/world/ground.js` | 227 | ARENA ground: procedural ground maps per biome, macro variation + patch textures (cached) |
-| 44 | `src/world/ground-photo.js` | 36 | Z250 PHOTO GROUND: the battlefield floor wears photo-scanned CC0 materials (Poly Haven, see config GROUND_PH… |
-| 45 | `src/world/grass-carpet.js` | 115 | Z251 GRASS CARPET → Z263 PHOTOGRAPHED GRASS: on grassy battlefields a carpet of real grass grows round the c… |
-| 48 | `src/world/heightfield.js` | 251 | HEIGHTFIELD: rolling mounds, shell craters & wind drifts; everything (tanks, props, shells, particles) sits … |
-| 49 | `src/world/river.js` | 194 | Z405 RIVERS: a river and its side stream across the battlefields that have one (config RIVERS) — the bed car… |
-| 50 | `src/world/decals.js` | 95 | GROUND SCARS: tread marks (fade over time) + scorch/craters/impact dirt (permanent per stage) painted into a… |
-| 51 | `src/world/props.js` | 257 | BATTLEFIELD PROPS (procedural, merged geometry, cached) |
-| 52 | `src/world/real-props.js` | 62 | Z252 REAL COVER: the Meshy-generated low-poly cover pieces (sandbags, concrete block, container, crates, dru… |
-| 53 | `src/world/perimeter.js` | 85 | perimeter: concrete jersey barriers (instanced) topped with concertina razor wire on steel pickets |
-| 54 | `src/world/decor.js` | 66 | TERRAIN DECOR (ambient scatter: rocks · grass · ice · slag · rubble) |
-| 55 | `src/world/magma.js` | 85 | Z258 REAL MAGMA + A REAL VOLCANO. One shader for molten rock: a skin of dark basalt crust broken into plates… |
-| 56 | `src/world/stone.js` | 126 | Z259 PHOTO STONE for built and natural rock: a material that starts in a plain stone colour and takes a phot… |
-| 57 | `src/world/lava.js` | 32 | Z187 LAVA in the volcanic caldera: glowing pools that light the ground, spit embers, and burn any tank that … |
-| 58 | `src/world/horizon.js` | 121 | Z189 THE HORIZON (Z209 sculpted, lit, never the same twice): the battlefield is not alone in the world. Thre… |
-| 59 | `src/world/backdrop.js` | 121 | Z427 THE FAR RANGES: the land and the mountains kilometres away, at their true distance and height. They are… |
-| 60 | `src/world/forest.js` | 44 | Z440 WOODS PAST THE FENCE: the land round the field wears real woods of the scanned tree species, not a scat… |
-| 61 | `src/world/biome.js` | 32 | Z103 split from world/physics.js: apply a battlefield biome (ground maps, terrain, sky, perimeter, |
-| 62 | `src/world/cover.js` | 239 | TERRAIN BLOCKS (cover) |
-| 63 | `src/world/rubble.js` | 44 | Z193 WHAT A BROKEN OBSTACLE LEAVES BEHIND: a low heap of its own material where it stood (torn sacks and spi… |
-| 64 | `src/world/supply.js` | 338 | Z194 ENEMY SUPPLY BASES: a FUEL STATION (tank farm behind a bund wall, pump house, dispensers, tanker trucks… |
-| 65 | `src/world/camp-life.js` | 53 | Z196 A LIVED-IN BARRACKS: the troop camp is where the enemy feeds, clothes and treats its men — the mess ten… |
-| 66 | `src/world/radar.js` | 79 | Z197 THE RADAR STATION: the enemy's eyes. A 20 m tapered steel lattice tower on a concrete pad, an equipment… |
-| 67 | `src/world/ridges.js` | 30 | Z106 INNER RIDGES: rock spines across the field that split it into sectors with passes between them — |
-| 68 | `src/world/brick-walls.js` | 126 | Z86 RUINED BRICK WALLS — tall, shell-torn, never whole; ram them down at speed |
-| 91 | `src/world/skylife.js` | 184 | Z235 A LIVING SKY over the battlefield: |
-| 98 | `src/world/landmarks.js` | 17 | Z139 BATTLEFIELD LANDMARKS (Z327: the old box-city and hill-woods builders are gone — the real city and flor… |
-| 99 | `src/world/regional.js` | 173 | Z140 REGIONAL ARCHITECTURE: every battlefield builds its strongholds its own way — our Core compound and the… |
-| 100 | `src/world/core-walls.js` | 182 | Z140 OUR STRONGHOLD: the Core sits inside a walled compound built in the land's own style (regional.js) — an… |
-| 101 | `src/world/env-events.js` | 60 | Z140 SURPRISES OF THE LAND: every minute or two the battlefield itself does something — the village river fl… |
-| 103 | `src/world/flora.js` | 236 | Z141 LIVING SCENERY: proper trees (layered conifers, round-crowned broadleaf, curved coconut palms, bamboo c… |
-| 104 | `src/world/cars.js` | 54 | Z206 STREET VEHICLES: which body each parked car takes (sedan · hatchback · SUV · pickup · minivan · taxi · … |
-| 105 | `src/world/city.js` | 449 | Z142 · Z216 A REAL CITY THAT BREAKS. The street plan has a hierarchy: wide BOULEVARDS every third line (two … |
-| 107 | `src/world/wonders.js` | 133 | Z144 WORLD LANDMARKS: every battlefield has one landmark of its land's architecture on the high ground just … |
-| 121 | `src/world/tunnels.js` | 132 | Z225 ĐỊA ĐẠO: the enemy has dug a tunnel network under the battlefield (from stage 2 and every custom battle). |
-| 122 | `src/world/underbase.js` | 238 | Z226 THE UNDERGROUND BASE: under every battlefield the enemy keeps a buried base — its barracks, its vehicle… |
-| 134 | `src/world/towers.js` | 134 | WATCHTOWERS: wood towers with guards who fire plunging rounds + night searchlights; shoot them down to colla… |
-| 135 | `src/world/tower-fall.js` | 158 | Z452 A TOWER COMES DOWN FOR REAL: a watchtower, a guard post or the radar mast shot down topples about the s… |
-| 136 | `src/world/tower-kinds.js` | 126 | Z175 WATCHTOWER TYPES: seven real guard-tower builds in timber, steel and concrete — each land raises the ki… |
-| 137 | `src/world/camps.js` | 157 | Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouri… |
-| 138 | `src/world/zones.js` | 38 | Z104 BATTLEFIELD PLAN: reserves ground for the rally point, POW stockades and depots before cover is scattered |
-| 139 | `src/world/fortress.js` | 680 | Z107 FORTRESSES (đại bản doanh): 3–4 named strongholds a stage — crenellated walls with riflemen on top, cor… |
-| 140 | `src/world/fort-hill.js` | 182 | Z453 CASTLES ON CRAGS (config FORTHILL, the limestone quarry first; Z455 the whole land: crags joined by rid… |
-| 141 | `src/world/hill-trees.js` | 35 | Z455 TREES ON THE CRAGS (FORTHILL.trees): on the limestone hills dead trees cling at the lip of a drop — fou… |
-| 142 | `src/world/hill-climb.js` | 40 | Z456 THE WAY UP (FORTHILL…spur.path): the capital's crag is sheer all round but for a narrow tongue toward i… |
-| 143 | `src/world/iceberg.js` | 101 | Z462 THE ICEBERG CITADELS (FORTHILL.biomes.ARCTIC.berg): the arctic's capital, and the fort with the most ro… |
-| 144 | `src/world/rally.js` | 26 | Z104 KHU TẬP KẾT (rally point): soldiers carry the loot they find back here; it waits (never expires) for th… |
-| 145 | `src/world/pow.js` | 57 | Z104 POW STOCKADES along our fence: our captured men behind barbed wire, enemy guards around them. |
-| 146 | `src/world/depots.js` | 58 | Z104 ENEMY WEAPON DEPOTS in their half of the field, each with a guard post (no-tanks: the motor pool is gon… |
-| 147 | `src/world/bridges.js` | 53 | Z90 · ROPE BRIDGES between paired watchtowers — plank walkway on a catenary, rope handrails, a sentry patrol… |
-| 160 | `src/world/tree-fall.js` | 52 | Z262 A TREE GOES DOWN FOR REAL: rammed by a tank, struck by a shell or caught in a blast, a tree topples abo… |
-| 161 | `src/world/real-trees.js` | 105 | Z262 REAL TREES: thirteen Meshy-generated species (oak, linden, birch, poplar, Scots pine, snowy spruce, coc… |
-| 162 | `src/world/real-city.js` | 60 | Z264 THE REAL CITY: Meshy-generated buildings (glass tower, stone office tower, apartment tower, mid-rise ho… |
-| 163 | `src/world/traffic.js` | 445 | Z268 THE CITY MOVES (Z269: app-driver liveries — green, yellow, teal on an electric scooter — plain jackets,… |
-| 165 | `src/world/ruins3d.js` | 31 | Z275 RUINS OF WAR: Tripo-built ruins stand about the battlefields — a gothic chapel fallen in (built from th… |
-| 166 | `src/world/defense.js` | 159 | Z420 THE DEFENCE IN DEPTH → Z423 EVERY LAND ITS OWN DOCTRINE. The forts stand in a ring round our base and t… |
-| 167 | `src/world/trails.js` | 135 | Z432 TRAILS: the tracks worn between the places of a battlefield (our gates, the spawn, the forts' gates, th… |
-| 168 | `src/world/real-turrets.js` | 61 | Z424 REAL GUNS ON THE DRAWN MOUNTS, REAL ROCKETS ON THE DRAWN ROUNDS. Our base's guard cannons (the fort gun… |
-| 169 | `src/world/real-fit.js` | 40 | Z426 A DRAWN PIECE WEARING A SCAN FITTED TO ITS OWN BOX: the enemy camps' Quonset barracks and sleeping tent… |
-| 170 | `src/world/scenery.js` | 300 | Z374 THE BATTLEFIELD AS A PICTURE: every land is composed from the Meshy community scans (config SCENERY, fi… |
-| 178 | `src/world/solid-shape.js` | 160 | Z337 THE SHAPE A THING REALLY HAS, for whatever bumps into it: a block is kept as a circle for the bullets a… |
-| 209 | `src/world/outposts.js` | 36 | Z285 ENEMY OUTPOSTS: round every enemy fort a camp of real things (Tripo): a long barracks, field tents, a r… |
-| 292 | `src/world/sidepaint.js` | 42 | Z179 BATTLEFIELD-AWARE PAINT: soldiers and vehicles of both sides are recoloured for each battlefield so the… |
+| 42 | `src/world/atmosphere.js` | 166 | Z97 VISIBLE SKY: a real gradient dome (zenith → horizon haze that melts into the fog), sun glow by day, moon… |
+| 43 | `src/world/sky-photo.js` | 27 | Z255 PHOTOGRAPHED SKY: a real pure-sky HDRI (Poly Haven, CC0; tools/sky-hdri.mjs → assets/sky) laid into the… |
+| 44 | `src/world/ground.js` | 227 | ARENA ground: procedural ground maps per biome, macro variation + patch textures (cached) |
+| 45 | `src/world/ground-photo.js` | 36 | Z250 PHOTO GROUND: the battlefield floor wears photo-scanned CC0 materials (Poly Haven, see config GROUND_PH… |
+| 46 | `src/world/grass-carpet.js` | 115 | Z251 GRASS CARPET → Z263 PHOTOGRAPHED GRASS: on grassy battlefields a carpet of real grass grows round the c… |
+| 49 | `src/world/heightfield.js` | 251 | HEIGHTFIELD: rolling mounds, shell craters & wind drifts; everything (tanks, props, shells, particles) sits … |
+| 50 | `src/world/river.js` | 194 | Z405 RIVERS: a river and its side stream across the battlefields that have one (config RIVERS) — the bed car… |
+| 51 | `src/world/decals.js` | 95 | GROUND SCARS: tread marks (fade over time) + scorch/craters/impact dirt (permanent per stage) painted into a… |
+| 52 | `src/world/props.js` | 257 | BATTLEFIELD PROPS (procedural, merged geometry, cached) |
+| 53 | `src/world/real-props.js` | 62 | Z252 REAL COVER: the Meshy-generated low-poly cover pieces (sandbags, concrete block, container, crates, dru… |
+| 54 | `src/world/perimeter.js` | 85 | perimeter: concrete jersey barriers (instanced) topped with concertina razor wire on steel pickets |
+| 55 | `src/world/decor.js` | 66 | TERRAIN DECOR (ambient scatter: rocks · grass · ice · slag · rubble) |
+| 56 | `src/world/magma.js` | 85 | Z258 REAL MAGMA + A REAL VOLCANO. One shader for molten rock: a skin of dark basalt crust broken into plates… |
+| 57 | `src/world/stone.js` | 126 | Z259 PHOTO STONE for built and natural rock: a material that starts in a plain stone colour and takes a phot… |
+| 58 | `src/world/lava.js` | 32 | Z187 LAVA in the volcanic caldera: glowing pools that light the ground, spit embers, and burn any tank that … |
+| 59 | `src/world/horizon.js` | 121 | Z189 THE HORIZON (Z209 sculpted, lit, never the same twice): the battlefield is not alone in the world. Thre… |
+| 60 | `src/world/backdrop.js` | 121 | Z427 THE FAR RANGES: the land and the mountains kilometres away, at their true distance and height. They are… |
+| 61 | `src/world/forest.js` | 44 | Z440 WOODS PAST THE FENCE: the land round the field wears real woods of the scanned tree species, not a scat… |
+| 62 | `src/world/biome.js` | 32 | Z103 split from world/physics.js: apply a battlefield biome (ground maps, terrain, sky, perimeter, |
+| 63 | `src/world/cover.js` | 239 | TERRAIN BLOCKS (cover) |
+| 64 | `src/world/rubble.js` | 44 | Z193 WHAT A BROKEN OBSTACLE LEAVES BEHIND: a low heap of its own material where it stood (torn sacks and spi… |
+| 65 | `src/world/supply.js` | 338 | Z194 ENEMY SUPPLY BASES: a FUEL STATION (tank farm behind a bund wall, pump house, dispensers, tanker trucks… |
+| 66 | `src/world/camp-life.js` | 53 | Z196 A LIVED-IN BARRACKS: the troop camp is where the enemy feeds, clothes and treats its men — the mess ten… |
+| 67 | `src/world/radar.js` | 79 | Z197 THE RADAR STATION: the enemy's eyes. A 20 m tapered steel lattice tower on a concrete pad, an equipment… |
+| 68 | `src/world/ridges.js` | 30 | Z106 INNER RIDGES: rock spines across the field that split it into sectors with passes between them — |
+| 69 | `src/world/brick-walls.js` | 126 | Z86 RUINED BRICK WALLS — tall, shell-torn, never whole; ram them down at speed |
+| 92 | `src/world/skylife.js` | 184 | Z235 A LIVING SKY over the battlefield: |
+| 99 | `src/world/landmarks.js` | 17 | Z139 BATTLEFIELD LANDMARKS (Z327: the old box-city and hill-woods builders are gone — the real city and flor… |
+| 100 | `src/world/regional.js` | 173 | Z140 REGIONAL ARCHITECTURE: every battlefield builds its strongholds its own way — our Core compound and the… |
+| 101 | `src/world/core-walls.js` | 182 | Z140 OUR STRONGHOLD: the Core sits inside a walled compound built in the land's own style (regional.js) — an… |
+| 102 | `src/world/env-events.js` | 60 | Z140 SURPRISES OF THE LAND: every minute or two the battlefield itself does something — the village river fl… |
+| 104 | `src/world/flora.js` | 236 | Z141 LIVING SCENERY: proper trees (layered conifers, round-crowned broadleaf, curved coconut palms, bamboo c… |
+| 105 | `src/world/cars.js` | 54 | Z206 STREET VEHICLES: which body each parked car takes (sedan · hatchback · SUV · pickup · minivan · taxi · … |
+| 106 | `src/world/city.js` | 449 | Z142 · Z216 A REAL CITY THAT BREAKS. The street plan has a hierarchy: wide BOULEVARDS every third line (two … |
+| 108 | `src/world/wonders.js` | 133 | Z144 WORLD LANDMARKS: every battlefield has one landmark of its land's architecture on the high ground just … |
+| 122 | `src/world/tunnels.js` | 132 | Z225 ĐỊA ĐẠO: the enemy has dug a tunnel network under the battlefield (from stage 2 and every custom battle). |
+| 123 | `src/world/underbase.js` | 238 | Z226 THE UNDERGROUND BASE: under every battlefield the enemy keeps a buried base — its barracks, its vehicle… |
+| 135 | `src/world/towers.js` | 134 | WATCHTOWERS: wood towers with guards who fire plunging rounds + night searchlights; shoot them down to colla… |
+| 136 | `src/world/tower-fall.js` | 158 | Z452 A TOWER COMES DOWN FOR REAL: a watchtower, a guard post or the radar mast shot down topples about the s… |
+| 137 | `src/world/tower-kinds.js` | 126 | Z175 WATCHTOWER TYPES: seven real guard-tower builds in timber, steel and concrete — each land raises the ki… |
+| 138 | `src/world/camps.js` | 157 | Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouri… |
+| 139 | `src/world/zones.js` | 38 | Z104 BATTLEFIELD PLAN: reserves ground for the rally point, POW stockades and depots before cover is scattered |
+| 140 | `src/world/fortress.js` | 680 | Z107 FORTRESSES (đại bản doanh): 3–4 named strongholds a stage — crenellated walls with riflemen on top, cor… |
+| 141 | `src/world/fort-hill.js` | 182 | Z453 CASTLES ON CRAGS (config FORTHILL, the limestone quarry first; Z455 the whole land: crags joined by rid… |
+| 142 | `src/world/hill-trees.js` | 35 | Z455 TREES ON THE CRAGS (FORTHILL.trees): on the limestone hills dead trees cling at the lip of a drop — fou… |
+| 143 | `src/world/hill-climb.js` | 40 | Z456 THE WAY UP (FORTHILL…spur.path): the capital's crag is sheer all round but for a narrow tongue toward i… |
+| 144 | `src/world/iceberg.js` | 101 | Z462 THE ICEBERG CITADELS (FORTHILL.biomes.ARCTIC.berg): the arctic's capital, and the fort with the most ro… |
+| 145 | `src/world/rally.js` | 26 | Z104 KHU TẬP KẾT (rally point): soldiers carry the loot they find back here; it waits (never expires) for th… |
+| 146 | `src/world/pow.js` | 57 | Z104 POW STOCKADES along our fence: our captured men behind barbed wire, enemy guards around them. |
+| 147 | `src/world/depots.js` | 58 | Z104 ENEMY WEAPON DEPOTS in their half of the field, each with a guard post (no-tanks: the motor pool is gon… |
+| 148 | `src/world/bridges.js` | 53 | Z90 · ROPE BRIDGES between paired watchtowers — plank walkway on a catenary, rope handrails, a sentry patrol… |
+| 161 | `src/world/tree-fall.js` | 52 | Z262 A TREE GOES DOWN FOR REAL: rammed by a tank, struck by a shell or caught in a blast, a tree topples abo… |
+| 162 | `src/world/real-trees.js` | 105 | Z262 REAL TREES: thirteen Meshy-generated species (oak, linden, birch, poplar, Scots pine, snowy spruce, coc… |
+| 163 | `src/world/real-city.js` | 60 | Z264 THE REAL CITY: Meshy-generated buildings (glass tower, stone office tower, apartment tower, mid-rise ho… |
+| 164 | `src/world/traffic.js` | 445 | Z268 THE CITY MOVES (Z269: app-driver liveries — green, yellow, teal on an electric scooter — plain jackets,… |
+| 166 | `src/world/ruins3d.js` | 31 | Z275 RUINS OF WAR: Tripo-built ruins stand about the battlefields — a gothic chapel fallen in (built from th… |
+| 167 | `src/world/defense.js` | 159 | Z420 THE DEFENCE IN DEPTH → Z423 EVERY LAND ITS OWN DOCTRINE. The forts stand in a ring round our base and t… |
+| 168 | `src/world/trails.js` | 135 | Z432 TRAILS: the tracks worn between the places of a battlefield (our gates, the spawn, the forts' gates, th… |
+| 169 | `src/world/real-turrets.js` | 61 | Z424 REAL GUNS ON THE DRAWN MOUNTS, REAL ROCKETS ON THE DRAWN ROUNDS. Our base's guard cannons (the fort gun… |
+| 170 | `src/world/real-fit.js` | 40 | Z426 A DRAWN PIECE WEARING A SCAN FITTED TO ITS OWN BOX: the enemy camps' Quonset barracks and sleeping tent… |
+| 171 | `src/world/scenery.js` | 300 | Z374 THE BATTLEFIELD AS A PICTURE: every land is composed from the Meshy community scans (config SCENERY, fi… |
+| 179 | `src/world/solid-shape.js` | 160 | Z337 THE SHAPE A THING REALLY HAS, for whatever bumps into it: a block is kept as a circle for the bullets a… |
+| 210 | `src/world/outposts.js` | 36 | Z285 ENEMY OUTPOSTS: round every enemy fort a camp of real things (Tripo): a long barracks, field tents, a r… |
+| 293 | `src/world/sidepaint.js` | 42 | Z179 BATTLEFIELD-AWARE PAINT: soldiers and vehicles of both sides are recoloured for each battlefield so the… |
 | | **fx/** — Hiệu ứng hình ảnh | | |
 | 29 | `src/fx/battle-light.js` | 73 | Z318 BATTLEFIELD LIGHT: one palette, one pulse clock and one glowing-ring material for every gameplay light |
 | 31 | `src/fx/searchlight.js` | 66 | Z146 SEARCHLIGHTS that read as real light in night air, not a glowing plastic cone: |
-| 70 | `src/fx/hud-fx.js` | 43 | FX (rings, float text, screen) |
-| 71 | `src/fx/particles.js` | 94 | PARTICLES (juice) |
-| 72 | `src/fx/gore.js` | 65 | Z121 GORE: blood on the ground as real soft-edged splats (one instanced draw, they fade out) and bodies torn… |
-| 88 | `src/fx/fire-wrecks.js` | 39 | REAL FIRE / FLASH: the flame and flash textures, particle layers and the rolling fireball (no-tanks: the bur… |
-| 89 | `src/fx/flames.js` | 40 | Z235 LIVING FLAMES: every standing fire (camp fires, braziers, torches) is a flame that breathes and dances,… |
-| 90 | `src/fx/smoketrail.js` | 81 | Z236 SMOKE RIBBONS: a tank-gun round no longer leaves a string of separate puffs behind it but one unbroken … |
-| 102 | `src/fx/celebrate.js` | 24 | Z140 VICTORY CELEBRATION: a fort taken or a battle won — fireworks over the field, every soldier of ours lea… |
-| 114 | `src/fx/realwar.js` | 37 | Z223 REAL WAR: the small things that make a firefight read as real. |
-| 150 | `src/fx/cinematic.js` | 41 | Z189 CINEMATIC COMBAT FX: a shock dome that rips out of every tank kill, real fire light (blasts flash the g… |
-| 151 | `src/fx/soldier-fx.js` | 56 | Z306 A MAN IS HIT, NOT A HULL: blood off the side the round came from, a flinch of the view and the red mark… |
-| 152 | `src/fx/fire-fx.js` | 209 | FIRE 1 THE FIRE / SMOKE PARTICLE LAYER: every flame, fireball, dust and smoke puff of the new effects (fx/bl… |
-| 153 | `src/fx/blasts.js` | 134 | FIRE 2–4 THE STAGED EFFECTS on the fire / smoke layer (fx/fire-fx.js; numbers in config FIREFX), each the wa… |
-| 154 | `src/fx/hitfx.js` | 77 | Z192 REAL ROUNDS & REAL HITS: a shell flies as a hot streak pointed along its path (not a glowing ball), a m… |
-| 155 | `src/fx/explosions.js` | 89 | COMBAT FX / EXPLOSIONS (juiced in P4) |
-| 156 | `src/fx/wallmarks.js` | 44 | Z204 A ROUND THAT HITS SOMETHING SOLID: every strike on a wall, rock, fortress, cover piece or structure — b… |
-| 157 | `src/fx/gunfx.js` | 295 | Z149 GUN EFFECTS that read like the real weapon, per firing class (GUNS[id].flash): |
-| 158 | `src/fx/debris.js` | 88 | Z103 split from fx/explosions.js: flying fragments (pooled) — chunks, plates, splinters (no-tanks: the tank … |
-| 159 | `src/fx/shatter.js` | 103 | Z261 REAL BREAKAGE: a destroyed prop breaks into pieces of ITSELF — its own (real, textured) mesh cut into f… |
-| 171 | `src/fx/dust.js` | 35 | Z278 DUST IN THE SUNLIGHT: a few thousand motes drift in a box of air that follows the camera's view (world-… |
-| 172 | `src/fx/footfall.js` | 145 | LIGHT 1 GROUNDED: the soldier stands IN the world. A soft contact shade (the sky the body hides from the gro… |
-| 183 | `src/fx/water-spray.js` | 106 | HSWIM 2 WATER THAT READS AS WATER (config HSWIM2): the splash of a boot, a stroke or a swimming horse's ches… |
-| 210 | `src/fx/weather.js` | 82 | Z107 WEATHER: rain squalls (streaks + wet, glossy ground + lightning), sandstorms (driven grit + thick ochre… |
+| 71 | `src/fx/hud-fx.js` | 43 | FX (rings, float text, screen) |
+| 72 | `src/fx/particles.js` | 94 | PARTICLES (juice) |
+| 73 | `src/fx/gore.js` | 65 | Z121 GORE: blood on the ground as real soft-edged splats (one instanced draw, they fade out) and bodies torn… |
+| 89 | `src/fx/fire-wrecks.js` | 39 | REAL FIRE / FLASH: the flame and flash textures, particle layers and the rolling fireball (no-tanks: the bur… |
+| 90 | `src/fx/flames.js` | 40 | Z235 LIVING FLAMES: every standing fire (camp fires, braziers, torches) is a flame that breathes and dances,… |
+| 91 | `src/fx/smoketrail.js` | 81 | Z236 SMOKE RIBBONS: a tank-gun round no longer leaves a string of separate puffs behind it but one unbroken … |
+| 103 | `src/fx/celebrate.js` | 24 | Z140 VICTORY CELEBRATION: a fort taken or a battle won — fireworks over the field, every soldier of ours lea… |
+| 115 | `src/fx/realwar.js` | 37 | Z223 REAL WAR: the small things that make a firefight read as real. |
+| 151 | `src/fx/cinematic.js` | 41 | Z189 CINEMATIC COMBAT FX: a shock dome that rips out of every tank kill, real fire light (blasts flash the g… |
+| 152 | `src/fx/soldier-fx.js` | 56 | Z306 A MAN IS HIT, NOT A HULL: blood off the side the round came from, a flinch of the view and the red mark… |
+| 153 | `src/fx/fire-fx.js` | 209 | FIRE 1 THE FIRE / SMOKE PARTICLE LAYER: every flame, fireball, dust and smoke puff of the new effects (fx/bl… |
+| 154 | `src/fx/blasts.js` | 134 | FIRE 2–4 THE STAGED EFFECTS on the fire / smoke layer (fx/fire-fx.js; numbers in config FIREFX), each the wa… |
+| 155 | `src/fx/hitfx.js` | 77 | Z192 REAL ROUNDS & REAL HITS: a shell flies as a hot streak pointed along its path (not a glowing ball), a m… |
+| 156 | `src/fx/explosions.js` | 89 | COMBAT FX / EXPLOSIONS (juiced in P4) |
+| 157 | `src/fx/wallmarks.js` | 44 | Z204 A ROUND THAT HITS SOMETHING SOLID: every strike on a wall, rock, fortress, cover piece or structure — b… |
+| 158 | `src/fx/gunfx.js` | 295 | Z149 GUN EFFECTS that read like the real weapon, per firing class (GUNS[id].flash): |
+| 159 | `src/fx/debris.js` | 88 | Z103 split from fx/explosions.js: flying fragments (pooled) — chunks, plates, splinters (no-tanks: the tank … |
+| 160 | `src/fx/shatter.js` | 103 | Z261 REAL BREAKAGE: a destroyed prop breaks into pieces of ITSELF — its own (real, textured) mesh cut into f… |
+| 172 | `src/fx/dust.js` | 35 | Z278 DUST IN THE SUNLIGHT: a few thousand motes drift in a box of air that follows the camera's view (world-… |
+| 173 | `src/fx/footfall.js` | 145 | LIGHT 1 GROUNDED: the soldier stands IN the world. A soft contact shade (the sky the body hides from the gro… |
+| 184 | `src/fx/water-spray.js` | 106 | HSWIM 2 WATER THAT READS AS WATER (config HSWIM2): the splash of a boot, a stroke or a swimming horse's ches… |
+| 211 | `src/fx/weather.js` | 82 | Z107 WEATHER: rain squalls (streaks + wet, glossy ground + lightning), sandstorms (driven grit + thick ochre… |
 | | **combat/** — Vũ khí, đạn, kỹ năng | | |
-| 86 | `src/combat/projectiles.js` | 23 | PROJECTILES |
-| 87 | `src/combat/ballistics.js` | 43 | Z228b A ROUND THAT FLIES LIKE ONE: velocity curves for every projectile. |
-| 92 | `src/combat/lock-on.js` | 173 | EVERY ROUND IN FLIGHT: spawning a round, flying it (straight line / lob / rocket), striking men, aircraft, b… |
-| 184 | `src/combat/solid-line.js` | 40 | Z380 NOTHING GOES THROUGH A WALL: a round was tested against the obstacles only where it stood at the end of… |
-| 217 | `src/combat/abilities.js` | 19 | ABILITIES (stubs filled in later phases) |
-| 218 | `src/combat/guns.js` | 92 | ARMS DOCTRINE helpers: damage class × armour, range falloff, battlefield conditions, smart gun pick |
-| 219 | `src/combat/aim.js` | 32 | Z104 aim policy: desktop aims with the mouse; MOBILE: Z233 the turret tracks the enemy itself (AIM.mobileFix… |
-| 220 | `src/combat/siege-rocket.js` | 74 | LOBBED ROUNDS: the M79 grenade and the hand grenade in an arc (fireMortar), the aim arc drawn on the ground,… |
-| 221 | `src/combat/flame.js` | 59 | the soldier's FLAMETHROWER cone (fireFlame), lobbed rounds in flight (the M79, the hand grenade: updateRocke… |
-| 222 | `src/combat/soldier-fire.js` | 58 | Z306 THE SOLDIER FIRES HIS OWN RIFLE (soldier mode only; the tank keeps combat/flame.js fireGun): a small-ar… |
-| 223 | `src/combat/air-aim.js` | 63 | Z313 SHOOTING AT HELICOPTERS IN 3D (tank and soldier alike): the gun is laid on an aircraft, height and all.… |
-| 224 | `src/combat/crosshair.js` | 147 | Z376 THE CROSSHAIR IS WHERE THE ROUND GOES. The mouse's aim used to be the GROUND under the cursor: laid on … |
-| 225 | `src/combat/trooper-spells.js` | 28 | Z307 THE SOLDIER'S OWN SKILLS (soldier mode only; the tank keeps combat/spells.js SPELLS): a hand grenade lo… |
-| 226 | `src/combat/spells.js` | 63 | the soldier's SKILLS in hand (one picked, cast on cooldown: combat/trooper-spells.js), his smoke screen, and… |
-| 260 | `src/combat/drone-skills.js` | 147 | DRONE 1 HIS OWN DRONES (the soldier's skills, combat/trooper-spells.js; each on a clock of its own, combat/s… |
+| 87 | `src/combat/projectiles.js` | 23 | PROJECTILES |
+| 88 | `src/combat/ballistics.js` | 43 | Z228b A ROUND THAT FLIES LIKE ONE: velocity curves for every projectile. |
+| 93 | `src/combat/lock-on.js` | 173 | EVERY ROUND IN FLIGHT: spawning a round, flying it (straight line / lob / rocket), striking men, aircraft, b… |
+| 185 | `src/combat/solid-line.js` | 40 | Z380 NOTHING GOES THROUGH A WALL: a round was tested against the obstacles only where it stood at the end of… |
+| 218 | `src/combat/abilities.js` | 19 | ABILITIES (stubs filled in later phases) |
+| 219 | `src/combat/guns.js` | 92 | ARMS DOCTRINE helpers: damage class × armour, range falloff, battlefield conditions, smart gun pick |
+| 220 | `src/combat/aim.js` | 32 | Z104 aim policy: desktop aims with the mouse; MOBILE: Z233 the turret tracks the enemy itself (AIM.mobileFix… |
+| 221 | `src/combat/siege-rocket.js` | 74 | LOBBED ROUNDS: the M79 grenade and the hand grenade in an arc (fireMortar), the aim arc drawn on the ground,… |
+| 222 | `src/combat/flame.js` | 59 | the soldier's FLAMETHROWER cone (fireFlame), lobbed rounds in flight (the M79, the hand grenade: updateRocke… |
+| 223 | `src/combat/soldier-fire.js` | 58 | Z306 THE SOLDIER FIRES HIS OWN RIFLE (soldier mode only; the tank keeps combat/flame.js fireGun): a small-ar… |
+| 224 | `src/combat/air-aim.js` | 63 | Z313 SHOOTING AT HELICOPTERS IN 3D (tank and soldier alike): the gun is laid on an aircraft, height and all.… |
+| 225 | `src/combat/crosshair.js` | 147 | Z376 THE CROSSHAIR IS WHERE THE ROUND GOES. The mouse's aim used to be the GROUND under the cursor: laid on … |
+| 226 | `src/combat/trooper-spells.js` | 28 | Z307 THE SOLDIER'S OWN SKILLS (soldier mode only; the tank keeps combat/spells.js SPELLS): a hand grenade lo… |
+| 227 | `src/combat/spells.js` | 63 | the soldier's SKILLS in hand (one picked, cast on cooldown: combat/trooper-spells.js), his smoke screen, and… |
+| 261 | `src/combat/drone-skills.js` | 147 | DRONE 1 HIS OWN DRONES (the soldier's skills, combat/trooper-spells.js; each on a clock of its own, combat/s… |
 | | **actors/** — Đơn vị trên sân (địch, lính, drone, Lõi) | | |
-| 93 | `src/actors/core.js` | 176 | CORE (base to defend) |
-| 94 | `src/actors/enemies.js` | 63 | ENEMY units: spawn (infantry, helicopters; elites, loot), pooled meshes and floating HP bars (no-tanks: no a… |
-| 95 | `src/actors/fireteam.js` | 257 | Z89/Z100 friendly FIRETEAM: called in on foot (no-tanks: no APC, no hull to board), free-roam inside the sol… |
-| 96 | `src/actors/escalade.js` | 46 | Z145 ESCALADE: while the gate still holds, every third man of an assault carries a scaling ladder on his sho… |
-| 106 | `src/actors/wildlife.js` | 142 | Z143 WILDLIFE (Z208 real anatomy and coats): herds that graze, wander and bolt from tanks — gazelles, zebras… |
-| 108 | `src/actors/crew.js` | 9 | Z245 the G key and the crew button: get on / off the ride (no-tanks: there is no tank crew to seat on the hu… |
-| 110 | `src/actors/infantry.js` | 220 | Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets… |
-| 111 | `src/actors/enemy-missiles.js` | 81 | ENEMY ROCKETS & GUIDED MISSILES — real objects in flight: dodge them, SHOOT THEM DOWN, or blind them with sm… |
-| 112 | `src/actors/vehicles.js` | 138 | Z80 the enemy's ATTACK GUNSHIP (its airframe, flight, guns and rockets, its fall) and the laser-beam pool (n… |
-| 113 | `src/actors/helis.js` | 206 | Z222 THE HELICOPTER FLEET: two more airframes beside the attack gunship, each with its own shape, paint and … |
-| 123 | `src/actors/paradrop.js` | 102 | Z104 PARATROOPERS: every so often an enemy transport helicopter crosses the field and drops a stick of |
-| 124 | `src/actors/command.js` | 39 | Z107 SQUAD COMMANDS: muster everyone on the map to the tank (T), storm the nearest fortress (X), call our he… |
-| 133 | `src/actors/damage.js` | 35 | DAMAGE AND DEATH of an enemy unit: hits (the general's hit cap), the kill (score, coins, loot, the soldier's… |
-| 164 | `src/actors/real-air.js` | 56 | Z272 REAL AIRCRAFT: Tripo models take the place of the procedural airframes — the attack gunship, the swooping |
-| 194 | `src/actors/squad-mates.js` | 60 | Z351 HIS OWN SQUAD (soldier mode only): he does not fight alone. He starts with two men of his own — a machi… |
-| 200 | `src/actors/fort-boss-look.js` | 82 | BOSS 1 THE FORT BOSS'S LOOK (campaign/fort-boss.js drives him): the enemy rifleman's rig scaled to a 2.6–2.9… |
-| 201 | `src/actors/fort-boss-glb.js` | 94 | BOSS 2 THE FORT BOSS AS A REAL RIGGED MODEL (FORTBOSS.model 'glb', FORTBOSS.looks): a Meshy community charac… |
-| 203 | `src/actors/hands.js` | 42 | Z296 HANDS THAT HOLD: the Tripo / Mixamo rigs carry every finger (four joints each, both hands — 40 bones) b… |
-| 204 | `src/actors/face-mask.js` | 128 | Z305 A MASK THAT FITS THE FACE: no new model needed. When a rigged character loads, its face is read from it… |
-| 205 | `src/actors/driver.js` | 288 | Z296 THE DRIVER, A CHARACTER OF HIS OWN: the xe ôm / ba gác driver is no longer baked into the ride. He is h… |
-| 206 | `src/actors/driver-acts.js` | 241 | Z331 THE DRIVER OFF THE RIDE: the crawl to a downed bike, the heave that rights it, and giving himself up wh… |
-| 207 | `src/actors/driver-rant.js` | 252 | Z361 THE DRIVER'S TEMPER: the bike dies under him and he takes it personally. |
-| 208 | `src/actors/driver-break.js` | 178 | Z363 THE DRIVER'S BREAK: after a long stretch of quiet riding he has had enough. He pulls over, the soldier … |
-| 259 | `src/actors/drone.js` | 119 | DRONE 1 THE DRONE WAR'S AIRFRAMES. The old "support drone" power-up (a sci-fi gatling gunship circling a man… |
-| 264 | `src/actors/soldiers.js` | 339 | infantryman: jointed legs (walk cycle), plate carrier + pouches, covered helmet w/ NVG mount, gloves, boots,… |
-| 265 | `src/actors/loft.js` | 68 | Z246 SCULPTED SURFACES: one smooth skin lofted through key cross-sections (a horse's barrel, neck, head and … |
-| 266 | `src/actors/horse.js` | 191 | Z245/Z246 THE WAR HORSE: one sculpted, skinned body (barrel, neck, head, four legs and tail lofted through r… |
-| 267 | `src/actors/models.js` | 120 | Z247/Z248 REAL MODELS: glTF files put onto the procedural rigs — the photo-scanned CC0 rifle (Poly Haven) an… |
-| 268 | `src/actors/general.js` | 227 | Z245/Z246 THE GENERAL: a big, modern heavy operator on the soldier's rig — one continuous skinned body (camo… |
-| 269 | `src/actors/puppet.js` | 229 | Z294 A SECOND SOLDIER WEARING THE FIRST ONE'S MOVES: the Tripo special-forces soldier has his own Mixamo ske… |
-| 270 | `src/actors/anim-lib.js` | 72 | ANIM 1 THE SOLDIER'S MOTION LIBRARY: some 290 Mixamo motions (walk / run / sprint / strafe / crouch-walk eig… |
-| 271 | `src/actors/anim-graph.js` | 446 | GRAPH 1 THE SOLDIER'S MOTION GRAPH (the PLAYER'S soldier, on his feet; ANIMGRAPH.on — on by default since GR… |
-| 272 | `src/actors/foe-bake.js` | 192 | FOE 1 THE ENEMY'S FULL SKELETON, BAKED ONCE A BATTLE (FOEANIM): the trooper (assets/models/real/trooper.glb … |
-| 273 | `src/actors/foe-skin.js` | 46 | FOE 1 THE ENEMY'S SKELETON ON THE GPU: two instanced meshes of the trooper's own body (actors/foe-bake.js ge… |
-| 274 | `src/actors/foe-anim.js` | 294 | FOE 1 THE ENEMY MOVES LIKE A MAN (FOEANIM; ?nofoeanim → none of it runs): every enemy rifleman on screen wit… |
-| 275 | `src/actors/soldier-legs.js` | 218 | Z339 THE SOLDIER'S FEET ON THE GROUND: his clips only ever walk him forward, so backing up or moving sideway… |
-| 276 | `src/actors/soldier-mount.js` | 83 | Z342 GETTING ON AND OFF THE WAY A RIDER DOES: he used to walk to the ride's right side and glide on a straig… |
-| 277 | `src/actors/soldier-climb-pose.js` | 72 | Z451 HIS BODY ON THE FACE (game/soldier-climb.js runs the climb; the soldier's model has no climbing clip, s… |
-| 278 | `src/actors/soldier-upper.js` | 105 | Z343 HIS UPPER BODY IN TIME WITH HIS LEGS: walking under his own legs (Z339) the rifle, shoulders and head w… |
-| 279 | `src/actors/soldier-stirrups.js` | 47 | Z371 THE RIDER'S FEET IN THE STIRRUPS: the riding clips sit the soldier with his knees drawn up and his feet… |
-| 280 | `src/actors/real-cav.js` | 459 | Z248 THE REAL CAVALRY: the Meshy-generated war horse, operator and carbine dressed over the procedural horse… |
-| 281 | `src/actors/gun-feel.js` | 75 | GUN 3 THE FEEL OF A SHOT (config GUNFEEL.shot / .cycle; the soldier's own guns — combat/soldier-fire.js, act… |
-| 282 | `src/actors/gun-reload.js` | 161 | GUN 2 THE RELOAD AS A SEQUENCE OF REAL STEPS, per weapon family (config GUNFEEL.reload; driven by actors/rea… |
-| 283 | `src/actors/gun-hands.js` | 79 | GUN 1 THE HANDS ON THE GUN, HELD TO A MAN'S OWN JOINTS (config GUNFEEL.hold; the soldier on his feet — actor… |
-| 284 | `src/actors/gun-carry.js` | 281 | CARRY 1 HOW A RIFLEMAN CARRIES HIS WEAPONS WHEN HE IS NOT AIMING THEM (config GUNCARRY; the soldier that is … |
-| 285 | `src/actors/hang.js` | 19 | HANG 1 WHAT HE WEARS ON HIS BACK HANGS (config HANG): one damped pendulum in the back's own plane, shared by… |
-| 286 | `src/actors/blade.js` | 559 | BLADE 2 THE WUXIA BLADE (config BLADE; ?noblade: none of it runs). The soldier always owns ONE ancient blade… |
-| 287 | `src/actors/gun-fit.js` | 76 | Z360 THE HOLD READ OFF THE GUN ITSELF: no common template — every hand weapon's model is measured once when … |
-| 288 | `src/actors/real-troops.js` | 149 | Z249 REAL INFANTRY at batch cost: one Meshy soldier (Z254: the ~10k-triangle, 2K-texture pass), posed once (… |
-| 289 | `src/actors/troop-skin.js` | 34 | Z344 THE INFANTRY SKINNED ON THE GPU: every man of a side is one InstancedMesh of the whole body (actors/rea… |
-| 290 | `src/actors/ragdoll.js` | 56 | Z254 A REAL FALL for a man shot down (enemy infantry, our fireteam, a general without his real model): the k… |
+| 94 | `src/actors/core.js` | 176 | CORE (base to defend) |
+| 95 | `src/actors/enemies.js` | 63 | ENEMY units: spawn (infantry, helicopters; elites, loot), pooled meshes and floating HP bars (no-tanks: no a… |
+| 96 | `src/actors/fireteam.js` | 257 | Z89/Z100 friendly FIRETEAM: called in on foot (no-tanks: no APC, no hull to board), free-roam inside the sol… |
+| 97 | `src/actors/escalade.js` | 46 | Z145 ESCALADE: while the gate still holds, every third man of an assault carries a scaling ladder on his sho… |
+| 107 | `src/actors/wildlife.js` | 142 | Z143 WILDLIFE (Z208 real anatomy and coats): herds that graze, wander and bolt from tanks — gazelles, zebras… |
+| 109 | `src/actors/crew.js` | 9 | Z245 the G key and the crew button: get on / off the ride (no-tanks: there is no tank crew to seat on the hu… |
+| 111 | `src/actors/infantry.js` | 220 | Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets… |
+| 112 | `src/actors/enemy-missiles.js` | 81 | ENEMY ROCKETS & GUIDED MISSILES — real objects in flight: dodge them, SHOOT THEM DOWN, or blind them with sm… |
+| 113 | `src/actors/vehicles.js` | 138 | Z80 the enemy's ATTACK GUNSHIP (its airframe, flight, guns and rockets, its fall) and the laser-beam pool (n… |
+| 114 | `src/actors/helis.js` | 206 | Z222 THE HELICOPTER FLEET: two more airframes beside the attack gunship, each with its own shape, paint and … |
+| 124 | `src/actors/paradrop.js` | 102 | Z104 PARATROOPERS: every so often an enemy transport helicopter crosses the field and drops a stick of |
+| 125 | `src/actors/command.js` | 39 | Z107 SQUAD COMMANDS: muster everyone on the map to the tank (T), storm the nearest fortress (X), call our he… |
+| 134 | `src/actors/damage.js` | 35 | DAMAGE AND DEATH of an enemy unit: hits (the general's hit cap), the kill (score, coins, loot, the soldier's… |
+| 165 | `src/actors/real-air.js` | 56 | Z272 REAL AIRCRAFT: Tripo models take the place of the procedural airframes — the attack gunship, the swooping |
+| 195 | `src/actors/squad-mates.js` | 60 | Z351 HIS OWN SQUAD (soldier mode only): he does not fight alone. He starts with two men of his own — a machi… |
+| 201 | `src/actors/fort-boss-look.js` | 82 | BOSS 1 THE FORT BOSS'S LOOK (campaign/fort-boss.js drives him): the enemy rifleman's rig scaled to a 2.6–2.9… |
+| 202 | `src/actors/fort-boss-glb.js` | 94 | BOSS 2 THE FORT BOSS AS A REAL RIGGED MODEL (FORTBOSS.model 'glb', FORTBOSS.looks): a Meshy community charac… |
+| 204 | `src/actors/hands.js` | 42 | Z296 HANDS THAT HOLD: the Tripo / Mixamo rigs carry every finger (four joints each, both hands — 40 bones) b… |
+| 205 | `src/actors/face-mask.js` | 128 | Z305 A MASK THAT FITS THE FACE: no new model needed. When a rigged character loads, its face is read from it… |
+| 206 | `src/actors/driver.js` | 288 | Z296 THE DRIVER, A CHARACTER OF HIS OWN: the xe ôm / ba gác driver is no longer baked into the ride. He is h… |
+| 207 | `src/actors/driver-acts.js` | 241 | Z331 THE DRIVER OFF THE RIDE: the crawl to a downed bike, the heave that rights it, and giving himself up wh… |
+| 208 | `src/actors/driver-rant.js` | 252 | Z361 THE DRIVER'S TEMPER: the bike dies under him and he takes it personally. |
+| 209 | `src/actors/driver-break.js` | 178 | Z363 THE DRIVER'S BREAK: after a long stretch of quiet riding he has had enough. He pulls over, the soldier … |
+| 260 | `src/actors/drone.js` | 119 | DRONE 1 THE DRONE WAR'S AIRFRAMES. The old "support drone" power-up (a sci-fi gatling gunship circling a man… |
+| 265 | `src/actors/soldiers.js` | 339 | infantryman: jointed legs (walk cycle), plate carrier + pouches, covered helmet w/ NVG mount, gloves, boots,… |
+| 266 | `src/actors/loft.js` | 68 | Z246 SCULPTED SURFACES: one smooth skin lofted through key cross-sections (a horse's barrel, neck, head and … |
+| 267 | `src/actors/horse.js` | 191 | Z245/Z246 THE WAR HORSE: one sculpted, skinned body (barrel, neck, head, four legs and tail lofted through r… |
+| 268 | `src/actors/models.js` | 120 | Z247/Z248 REAL MODELS: glTF files put onto the procedural rigs — the photo-scanned CC0 rifle (Poly Haven) an… |
+| 269 | `src/actors/general.js` | 227 | Z245/Z246 THE GENERAL: a big, modern heavy operator on the soldier's rig — one continuous skinned body (camo… |
+| 270 | `src/actors/puppet.js` | 229 | Z294 A SECOND SOLDIER WEARING THE FIRST ONE'S MOVES: the Tripo special-forces soldier has his own Mixamo ske… |
+| 271 | `src/actors/anim-lib.js` | 72 | ANIM 1 THE SOLDIER'S MOTION LIBRARY: some 290 Mixamo motions (walk / run / sprint / strafe / crouch-walk eig… |
+| 272 | `src/actors/anim-graph.js` | 446 | GRAPH 1 THE SOLDIER'S MOTION GRAPH (the PLAYER'S soldier, on his feet; ANIMGRAPH.on — on by default since GR… |
+| 273 | `src/actors/foe-bake.js` | 192 | FOE 1 THE ENEMY'S FULL SKELETON, BAKED ONCE A BATTLE (FOEANIM): the trooper (assets/models/real/trooper.glb … |
+| 274 | `src/actors/foe-skin.js` | 46 | FOE 1 THE ENEMY'S SKELETON ON THE GPU: two instanced meshes of the trooper's own body (actors/foe-bake.js ge… |
+| 275 | `src/actors/foe-anim.js` | 294 | FOE 1 THE ENEMY MOVES LIKE A MAN (FOEANIM; ?nofoeanim → none of it runs): every enemy rifleman on screen wit… |
+| 276 | `src/actors/soldier-legs.js` | 218 | Z339 THE SOLDIER'S FEET ON THE GROUND: his clips only ever walk him forward, so backing up or moving sideway… |
+| 277 | `src/actors/soldier-mount.js` | 83 | Z342 GETTING ON AND OFF THE WAY A RIDER DOES: he used to walk to the ride's right side and glide on a straig… |
+| 278 | `src/actors/soldier-climb-pose.js` | 72 | Z451 HIS BODY ON THE FACE (game/soldier-climb.js runs the climb; the soldier's model has no climbing clip, s… |
+| 279 | `src/actors/soldier-upper.js` | 105 | Z343 HIS UPPER BODY IN TIME WITH HIS LEGS: walking under his own legs (Z339) the rifle, shoulders and head w… |
+| 280 | `src/actors/soldier-stirrups.js` | 47 | Z371 THE RIDER'S FEET IN THE STIRRUPS: the riding clips sit the soldier with his knees drawn up and his feet… |
+| 281 | `src/actors/real-cav.js` | 459 | Z248 THE REAL CAVALRY: the Meshy-generated war horse, operator and carbine dressed over the procedural horse… |
+| 282 | `src/actors/gun-feel.js` | 75 | GUN 3 THE FEEL OF A SHOT (config GUNFEEL.shot / .cycle; the soldier's own guns — combat/soldier-fire.js, act… |
+| 283 | `src/actors/gun-reload.js` | 161 | GUN 2 THE RELOAD AS A SEQUENCE OF REAL STEPS, per weapon family (config GUNFEEL.reload; driven by actors/rea… |
+| 284 | `src/actors/gun-hands.js` | 79 | GUN 1 THE HANDS ON THE GUN, HELD TO A MAN'S OWN JOINTS (config GUNFEEL.hold; the soldier on his feet — actor… |
+| 285 | `src/actors/gun-carry.js` | 281 | CARRY 1 HOW A RIFLEMAN CARRIES HIS WEAPONS WHEN HE IS NOT AIMING THEM (config GUNCARRY; the soldier that is … |
+| 286 | `src/actors/hang.js` | 19 | HANG 1 WHAT HE WEARS ON HIS BACK HANGS (config HANG): one damped pendulum in the back's own plane, shared by… |
+| 287 | `src/actors/blade.js` | 559 | BLADE 2 THE WUXIA BLADE (config BLADE; ?noblade: none of it runs). The soldier always owns ONE ancient blade… |
+| 288 | `src/actors/gun-fit.js` | 76 | Z360 THE HOLD READ OFF THE GUN ITSELF: no common template — every hand weapon's model is measured once when … |
+| 289 | `src/actors/real-troops.js` | 149 | Z249 REAL INFANTRY at batch cost: one Meshy soldier (Z254: the ~10k-triangle, 2K-texture pass), posed once (… |
+| 290 | `src/actors/troop-skin.js` | 34 | Z344 THE INFANTRY SKINNED ON THE GPU: every man of a side is one InstancedMesh of the whole body (actors/rea… |
+| 291 | `src/actors/ragdoll.js` | 56 | Z254 A REAL FALL for a man shot down (enemy infantry, our fireteam, a general without his real model): the k… |
 | | **ai/** — Trí tuệ địch | | |
-| 126 | `src/ai/tactics.js` | 42 | THE ENEMY'S FRAME: every enemy unit's HP bar, burning, stun and first sighting; then the infantry (actors/in… |
-| 127 | `src/ai/cover.js` | 14 | Z104 COVER: a soldier who sees a tank coming puts a wall, rock or sandbag line between it and himself (both … |
-| 128 | `src/ai/spatial.js` | 25 | Z172 UNIT GRID: a uniform hash of every unit (rebuilt once a frame) and of the obstacles (rebuilt when they … |
-| 129 | `src/ai/squads.js` | 135 | Z173 SQUAD TACTICS: enemy foot squads get a leader, a formation and one shared plan (advance → fire-and-mano… |
-| 130 | `src/ai/tiers.js` | 113 | DIR 2 TACTICS BY TIER: what the enemy's foot squads know how to do grows with the stage (tacTier 1…3; DIRECT… |
-| 131 | `src/ai/awareness.js` | 92 | AI 1 WHAT EACH ENEMY SOLDIER KNOWS. Every man on foot used to know where the player was the moment he existe… |
-| 132 | `src/ai/fieldcraft.js` | 88 | Z220 FIELDCRAFT, for the soldiers of BOTH sides: |
+| 127 | `src/ai/tactics.js` | 42 | THE ENEMY'S FRAME: every enemy unit's HP bar, burning, stun and first sighting; then the infantry (actors/in… |
+| 128 | `src/ai/cover.js` | 14 | Z104 COVER: a soldier who sees a tank coming puts a wall, rock or sandbag line between it and himself (both … |
+| 129 | `src/ai/spatial.js` | 25 | Z172 UNIT GRID: a uniform hash of every unit (rebuilt once a frame) and of the obstacles (rebuilt when they … |
+| 130 | `src/ai/squads.js` | 135 | Z173 SQUAD TACTICS: enemy foot squads get a leader, a formation and one shared plan (advance → fire-and-mano… |
+| 131 | `src/ai/tiers.js` | 113 | DIR 2 TACTICS BY TIER: what the enemy's foot squads know how to do grows with the stage (tacTier 1…3; DIRECT… |
+| 132 | `src/ai/awareness.js` | 92 | AI 1 WHAT EACH ENEMY SOLDIER KNOWS. Every man on foot used to know where the player was the moment he existe… |
+| 133 | `src/ai/fieldcraft.js` | 88 | Z220 FIELDCRAFT, for the soldiers of BOTH sides: |
 | | **campaign/** — Chiến dịch, đợt, tướng, pháo kích | | |
-| 115 | `src/campaign/surprises.js` | 59 | Z223 THE FIGHT SURPRISES YOU: every minute or so, out of a weighted, stage-gated hat, something you didn't p… |
-| 116 | `src/campaign/story.js` | 107 | STORY 1–3 THE CAMPAIGN'S STORY AND THE RADIO THAT FOLLOWS THE FIGHT (config.js STORY: the cast, the five sta… |
-| 117 | `src/campaign/director.js` | 169 | DIR 1 THE BATTLE'S DIRECTOR: reinforcements, surprises and the finale are released by the STATE of the fight… |
-| 118 | `src/campaign/entries.js` | 52 | AI 2 NOBODY POPS INTO EXISTENCE. Every enemy soldier raised during a battle comes onto the field by a way th… |
-| 119 | `src/campaign/side-missions.js` | 216 | EVENT 1 SIDE MISSIONS IN THE MIDDLE OF A FIGHT (config.js SIDEMISSION): when the director has room for more,… |
-| 120 | `src/campaign/big-events.js` | 198 | EVENT 2 BIG BATTLEFIELD EVENTS (config.js BIGEVENT): now and then the battle itself does something big — dra… |
-| 125 | `src/campaign/operations.js` | 123 | Z83 · CAMPAIGN OPERATIONS — named operation per stage: briefing, radio chatter, scripted waves and a high-va… |
-| 148 | `src/campaign/waves.js` | 109 | WAVES: difficulty / NG+ loop multipliers, wave queue per stage, random wave events, edge spawn points |
-| 149 | `src/campaign/boss.js` | 36 | THE STAGE'S GENERAL (no-tanks: Z96 the super-heavy, its weak points, armour arcs, phases, shield pylons, min… |
-| 191 | `src/campaign/soldier-war.js` | 24 | Z309 A SOLDIER'S WAR: the waves are men — riflemen and RPG teams, squads, troop helicopters dropping more me… |
-| 198 | `src/campaign/general-duel.js` | 84 | Z353 THE GENERAL ON FOOT (no-tanks: the stage's boss fight): the general waits in his citadel and takes the … |
-| 199 | `src/campaign/fort-boss.js` | 272 | BOSS 1 A BOSS IN EVERY FORT (FORTBOSS; his look: actors/fort-boss-look.js). Every fort holds ONE boss, a mod… |
-| 202 | `src/campaign/nemesis.js` | 191 | NEMESIS 1–3 THE ENEMY GENERAL REMEMBERS YOU (config.js NEMESIS; the record, its sanitiser and the rules are … |
-| 227 | `src/campaign/artillery.js` | 31 | ARTILLERY STRIKES: a locked spot (the objective battery's), the shell in flight, the burst, shrapnel hit vs … |
-| 261 | `src/campaign/drone-raid.js` | 135 | DRONE 3 THE ENEMY'S DRONES, AND THE JAMMER. A raid is one draw of the surprises' hat (campaign/surprises.js … |
-| 293 | `src/campaign/mode-run.js` | 110 | MODE 3 THE RUN KIT of the two extra modes (night defence: campaign/night-defence.js · the daily challenge: c… |
-| 294 | `src/campaign/night-defence.js` | 186 | MODE 1 NIGHT DEFENCE ("THỦ ĐÊM", config NIGHTDEF; the run kit: campaign/mode-run.js; its arithmetic: data/mo… |
-| 295 | `src/campaign/daily.js` | 80 | MODE 2 THE DAILY CHALLENGE ("THỬ THÁCH HÔM NAY", config DAILY; the run kit: campaign/mode-run.js; the genera… |
+| 116 | `src/campaign/surprises.js` | 59 | Z223 THE FIGHT SURPRISES YOU: every minute or so, out of a weighted, stage-gated hat, something you didn't p… |
+| 117 | `src/campaign/story.js` | 107 | STORY 1–3 THE CAMPAIGN'S STORY AND THE RADIO THAT FOLLOWS THE FIGHT (config.js STORY: the cast, the five sta… |
+| 118 | `src/campaign/director.js` | 169 | DIR 1 THE BATTLE'S DIRECTOR: reinforcements, surprises and the finale are released by the STATE of the fight… |
+| 119 | `src/campaign/entries.js` | 52 | AI 2 NOBODY POPS INTO EXISTENCE. Every enemy soldier raised during a battle comes onto the field by a way th… |
+| 120 | `src/campaign/side-missions.js` | 216 | EVENT 1 SIDE MISSIONS IN THE MIDDLE OF A FIGHT (config.js SIDEMISSION): when the director has room for more,… |
+| 121 | `src/campaign/big-events.js` | 198 | EVENT 2 BIG BATTLEFIELD EVENTS (config.js BIGEVENT): now and then the battle itself does something big — dra… |
+| 126 | `src/campaign/operations.js` | 123 | Z83 · CAMPAIGN OPERATIONS — named operation per stage: briefing, radio chatter, scripted waves and a high-va… |
+| 149 | `src/campaign/waves.js` | 109 | WAVES: difficulty / NG+ loop multipliers, wave queue per stage, random wave events, edge spawn points |
+| 150 | `src/campaign/boss.js` | 36 | THE STAGE'S GENERAL (no-tanks: Z96 the super-heavy, its weak points, armour arcs, phases, shield pylons, min… |
+| 192 | `src/campaign/soldier-war.js` | 24 | Z309 A SOLDIER'S WAR: the waves are men — riflemen and RPG teams, squads, troop helicopters dropping more me… |
+| 199 | `src/campaign/general-duel.js` | 84 | Z353 THE GENERAL ON FOOT (no-tanks: the stage's boss fight): the general waits in his citadel and takes the … |
+| 200 | `src/campaign/fort-boss.js` | 272 | BOSS 1 A BOSS IN EVERY FORT (FORTBOSS; his look: actors/fort-boss-look.js). Every fort holds ONE boss, a mod… |
+| 203 | `src/campaign/nemesis.js` | 191 | NEMESIS 1–3 THE ENEMY GENERAL REMEMBERS YOU (config.js NEMESIS; the record, its sanitiser and the rules are … |
+| 228 | `src/campaign/artillery.js` | 31 | ARTILLERY STRIKES: a locked spot (the objective battery's), the shell in flight, the burst, shrapnel hit vs … |
+| 262 | `src/campaign/drone-raid.js` | 135 | DRONE 3 THE ENEMY'S DRONES, AND THE JAMMER. A raid is one draw of the surprises' hat (campaign/surprises.js … |
+| 294 | `src/campaign/mode-run.js` | 110 | MODE 3 THE RUN KIT of the two extra modes (night defence: campaign/night-defence.js · the daily challenge: c… |
+| 295 | `src/campaign/night-defence.js` | 186 | MODE 1 NIGHT DEFENCE ("THỦ ĐÊM", config NIGHTDEF; the run kit: campaign/mode-run.js; its arithmetic: data/mo… |
+| 296 | `src/campaign/daily.js` | 80 | MODE 2 THE DAILY CHALLENGE ("THỬ THÁCH HÔM NAY", config DAILY; the run kit: campaign/mode-run.js; the genera… |
 | | **loot/** — Vật phẩm, rơi đồ, nâng cấp roguelite | | |
-| 195 | `src/loot/soldier-arms.js` | 37 | Z352 ARMS OFF THE FIELD (soldier mode only): what a dead enemy carried is his to take. A rifleman sometimes … |
-| 196 | `src/loot/gift-crate.js` | 90 | Z369 / Z370 THE RANK'S SUPPLY BUNDLE (soldier mode): what the HQ drops when he climbs a rank — a real airdro… |
-| 197 | `src/loot/loot-real.js` | 46 | LOOT 1 THE LOOT IS REAL: every pick-up wears a downloaded 3D model at its real size (tools/loot-pack.mjs → a… |
-| 228 | `src/loot/powerups.js` | 166 | Z93 DROPS: the loot is a real object — it pops out of the wreck in an arc, bounces, raises dust, then sits u… |
-| 229 | `src/loot/relic.js` | 99 | Z153 THÁNH TÍCH: one ancient relic per stage — a floating crystal over a rune plinth under a pillar of light. |
-| 230 | `src/loot/upgrades.js` | 52 | THE STAGE WON: pick 1 of 3 of the soldier's perks (game/soldier-rank.js), then the next battlefield is built… |
-| 263 | `src/loot/beacons.js` | 38 | LOOT MARKERS (crates / towers / huts / tanks that hide a power-up) · Z177 no light columns · Z211 the object… |
+| 196 | `src/loot/soldier-arms.js` | 37 | Z352 ARMS OFF THE FIELD (soldier mode only): what a dead enemy carried is his to take. A rifleman sometimes … |
+| 197 | `src/loot/gift-crate.js` | 90 | Z369 / Z370 THE RANK'S SUPPLY BUNDLE (soldier mode): what the HQ drops when he climbs a rank — a real airdro… |
+| 198 | `src/loot/loot-real.js` | 46 | LOOT 1 THE LOOT IS REAL: every pick-up wears a downloaded 3D model at its real size (tools/loot-pack.mjs → a… |
+| 229 | `src/loot/powerups.js` | 166 | Z93 DROPS: the loot is a real object — it pops out of the wreck in an arc, bounces, raises dust, then sits u… |
+| 230 | `src/loot/relic.js` | 99 | Z153 THÁNH TÍCH: one ancient relic per stage — a floating crystal over a rune plinth under a pillar of light. |
+| 231 | `src/loot/upgrades.js` | 52 | THE STAGE WON: pick 1 of 3 of the soldier's perks (game/soldier-rank.js), then the next battlefield is built… |
+| 264 | `src/loot/beacons.js` | 38 | LOOT MARKERS (crates / towers / huts / tanks that hide a power-up) · Z177 no light columns · Z211 the object… |
 | | **input/** — Bàn phím, chuột, cảm ứng | | |
-| 213 | `src/input/input.js` | 186 | INPUT: mouse aim raycast, keyboard, touch joysticks + action buttons, auto-fire |
-| 214 | `src/input/bindings.js` | 119 | Z118 ONE BINDING TABLE for the keyboard and the controller: every action (drive, fire, skill, guns, squad or… |
-| 215 | `src/input/gamepad.js` | 155 | Z117/Z118 GAMEPAD + HAPTICS. Plays the whole game from a controller through the Gamepad API ("standard" mapp… |
-| 216 | `src/input/padmap.js` | 75 | Z123 LEARN A PAD'S LAYOUT. Over USB on a Mac (and for many DInput pads) the browser hands back a GENERIC HID… |
+| 214 | `src/input/input.js` | 186 | INPUT: mouse aim raycast, keyboard, touch joysticks + action buttons, auto-fire |
+| 215 | `src/input/bindings.js` | 119 | Z118 ONE BINDING TABLE for the keyboard and the controller: every action (drive, fire, skill, guns, squad or… |
+| 216 | `src/input/gamepad.js` | 155 | Z117/Z118 GAMEPAD + HAPTICS. Plays the whole game from a controller through the Gamepad API ("standard" mapp… |
+| 217 | `src/input/padmap.js` | 75 | Z123 LEARN A PAD'S LAYOUT. Over USB on a Mac (and for many DInput pads) the browser hands back a GENERIC HID… |
 | | **ui/** — Giao diện DOM (menu, shop, HUD phụ, gợi ý) | | |
 | 19 | `src/ui/icons.js` | 124 | CUSTOM ICON SET (military line-art; no emoji) |
 | 20 | `src/ui/gunart.js` | 71 | Z150 ONE PICTURE PER GUN, EVERYWHERE: the KHO SÚNG cards, the battle HUD, the deploy list and the "new gun" … |
-| 109 | `src/ui/tips.js` | 42 | Z94 · FIRST-TIME TIPS — the first time something new happens, a short field note explains it (Z168: a side c… |
-| 231 | `src/ui/briefing.js` | 148 | STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin; XK-UI its back button: to the battle… |
-| 232 | `src/ui/deploy.js` | 78 | Z105 DEPLOYMENT before every stage: troop strength, key points to post men at, |
-| 234 | `src/ui/menus.js` | 43 | title screen: greeting, the hero (CHƠI NGAY / CHƠI TIẾP), nickname dialog, and the shared tap helpers (tapBt… |
-| 235 | `src/ui/terrain-picker.js` | 50 | Z103 split from ui/menus.js. TERRAIN PICKER — start-screen battlefield choice (AUTO campaign rotation or a f… |
-| 236 | `src/ui/battle-setup.js` | 101 | Z107 BATTLE SETUP: PLAY opens it. CAMPAIGN = a ladder of levels in rising difficulty (win one to open the ne… |
-| 237 | `src/ui/load-veil.js` | 38 | NO-TANKS 8 THE DEPLOYMENT ORDER: the screen between XUẤT KÍCH and the battle (#loadVeil) is the order the so… |
-| 238 | `src/ui/setup-units.js` | 65 | Z354 WHO GOES INTO BATTLE (TRANG BỊ, the first step of CHUẨN BỊ TRẬN, ui/battle-setup.js runs the steps; no-… |
-| 239 | `src/ui/padview.js` | 70 | Z125 CONTROLLER DIAGRAM: a shaded (pseudo-3D) gamepad drawn in SVG with a label on every control showing wha… |
-| 240 | `src/ui/keys.js` | 35 | Z107 CONTROLS SHEET: every key / touch control in one place — from the home menu (PHÍM TẮT), the pause menu,… |
-| 241 | `src/ui/guide.js` | 40 | Z103 split from ui/menus.js. FIELD MANUAL — the how-to-play screen (first launch + re-openable) and the firs… |
-| 242 | `src/ui/settings.js` | 121 | Z103 split from ui/menus.js · XK-UI SETTINGS in tabs (Trò chơi · Hình ảnh · Âm thanh · Điều khiển · Tay cầm … |
-| 243 | `src/ui/confirm.js` | 13 | XK-UI ONE CONFIRMATION DIALOG (#xkConfirm) for the choices that throw something away: leaving a battle, rest… |
-| 244 | `src/ui/hud-prefs.js` | 12 | Z324 WHAT THE BATTLE HUD SHOWS (CÀI ĐẶT): the dialogue on screen (the radio box, the driver's and the soldie… |
-| 245 | `src/ui/loadout.js` | 37 | Z103 split from ui/menus.js. KHO SÚNG — Z411 THE SOLDIER'S ARSENAL (from the start screen, CHUẨN BỊ TRẬN or … |
-| 246 | `src/ui/medals-ui.js` | 116 | MEDAL 3 THE CAREER ON SCREEN: the shoulder board a rank wears, the medal discs, a medal's toast and the rank… |
-| 247 | `src/ui/ranking.js` | 30 | Z163 BẢNG XẾP HẠNG: this week's and all-time best runs (lb/{uid}, lbw/{week}/e/{uid} — written only by the s… |
-| 252 | `src/ui/radar.js` | 51 | RADAR / MINIMAP |
-| 253 | `src/ui/instruments.js` | 67 | Z228 the soldier's instrument panel (desktop HUD, bottom-right): a north-up azimuth dial with him and his ri… |
-| 254 | `src/ui/squad-hud.js` | 27 | Z220 TỔ BỘ BINH panel (desktop HUD, bottom-left): the squad order in force ([U] cycles it), how the squad re… |
-| 258 | `src/ui/alarm.js` | 34 | CORE-UNDER-ATTACK ALARM. Z133 early warning: the moment the core takes damage a banner shows its HP and dist… |
-| 262 | `src/ui/drone-hud.js` | 76 | DRONE 1 WHAT THE DRONE WAR SHOWS HIM: the red diamond over every marked enemy (one instanced mesh drawn over… |
-| 299 | `src/ui/coop-lobby.js` | 48 | COOP 4 THE CO-OP LOBBY'S SCREEN (shown instead of the home screen when the address has ?room=CODE) and the t… |
+| 110 | `src/ui/tips.js` | 42 | Z94 · FIRST-TIME TIPS — the first time something new happens, a short field note explains it (Z168: a side c… |
+| 232 | `src/ui/briefing.js` | 148 | STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin; XK-UI its back button: to the battle… |
+| 233 | `src/ui/deploy.js` | 78 | Z105 DEPLOYMENT before every stage: troop strength, key points to post men at, |
+| 235 | `src/ui/menus.js` | 43 | title screen: greeting, the hero (CHƠI NGAY / CHƠI TIẾP), nickname dialog, and the shared tap helpers (tapBt… |
+| 236 | `src/ui/terrain-picker.js` | 50 | Z103 split from ui/menus.js. TERRAIN PICKER — start-screen battlefield choice (AUTO campaign rotation or a f… |
+| 237 | `src/ui/battle-setup.js` | 101 | Z107 BATTLE SETUP: PLAY opens it. CAMPAIGN = a ladder of levels in rising difficulty (win one to open the ne… |
+| 238 | `src/ui/load-veil.js` | 38 | NO-TANKS 8 THE DEPLOYMENT ORDER: the screen between XUẤT KÍCH and the battle (#loadVeil) is the order the so… |
+| 239 | `src/ui/setup-units.js` | 65 | Z354 WHO GOES INTO BATTLE (TRANG BỊ, the first step of CHUẨN BỊ TRẬN, ui/battle-setup.js runs the steps; no-… |
+| 240 | `src/ui/padview.js` | 70 | Z125 CONTROLLER DIAGRAM: a shaded (pseudo-3D) gamepad drawn in SVG with a label on every control showing wha… |
+| 241 | `src/ui/keys.js` | 35 | Z107 CONTROLS SHEET: every key / touch control in one place — from the home menu (PHÍM TẮT), the pause menu,… |
+| 242 | `src/ui/guide.js` | 40 | Z103 split from ui/menus.js. FIELD MANUAL — the how-to-play screen (first launch + re-openable) and the firs… |
+| 243 | `src/ui/settings.js` | 122 | Z103 split from ui/menus.js · XK-UI SETTINGS in tabs (Trò chơi · Hình ảnh · Âm thanh · Điều khiển · Tay cầm … |
+| 244 | `src/ui/confirm.js` | 13 | XK-UI ONE CONFIRMATION DIALOG (#xkConfirm) for the choices that throw something away: leaving a battle, rest… |
+| 245 | `src/ui/hud-prefs.js` | 12 | Z324 WHAT THE BATTLE HUD SHOWS (CÀI ĐẶT): the dialogue on screen (the radio box, the driver's and the soldie… |
+| 246 | `src/ui/loadout.js` | 37 | Z103 split from ui/menus.js. KHO SÚNG — Z411 THE SOLDIER'S ARSENAL (from the start screen, CHUẨN BỊ TRẬN or … |
+| 247 | `src/ui/medals-ui.js` | 116 | MEDAL 3 THE CAREER ON SCREEN: the shoulder board a rank wears, the medal discs, a medal's toast and the rank… |
+| 248 | `src/ui/ranking.js` | 30 | Z163 BẢNG XẾP HẠNG: this week's and all-time best runs (lb/{uid}, lbw/{week}/e/{uid} — written only by the s… |
+| 253 | `src/ui/radar.js` | 51 | RADAR / MINIMAP |
+| 254 | `src/ui/instruments.js` | 67 | Z228 the soldier's instrument panel (desktop HUD, bottom-right): a north-up azimuth dial with him and his ri… |
+| 255 | `src/ui/squad-hud.js` | 27 | Z220 TỔ BỘ BINH panel (desktop HUD, bottom-left): the squad order in force ([U] cycles it), how the squad re… |
+| 259 | `src/ui/alarm.js` | 34 | CORE-UNDER-ATTACK ALARM. Z133 early warning: the moment the core takes damage a banner shows its HP and dist… |
+| 263 | `src/ui/drone-hud.js` | 76 | DRONE 1 WHAT THE DRONE WAR SHOWS HIM: the red diamond over every marked enemy (one instanced mesh drawn over… |
+| 300 | `src/ui/coop-lobby.js` | 48 | COOP 4 THE CO-OP LOBBY'S SCREEN (shown instead of the home screen when the address has ?room=CODE) and the t… |
 | | **game/** — Luồng game, vòng lặp, khởi động | | |
-| 173 | `src/game/xeom.js` | 192 | Z282 XE ÔM MODE (Z332 the xích lô is gone): the cavalry mode (game/cavalry.js) with a Vietnamese ride instea… |
-| 174 | `src/game/ride-wear.js` | 41 | Z303 THE RIDE WEARS OUT: the xe ôm / ba gác / bán tải has its own health. Hits taken while riding (a share o… |
-| 175 | `src/game/ride-collide.js` | 97 | Z311 WHAT A RIDE RUNS INTO: the xe ôm (or the horse) is held by everything a tank simply rolls over — trees,… |
-| 176 | `src/game/ride-avoid.js` | 97 | RIDE 1 THE MOUNT PICKS ITS OWN LINE (the war horse and the xe ôm alike; game/cavalry.js asks once a frame). … |
-| 177 | `src/game/ride-feel.js` | 50 | RIDE 2 THE HARD STOP (both mounts; game/cavalry.js asks once a frame in the saddle). Reined in from speed — … |
-| 179 | `src/game/soldier-moves.js` | 54 | Z336 THE SOLDIER ON HIS FEET MOVES LIKE ONE (soldier mode, off the ride): Space jumps (a spring off both fee… |
-| 180 | `src/game/soldier-climb.js` | 154 | Z451 THE SOLDIER CLIMBS (soldier mode, on foot): with a rock, a fortress wall or gate, a ruin, a container, … |
-| 181 | `src/game/swim.js` | 182 | SWIM 1 THE SOLDIER IN THE RIVER (soldier mode, on foot; config SWIM): the water's depth at his feet (RIVER.y… |
-| 182 | `src/game/horse-swim.js` | 93 | HSWIM 1 THE HORSE SWIMS (config HORSESWIM): the war horse in the river by the depth under it (RIVER.y − the … |
-| 185 | `src/game/logistics.js` | 173 | SUPPLY 1 AMMUNITION IS A SUPPLY LINE (soldier mode): the reserve of rounds behind every magazine, what a rel… |
-| 186 | `src/game/ambush.js` | 77 | AMBUSH 1 THE BLADE DOES NOT GIVE HIM AWAY: hide behind a rock or a container, dart out, cut one man down, ge… |
-| 187 | `src/game/quiet.js` | 116 | SUPPLY 3 QUIET OR LOUD (soldier mode, on foot): the suppressed gun, the knife, the bodies left behind, the a… |
-| 188 | `src/game/stealth.js` | 56 | Z377 A MAN FLAT ON THE GROUND IS HARD TO SEE (soldier mode, on foot): every enemy gun used to take the playe… |
-| 189 | `src/game/ride-impact.js` | 30 | Z306 THE RIDE MEETS THE STREET (soldier mode only; the tank keeps its own run-over in world/traffic.js): wha… |
-| 190 | `src/game/ride-call.js` | 49 | Z306 CALL THE RIDE (soldier mode only): on foot, a button (and G) tells you where your ride stands — LÊN XE … |
-| 192 | `src/game/medals.js` | 83 | MEDAL 2 THE BATTLE'S LEDGER: who killed what and how (his round, his blade, his grenade, his charge — or his… |
-| 193 | `src/game/soldier-rank.js` | 97 | Z350 THE SOLDIER'S CAREER (soldier mode only): every man he or his squad drops is experience, and experience… |
-| 211 | `src/game/score.js` | 16 | SCORE / COMBO |
-| 212 | `src/game/player-damage.js` | 85 | PLAYER DAMAGE / DEATH |
-| 233 | `src/game/flow.js` | 127 | GAME FLOW: start / pause / quit-to-menu, loadout guns for the run, menu ↔ HUD state, show/hide panels |
-| 249 | `src/game/update.js` | 159 | the camera that follows the soldier, the enemy vehicles' rigs, Vietnamese label helpers (no-tanks: the tank'… |
-| 250 | `src/game/intro-clouds.js` | 49 | Z322 THE INTRO'S SKY: high over the field the air is hazy and a thin deck of soft clouds drifts between the … |
-| 251 | `src/game/intro.js` | 172 | INTRO CINEMATIC (deploy showcase) |
-| 291 | `src/game/cavalry.js` | 229 | Z245 CAVALRY MODE: the player is a general in full plate — on his armoured war horse (walk · trot · canter ·… |
-| 296 | `src/game/loop.js` | 153 | MAIN LOOP: per-frame update + render orchestration, frame pacing, ability cooldown dials |
-| 297 | `src/game/viewport.js` | 30 | Z103 split from game/loop.js: canvas/render-target sizing, the soft-keyboard guard, landscape gate, |
-| 298 | `src/game/boot-gate.js` | 69 | Z103 split from game/loop.js: the branded splash, real boot progress, sliced shader warm-up, |
-| 300 | `src/game/coop-remote.js` | 112 | COOP 5 THE OTHER PLAYER'S SOLDIER on this page: the same rig the local soldier wears (buildGeneral + his hor… |
-| 301 | `src/game/coop-puppets.js` | 137 | COOP 6 ONE BATTLE: the host is the authority for the enemy. HOST: every enemy unit into the snapshot (coopHo… |
-| 302 | `src/game/coop-world.js` | 139 | COOP 9 ONE SHARED BATTLE: what stands, what lies on the ground and the Core's health are the HOST's, on both… |
-| 303 | `src/game/coop-team.js` | 97 | COOP 9 WHAT TWO PLAYERS DO TOGETHER (numbers: config COOP2; rules: net/rules.js). |
-| 304 | `src/game/coop-glue.js` | 229 | COOP 4–7 THE GAME'S SIDE OF TWO-PLAYER CO-OP (the net layer is src/net/*; the screen ui/coop-lobby.js; the o… |
-| 305 | `src/game/startup.js` | 23 | Z103 COMPOSITION ROOT. Last system module in hub.js: everything is defined, so this is where the |
+| 174 | `src/game/xeom.js` | 192 | Z282 XE ÔM MODE (Z332 the xích lô is gone): the cavalry mode (game/cavalry.js) with a Vietnamese ride instea… |
+| 175 | `src/game/ride-wear.js` | 41 | Z303 THE RIDE WEARS OUT: the xe ôm / ba gác / bán tải has its own health. Hits taken while riding (a share o… |
+| 176 | `src/game/ride-collide.js` | 97 | Z311 WHAT A RIDE RUNS INTO: the xe ôm (or the horse) is held by everything a tank simply rolls over — trees,… |
+| 177 | `src/game/ride-avoid.js` | 97 | RIDE 1 THE MOUNT PICKS ITS OWN LINE (the war horse and the xe ôm alike; game/cavalry.js asks once a frame). … |
+| 178 | `src/game/ride-feel.js` | 50 | RIDE 2 THE HARD STOP (both mounts; game/cavalry.js asks once a frame in the saddle). Reined in from speed — … |
+| 180 | `src/game/soldier-moves.js` | 54 | Z336 THE SOLDIER ON HIS FEET MOVES LIKE ONE (soldier mode, off the ride): Space jumps (a spring off both fee… |
+| 181 | `src/game/soldier-climb.js` | 154 | Z451 THE SOLDIER CLIMBS (soldier mode, on foot): with a rock, a fortress wall or gate, a ruin, a container, … |
+| 182 | `src/game/swim.js` | 182 | SWIM 1 THE SOLDIER IN THE RIVER (soldier mode, on foot; config SWIM): the water's depth at his feet (RIVER.y… |
+| 183 | `src/game/horse-swim.js` | 93 | HSWIM 1 THE HORSE SWIMS (config HORSESWIM): the war horse in the river by the depth under it (RIVER.y − the … |
+| 186 | `src/game/logistics.js` | 173 | SUPPLY 1 AMMUNITION IS A SUPPLY LINE (soldier mode): the reserve of rounds behind every magazine, what a rel… |
+| 187 | `src/game/ambush.js` | 77 | AMBUSH 1 THE BLADE DOES NOT GIVE HIM AWAY: hide behind a rock or a container, dart out, cut one man down, ge… |
+| 188 | `src/game/quiet.js` | 116 | SUPPLY 3 QUIET OR LOUD (soldier mode, on foot): the suppressed gun, the knife, the bodies left behind, the a… |
+| 189 | `src/game/stealth.js` | 56 | Z377 A MAN FLAT ON THE GROUND IS HARD TO SEE (soldier mode, on foot): every enemy gun used to take the playe… |
+| 190 | `src/game/ride-impact.js` | 30 | Z306 THE RIDE MEETS THE STREET (soldier mode only; the tank keeps its own run-over in world/traffic.js): wha… |
+| 191 | `src/game/ride-call.js` | 49 | Z306 CALL THE RIDE (soldier mode only): on foot, a button (and G) tells you where your ride stands — LÊN XE … |
+| 193 | `src/game/medals.js` | 83 | MEDAL 2 THE BATTLE'S LEDGER: who killed what and how (his round, his blade, his grenade, his charge — or his… |
+| 194 | `src/game/soldier-rank.js` | 97 | Z350 THE SOLDIER'S CAREER (soldier mode only): every man he or his squad drops is experience, and experience… |
+| 212 | `src/game/score.js` | 16 | SCORE / COMBO |
+| 213 | `src/game/player-damage.js` | 85 | PLAYER DAMAGE / DEATH |
+| 234 | `src/game/flow.js` | 128 | GAME FLOW: start / pause / quit-to-menu, loadout guns for the run, menu ↔ HUD state, show/hide panels |
+| 250 | `src/game/update.js` | 159 | the camera that follows the soldier, the enemy vehicles' rigs, Vietnamese label helpers (no-tanks: the tank'… |
+| 251 | `src/game/intro-clouds.js` | 49 | Z322 THE INTRO'S SKY: high over the field the air is hazy and a thin deck of soft clouds drifts between the … |
+| 252 | `src/game/intro.js` | 172 | INTRO CINEMATIC (deploy showcase) |
+| 292 | `src/game/cavalry.js` | 229 | Z245 CAVALRY MODE: the player is a general in full plate — on his armoured war horse (walk · trot · canter ·… |
+| 297 | `src/game/loop.js` | 154 | MAIN LOOP: per-frame update + render orchestration, frame pacing, ability cooldown dials |
+| 298 | `src/game/viewport.js` | 30 | Z103 split from game/loop.js: canvas/render-target sizing, the soft-keyboard guard, landscape gate, |
+| 299 | `src/game/boot-gate.js` | 69 | Z103 split from game/loop.js: the branded splash, real boot progress, sliced shader warm-up, |
+| 301 | `src/game/coop-remote.js` | 112 | COOP 5 THE OTHER PLAYER'S SOLDIER on this page: the same rig the local soldier wears (buildGeneral + his hor… |
+| 302 | `src/game/coop-puppets.js` | 137 | COOP 6 ONE BATTLE: the host is the authority for the enemy. HOST: every enemy unit into the snapshot (coopHo… |
+| 303 | `src/game/coop-world.js` | 139 | COOP 9 ONE SHARED BATTLE: what stands, what lies on the ground and the Core's health are the HOST's, on both… |
+| 304 | `src/game/coop-team.js` | 97 | COOP 9 WHAT TWO PLAYERS DO TOGETHER (numbers: config COOP2; rules: net/rules.js). |
+| 305 | `src/game/coop-glue.js` | 229 | COOP 4–7 THE GAME'S SIDE OF TWO-PLAYER CO-OP (the net layer is src/net/*; the screen ui/coop-lobby.js; the o… |
+| 306 | `src/game/startup.js` | 25 | Z103 COMPOSITION ROOT. Last system module in hub.js: everything is defined, so this is where the |
 | | **dev/** — Móc kiểm thử / gỡ lỗi (không ảnh hưởng gameplay) | | |
-| 306 | `src/dev/hooks.js` | 58 | Z103 split from game/loop.js: window._* inspection/driving hooks used by Playwright smoke tests and the |
-| 307 | `src/dev/pose-studio.js` | 129 | Z349 THE POSE STUDIO: calibrate and judge how a soldier holds each of his weapons — for every new soldier mo… |
+| 307 | `src/dev/hooks.js` | 58 | Z103 split from game/loop.js: window._* inspection/driving hooks used by Playwright smoke tests and the |
+| 308 | `src/dev/pose-studio.js` | 129 | Z349 THE POSE STUDIO: calibrate and judge how a soldier holds each of his weapons — for every new soldier mo… |
 <!-- MODULES:END -->
 
 ---

@@ -2,7 +2,9 @@
 // game is actually started (title-screen actors, saved prefs, first-launch dialogs, boot gate, first frame).
 // Server/co-op work (ARCHITECTURE.md §6) swaps what runs here — not the systems themselves.
 import { makeCavPlayer, PROFILE, S, __set_muted, bootReady, buildCore, doResize, initIcons, loop, muted, openNick, refreshBestLine, refreshStartUI, setMuted, setQuality, syncMenuState, updateSpellHUD, coopBoot } from '../hub.js';
+import { tierBoot } from '../hub.js';   // SPLIT 3 (render/quality.js)
 
+tierBoot();   // SPLIT 3 the last load never finished → one quality level down (render/quality.js), before anything is built
 // build the scene actors up front so the title screen shows a live battlefield
 buildCore(1);
 { const R = ['cav', 'xeom', 'bagac', 'bantai']; if(!R.includes(PROFILE.unit)) PROFILE.unit = R.includes(PROFILE.lastRide) ? PROFILE.lastRide : 'xeom';   // (no-tanks: an old profile's tank → his last ride, else the xe ôm)
