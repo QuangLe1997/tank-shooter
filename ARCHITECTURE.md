@@ -53,7 +53,7 @@ tools/
 test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 ```
 
-### 2.1 Danh mục module (310 module theo thứ tự hub · 33.126 dòng)
+### 2.1 Danh mục module (310 module theo thứ tự hub · 33.157 dòng)
 
 <!-- MODULES:BEGIN (npm run modmap) -->
 | # | Module | Dòng | Nội dung |
@@ -120,7 +120,7 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 84 | `src/audio/afx-move.js` | 35 | AUDIO 2 MEN ON THE MOVE: a footstep by the ground under it (sand hisses, rock scrapes, the shallows splash, … |
 | 85 | `src/audio/afx-mix.js` | 66 | AUDIO 3 THE MIXER, THE SCORE AND THE SQUAD'S CALLS: the music dips under gunfire and under a close blast and… |
 | 86 | `src/audio/body-math.js` | 36 | HIT 1 the takes of a man's body struck, pure maths (no imports: runs in Node, test.js): each returns a mono … |
-| 87 | `src/audio/body-hit.js` | 45 | HIT 1 A MAN IS HIT, NOT A HULL: what HE hears when he is struck (game/player-damage.js), synthesised, no fil… |
+| 87 | `src/audio/body-hit.js` | 51 | HIT 1 A MAN IS HIT, NOT A HULL: what HE hears when he is struck (game/player-damage.js), synthesised, no fil… |
 | | **world/** — Bản đồ: địa hình, khí quyển, vật cản, công trình | | |
 | 22 | `src/world/field.js` | 63 | Z106 FIELD BOUNDARY: the playable area is an irregular outline (radius per bearing around the Core) — bays, … |
 | 43 | `src/world/atmosphere.js` | 166 | Z97 VISIBLE SKY: a real gradient dome (zenith → horizon haze that melts into the fog), sun glow by day, moon… |
@@ -199,7 +199,7 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 104 | `src/fx/celebrate.js` | 24 | Z140 VICTORY CELEBRATION: a fort taken or a battle won — fireworks over the field, every soldier of ours lea… |
 | 116 | `src/fx/realwar.js` | 37 | Z223 REAL WAR: the small things that make a firefight read as real. |
 | 152 | `src/fx/cinematic.js` | 41 | Z189 CINEMATIC COMBAT FX: a shock dome that rips out of every tank kill, real fire light (blasts flash the g… |
-| 153 | `src/fx/soldier-fx.js` | 56 | Z306 A MAN IS HIT, NOT A HULL: blood off the side the round came from, a flinch of the view and the red mark… |
+| 153 | `src/fx/soldier-fx.js` | 81 | Z306 A MAN IS HIT, NOT A HULL: blood off the side the round came from, a flinch of the view and the red mark… |
 | 154 | `src/fx/fire-fx.js` | 209 | FIRE 1 THE FIRE / SMOKE PARTICLE LAYER: every flame, fireball, dust and smoke puff of the new effects (fx/bl… |
 | 155 | `src/fx/blasts.js` | 134 | FIRE 2–4 THE STAGED EFFECTS on the fire / smoke layer (fx/fire-fx.js; numbers in config FIREFX), each the wa… |
 | 156 | `src/fx/hitfx.js` | 77 | Z192 REAL ROUNDS & REAL HITS: a shell flies as a hot streak pointed along its path (not a glowing ball), a m… |
