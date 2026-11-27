@@ -53,7 +53,7 @@ tools/
 test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 ```
 
-### 2.1 Danh mục module (302 module theo thứ tự hub · 31.973 dòng)
+### 2.1 Danh mục module (302 module theo thứ tự hub · 31.986 dòng)
 
 <!-- MODULES:BEGIN (npm run modmap) -->
 | # | Module | Dòng | Nội dung |
@@ -135,7 +135,7 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 54 | `src/world/stone.js` | 126 | Z259 PHOTO STONE for built and natural rock: a material that starts in a plain stone colour and takes a phot… |
 | 55 | `src/world/lava.js` | 32 | Z187 LAVA in the volcanic caldera: glowing pools that light the ground, spit embers, and burn any tank that … |
 | 56 | `src/world/horizon.js` | 121 | Z189 THE HORIZON (Z209 sculpted, lit, never the same twice): the battlefield is not alone in the world. Thre… |
-| 57 | `src/world/backdrop.js` | 109 | Z427 THE FAR RANGES: the land and the mountains kilometres away, at their true distance and height. They are… |
+| 57 | `src/world/backdrop.js` | 121 | Z427 THE FAR RANGES: the land and the mountains kilometres away, at their true distance and height. They are… |
 | 58 | `src/world/forest.js` | 44 | Z440 WOODS PAST THE FENCE: the land round the field wears real woods of the scanned tree species, not a scat… |
 | 59 | `src/world/biome.js` | 32 | Z103 split from world/physics.js: apply a battlefield biome (ground maps, terrain, sky, perimeter, |
 | 60 | `src/world/cover.js` | 239 | TERRAIN BLOCKS (cover) |
@@ -174,7 +174,7 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 159 | `src/world/real-trees.js` | 105 | Z262 REAL TREES: thirteen Meshy-generated species (oak, linden, birch, poplar, Scots pine, snowy spruce, coc… |
 | 160 | `src/world/real-city.js` | 60 | Z264 THE REAL CITY: Meshy-generated buildings (glass tower, stone office tower, apartment tower, mid-rise ho… |
 | 161 | `src/world/traffic.js` | 445 | Z268 THE CITY MOVES (Z269: app-driver liveries — green, yellow, teal on an electric scooter — plain jackets,… |
-| 163 | `src/world/ruins3d.js` | 30 | Z275 RUINS OF WAR: Tripo-built ruins stand about the battlefields — a gothic chapel fallen in (built from th… |
+| 163 | `src/world/ruins3d.js` | 31 | Z275 RUINS OF WAR: Tripo-built ruins stand about the battlefields — a gothic chapel fallen in (built from th… |
 | 164 | `src/world/defense.js` | 159 | Z420 THE DEFENCE IN DEPTH → Z423 EVERY LAND ITS OWN DOCTRINE. The forts stand in a ring round our base and t… |
 | 165 | `src/world/trails.js` | 135 | Z432 TRAILS: the tracks worn between the places of a battlefield (our gates, the spawn, the forts' gates, th… |
 | 166 | `src/world/real-turrets.js` | 61 | Z424 REAL GUNS ON THE DRAWN MOUNTS, REAL ROCKETS ON THE DRAWN ROUNDS. Our base's guard cannons (the fort gun… |
