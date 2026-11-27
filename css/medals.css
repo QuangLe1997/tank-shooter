@@ -103,9 +103,9 @@ body.inmenu .mdl-toasts,body.inmenu .mdl-rankup{display:none;}
 
 /* ---------- a phone on its side ---------- */
 @media (orientation:landscape) and (max-height:500px){
-  .mdl-toasts{top:31%;right:max(12px,env(safe-area-inset-right));} .mdl-toast{min-width:250px;padding:6px 14px 6px 8px;gap:10px;} .mdl-toast .mdl-disc{--d:34px;}
+  .mdl-toasts{top:54%;right:max(12px,env(safe-area-inset-right));} .mdl-toast{min-width:250px;padding:6px 14px 6px 8px;gap:10px;} .mdl-toast .mdl-disc{--d:34px;}
   .mdl-toast b{font-size:18px;} .mdl-toast small{font-size:11.5px;} .mdl-toast .tx > span{font-size:12px;}
-  .mdl-rankup{top:16%;padding:10px 26px 12px;} .mdl-rankup .mdl-ins{width:130px;} .mdl-rankup b{font-size:32px;} .mdl-rankup small,.mdl-rankup span{font-size:13px;}
+  .mdl-rankup{top:15%;min-width:0;padding:8px 24px 10px;gap:3px;} .mdl-rankup .mdl-ins{width:104px;} .mdl-rankup b{font-size:28px;} .mdl-rankup small,.mdl-rankup span{font-size:13px;}
   .mdl-sc b{font-size:22px;}
   .mdl-grid{gap:16px;} .mdl-col{gap:8px;}
   .mdl-hero{padding:8px 12px;gap:10px;} .mdl-hero .ic{width:26px;height:26px;} .mdl-hero b{font-size:17px;} .mdl-hero small{font-size:11.5px;}
