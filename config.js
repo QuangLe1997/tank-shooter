@@ -2275,6 +2275,13 @@ export const MATLOOK = {
       prop:{ ref:0.12, lum:[0.035, 0.50], sat:[0, 0.45], rough:[0.4, 1], metal:0.5, sq:0.15 } },
     except:{ prop_lamp:{ skip:true }, prop_gate:{ lum:[0.02, 0.3] } },
     biome:{ DESERT:{ stone:1.35, masonry:1.1 }, SAVANNA:{ stone:1.2 }, QUARRY:{ stone:1.25, masonry:1.1 }, VOLCANO:{ stone:0.85 } } },
+  // MAT 2 the particle layer (fx/fire-fx.js): shimGlow = the old layers' glow sparks, flashes and odd-coloured fire drawn there too; softDepth = soft against the scene's
+  //   depth (desktop), soft[0] = its fade length × the particle's size; near = the lens inside a puff: fade length × size, at least m, from m; shadow = how much of
+  //   the sun's shadow a puff takes (desktop), shadowTap = its 4 taps' spread in texels, shadowBias; ramps / kinds = the shim's own (as FIREFX), white: the caller's colour
+  pfx:{ on:true, shimGlow:true, softDepth:true, soft:[0.5], near:[0.6, 0.35, 0.25], shadow:0.85, shadowTap:1.5, shadowBias:0.003,
+    ramps:{ pGlow:[[0, 0xffffff, 1, 1], [0.45, 0xffffff, 1, 1], [1, 0xffffff, 0, 1]] },
+    kinds:{ pSpark:{ ramp:'pGlow', cells:[14, 1], layer:1, s:[1.6, 0.1], hot:0.8, stretch:0.025, prio:1 }, pFlash:{ ramp:'pGlow', cells:[13, 1], layer:1, s:[1, 0.05], hot:0.7, prio:2 },
+      pFire:{ ramp:'pGlow', cells:[0, 7], layer:1, s:[1, 0.55], sit:0.42, spin:0.6, hot:0.55, prio:1 } } },
 };
 // Z400 CONTACT (world/decals.js paintContact, read by the ground's shader): things stood on the floor like cut-outs — a hard line where a wall met the grass, no
 //   shade under a rock, the same clean sand right up to a pipe. Once a stage is built every solid footprint (blocks: walls, cover, rocks, camps,

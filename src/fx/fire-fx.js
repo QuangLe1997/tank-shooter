@@ -15,10 +15,10 @@
 //   · a hard budget (FIREFX.max live + scheduled): past FIREFX.thin of it the cheap kinds are dropped more and more often, the heart of an effect never.
 //   · the old spawnPart smoke and fire (every caller in the game) are drawn here too (fxShim) — the same puffs, lit, on the same budget. ?oldfx: none of it.
 import * as THREE from 'three';
-import { FIREFX } from '../../config.js';
-import { MOBILE, NIGHT, PERF, S, SUN_DIR, WX, ambient, gradePass, heightAt, hemi, scene, sun } from '../hub.js';
+import { FIREFX, MATLOOK } from '../../config.js';
+import { MATSW, MOBILE, NIGHT, PERF, PROFILE, S, SUN_DIR, WX, ambient, gradePass, heightAt, hemi, renderPass, renderer, scene, sun } from '../hub.js';
 
-const F = FIREFX, MAX = MOBILE ? F.maxMobile : F.max, STR = 32, NL = F.lights;
+const F = FIREFX, P = MATLOOK.pfx, RAMPS = Object.assign({}, F.ramps, P.ramps), KINDS = Object.assign({}, F.kinds, P.kinds), MAX = MOBILE ? F.maxMobile : F.max, STR = 32, NL = F.lights;
 export const FX = { on:F.on && !(typeof location !== 'undefined' && /oldfx/.test(location.search + location.hash)), live:0, peak:0, born:0, dropped:0, cur:0, d0:MAX, d1:-1, hi:-1 };
 export const fireFxOn = () => FX.on;
 export function fireFxSet(on){ FX.on = !!on && F.on; }                 // (a probe compares the two looks in one battle)
@@ -55,27 +55,32 @@ function makeAtlas(){ const G = F.atlas.grid, N = MOBILE ? F.atlas.cellMobile : 
       px[o] = Math.round(D[k] * 255); px[o + 1] = Math.round((nx * 0.5 + 0.5) * 255); px[o + 2] = Math.round((ny * 0.5 + 0.5) * 255); px[o + 3] = Math.round(Math.max(0, Math.min(1, A[k])) * 255); } }
   const t = new THREE.DataTexture(px, W, W, THREE.RGBAFormat, THREE.UnsignedByteType); t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true; t.needsUpdate = true; return t; }
 // ---- the ramps: two rows each (colour + opacity · glow share), 64 wide, half-float so a dark soot does not band ----
-const RAMP = {}, RW = 64; { let i = 0; for(const k in F.ramps) RAMP[k] = i++; }
-function makeRamps(){ const names = Object.keys(F.ramps), rows = names.length * 2, d = new Uint16Array(RW * rows * 4), hf = THREE.DataUtils.toHalfFloat, c0 = new THREE.Color(), c1 = new THREE.Color();
-  names.forEach((nm, r) => { const st = F.ramps[nm];
+const RAMP = {}, RW = 64; { let i = 0; for(const k in RAMPS) RAMP[k] = i++; }   // (MAT 2 + MATLOOK.pfx.ramps, and any an emitter registers: pfxKind)
+function makeRamps(){ const names = Object.keys(RAMPS), rows = names.length * 2, d = new Uint16Array(RW * rows * 4), hf = THREE.DataUtils.toHalfFloat, c0 = new THREE.Color(), c1 = new THREE.Color();
+  names.forEach((nm, r) => { const st = RAMPS[nm];
     for(let x = 0; x < RW; x++){ const t = x / (RW - 1); let j = 0; while(j < st.length - 2 && t > st[j + 1][0]) j++; const a = st[j], b = st[j + 1], f = Math.max(0, Math.min(1, (t - a[0]) / Math.max(1e-6, b[0] - a[0])));
       c0.setHex(a[1]); c1.setHex(b[1]); c0.lerp(c1, f); const o = (r * 2 * RW + x) * 4, o2 = ((r * 2 + 1) * RW + x) * 4;
       d[o] = hf(c0.r); d[o + 1] = hf(c0.g); d[o + 2] = hf(c0.b); d[o + 3] = hf(a[2] + (b[2] - a[2]) * f); d[o2] = hf(a[3] + (b[3] - a[3]) * f); d[o2 + 1] = d[o2 + 2] = 0; d[o2 + 3] = hf(1); } });
   const t = new THREE.DataTexture(d, RW, rows, THREE.RGBAFormat, THREE.HalfFloatType); t.magFilter = t.minFilter = THREE.LinearFilter; t.generateMipmaps = false; t.needsUpdate = true; return { t, rows }; }
 // ---- the kinds, resolved once ----
 export const FXK = {};
-for(const k in F.kinds){ const q = F.kinds[k]; FXK[k] = { row:RAMP[q.ramp], c0:q.cells[0], cn:q.cells[1], layer:q.layer || 0, drag:q.drag || 0, dragY:q.dragY || 0, grav:q.grav || 0, s0:q.s[0], s1:q.s[1], grow:q.grow || 1, thin:q.thin || 0, cool:q.cool || 0, sit:q.sit || 0,
-  turb:q.turb || 0, wind:q.wind || 0, hot:q.hot || 1, op:q.op ?? 1, stretch:q.stretch || 0, spin:q.spin || 0, up:q.up || 0, prio:q.prio ?? 1 }; }
+const kindOf = q => ({ row:RAMP[q.ramp], c0:q.cells[0], cn:q.cells[1], layer:q.layer || 0, drag:q.drag || 0, dragY:q.dragY || 0, grav:q.grav || 0, s0:q.s[0], s1:q.s[1], grow:q.grow || 1, thin:q.thin || 0, cool:q.cool || 0, sit:q.sit || 0,
+  turb:q.turb || 0, wind:q.wind || 0, hot:q.hot || 1, op:q.op ?? 1, stretch:q.stretch || 0, spin:q.spin || 0, up:q.up || 0, prio:q.prio ?? 1 });
+for(const k in KINDS) FXK[k] = kindOf(KINDS[k]);
 
 // ---- the buffer and its two meshes ----
+// MAT 2 what this machine can do: the sun's shadow on every puff (desktop), and soft against the scene's depth (desktop, where the scene pass keeps a resolved depth texture)
+let SD_ON = false; try{ SD_ON = P.on && P.softDepth && !MOBILE && !!(renderPass && renderPass.rt && renderPass.rt.depthTexture) && !renderer.extensions.has('WEBGL_multisampled_render_to_texture'); }catch(e){}
+const SH_ON = P.on && P.shadow > 0 && !MOBILE;
 const BUF = new Float32Array(MAX * STR), DIE = new Float32Array(MAX), _rm = makeRamps();
 const U = { uNow:{ value:0 }, uSoft:{ value:F.soft }, uFogD:{ value:0 }, uFogC:{ value:new THREE.Color() }, uWind:{ value:new THREE.Vector2() }, uSunDir:{ value:SUN_DIR }, uSunC:{ value:new THREE.Color() }, uAmbC:{ value:new THREE.Color() },
-  uWrap:{ value:F.light.wrap }, uHot:{ value:F.hot.day }, uAtlas:{ value:makeAtlas() }, uRamp:{ value:_rm.t }, uRampN:{ value:_rm.rows }, uFL:{ value:[] }, uFC:{ value:[] } };
+  uWrap:{ value:F.light.wrap }, uHot:{ value:F.hot.day }, uAtlas:{ value:makeAtlas() }, uRamp:{ value:_rm.t }, uRampN:{ value:_rm.rows }, uFL:{ value:[] }, uFC:{ value:[] },
+  uShM:{ value:new THREE.Matrix4() }, uShT:{ value:null }, uShP:{ value:new THREE.Vector4(0, 1 / 2048, P.shadowBias, 0) }, uDepth:{ value:null }, uPrevVP:{ value:new THREE.Matrix4() }, uNF:{ value:new THREE.Vector4(0.6, 600, P.soft[0], 0) }, uSoftK:{ value:new THREE.Vector4(P.near[0], P.near[1], P.near[2], 1) } };   // MAT 2 sun shadow · scene depth · soft lengths
 for(let i = 0; i < NL; i++){ U.uFL.value.push(new THREE.Vector4(0, 0, 0, 1)); U.uFC.value.push(new THREE.Vector3()); }
 export const FX_U = U;
-const VS = `uniform float uNow, uLayer, uSoft, uFogD; uniform vec2 uWind; uniform vec3 uSunDir; uniform vec4 uFL[${NL}]; uniform vec3 uFC[${NL}];
+const VS = `${SH_ON ? '#define FX_SH\n#include <packing>\n' : ''}uniform float uNow, uLayer, uSoft, uFogD; uniform mat4 uShM; uniform sampler2D uShT; uniform vec4 uShP; uniform vec2 uWind; uniform vec3 uSunDir; uniform vec4 uFL[${NL}]; uniform vec3 uFC[${NL}];
 attribute vec4 aP, aV, aT, aS, aK, aC, aX, aY;
-varying vec2 vUv; varying vec4 vA; varying vec3 vTint, vFire, vL, vM;
+varying vec2 vUv; varying vec4 vA; varying vec3 vTint, vFire, vL, vM; varying vec4 vS, vPc; uniform mat4 uPrevVP;
 void main(){ float age = uNow - aT.x;
   if(age < 0.0 || age >= aT.y || abs(aX.x - uLayer) > 0.5){ gl_Position = vec4(2.0, 2.0, 2.0, 1.0); return; }
   float k = age / aT.y, e = exp(-aT.z * age), f = aT.z > 0.001 ? (1.0 - e) / aT.z : age, vy;
@@ -98,14 +103,29 @@ void main(){ float age = uNow - aT.x;
   vec4 mv = viewMatrix * vec4(wp, 1.0); float dd = uFogD * length(mv.xyz);
   vM = vec3(sz > 0.45 ? (wp.y - aP.w) / max(min(uSoft, sz * 0.35), 0.01) : 1.0, 1.0 - exp(-dd * dd), aK.x);
   vA = vec4(k, aK.z * pow(aS.x / max(sz, 1e-4), aY.y), aK.w, aY.z); vTint = aC.rgb;
+  float lit = 1.0;   // MAT 2 the sun's shadow map at each corner: a puff drifting into a wall's shade goes dark on that side
+#ifdef FX_SH
+  if(uShP.x > 0.0){ vec4 sc = uShM * vec4(wp, 1.0); sc.xyz /= sc.w;
+    if(sc.x > 0.0 && sc.x < 1.0 && sc.y > 0.0 && sc.y < 1.0 && sc.z < 1.0){ float o = uShP.y, z = sc.z - uShP.z; lit = 0.25 * (step(z, unpackRGBAToDepth(texture2D(uShT, sc.xy + vec2(-o, -o)))) + step(z, unpackRGBAToDepth(texture2D(uShT, sc.xy + vec2(o, -o))))
+      + step(z, unpackRGBAToDepth(texture2D(uShT, sc.xy + vec2(-o, o)))) + step(z, unpackRGBAToDepth(texture2D(uShT, sc.xy + vec2(o, o))))); lit = mix(1.0, lit, uShP.x); } }
+#endif
+  vS = vec4(lit, -mv.z, sz, 0.0); vPc = uPrevVP * vec4(wp, 1.0);   // (last frame's clip position: linear across the quad, divided per pixel)
   gl_Position = projectionMatrix * mv; }`;
-const FS = `uniform sampler2D uAtlas, uRamp; uniform float uRampN, uWrap, uHot; uniform vec3 uSunC, uAmbC, uFogC;
-varying vec2 vUv; varying vec4 vA; varying vec3 vTint, vFire, vL, vM;
+const FS = `${SD_ON ? '#define FX_SD\n' : ''}uniform sampler2D uAtlas, uRamp, uDepth; uniform float uRampN, uWrap, uHot; uniform vec3 uSunC, uAmbC, uFogC; uniform vec4 uNF, uSoftK;
+varying vec2 vUv; varying vec4 vA; varying vec3 vTint, vFire, vL, vM; varying vec4 vS, vPc;
 void main(){ vec4 t = texture2D(uAtlas, vUv); float den = t.r, u = clamp(vA.x + ((1.0 - den) + (t.a - 0.5) * 0.8) * vA.w, 0.0, 0.995), row = vM.z * 2.0;   // further along the ramp at the thin rim and in the grain's cool streaks: a hot heart, sooty edges, a mottled ball
   vec4 rc = texture2D(uRamp, vec2(u, (row + 0.5) / uRampN)); float em = texture2D(uRamp, vec2(u, (row + 1.5) / uRampN)).r;
-  float a = min(1.0, den * rc.a * vA.y) * clamp(vM.x, 0.0, 1.0); if(a < 0.004) discard;
+  float a = min(1.0, den * rc.a * vA.y) * clamp(vM.x, 0.0, 1.0);
+  if(uSoftK.w > 0.5){ float sf = vS.z > 0.8 ? smoothstep(0.0, 1.0, (vS.y - uSoftK.z) / max(uSoftK.x * vS.z, uSoftK.y)) : 1.0;   // MAT 2 the lens inside a puff: it thins away instead of filling the view with grain
+#ifdef FX_SD
+    if(uNF.w > 0.5){ vec4 pc = vPc; vec2 su = pc.xy / max(pc.w, 1e-3) * 0.5 + 0.5;   // soft against whatever stands there: the scene's depth (last frame's, reprojected) behind this point
+      if(pc.w > 0.05 && su.x > 0.0 && su.y > 0.0 && su.x < 1.0 && su.y < 1.0){ float d = texture2D(uDepth, su).r, vz = uNF.x * uNF.y / ((uNF.y - uNF.x) * d - uNF.y);
+        sf *= smoothstep(0.0, 1.0, (-vz - pc.w) / max(uNF.z * vS.z, 0.04)); } }   // (a spark's fade as short as it is small)
+#endif
+    a *= sf; }
+  if(a < 0.004) discard;
   vec2 n2 = t.gb * 2.0 - 1.0; float L = clamp(dot(vec3(n2, sqrt(max(0.0, 1.0 - dot(n2, n2)))), normalize(vL)) * 0.5 + 0.5, 0.0, 1.0);
-  vec3 body = vTint * rc.rgb * (uSunC * (uWrap + (1.0 - uWrap) * L) + uAmbC + vFire * (0.6 + 0.4 * den)) * ((0.8 + 0.4 * t.a) * (1.0 - em) * (1.0 - em));   // what covers is soot: the less it still glows, the more of its own colour it shows
+  vec3 body = vTint * rc.rgb * (uSunC * (uWrap + (1.0 - uWrap) * L) * vS.x + uAmbC + vFire * (0.6 + 0.4 * den)) * ((0.8 + 0.4 * t.a) * (1.0 - em) * (1.0 - em));   // what covers is soot: the less it still glows, the more of its own colour it shows
   vec3 glow = vTint * rc.rgb * (vA.z * uHot * (0.55 + 0.9 * den));
   float cov = a * (1.0 - em);
   gl_FragColor = vec4(mix(body, uFogC, vM.y) * cov + glow * (a * em * (1.0 - vM.y)), cov); }`;
@@ -138,7 +158,19 @@ const fireLike = h => { const r = (h >> 16) & 255, g = (h >> 8) & 255, b = h & 2
 export function fxShim(x, y, z, vx, vy, vz, o){ if(!FX.on) return false; const sz = o.size || 1, gr = o.grow || 0, life = o.life || 0.6;
   if(o.smoke){ if(!F.shim.smoke) return false; put(FXK.shimSmoke, x, y, z, vx, vy, vz, sz * 0.6, sz * 1.4 + gr, life, 0, o.color ?? 0xffd27a, 0.5 * (o.op ?? 1) * F.shim.op, heightAt(x, z), o.drag ?? 2.5, 0, o.grav ?? -9); return true; }
   if(o.tex === 'fire' && F.shim.fire && fireLike(o.color ?? 0xffd27a)){ put(FXK.shimFire, x, y, z, vx, vy, vz, sz, sz * 0.55 + gr, life, 0, null, o.op ?? 1, heightAt(x, z), o.drag ?? 2.5, 0, o.grav ?? -9); return true; }
-  return false; }
+  if(o.smoke || !(P.on && P.shimGlow && MATSW.pfx) || o.old) return false;   // MAT 2 the old layers' glow sparks, flashes and odd-coloured fire: on this layer too (o.old keeps one on the old layers)
+  const gy = heightAt(x, z), dr = o.drag ?? 2.5, gv = o.grav ?? -9, col = o.color ?? 0xffd27a, op = o.op ?? 1, K = o.tex === 'fire' ? FXK.pFire : o.tex === 'flash' ? FXK.pFlash : !o.tex ? FXK.pSpark : null;
+  if(!K) return false; put(K, x, y, z, vx, vy, vz, sz, o.tex === 'fire' ? sz * 0.55 + gr : sz * K.s1 + gr, life, 0, col, K.op * op, gy, dr, 0, gv); return true; }
+// ---- MAT 2 THE PARTICLE API, for any effect (the gun effects too): one instanced buffer, birth-only (the GPU flies it), two draws in all ----
+//   pfxKind(name, def, stops) — an emitter's own kind (its "material"): def as a FIREFX.kinds entry { ramp, cells:[first, count] of the sprite sheet
+//     (0–8 puffs / wisps, 9–12 flame tongues, 13 flash, 14 dot, 15 clod), layer 0 covers (smoke, dust) / 1 glows (flame, sparks), drag, dragY, grav, s:[start, end],
+//     grow, thin, cool, sit, turb, wind, hot, op, stretch, spin, up, prio }; stops = its own colour ramp ([t, colour, opacity, glow share] as FIREFX.ramps)
+//   pfxEmit(kind, x, y, z, o) — one particle, o = { vx, vy, vz, size, life, delay, tint, op, gy }: soft where it meets the ground and (desktop) whatever stands
+//     there, thinned when the lens is inside it, lit by the sun with the sun's shadow, the fires' light and the fog; on the shared budget. → its slot, or -1
+export function pfxKind(name, def, stops){ if(stops){ const r = def.ramp = def.ramp || name; RAMPS[r] = stops; if(!(r in RAMP)) RAMP[r] = Object.keys(RAMP).length;
+    const R = makeRamps(), old = U.uRamp.value; U.uRamp.value = R.t; U.uRampN.value = R.rows; if(old) old.dispose(); }
+  if(!(def.ramp in RAMP)) return null; return (FXK[name] = kindOf(def)); }
+export function pfxEmit(kind, x, y, z, o = {}){ return fxp(kind, x, y, z, o.vx || 0, o.vy || 0, o.vz || 0, o.size ?? 1, o.life ?? 1, o.delay || 0, o.tint ?? null, o.op ?? 1, o.gy); }
 
 // ---- the fires' light on smoke (and on nothing else: the ground's glow is fx/cinematic.js blastLight / fireLight) ----
 const LT = []; for(let i = 0; i < 12; i++) LT.push({ t:0, t0:1, x:0, y:0, z:0, r:0, g:0, b:0, p:0, rad:1, fl:0, key:null, ph:i * 1.7 });
@@ -165,6 +197,9 @@ export function updateFireFX(dt){ const now = (U.uNow.value += dt); let live = 0
   if(FX.d1 >= FX.d0){ _ib.clearUpdateRanges(); _ib.addUpdateRange(FX.d0 * STR, (FX.d1 - FX.d0 + 1) * STR); _ib.needsUpdate = true; FX.d0 = MAX; FX.d1 = -1; }
   for(let i = SHK.length - 1; i >= 0; i--) if(SHK[i].at <= now){ S.shake = Math.min(F.feel.shakeMax, (S.shake || 0) + SHK[i].sh); SHK[i] = SHK[SHK.length - 1]; SHK.pop(); }
   lightsFrame(dt, now); if(!live) return;
+  { const on = P.on && MATSW.pfx, hi = on && PROFILE.quality !== 'low'; U.uSoftK.value.w = on ? 1 : 0;   // (low quality: the lens fade only)   // MAT 2 this frame's shadow map, and last frame's camera for the scene depth it left behind
+    if(SH_ON){ const sm = sun.shadow && sun.shadow.map; U.uShP.value.x = hi && sm && sun.castShadow ? P.shadow : 0; if(U.uShP.value.x){ U.uShT.value = sm.texture; U.uShM.value.copy(sun.shadow.matrix); U.uShP.value.y = P.shadowTap / (sm.width || 2048); } }
+    if(SD_ON){ const c = renderPass.camera; U.uNF.value.w = hi && c.isPerspectiveCamera && renderPass.scene === scene ? 1 : 0; U.uDepth.value = renderPass.rt.depthTexture; U.uPrevVP.value.multiplyMatrices(c.projectionMatrix, c.matrixWorldInverse); U.uNF.value.x = c.near; U.uNF.value.y = c.far; } }
   const L = F.light, night = NIGHT.on || S.tod === 'night', nk = night ? L.night : 1; U.uSunC.value.copy(sun.color).multiplyScalar(sun.intensity * L.sun * nk);
   U.uAmbC.value.copy(hemi.color).multiplyScalar(hemi.intensity * L.amb * nk).add(_lc.copy(ambient.color).multiplyScalar(ambient.intensity * L.amb * nk));
   U.uHot.value = night ? F.hot.night : F.hot.day; if(scene.fog){ U.uFogC.value.copy(scene.fog.color); U.uFogD.value = scene.fog.density || 0; }

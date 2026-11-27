@@ -48,7 +48,7 @@ export const PPOOL=[];                                                          
 export function spawnPart(x,y,z,vx,vy,vz,o={}){
   if(parts.length >= PART_MAX*1.7*PERF.parts) return;                                  // hard budget (oldest keep living; new spawns drop) — shrinks when the device struggles
   if(PERF.parts<1 && !o.keep && (o.smoke||o.tex==='flash') && Math.random()>PERF.parts) return;   // (Z192 keep: the caller thins itself, e.g. a missile's ribbon spaces its puffs out)  // under load: thin out the cheap-to-lose layers first
-  if((o.smoke || o.tex==='fire') && fxShim(x,y,z,vx,vy,vz,o)) return;   // FIRE 1 smoke and fire puffs are drawn by the fire / smoke layer (fx/fire-fx.js: shaped, lit, flown on the GPU); ?oldfx: here as before
+  if(fxShim(x,y,z,vx,vy,vz,o)) return;   // FIRE 1 smoke and fire puffs are drawn by the fire / smoke layer (fx/fire-fx.js: shaped, lit, flown on the GPU; MAT 2 the glow sparks and flashes too, MATLOOK.pfx.shimGlow); ?oldfx: here as before
   const P=PPOOL.pop()||{ col:new THREE.Color(), _c0:new THREE.Color(), _c1:new THREE.Color() };
   P.x=x; P.y=y; P.z=z; P.vx=vx; P.vy=vy; P.vz=vz; P.life=P.max=o.life||0.6; P.size=o.size||1; P.grow=o.grow||0;
   P.grav=o.grav??-9; P.drag=o.drag??2.5; P.smoke=!!o.smoke; P.tex=o.tex||null; P.op=o.op??1; P.rot=(o.smoke||o.tex)?Math.random()*6.283:0; P.spin=o.smoke?(Math.random()-0.5)*0.8:0;
@@ -87,7 +87,7 @@ export function flushParticles(){
     G.iPos.array[i*3]=t.x; G.iPos.array[i*3+1]=t.y; G.iPos.array[i*3+2]=t.z;
     G.iCol.array[i*4]=t.c.r; G.iCol.array[i*4+1]=t.c.g; G.iCol.array[i*4+2]=t.c.b; G.iCol.array[i*4+3]=(t.life/t.max)*0.5;   // dots overlap along the streak → keep each faint so the sum doesn't blow out the bloom
     G.iSR.array[i*2]=t.size; G.iSR.array[i*2+1]=0; }
-  for(const ly of L){ ly.g.instanceCount=ly.n; if(ly.n){ ly.iPos.needsUpdate=true; ly.iCol.needsUpdate=true; ly.iSR.needsUpdate=true;
+  for(const ly of L){ ly.g.instanceCount=ly.n; ly.mesh.visible=ly.n>0; if(ly.n){ ly.iPos.needsUpdate=true; ly.iCol.needsUpdate=true; ly.iSR.needsUpdate=true;
     ly.iPos.clearUpdateRanges(); ly.iPos.addUpdateRange(0, ly.n*3); ly.iCol.clearUpdateRanges(); ly.iCol.addUpdateRange(0, ly.n*4); ly.iSR.clearUpdateRanges(); ly.iSR.addUpdateRange(0, ly.n*2); } }
 }
 export const _pc=new THREE.Color();
