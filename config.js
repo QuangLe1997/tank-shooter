@@ -4086,6 +4086,13 @@ export const MIXER = { v:1,
   // the run's sector chain when the spec gives none: from this length on, n sectors (by length), the last the general's
   auto:{ sectorsFrom:65, n:[[65, 2], [75, 3], [88, 4], [97, 5]], fixedBelow:35 },
   sectors:{ max:6, coop:false },
+  // MIX 3 a scenario's own relative knobs (spec.threat — a conquest fort's): the roots it may name and the range of a leaf it turns (× today, unless MIXER.bounds names it)
+  threat:{ roots:['REAL', 'DIRECTOR', 'FORT', 'FORTBOSS', 'BALANCE'], k:[0.2, 6] },
+  // MIX 3 PRESET SPECS — the ten conquest forts as battle specs (the battle of CONQUEST.forts[i]: its land, hour, weather, level, sector run, threat, general and story;
+  //   the map's own fields — name, blurb, prize, act — stay in CONQUEST). campaign/conquest.js conqLaunch composes these; the mixer desk lists them.
+  presets:{ conquest:CONQUEST.forts.map((f, i) => ({ v:1, id:'conq-' + (i + 1), name:'Thành ' + (i + 1) + ' · ' + f.name, world:{ land:f.biome, tod:f.tod, wx:f.wx, space:'wide', level:f.lvl },
+    structure:{ sectors:f.run ? f.run.split(' ') : null }, threat:f.threat ? { id:f.threat.id, knobs:f.threat.knobs.map(k => k.slice()) } : null, general:{ name:f.boss, look:f.look || null },
+    storyline:'conquest:' + i, conq:{ i } })) },
   // DEVICE BUDGETS (MOBILE = phone): live infantry at once, the head-count multiplier, the sim's time scale, events in any 5 minutes, live units at the peak
   budget:{ desktop:{ liveInf:30, countK:1.7, simK:1.4, events5:11, peakUnits:64 }, phone:{ liveInf:18, countK:1.4, simK:1.2, events5:10, peakUnits:36 } },
   // CROSS-RULES (src/data/mixer-math.js rules): thresholds
@@ -4095,6 +4102,6 @@ export const MIXER = { v:1,
   score:{ ref:{ stage:3, ttk:0.55, kpm:6, waveMin:1.25, bossMin:2, transitMin:0.4 }, typeMin:{ hold:3, sabotage:4.5, boss:4, rescue:4.5, breach:4, infiltrate:4.5, pursuit:3.5 },
     diffK:20, intK:24, warn:{ flat:40, grind:{ diff:85, joy:30 }, unreadable:75, unfair:45, short:4, long:30, samey:25, hot:{ int:85, fair:50 } } },
   // the mixer battle's own words (campaign/mixer.js: the briefing, the radio, the result card — never in the aim zone)
-  say:{ op:'TRẬN TỰ DỰNG', kick:'TRẬN TỰ DỰNG', won:'THẮNG TRẬN', lost:'THẤT THỦ', again:'ĐÁNH LẠI', why:'Dự báo: độ khó {d} · khoảng {m} phút',
+  say:{ op:'TRẬN TỰ DỰNG', kick:'TRẬN TỰ DỰNG', won:'THẮNG TRẬN', lost:'THẤT THỦ', again:'ĐÁNH LẠI', desk:'VỀ BÀN TRỘN', why:'Dự báo: độ khó {d} · khoảng {m} phút',
     brief:'Trận dựng từ bàn trộn — dự báo độ khó {d}, độ căng {i}, khoảng {m} phút.', obj:'Hạ tướng địch', objSect:'Chiếm từng khu, tới khu cuối',
     radio:'SCH: Trận này do bàn trộn dựng — độ khó dự báo {d}, chừng {m} phút. Vào vị trí!', st:{ time:'Thời gian', kills:'Hạ địch', acc:'Chính xác', dmg:'Máu đã mất' } } };

@@ -39,7 +39,7 @@ holdBack();   // a run the tab was closed on: the campaign's director gets its m
 // a battle begins (game/flow.js startGame, the run known, the world not yet built): the last mode's traces go, this run's mode — if it is one — turns its knobs
 export function modeBegin(run){ modeEnd(); const id = run && run.mode === 'custom' ? (run.nd ? 'nd' : run.daily ? 'daily' : run.conq ? 'conq' : run.mix ? 'mix' : '') : '';   /* (CONQ 1 a fort of the conquest: campaign/conquest.js) */ if(!id || !DEFS[id]) return;
   Object.assign(MODE, { id, H:DEFS[id], cfg:run, live:false, over:false, went:false, t:0 }); MODE.seq++;
-  modeStore().hold = { dirEase:PROFILE.dirEase || null }; PROFILE.dirEase = null; saveProfile(true);   // the same director for everyone; the campaign's own easing waits outside
+  if(!(MODE.H.keepEase && MODE.H.keepEase(run))){ modeStore().hold = { dirEase:PROFILE.dirEase || null }; PROFILE.dirEase = null; saveProfile(true); }   // the same director for everyone; the campaign's own easing waits outside (MIX 3 a mode that IS the custom ladder keeps it, as the legacy launch did)
   S.kills = 0; SHOTS.n = SHOTS.hit = 0;
   MODE.H.begin && MODE.H.begin(run); }
 // a step of the battlefield's build begins (world/biome.js applyBiome, world/cover.js buildBlocks): a mode that builds from a seed starts that step's draws afresh,
@@ -59,9 +59,9 @@ export function updateModes(dt, now){ if(!MODE.id || MODE.over) return;
 // a radio line `wait` s of play from now (0: at once)
 export function modeSay(msg, wait){ if(!msg) return; if(!(wait > 0)) radio(msg); else MODE.sayQ.push({ t:wait, msg }); }
 // the battle is lost (game/player-damage.js gameOver): the mode's own ending. true: the campaign's game-over screen, record and report are not for this run
-export function modeOver(reason){ if(!MODE.id) return false; if(MODE.over) return true; MODE.H.over && MODE.H.over(reason); return true; }
+export function modeOver(reason){ if(!MODE.id) return false; if(MODE.over) return true; return !(MODE.H.over && MODE.H.over(reason) === false); }   // MIX 3 a handler returning false hands the game over back to the campaign's screen
 // the stage's general fell in his citadel (campaign/boss.js bossStageWon). true: no next stage, no campaign progress — the mode decides what it means
-export function modeStageWon(now, bdef){ if(!MODE.id) return false; if(!MODE.over && MODE.H.stageWon) MODE.H.stageWon(now, bdef); return true; }
+export function modeStageWon(now, bdef){ if(!MODE.id) return false; if(!MODE.over && MODE.H.stageWon && MODE.H.stageWon(now, bdef) === false) return false; return true; }   // MIX 3 false: the campaign's stage won (perk, next stage) goes on
 // may the citadel's general take the field on his own (campaign/boss.js startBoss)? a mode can keep him for itself
 export function modeBossHold(){ return !!(MODE.id && MODE.H.bossHold && MODE.H.bossHold()); }
 // the pause screen's line (game/flow.js pauseWhere): '' = the campaign's own

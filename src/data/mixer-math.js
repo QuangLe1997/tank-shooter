@@ -6,7 +6,7 @@
 //   SCORES are first-principles estimates around today's battle (level 3, every param 50) — to be calibrated against measured battles (mixer-mapping.md §6).
 import * as CFG from '../../config.js';
 import { ENEMY_DEFS } from './enemies.js';
-import { modeHash } from './mode-math.js';
+import { modeHash, knobApply } from './mode-math.js';
 
 const { MIXER, BALANCE, SECTOR, SECROUTE } = CFG;
 const clamp = (x, a, b) => x < a ? a : x > b ? b : x, r3 = x => Math.round(x * 1000) / 1000;
@@ -42,7 +42,7 @@ export function mixToken(t){ if(t === '*') return { tok:'*', type:'*' }; let o =
 function deckTypes(land){ const d = SECROUTE.decks[land] || SECROUTE.decks._ || []; return d.map(x => mixToken(x)).filter(Boolean).map(c => c.type); }
 
 const GROUPS = () => [...new Set(Object.keys(MIXER.params).map(id => id.split('.')[0]))];
-const TOP = ['v', 'id', 'name', 'seed', 'macro', 'world', 'structure', 'advanced', 'coop', 'note'];
+const TOP = ['v', 'id', 'name', 'seed', 'macro', 'world', 'structure', 'advanced', 'coop', 'note', 'threat', 'general', 'storyline', 'conq'];   // MIX 3 threat · general · storyline · conq: a scenario's own fields (the conquest's forts)
 
 // ================= NORMALIZE =================
 export function normalizeSpec(spec, opts){ opts = opts || {}; const M = opts.M || MIXER, roots = opts.roots || mixRoots(), device = opts.device === 'phone' ? 'phone' : 'desktop', B = M.budget[device];
@@ -133,20 +133,32 @@ export function normalizeSpec(spec, opts){ opts = opts || {}; const M = opts.M |
         if(f.includes('t') && simK !== 1){ const L = leaf(lp, 'sim.timeScale'); L.t = true; if(f.includes('b')) L.read = 'build'; }
         if(ident || (op === '=' && !leaves.has(lp) && r[0][r[1]] === x)) continue;
         const L = leaf(lp, id); if(!L) continue; L.to = op === '*' ? L.to * x : op === '+' ? L.to + x : x; if(f.includes('b')) L.read = 'build'; if(f.includes('i')) L.int = true; if(f.includes('t')) L.t = true; } } }
+  // MIX 3 THE THREAT: a scenario's own relative knobs [path, op, x] (a conquest fort's: CONQUEST.forts[i].threat.knobs) — roots MIXER.threat.roots only, '$d' = the
+  //   difficulty, turned before the build, each leaf inside MIXER.bounds or else MIXER.threat.k × today (wider than a param's: a fort's gate is ×5)
+  { const th = s.threat && typeof s.threat === 'object' ? s.threat : null; s.threat = null;
+    if(th){ const ok = []; for(const q of Array.isArray(th.knobs) ? th.knobs : []){ const [p0, op, x] = Array.isArray(q) ? q : [], p = String(p0).replace('$d', diff);
+        if(!M.threat.roots.includes(p.split('.')[0]) || !['*', '+', '='].includes(op) || !Number.isFinite(Number(x))){ W('threat', 'Bỏ núm đe doạ: ' + p0); continue; }
+        const ls = mixLeaves(roots, p, M); if(!ls.length){ W('threat', 'Núm đe doạ không có trong game: ' + p0); continue; } ok.push([String(p0), op, Number(x)]);
+        for(const lp of ls){ const L = leaf(lp, 'threat'); L.to = knobApply(L.to, op, Number(x)); L.read = 'build'; L.wide = true; } }
+      s.threat = { id:String(th.id || ''), knobs:ok }; } }
+  for(const k of ['general', 'conq']) if(s[k] != null && (typeof s[k] !== 'object' || Array.isArray(s[k]))){ W(k, 'Bỏ trường hỏng: ' + k); delete s[k]; }
+  if(s.general) s.general = { name:String(s.general.name || ''), look:s.general.look ? String(s.general.look) : null };
+  if(s.conq){ const i = Math.round(Number(s.conq.i)); if(!(i >= 0 && i < CFG.CONQUEST.forts.length)){ C('conq.i', s.conq.i, null, 'không có thành này'); delete s.conq; } else s.conq = { i }; }
+  if(s.storyline != null && typeof s.storyline !== 'string'){ W('storyline', 'Bỏ trường hỏng: storyline'); delete s.storyline; }
   // advanced keys (allow-listed, '=' and clamped)
   const adv = s.advanced && typeof s.advanced === 'object' ? s.advanced : {}; s.advanced = {};
   for(const k of Object.keys(adv)){ const lim = M.advanced[k], n = Number(adv[k]); if(!lim){ W('advanced', 'Khoá chuyên sâu không được phép: ' + k); continue; } if(!Number.isFinite(n)){ C('advanced.' + k, adv[k], null, 'không phải số'); continue; }
     const v = clamp(n, lim[0], lim[1]); if(v !== n) C('advanced.' + k, n, v, 'biên ' + lim[0] + '–' + lim[1]); const L = leaf(k, 'advanced'); if(!L){ W('advanced', 'Khoá chuyên sâu không có trong game: ' + k); continue; } L.to = v; L.read = 'build'; s.advanced[k] = v; }
   // the sim's time scale: a wall-clock second (the game's `now`) is 1/simK of a sim second
   for(const L of leaves.values()){ if(L.t && simK !== 1) L.to /= simK;
-    const b = boundOf(M, L.path), lo = b ? b[0] : L.from >= 0 ? L.from * 0.25 : L.from * 4, hi = b ? b[1] : L.from >= 0 ? L.from * 4 : L.from * 0.25;
+    const b = boundOf(M, L.path), wl = L.wide ? M.threat.k[0] : 0.25, wh = L.wide ? M.threat.k[1] : 4, lo = b ? b[0] : L.from >= 0 ? L.from * wl : L.from * wh, hi = b ? b[1] : L.from >= 0 ? L.from * wh : L.from * wl;
     let v = L.int ? Math.round(L.to) : L.to; const c = clamp(v, Math.min(lo, hi), Math.max(lo, hi)); if(Math.abs(c - v) > 1e-9){ C(L.path, r3(v), r3(c), 'biên cứng của tham số'); v = c; }
-    L.to = L.int ? Math.round(v) : Math.round(v * 1e6) / 1e6; }
+    L.to = L.int ? Math.round(v) : v; }   // (MIX 3 no rounding: a fort's threat lands on exactly the number the old conquest code made)
   const knobs = [...leaves.values()].filter(L => L.to !== L.from).map(L => ({ path:L.path, from:L.from, to:L.to, read:L.read, by:L.by }));
   const stage = ((level - 1) % 5) + 1, loop = Math.floor((level - 1) / 5);
   const plan = { v:1, seed, seeds:{ build:modeHash(seed, 1), deal:modeHash(seed, 2), play:modeHash(seed, 3) }, device, coop,
     world:{ land, biome:M.lands.indexOf(land), tod, wx, space, level, stage, loop, diff }, structure:{ sectors:toks ? toks.slice() : null, auto, stars:toks ? toks.filter(t => t === '*').length : 0 },
-    macro, params:vals, player:{ lives:vals['player.lives'].v }, knobs };
+    macro, params:vals, player:{ lives:vals['player.lives'].v }, knobs, conq:s.conq ? s.conq.i : null, storyline:s.storyline || null };
   return { spec:s, plan, clamped, warnings }; }
 
 // ---- events in five minutes (surprises · big events · side missions · drone raids), from the params ----
@@ -228,3 +240,20 @@ export function scoreBattle(spec, opts){ const n = spec && spec.plan && spec.cla
   if(minutes < T.short) W('short', 'Trận quá ngắn: ~' + minutes + ' phút'); if(minutes > T.long) W('long', 'Trận quá dài: ~' + minutes + ' phút');
   if(out.variety < T.samey) W('samey', 'Lặp lại: đa dạng ' + out.variety);
   return { ...out, reasons:R, warnings:warn, est:{ ttk:r3(ttk), kpm:r3(kpm), events5:r3(e5), threat:r3(threat), sustain:r3(sustain), hpX:r3(hpX), numX:r3(numX) } }; }
+
+// ================= MIX 3 THE PREDICTED PRESSURE CURVE (the mixer desk draws it) =================
+// n = a normalizeSpec result → { pts:[[minute, pressure 0–1]], marks:[{ t, label }], total } — a sketch of the director's pressure across the battle from the scores:
+//   each wave (or sector) builds up to a peak and falls into a lull; a sector chain follows each mission's own shape; the general's fight is the last peak.
+export function planCurve(n, sc){ sc = sc || scoreBattle(n); const p = n.plan, V = p.params, T = MIXER.score, total = Math.max(1, sc.minutes), pts = [[0, 0.05]], marks = [];
+  const pk = Math.min(0.95, 0.3 + 0.45 * sc.intensity / 100 + 0.15 * sc.difficulty / 100), lo = Math.max(0.04, 0.16 - 0.06 * (V['pace.lull'].k - 1)), at = (t, v) => pts.push([+t.toFixed(2), +Math.max(0, Math.min(1, v)).toFixed(3)]);
+  const toks = p.structure.sectors, dk = toks ? toks.map(t => t === '*' ? null : mixToken(t).type) : null;
+  if(toks){ const w = dk.map(ty => ty ? T.typeMin[ty] || 4 : 4), sum = w.reduce((a, b) => a + b, 0); let t = 0;
+    dk.forEach((ty, i) => { const d = total * w[i] / sum, k = ty === 'boss' ? 1 : ty === 'hold' ? 0.85 : ty === 'breach' ? 0.9 : 0.75; marks.push({ t:+t.toFixed(2), label:(i + 1) + '·' + (ty || '*') });
+      if(ty === 'hold'){ at(t + d * 0.15, pk * k * 0.7); at(t + d * 0.5, pk * k); at(t + d * 0.8, pk * k * 0.9); }
+      else if(ty === 'boss'){ at(t + d * 0.3, pk * 0.55); at(t + d * 0.45, lo + 0.1); at(t + d * 0.85, pk); }
+      else { at(t + d * 0.35, pk * k * 0.6); at(t + d * 0.6, lo + 0.08); at(t + d * 0.85, pk * k); }
+      at(t + d * 0.97, lo); t += d; }); }
+  else { const waves = V['enemy.waves'].v, boss = Math.min(total * 0.3, T.ref.bossMin * Math.sqrt(V['boss.tough'].k)), d = (total - boss) / waves; let t = 0;
+    for(let i = 0; i < waves; i++){ marks.push({ t:+t.toFixed(2), label:'Đ' + (i + 1) }); const r = 0.75 + 0.25 * (i + 1) / waves; at(t + d * 0.45, pk * r * 0.7); at(t + d * 0.62, pk * r); at(t + d * 0.8, lo); t += d; }
+    marks.push({ t:+t.toFixed(2), label:'Tướng' }); at(t + boss * 0.4, pk * 0.8); at(t + boss * 0.85, Math.min(1, pk * 1.05)); at(total, lo); }
+  return { pts, marks, total }; }

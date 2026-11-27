@@ -1,6 +1,7 @@
 // ui/battle-setup.js — Z107 BATTLE SETUP: PLAY opens it. CAMPAIGN = a ladder of levels in rising difficulty (win one to open the next; map/hour/weather set per level) · CUSTOM = pick map, hour, weather, space and enemy level · Z181 every battlefield is shown by a real in-game photo (assets/maps), the chosen one fills a hero card with its place, story, hour and weather
 import { CAMPAIGN, SPACE, WEATHER } from '../../config.js';
-import { nightDefLaunch, nightDefSetup, BIOMES, CAMPAIGN_BIOMES, PROFILE, S, TOD_LABEL, capVi, biomeBlurb, biomePlace, biomeVi, drawTerrainPreview, hide, launchGame, buildConquest, conqGo, conqSummary, loadoutChips, renderGear, saveProfile, sfx, show, tapBtn, tapEl, todFor } from '../hub.js';
+import { composeBattle } from '../hub.js';   // MIX 3 (campaign/mixer.js)
+import { nightDefLaunch, nightDefSetup, BIOMES, CAMPAIGN_BIOMES, PROFILE, S, TOD_LABEL, capVi, biomeBlurb, biomePlace, biomeVi, drawTerrainPreview, hide, buildConquest, conqGo, conqSummary, loadoutChips, renderGear, saveProfile, sfx, show, tapBtn, tapEl, todFor } from '../hub.js';
 
 export const BS = { tab:'campaign', sel:1, bg:0, step:2 };
 export const TOD_KEYS = ['day','noon','sunset','night'];
@@ -75,7 +76,7 @@ export function closeBattleSetup(){ hide('battleSetup'); show('start'); sfx('cli
 export function goBattle(){ hide('battleSetup');
   if(BS.tab==='campaign'){ if(!conqGo()){ show('battleSetup'); sfx('alarm'); } }   // CONQ 1 the fort picked on the road (a locked one: nothing)
   else if(BS.tab==='night'){ saveProfile(); nightDefLaunch(PROFILE.custom); }
-  else { const C=PROFILE.custom; saveProfile(); launchGame({ mode:'custom', level:C.lvl, biome:C.biome, tod:C.tod, wx:C.wx, space:C.space }); } }
+  else { const C=PROFILE.custom; saveProfile(); composeBattle({ v:1, id:'tu-chon', world:{ land:BIOMES[C.biome].name, tod:C.tod, wx:C.wx, space:C.space, level:C.lvl } }, { ladder:true }); } }   // MIX 3 TỰ CHỌN is a battle spec: the mixer's ladder launch (campaign/mixer.js) — the same numbers as the old launchGame (only the land, hour, weather, size and level given)
 tapBtn('bsBack', closeBattleSetup); tapBtn('bsGo', goBattle); tapBtn('bsNext', () => { sfx('click'); setStep(BS.step + 1); }); tapBtn('bsPrev', () => { sfx('click'); setStep(BS.step - 1); });
 document.querySelectorAll('#battleSetup .bs-mode').forEach(m=>tapEl(m, ()=>{ setSetupTab(m.dataset.m); sfx('click'); }));
 document.querySelectorAll('#bsRail .bs-rs').forEach(r=>tapEl(r, ()=>{ sfx('click'); if(+r.dataset.s === 4) goBattle(); else setStep(+r.dataset.s); }));   // UIX stop 3 of the rail (XUẤT KÍCH) goes in, like the footer button

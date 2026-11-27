@@ -1,7 +1,7 @@
 // dev/hooks.js — Z103 split from game/loop.js: window._* inspection/driving hooks used by Playwright smoke tests and the
 // #dev console. Nothing in the game reads these; a production build may drop this module from hub.js.
 import { CONTRACTS, DAILY } from '../../config.js';
-import { composeBattle } from '../hub.js';   // MIX 1 (campaign/mixer.js)
+import { composeBattle, MIX_SPEC } from '../hub.js';   // MIX 1 (campaign/mixer.js)
 import { dailyDay, dailyLaunch, nightDefLaunch, launchGame, launchStage, BIOME, BIOMES, DEATH, FT, GUNS, OBJ, PH, POWERUPS, PROFILE, S, WAVE, __set_last, __set_soldierLvl, aimDots, applyAtmosphere, applyBiome, applyPowerup, beginDeath, blocks, bootHide, bootReady, buildObjective, buildTerrainDecor, buildTerrainPicker, bullets, cMod, camera, chooseContract, clearProgress, composer, core, cycleGun, damageBlock, damageEnemy, damagePlayer, debris, decorGroup, deploySoldiers, doResize, dropPowerup, enemies, enemyBarPool, fireFlame, heightAt, impactFX, intro, killEnemy, launchParadrop, loop, makeElite, openBriefing, openLoadout, openUpgrade, parts, pickups, playerDie, renderer, respawnPlayer, rocketTarget, rockets, rollWaveEvent, saveProgress, scene, selectGun, skipIntro, soldierLvl, soldiers, spawnEnemy, startBoss, startGame, vehicleExplode, towers, trySpell, updateDeath, updateEnemies, updateEnemyBar, updateRockets } from '../hub.js';
 
 // diagnostics hooks (used for automated testing)
@@ -57,12 +57,15 @@ window._paradrop = ()=>launchParadrop(performance.now()/1000);   // (debug) Z104
       setTimeout(tick, 250); };
     addEventListener('load', () => setTimeout(tick, 200)); } }
 // MIX 1 ?spec=<name> — tools/specs/<name>.json composed by the battle mixer (campaign/mixer.js composeBattle), straight into the fight like ?test (window.__mix: its plan and scores)
-{ const Q = typeof location !== 'undefined' ? new URLSearchParams(location.search) : null, want = Q && !Q.get('test') && Q.get('spec');
+//   MIX 3 ?spec=_session — the mixer desk's spec (sessionStorage xk.mixspec) · ?mixspec=<url-encoded JSON> — a spec in the address · &desk=1 — the result card goes back to the desk
+{ const Q = typeof location !== 'undefined' ? new URLSearchParams(location.search) : null, want = Q && !Q.get('test') && (Q.get('spec') || (Q.get('mixspec') != null ? '_url' : ''));
   if(want && /^[\w-]+$/.test(want)){ let n = 0, sent = false;
     const tick = () => { if(window.__ready || ++n > 400) return;
       for(const id of ['briefing', 'start', 'deploy', 'nick', 'tip']){ const e = document.getElementById(id); if(e) e.classList.add('hidden'); }
       if(sent && S.mode === 'intro'){ try{ skipIntro(); }catch(e){} } else if(sent && S.run && S.run.mix && S.mode !== 'playing' && S.mode !== 'countdown'){ try{ launchStage(false); }catch(e){} }
       if(sent && S.mode === 'playing' && S.run && S.run.mix){ window.__ready = true; return; } setTimeout(tick, 250); };
-    addEventListener('load', () => fetch('tools/specs/' + want + '.json').then(r => r.json()).then(sp => { document.querySelectorAll('.overlay').forEach(o => o.classList.add('hidden'));
-      const b = document.getElementById('boot'); if(b) b.style.display = 'none'; PROFILE.onboarded = true; PROFILE.coached = true; window.__mix = composeBattle(sp); sent = true; setTimeout(tick, 200); })
-      .catch(e => console.warn('?spec: ' + want + ' — ' + e.message))); } }
+    const get = () => want === '_session' ? Promise.resolve(JSON.parse(sessionStorage.getItem(MIX_SPEC) || 'null')) : want === '_url' ? Promise.resolve(JSON.parse(Q.get('mixspec')))
+      : fetch('tools/specs/' + want + '.json').then(r => r.json());
+    addEventListener('load', () => setTimeout(() => get().then(sp => { if(!sp || typeof sp !== 'object') throw new Error('no spec'); document.querySelectorAll('.overlay').forEach(o => o.classList.add('hidden'));
+      const b = document.getElementById('boot'); if(b) b.style.display = 'none'; PROFILE.onboarded = true; PROFILE.coached = true; window.__mix = composeBattle(sp, { desk:Q.get('desk') === '1' }); sent = true; setTimeout(tick, 200); })
+      .catch(e => console.warn('?spec: ' + want + ' — ' + e.message)), 300)); } }

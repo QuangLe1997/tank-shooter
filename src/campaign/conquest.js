@@ -11,14 +11,14 @@
 //   SECTOR 2 a fort's battle is a SECTOR RUN (CONQUEST.forts[i].run: its approach missions, then the general — campaign/sectors.js): begin declares it with
 //   sectorBattle(run, conqWon), so the fort is taken when its LAST sector is won and nowhere else; each new sector's field gets the fort's poison clouds again (conqSectorLive).
 //   PROFILE.conquest { cap, carry, sel } (conqStore); an old save's campaign reach becomes forts taken once (migrate). Probes read CQ.st.
-import { CONQUEST, REAL, DIRECTOR, FORT, FORTBOSS, BALANCE, INFGUN } from '../../config.js';
-import { BIOMES, FORTS, GUNS, PROFILE, RECON, S, SURP, TROOPER_SPELLS, ammoOnGive, celebrate, damageBlock, damageGate, damagePlayer, enemies, escapeHtml, fillTx, floatText, fortBossFreeze, heightAt, hide,
-  knobApply, knobRefs, magCap, modeCard, modeDefine, modeKnob, modeLaunch, modeSay, modeStats, modeTime, openBattleSetup, quitToMenu, ringPulse, saveProfile, sfx, showBanner, spawnBullet,
+import { CONQUEST, FORTBOSS, INFGUN, MIXER } from '../../config.js';
+import { MIX, SECT, composeBattle, mixBegin, mixGo, mixSeed } from '../hub.js';   // MIX 3 (campaign/mixer.js)
+import { FORTS, GUNS, PROFILE, RECON, S, SURP, TROOPER_SPELLS, ammoOnGive, celebrate, damageBlock, damageGate, damagePlayer, enemies, escapeHtml, fillTx, floatText, fortBossFreeze, heightAt, hide,
+  magCap, modeCard, modeDefine, modeSay, modeStats, modeTime, openBattleSetup, quitToMenu, ringPulse, saveProfile, sfx, showBanner, spawnBullet,
   spawnPart, svgMarkup, tapEl, updateGunHUD, updateSpellHUD } from '../hub.js';
-import { sectorBattle, sectorStory, cqStoryHooks, cqStoryClose, cqEnding } from '../hub.js';   // SECTOR 6 (campaign/conq-story.js)   // SECTOR 2 (campaign/sectors.js)
+import { sectorStory, cqStoryHooks, cqStoryClose, cqEnding } from '../hub.js';   // SECTOR 6 (campaign/conq-story.js)   // SECTOR 2 (campaign/sectors.js)
 
 const C = CONQUEST, Y = C.say, T = C.treasures, N = C.forts.length, NOW = () => performance.now() / 1000;
-const ROOTS = { REAL, DIRECTOR, FORT, FORTBOSS, BALANCE };
 // the battle as it stands (probes read st): i = the fort · on = a conquest battle is running · carry = the treasures in it
 export const CQ = { on:false, i:-1, won:false, cardIn:0, carry:new Set(), gas:[], thAt:0, gasAt:0, fxAt:0, saveAt:-1e9, lavaUntil:0, lavaN:0,
   st:{ marked:0, taken:0, soaked:0, saved:0, masked:0, gasIn:0, thru:0, salvo:0, shells:0, frozen:0, breached:0, walls:0, returned:0 } };
@@ -45,8 +45,7 @@ const has = id => CQ.on && CQ.carry.has(id);
 
 // ---- a fort's battle from the map ----
 export function conqLaunch(i, fromHome){ const f = C.forts[i]; if(!f || conqState(i) === 'lock') return false; const q = conqStore(); q.sel = i; saveProfile(true);
-  modeLaunch({ biome:biomeIdx(f.biome), tod:f.tod, wx:f.wx, space:'wide', level:f.lvl, conq:{ i } }, fromHome); return true; }
-function biomeIdx(n){ const k = BIOMES.findIndex(b => b.name === n); return k < 0 ? 0 : k; }
+  composeBattle(MIXER.presets.conquest[i], { fromHome }); return true; }   // MIX 3 the fort's preset spec (config.js MIXER.presets.conquest)
 
 // ---- arming: the carried treasures into his hands and his skill wheel (the briefing's picks call it again) ----
 const SPELL = {};
@@ -135,9 +134,14 @@ function card(won){ const st = modeStats(), q = conqStore(), i = CQ.i, f = C.for
 modeDefine('conq', {
   begin(run){ const i = Math.max(0, Math.min(N - 1, (run.conq && run.conq.i) | 0)), f = C.forts[i];
     Object.assign(CQ, { on:true, i, won:false, cardIn:0, thAt:0, gasAt:0, fxAt:0, saveAt:-1e9, lavaUntil:0, lavaN:0, fresh:false, gasSay:0 }); CQ.gas.length = 0; for(const k in CQ.st) CQ.st[k] = 0;
-    CQ.carry = new Set(conqCarryFor(i)); if(f.run){ sectorBattle(f.run.split(' '), n => conqWon(n)); sectorStory(cqStoryHooks(i, i >= conqStore().cap)); }   // SECTOR 2 the fort as a chain of sectors: its win comes from the last one · SECTOR 6 its story (campaign/conq-story.js)
-    const th = f.threat; if(th) for(const [path, op, x] of th.knobs){ const [root, ...rest] = String(path).replace('$d', PROFILE.difficulty || 'soldier').split('.'); if(!ROOTS[root]) continue;
-      for(const [o, k] of knobRefs(ROOTS[root], rest.join('.'))) modeKnob(o, k, knobApply(o[k], op, x)); } },
+    CQ.carry = new Set(conqCarryFor(i));
+    // MIX 3 the fort IS a battle spec (config.js MIXER.presets.conquest[i]: land, hour, weather, level, sector run, threat, general, story): the mixer's plan turns its
+    //   threat knobs before the build, declares its sector chain (its win from the last one) on the attempt's seed and seeds the build — the old inline threat loop,
+    //   sectorBattle and story calls are that spec now (test.js holds the knob values equal to the old loop's for all ten forts)
+    if(!(MIX.spec && MIX.spec.conq && MIX.spec.conq.i === i)){ MIX.spec = MIXER.presets.conquest[i]; MIX.score = null; }   // (a launch that did not come through composeBattle)
+    mixBegin(n => conqWon(n)); if(SECT.on && MIX.spec.storyline === 'conquest:' + i) sectorStory(cqStoryHooks(i, i >= conqStore().cap)); },   // SECTOR 6 its story (campaign/conq-story.js)
+  seed(k){ mixSeed(k); },
+  go(now, first){ mixGo(first); },
   ready(p){ conqArm(p); const th = C.forts[CQ.i].threat; if(th && th.gas) gasPlace(th.gas); },
   live(){ const f = C.forts[CQ.i]; modeSay(fillTx(Y.open, { fort:f.name, boss:f.boss }), 1.2); },
   frame(dt, now){ if(CQ.won){ if(CQ.cardIn > 0 && (CQ.cardIn -= dt) <= 0){ if(!(CQ.i === N - 1 && cqEnding())) card(true); } return; }   // SECTOR 6 the last fort: the war's ending, then the map
