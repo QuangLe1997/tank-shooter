@@ -2697,18 +2697,32 @@ export const NEMESIS = { on:true, v:1, tick:0.25,
 //   called in phase 2 [by tier], their health × hpK. first = the fort's first force: its pool held to [min, max] men by tier when it wakes (× FORT.mobileMul). intro: slow-mo timeScale, hold s walking out (no hits land), step = metres between heavy footfalls.
 //   BOSS 2 model 'glb' = a real rigged model (actors/fort-boss-glb.js; 'rig' = the BOSS 1 armoured rifleman rig, also while the file loads): looks = the
 //   models packed by tools/boss-pack.mjs (file, h = its own height m, hipK = its hip height over the library operator's — the clips' speeds × it), pick =
-//   which look a fort gets (_ = any, capital = the stage's general, lands = by battlefield; the two female bosses to come are more rows); anim = cross-fade s,
+//   which look a fort gets (_ = any, capital = the stage's general, lands = by battlefield (or a list: the first whose file is in), second = a battlefield's tier-2 fort (so the arctic explorer, the shadow
+//   stalker, the mining robot and the green mech fight too: TUNDRA, STEELMILL, HILLS, CAVERN and VILLAGE are retired battlefields); a new boss is one more row); anim = cross-fade s,
 //   plate = his plates' steel; a look may carry its own hK (× the tier's height), gun / gunK, name (+ the fort chief's) and sub (the bar's line), glow (the
-//   pack's cells), plateK / helm:'mask' (its own plate size; a mask over the eyes in place of the helmet) and sway (wings flapping [standing, running] rad at hz [standing, running] Hz, tail rad — the demon commander's wings and tail); walk / run above walkV / runV m/s, the library clips' own speeds (m/s on the operator), lie = s the fallen lies before he sinks; gun = the INFGUN scan
+//   pack's cells), plateK / helm ('mask' over the eyes in place of the helmet, 'cap' a flat skull plate that leaves a masked face seen) and sway (wings flapping [standing, running] rad at hz [standing, running] Hz, tail rad — the demon commander's wings and tail); walk / run above walkV / runV m/s, the library clips' own speeds (m/s on the operator), lie = s the fallen lies before he sinks, deathAt = s into the death clip it starts (its first stand skipped); emit = his colour map also glows (× it); gun = the INFGUN scan
 //   in his hands × gunK of its length (on his scale), plateK = the plates' size on the model; h = his height m by tier (the guards stand 1.8)
 //   kinds = by tier his heavy gun (n = rounds ×, r = round size, dmgK, arcK) and his second weapon (alt: nade = hand grenades, gl = a grenade launcher's
 //   wider volley gl.n rounds over gl.scatter m, rocket = a shoulder launcher, rocket.n rockets gap s apart after a tel s red glint) — every boss a modern
 //   heavy operator (helmet and visor, plate carrier, heavy plates; never a sword or a robe); lands = his name and armour colour per battlefield; cue = co-op event codes (host → guest)
 export const FORTBOSS = { on:true, model:'glb', h:[3.0, 3.15, 3.3], baseH:1.82,
   looks:{ titan:{ file:'assets/models/real/boss/titan-exosuit.glb', h:2.0, hipK:1.168, plate:0x8c97a6 }, revenant:{ file:'assets/models/real/boss/cyborg-revenant.glb', h:1.95, hipK:1.266, plate:0x3c3836 },
-    demon:{ file:'assets/models/real/boss/demon-commander.glb', h:1.9, hipK:1.249, plate:0x5c1f28, hK:0.95, plateK:0.85, helm:'mask', gun:'mp5', gunK:1.3, name:'NỮ QUỶ', sub:'TIỂU LIÊN · GIÁP QUỶ', glow:0xff3a7a, sway:{ wing:[0.12, 0.35], hz:[1.1, 2.6], tail:0.3 } } },
-  pick:{ _:'titan', capital:'revenant', lands:{ VOLCANO:'revenant', FOUNDRY:'revenant', STEELMILL:'revenant', RUINS:'revenant', CITY:'demon', SAVANNA:'demon', QUARRY:'demon', ARCTIC:'demon', TUNDRA:'demon' } },
-  anim:{ fade:0.25, walkV:0.35, runV:4.2, v:{ walk:1.645, run:4.113, fireWalk:0.85 }, lie:5 }, gun:'lmg', gunK:1.15, plateK:1.35,
+    demon:{ file:'assets/models/real/boss/demon-commander.glb', h:1.9, hipK:1.249, plate:0x5c1f28, hK:0.95, plateK:0.85, helm:'mask', gun:'mp5', gunK:1.3, name:'NỮ QUỶ', sub:'TIỂU LIÊN · GIÁP QUỶ', glow:0xff3a7a, sway:{ wing:[0.12, 0.35], hz:[1.1, 2.6], tail:0.3 } },
+    // BOSS 3 one fitting boss a battlefield (tools/boss-pack.mjs, second pack; KTX2 maps by tools/asset-diet.mjs) (a row with file:null would wait for its file: the land takes the next)
+    miner:{ file:'assets/models/real/boss/02-robot-mining-killer.glb', h:2.0, hipK:1.278, plate:0x6a5a48, glow:0xffa020, hK:1.05, helm:'cap', gun:'minigun', gunK:1.2, name:'MÁY XAY THÉP', sub:'SÚNG NÒNG XOAY · VỎ THÉP' },
+    cbrn:{ file:'assets/models/real/boss/03-specops-cbrn-operator.glb', h:1.8, hipK:1.012, plate:0x4a5240, glow:0x7aff4a, hK:1, helm:'cap', gun:'ar', gunK:1.2, name:'BÓNG ĐỘC', sub:'SÚNG TRƯỜNG · MẶT NẠ PHÒNG ĐỘC' },
+    mech:{ file:'assets/models/real/boss/04-heavy-green-mech.glb', h:2.4, hipK:1.383, plate:0x3e5a36, glow:0x6aff6a, hK:1.05, helm:'cap', gun:'minigun', gunK:1.5, name:'NGƯỜI SẮT XANH', sub:'SÚNG NÒNG XOAY · GIÁP CƠ GIỚI' },
+    arctic:{ file:'assets/models/real/boss/05-arctic-explorer.glb', h:1.8, hipK:0.948, plate:0xc8d0d8, glow:0x6ad8ff, hK:1, helm:'cap', gun:'lmg', gunK:1.2, name:'SÓI BĂNG', sub:'ĐẠI LIÊN · ÁO TUYẾT' },
+    raider:{ file:'assets/models/real/boss/06-desert-wastelander.glb', h:1.8, hipK:0.95, plate:0x8a6a48, glow:0xffb040, hK:1, helm:'cap', gun:'shotgun', gunK:1.3, name:'CÁT ĐỘC', sub:'SÚNG SĂN · MẶT NẠ KHÍ' },
+    soldierF:{ file:'assets/models/real/boss/07-female-soldier.glb', h:1.7, hipK:1.09, plate:0x6a6a4a, glow:0xffd040, hK:0.95, helm:'mask', gun:'ar', gunK:1.15, name:'NỮ HỔ', sub:'SÚNG TRƯỜNG · GIÁP NHẸ' },
+    cyborgF:{ file:'assets/models/real/boss/08-female-cyborg-trooper.glb', h:1.75, hipK:1.031, plate:0xdfe4ea, glow:0x6ad8ff, hK:0.95, helm:'mask', gun:'energy', gunK:1.2, name:'NỮ BĂNG CƠ', sub:'SÚNG NĂNG LƯỢNG · VỎ GỐM' },
+    spy:{ file:'assets/models/real/boss/09-female-spy.glb', h:1.7, hipK:1.061, plate:0x26262c, glow:0xff2a5a, hK:0.95, helm:'mask', gun:'mp5', gunK:1.3, name:'BÓNG ĐÊM', sub:'TIỂU LIÊN · ĐỒ ĐẶC NHIỆM' },
+    magma:{ emit:0.55, file:'assets/models/real/boss/10-magma-inferno-sentinel.glb', h:2.2, hipK:1.169, plate:0x3a2420, glow:0xff5a10, hK:1.05, helm:'cap', gun:'lmg', gunK:1.5, name:'HOẢ THẠCH', sub:'ĐẠI LIÊN · ĐÁ NÓNG CHẢY' },
+    stalker:{ file:'assets/models/real/boss/12-shadow-stalker.glb', h:1.85, hipK:1.018, plate:0x2c3036, glow:0x9a6aff, hK:1, helm:'cap', gun:'ar', gunK:1.2, name:'BÓNG MA HANG', sub:'SÚNG TRƯỜNG · ÁO CHOÀNG' },
+    guardian:{ file:'assets/models/real/boss/01-steel-titanium-guardian.glb', h:1.95, hipK:1.236, plate:0x8a8e94, glow:0x9ad8ff, hK:1.05, helm:'cap', gun:'lmg', gunK:1.5, name:'VỆ BINH THÉP', sub:'ĐẠI LIÊN · GIÁP TITAN' } },
+  pick:{ _:'titan', capital:'revenant', lands:{ DESERT:'raider', SAVANNA:'soldierF', TUNDRA:'arctic', ARCTIC:'cyborgF', FOUNDRY:'guardian', STEELMILL:'miner', CITADEL:'spy', MEADOW:'cbrn',
+    HILLS:'mech', VILLAGE:'titan', RUINS:'revenant', VOLCANO:'magma', QUARRY:'titan', CAVERN:'stalker', CITY:'demon' }, second:{ ARCTIC:'arctic', RUINS:'stalker', FOUNDRY:'miner', QUARRY:'mech' } },
+  anim:{ fade:0.25, walkV:0.35, runV:4.2, v:{ walk:1.645, run:4.113, fireWalk:0.85 }, lie:5, deathAt:0.6 }, gun:'lmg', gunK:1.15, plateK:1.35,
   hp:[4400, 5000, 5600], stageK:0.08, coopK:0.7, hitCap:0.03,
   front:0.95, back:2.25, headShare:0.25, sideShare:0.7, armK:0.2, headK:1.6, packK:1.5, backK:1.15, packBoom:0.04,
   plates:{ helmet:0.05, chest:0.10, shL:0.05, shR:0.05, pack:0.07 },
