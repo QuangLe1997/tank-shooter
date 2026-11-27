@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { Pass, FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
 import { AIR } from '../../config.js';
-import { S, bloom, composer, gradePass, nanPass, outPass, renderer } from '../hub.js';
+import { BIOME, NIGHT, S, SUN_DIR, bloom, composer, gradePass, nanPass, outPass, renderPass, renderer } from '../hub.js';
 
 const VS = 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }';
 // selective bright pass (replaces the bloom's luminosity high pass; uSel.x = 0 is the stock one: hard threshold, every colour alike)
@@ -23,7 +23,8 @@ const AE_FRAG = `uniform sampler2D tDiffuse, tPrev; uniform vec2 uK, uJ; varying
     float k = gl_FragCoord.x < 1.0 ? uK.x : uK.y, prev = texture2D(tPrev, vec2(gl_FragCoord.x * 0.5, 0.5)).r;
     gl_FragColor = vec4(mix(prev, s / w, k), 0.0, 0.0, 1.0); }`;
 const FRAG = `#include <tonemapping_pars_fragment>
-  uniform sampler2D tDiffuse, tBloom, tAE; uniform float bloomOn; uniform vec4 uAE; uniform vec2 uGrainK;
+  #include <packing>
+  uniform sampler2D tDiffuse, tBloom, tAE, tDepth; uniform float bloomOn; uniform vec4 uAE, uHaze; uniform vec2 uGrainK, uNF;
   uniform float time,vig,grain,sharp,sat,contrast,aberr,flash,vib,toe; uniform vec3 lift,gain,shTint,hiTint; varying vec2 vUv;
   float gExp = 1.0; vec3 gB = vec3(0.0);
   vec3 hdr(vec2 uv){ return min(texture2D(tDiffuse, uv).rgb, vec3(64.0)); }   // (the NaN guard runs once, on the result)
@@ -41,6 +42,9 @@ const FRAG = `#include <tonemapping_pars_fragment>
     return sRGBTransferOETF(vec4(h, 1.0)).rgb; }
   void main(){
     vec2 uv = vUv;
+    if(uHaze.x > 0.0){ float z = texture2D(tDepth, vUv).x, m = smoothstep(uHaze.z, uHaze.w, -perspectiveDepthToViewZ(z, uNF.x, uNF.y)) * step(z, 0.99999);   // AIR 3 heat haze: the far hot ground
+      if(m > 0.0){ float t = uHaze.y, w = sin(vUv.y * 520.0 - t * 5.0 + sin(vUv.x * 31.0 + t * 0.9) * 2.4) * 0.65 + sin(vUv.y * 1130.0 - t * 8.3 + vUv.x * 57.0) * 0.35;   // fine ripples rising up the frame
+        uv += vec2(w * 0.35, w) * uHaze.x * m / vec2(textureSize(tDiffuse, 0)); } }
     if(uAE.x > 0.0){ float f = texture2D(tAE, vec2(0.25, 0.5)).r, s = texture2D(tAE, vec2(0.75, 0.5)).r; gExp = clamp(exp2((s - f) * uAE.y), uAE.z, uAE.w); }
     if(bloomOn > 0.5) gB = texture2D(tBloom, vUv).rgb;
     vec2 d = vUv - 0.5; vec3 c;
@@ -71,7 +75,7 @@ const TONES = { [THREE.LinearToneMapping]:'LINEAR_TONE_MAPPING', [THREE.ACESFilm
 const G = gradePass.uniforms, aeRT = () => new THREE.WebGLRenderTarget(2, 1, { type:THREE.HalfFloatType, format:THREE.RGBAFormat, minFilter:THREE.NearestFilter, magFilter:THREE.NearestFilter, depthBuffer:false });
 export const AIRPOST = { on:false, ae:{ a:aeRT(), b:aeRT(), reset:true, last:0, was:'' }, tone:-1,
   u:{ tDiffuse:{ value:null }, tBloom:{ value:null }, tAE:{ value:null }, bloomOn:{ value:1 }, toneMappingExposure:{ value:1 }, uAE:{ value:new THREE.Vector4(0, AIR.ae.k, AIR.ae.lo, AIR.ae.hi) },
-    uGrainK:{ value:new THREE.Vector2(AIR.grain.lo, AIR.grain.shape ? 1 : 0) },
+    uGrainK:{ value:new THREE.Vector2(AIR.grain.lo, AIR.grain.shape ? 1 : 0) }, tDepth:{ value:null }, uHaze:{ value:new THREE.Vector4() }, uNF:{ value:new THREE.Vector2(0.6, 600) },
     time:G.time, vig:G.vig, grain:G.grain, sharp:G.sharp, sat:G.sat, contrast:G.contrast, lift:G.lift, gain:G.gain, aberr:G.aberr, flash:G.flash, shTint:G.shTint, hiTint:G.hiTint, vib:G.vib, toe:G.toe } };
 const aeMat = new THREE.ShaderMaterial({ uniforms:{ tDiffuse:{ value:null }, tPrev:{ value:null }, uK:{ value:new THREE.Vector2(1, 1) }, uJ:{ value:new THREE.Vector2(0.5, 0.5) } }, vertexShader:VS, fragmentShader:AE_FRAG, depthTest:false, depthWrite:false, blending:THREE.NoBlending });
 const aeQuad = new FullScreenQuad(aeMat);
@@ -93,6 +97,11 @@ function bloomMips(r, rb){ const B = bloom; r.getClearColor(_cc); const ca = r.g
   r.setClearColor(_cc, ca); r.autoClear = ac; }
 { const base = bloom.render.bind(bloom); bloom.render = (r, w, rb, dt, mask) => AIRPOST.on ? bloomMips(r, rb) : base(r, w, rb, dt, mask); }
 
+// AIR 3 heat haze (config AIR.haze): the far ground of a hot battlefield wavers in fine rising ripples — strongest with the sun high, none at night,
+//   none near (near..far m). Needs the scene's depth: desktop only, and only in the one pass.
+function heatHaze(U){ const H = AIR.haze, k = H && H.on ? (H[BIOME.name] || 0) : 0, dt = renderPass.rt.depthTexture, cam = renderPass.camera, v = U.uHaze.value;
+  const amt = dt && k > 0 && !AIRPOST.hazeOff ? k * H.px * Math.min(1, Math.max(0, (SUN_DIR.y - 0.2) / 0.4)) * (1 - NIGHT.k) : 0; v.x = amt; if(!amt) return;
+  v.y = performance.now() / 1000 % 1000; v.z = H.near; v.w = H.far; U.tDepth.value = dt; U.uNF.value.set(cam.near, cam.far); }
 class AirPass extends Pass {
   constructor(){ super(); this.needsSwap = false; this.mat = new THREE.ShaderMaterial({ uniforms:AIRPOST.u, vertexShader:VS, fragmentShader:FRAG, toneMapped:false, depthTest:false, depthWrite:false, blending:THREE.NoBlending }); this.quad = new FullScreenQuad(this.mat); }
   render(r, w, rb){ const U = AIRPOST.u, A = AIRPOST.ae;
@@ -104,6 +113,7 @@ class AirPass extends Pass {
       const kf = A.reset ? 1 : 1 - Math.exp(-dt / AIR.ae.fast), ks = A.reset ? 1 : 1 - Math.exp(-dt / AIR.ae.slow); A.reset = false;
       aeMat.uniforms.tDiffuse.value = rb.texture; aeMat.uniforms.tPrev.value = A.a.texture; aeMat.uniforms.uK.value.set(kf, ks); aeMat.uniforms.uJ.value.set(Math.random(), Math.random());
       r.setRenderTarget(A.b); aeQuad.render(r); const sw = A.a; A.a = A.b; A.b = sw; U.tAE.value = A.a.texture; }
+    heatHaze(U);
     U.tDiffuse.value = rb.texture; U.bloomOn.value = bloom.enabled ? 1 : 0; U.tBloom.value = bloom.renderTargetsHorizontal[0].texture;
     r.setRenderTarget(this.renderToScreen ? null : w); this.quad.render(r); }
   dispose(){ this.mat.dispose(); this.quad.dispose(); } }

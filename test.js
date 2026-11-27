@@ -2638,6 +2638,12 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
     'AIR.mist: every battlefield has its own low mist (k < 0.02 /m, 1–15 m deep, tinted, in banks)');
   ok(['day','noon','sunset','night'].every(t => M.tod[t]>=0 && M.tod[t]<=2) && M.ARCTIC.k>=M.DESERT.k && /uMist\.w > 0\.0/.test(ae) && /export function updateMist\(cam\)/.test(ae) && /MOBILE \&\& PROFILE\.quality !== 'low'/.test(ae),
     'the mist by the hour, thickest over the Arctic, skipped in the shader when off, never on phones or the low setting'); }
+// AIR 3 living light: heat haze over hot ground, each battlefield's sunlit dust
+{ const fs=await import('node:fs'), C=await import('./config.js'), Z=C.AIR.haze, D=C.AIR.motes, ap=fs.readFileSync('src/render/air-post.js','utf8'), du=fs.readFileSync('src/fx/dust.js','utf8');
+  ok(Z && typeof Z.on==='boolean' && Z.px>0 && Z.px<=4 && Z.near>0 && Z.far>Z.near && Z.DESERT>0 && Z.DESERT<=1 && !Z.ARCTIC && !Z.MEADOW,
+    'AIR.haze: the far hot ground ('+Z.near+'–'+Z.far+' m) wavers ≤ '+Z.px+' px — desert yes, snow and meadow no');
+  ok(Object.values(D).every(m => Number.isInteger(m.col) && m.gain>0 && m.gain<=2) && D.ARCTIC && /function heatHaze\(U\)/.test(ap) && /NIGHT\.k/.test(ap) && /AIR\.motes/.test(du),
+    'AIR.motes: the sunlit dust takes the battlefield\'s colour (ice crystals over the Arctic); the haze never at night'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

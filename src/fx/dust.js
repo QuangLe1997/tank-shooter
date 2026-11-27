@@ -2,8 +2,8 @@
 // they never swim with the camera). Each asks the sun's shadow map whether it hangs in sunlight: only the lit ones glint, brightest when you
 // look toward the sun (forward scattering) — the specks you see in a beam of light. Additive, soft-edged, off at night and on phones.
 import * as THREE from 'three';
-import { DUST } from '../../config.js';
-import { MOBILE, NIGHT, heightAt, scene, sun } from '../hub.js';
+import { AIR, DUST } from '../../config.js';
+import { BIOME, MOBILE, NIGHT, heightAt, scene, sun } from '../hub.js';
 
 let PTS = null;
 const _f = new THREE.Vector3(), _c = new THREE.Vector3(), _d = new THREE.Vector3();
@@ -25,7 +25,8 @@ export function initDust(){ if(PTS || MOBILE || typeof window === 'undefined' ||
         gl_PointSize = uSize * (0.6 + aSeed) * 300.0 / max(-mv.z, 1.0); }`,
     fragmentShader:`uniform vec3 uCol; varying float vA; void main(){ vec2 d = gl_PointCoord - 0.5; float a = smoothstep(0.5, 0.0, length(d)) * vA; if(a < 0.003) discard; gl_FragColor = vec4(uCol * a, a); }` });
   PTS = new THREE.Points(g, m); PTS.frustumCulled = false; PTS.renderOrder = 5;
-  PTS.onBeforeRender = (r, sc, cam) => { const map = sun.shadow && sun.shadow.map; U.uGain.value = map && sun.castShadow ? DUST.gain * (1 - NIGHT.k) : 0; if(!U.uGain.value) return;
+  PTS.onBeforeRender = (r, sc, cam) => { const map = sun.shadow && sun.shadow.map; const M = AIR.motes && AIR.motes[BIOME.name]; U.uGain.value = map && sun.castShadow ? DUST.gain * (M ? M.gain : 1) * (1 - NIGHT.k) : 0; if(!U.uGain.value) return;
+    U.uCol.value.setHex(M ? M.col : DUST.col);   // AIR 3 each battlefield's own dust: ice crystals glint white-blue over the Arctic
     cam.getWorldDirection(_f); _c.copy(cam.position).addScaledVector(_f, DUST.ahead); _c.y = heightAt(_c.x, _c.z) + DUST.box[1] * 0.5;
     U.uCenter.value.copy(_c); U.uCam.value.copy(cam.position); U.tShadow.value = map.texture; U.uShadowM.value.copy(sun.shadow.matrix);
     U.uSunDir.value.copy(_d.subVectors(sun.position, sun.target.position).normalize()); U.uTime.value = performance.now() / 1000 % 10000; };
