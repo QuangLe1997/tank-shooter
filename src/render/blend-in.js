@@ -46,14 +46,14 @@ export function blendIn(m){ if(!m || m.userData.blendIn || !(m.isMeshStandardMat
 export function fieldColour(){ const c = new THREE.Color(0.3, 0.28, 0.24); try{ const img = groundMat.map && groundMat.map.image, a = img ? avgOf(img) : null; if(a) c.copy(a).multiply(groundMat.color); }catch(e){}
   if(GRASS_FAR.k.value.x > 0) c.lerp(GRASS_FAR.col.value, GRASS_FAR.k.value.x * 0.85); return c; }
 // grade every lit opaque material on the field (called when a stage is built, before its shaders compile)
-export function blendScene(root){ try{ paintContact(); }catch(e){ console.warn('[contact]', e && e.message); }   // Z400 the floor shaded and trodden round all that stands on it
+export function blendScene(root, noNew){ try{ paintContact(); }catch(e){ console.warn('[contact]', e && e.message); }   // Z400 the floor shaded and trodden round all that stands on it
   if(!BLEND.on) return 0; try{ terrainTex(); }catch(e){} const f = fieldColour(), l = Math.max(0.02, f.r * 0.2126 + f.g * 0.7152 + f.b * 0.0722);
   BLEND_U.tint.value.setRGB(...[f.r, f.g, f.b].map(v => Math.min(BLEND.tintMax, Math.max(BLEND.tintMin, v / l))));
   BLEND_U.dust.value.copy(f);
   try{ matNormStage(BIOME.name); tileStage(BIOME.name); }catch(e){}   // MAT 1 this field's gain per kind of model · MAT 3 its land's colours
   const skip = S.player && S.player.mesh; let n = 0; const seen = new Set();
   root.traverse(o => { if(!o.isMesh || o.isSkinnedMesh || seen.has(o.material)) return; let p = o; while(p){ if(p === skip) return; p = p.parent; }
-    for(const m of Array.isArray(o.material) ? o.material : [o.material]){ if(seen.has(m)) continue; seen.add(m); if(m) matNormRefresh(m); if(blendIn(m)) n++; } });
+    for(const m of Array.isArray(o.material) ? o.material : [o.material]){ if(seen.has(m)) continue; seen.add(m); if(m) matNormRefresh(m); if(!(noNew && m && !m.userData.blendIn) && blendIn(m)) n++; } });   // (DIET 9 noNew: a fight already on — the colours move, but no material takes a new shader variant mid-fight)
   return n; }
 // the next stage has no intro: grade it once its floor (and grass) are in, while the briefing is up
-export async function blendWhenReady(scene){ try{ await Promise.race([Promise.all([GROUND_READY.p, grassReady()]), new Promise(r => setTimeout(r, 6000))]); }catch(e){} return blendScene(scene); }
+export async function blendWhenReady(scene){ try{ await Promise.race([Promise.all([GROUND_READY.p, grassReady()]), new Promise(r => setTimeout(r, 6000))]); }catch(e){} return blendScene(scene, S.mode === 'playing' || S.mode === 'dying'); }

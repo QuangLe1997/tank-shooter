@@ -22,7 +22,7 @@ export function ktx2Ok(){ if(_ok) return _ok;
     .then(ok => (DIET_STATE.ktx2 = ok))); }
 // a GLTF loader: the KTX2 one once proven, else the one that reads the fallback pictures (both read meshopt)
 export const gltfLoader = () => ktx2Ok().then(ok => ok ? (_l1 || (_l1 = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).setKTX2Loader(_k2))) : (_l0 || (_l0 = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder))));
-export function loadGLB(url){ return gltfLoader().then(L => L.loadAsync(url)).then(gl => { DIET_STATE.files++; return withPx(gl); }).then(gl => { keepLean(gl, url); return gl; }); }
+export function loadGLB(url){ return gltfLoader().then(L => L.loadAsync(url)).then(gl => { DIET_STATE.files++; return ASSETDIET.pxFrom.some(s => url.includes(s)) || (gl.parser && (gl.parser.json.skins || []).length) ? withPx(gl) : gl; }).then(gl => { keepLean(gl, url); return gl; }); }
 // each compressed colour map gets its fallback picture (decoded off the main thread, never sent to the GPU) as userData.px
 function withPx(gl){ const P = gl.parser, J = P && P.json; if(!J || !(J.extensionsUsed || []).includes('KHR_texture_basisu')) return gl; const jobs = [];
   gl.scene.traverse(o => { if(!o.isMesh) return; for(const m of [].concat(o.material)){ const t = m && m.map; if(!t || !t.isCompressedTexture || t.userData.px !== undefined) continue;
