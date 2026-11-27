@@ -53,7 +53,7 @@ tools/
 test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 ```
 
-### 2.1 Danh mục module (309 module theo thứ tự hub · 33.047 dòng)
+### 2.1 Danh mục module (309 module theo thứ tự hub · 33.064 dòng)
 
 <!-- MODULES:BEGIN (npm run modmap) -->
 | # | Module | Dòng | Nội dung |
@@ -244,8 +244,8 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 135 | `src/actors/damage.js` | 36 | DAMAGE AND DEATH of an enemy unit: hits (the general's hit cap), the kill (score, coins, loot, the soldier's… |
 | 166 | `src/actors/real-air.js` | 56 | Z272 REAL AIRCRAFT: Tripo models take the place of the procedural airframes — the attack gunship, the swooping |
 | 196 | `src/actors/squad-mates.js` | 60 | Z351 HIS OWN SQUAD (soldier mode only): he does not fight alone. He starts with two men of his own — a machi… |
-| 202 | `src/actors/fort-boss-look.js` | 82 | BOSS 1 THE FORT BOSS'S LOOK (campaign/fort-boss.js drives him): the enemy rifleman's rig scaled to a 2.6–2.9… |
-| 203 | `src/actors/fort-boss-glb.js` | 94 | BOSS 2 THE FORT BOSS AS A REAL RIGGED MODEL (FORTBOSS.model 'glb', FORTBOSS.looks): a Meshy community charac… |
+| 202 | `src/actors/fort-boss-look.js` | 92 | BOSS 1 THE FORT BOSS'S LOOK (campaign/fort-boss.js drives him): the enemy rifleman's rig scaled to a 2.6–2.9… |
+| 203 | `src/actors/fort-boss-glb.js` | 101 | BOSS 2 THE FORT BOSS AS A REAL RIGGED MODEL (FORTBOSS.model 'glb', FORTBOSS.looks): a Meshy community charac… |
 | 205 | `src/actors/hands.js` | 42 | Z296 HANDS THAT HOLD: the Tripo / Mixamo rigs carry every finger (four joints each, both hands — 40 bones) b… |
 | 206 | `src/actors/face-mask.js` | 128 | Z305 A MASK THAT FITS THE FACE: no new model needed. When a rigged character loads, its face is read from it… |
 | 207 | `src/actors/driver.js` | 288 | Z296 THE DRIVER, A CHARACTER OF HIS OWN: the xe ôm / ba gác driver is no longer baked into the ride. He is h… |
