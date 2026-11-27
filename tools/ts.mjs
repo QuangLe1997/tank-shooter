@@ -9,6 +9,9 @@
 //   --gpumem      DIET 1 what the page holds on the GPU, counted from its first WebGL call (every texture level / buffer / renderbuffer allocated,
 //                 less those deleted; compressed formats at their real size): out.gpu = { texMB, bufMB, rbMB, tex, buf, fmt, footprintMB:{ gpu-process, renderer, … } }
 //                 (the last: macOS's footprint of this Chrome's processes at the end), and window.__gpuMem() for a probe.
+//   --glslow      DIET 7 out.glslow: every WebGL call over 30 ms [s from the fight's start, ms, call, the stack that made it] (a sync wait on the GPU process)
+//   --jsflags 'f' DIET 7 V8 flags for the page (e.g. '--trace-gc'; their output: DEBUG=pw:browser* on the runner)
+//   --cpuprofile s DIET 7 sample the main thread for the fight's first s seconds: out.cpu = { top: self time by function, busy: every 50 ms slice over 35 ms busy and what filled it }
 //   --gc          DIET 4 window.gc() for a probe (collect before reading the JS heap)
 //   --novsync     frames as fast as the GPU allows (to compare frame times; with vsync every frame over 16.7 ms falls to 33).
 //   Out: { ok, biome, load, frame:{ p50, p95, max, n }, calls, tris, errors:[…], eval, shot } — exit code 0 only when the page logged no error.
@@ -18,7 +21,7 @@
 import http from 'node:http'; import fs from 'node:fs'; import os from 'node:os'; import path from 'node:path'; import { fileURLToPath, pathToFileURL } from 'node:url';
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url))), argv = process.argv.slice(2);
 const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : d; }, has = k => argv.includes(k);
-const VAL = new Set(['--seed', '--at', '--eval', '--shot', '--profile', '--level', '--tod', '--wx', '--size', '--query', '--dpr']), pos = [];
+const VAL = new Set(['--cpuprofile', '--jsflags', '--seed', '--at', '--eval', '--shot', '--profile', '--level', '--tod', '--wx', '--size', '--query', '--dpr']), pos = [];
 for(let i = 0; i < argv.length; i++){ if(VAL.has(argv[i])){ i++; continue; } if(!argv[i].startsWith('--')) pos.push(argv[i]); }
 const biome = (pos[0] || '').toUpperCase(), secs = +(pos[1] || 5);
 if(!biome){ console.log('usage: node tools/ts.mjs <BIOME> [seconds] [--seed n] [--at x,z] [--eval probe.js] [--shot out.jpg] [--novsync]'); process.exit(2); }
@@ -51,7 +54,7 @@ async function done(code){ clearTimeout(kill); try{ if(ctx) await ctx.close(); }
 process.on('SIGINT', () => done(2)); process.on('SIGTERM', () => done(2));
 try{
   ctx = await chromium.launchPersistentContext(path.join(os.tmpdir(), 'ts-chrome-profile'), { channel:'chrome', headless:true, viewport:{ width:W, height:Hh }, deviceScaleFactor:+opt('--dpr', 1),
-    args:['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist', '--mute-audio', '--autoplay-policy=no-user-gesture-required', ...(has('--novsync') ? ['--disable-gpu-vsync', '--disable-frame-rate-limit'] : []), ...(has('--gc') ? ['--js-flags=--expose-gc'] : [])] });
+    args:['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist', '--mute-audio', '--autoplay-policy=no-user-gesture-required', ...(has('--novsync') ? ['--disable-gpu-vsync', '--disable-frame-rate-limit'] : []), ...(has('--gc') || opt('--jsflags') ? ['--js-flags=' + [has('--gc') ? '--expose-gc' : '', opt('--jsflags') || ''].join(' ').trim()] : [])] });
   const p = ctx.pages()[0] || await ctx.newPage();
   p.on('pageerror', e => out.errors.length < 8 && out.errors.push('pageerror: ' + e.message.slice(0, 300)));
   p.on('console', m => { if(m.type() === 'error' && out.errors.length < 8 && !/favicon|ERR_|404/.test(m.text())) out.errors.push('console: ' + m.text().slice(0, 300)); });
@@ -79,6 +82,9 @@ try{
     wrap('renderbufferStorageMultisample', a => cur.rb && RB.set(cur.rb, a[3] * a[4] * bpp(a[2]) * a[1]));
     const sum = M => { let s = 0; for(const v of M.values()) s += typeof v === 'number' ? v : [...v.values()].reduce((x, y) => x + y, 0); return s; }, mb = b => +(b / 1048576).toFixed(1);
     window.__gpuMem = () => ({ texMB:mb(sum(TX)), bufMB:mb(sum(BF)), rbMB:mb(sum(RB)), tex:TX.size, buf:BF.size, fmt:Object.keys(FMT).map(f => (+f).toString(16)).join(' ') }); });
+  if(has('--glslow')) await p.addInitScript(() => {   // DIET 7 every WebGL call that holds the main thread over 30 ms (a sync round-trip to a busy GPU process), with who made it
+    const P = WebGL2RenderingContext.prototype, L = window.__glSlow = []; for(const n of Object.getOwnPropertyNames(P)){ const d = Object.getOwnPropertyDescriptor(P, n); if(!d || typeof d.value !== 'function' || n === 'constructor') continue; const o = d.value;
+      P[n] = function(...a){ const t = performance.now(); try{ return o.apply(this, a); } finally{ const ms = performance.now() - t; if(ms > 30 && L.length < 30) L.push([Math.round(t), Math.round(ms), n, (new Error().stack || '').split('\n').slice(2, 7).map(s => s.trim().replace(/^at /, '').replace(/https?:\/\/[^/]+\//, '').replace(/^.*\/npm\//, '')).join(' < ')]); } }; } });
   const q = ['perf', 'nogov', 'test=' + biome, 'level=' + opt('--level', '3'), 'tod=' + opt('--tod', 'noon'), 'wx=' + opt('--wx', 'clear')];
   if(has('--novsync')) q.push('nopace'); if(opt('--seed')) q.push('seed=' + opt('--seed')); if(opt('--at')) q.push('at=' + opt('--at')); if(opt('--query')) q.push(opt('--query'));
   const t0 = Date.now(); await p.goto('http://127.0.0.1:' + port + '/?' + q.join('&')); await p.waitForFunction(() => window.__ready, null, { timeout:150000 });
@@ -86,10 +92,20 @@ try{
   // frame times over the watched seconds: the game's own probe (?perf — render/perfhud.js PH.frm, the time between two frames it drew), sampled as it goes
   await p.evaluate(async () => { const H = window.__H = await import('/src/hub.js'), PH = H.PH, F = window.__tsF = []; let seen = PH.frm.i;
     window.__tsI = setInterval(() => { const r = PH.frm, n = r.a.length; while(seen !== r.i){ F.push(r.a[seen]); seen = (seen + 1) % n; } }, 200); });
-  await p.waitForTimeout(secs * 1000);
+  let cdpP = null; if(opt('--cpucdpPile')){ cdpP = await ctx.newCDPSession(p); await cdpP.send('Profiler.enable'); await cdpP.send('Profiler.setSamplingInterval', { interval:200 }); await cdpP.send('Profiler.start'); }
+  if(cdpP){ const w = Math.min(secs, +opt('--cpucdpPile')) * 1000; await p.waitForTimeout(w); const { profile:P } = await cdpP.send('Profiler.stop'); await p.waitForTimeout(Math.max(0, secs * 1000 - w));   // DIET 7 where the main thread's time went in the fight's first seconds
+    const self = new Map(), byId = new Map(P.nodes.map(n => [n.id, n])); P.samples.forEach((id, i) => self.set(id, (self.get(id) || 0) + (P.timeDeltas[i] || 0)));
+    const agg = {}; for(const [id, us] of self){ const c = byId.get(id).callFrame, k = (c.functionName || '(anon)') + ' ' + (c.url || '').replace(/^.*\/(src|assets)\//, '$1/').replace(/^.*\/npm\//, '') + ':' + (c.lineNumber + 1); agg[k] = (agg[k] || 0) + us; }
+    // the longest gaps between samples' time order are not visible here; the worst 600 ms is found by summing self time in 50 ms buckets
+    const B = {}; let t = P.startTime; P.samples.forEach((id, i) => { t += P.timeDeltas[i] || 0; const b = Math.floor((t - P.startTime) / 50000), c = byId.get(id).callFrame, k = (c.functionName || '(anon)') + ' ' + (c.url || '').replace(/^.*\/(src|assets)\//, '$1/').replace(/^.*\/npm\//, '') + ':' + (c.lineNumber + 1);
+      if(c.functionName === '(idle)' || c.functionName === '(program)') return; const e = B[b] || (B[b] = {}); e[k] = (e[k] || 0) + (P.timeDeltas[i] || 0); });
+    const busy = Object.entries(B).map(([b, e]) => [+b * 0.05, Object.values(e).reduce((x, y) => x + y, 0) / 1000, Object.entries(e).sort((x, y) => y[1] - x[1]).slice(0, 4).map(([k, v]) => Math.round(v / 1000) + 'ms ' + k)]).filter(x => x[1] > 35);
+    out.cpu = { top:Object.entries(agg).filter(([k]) => !/^\((idle|program)\)/.test(k)).sort((a, b) => b[1] - a[1]).slice(0, 18).map(([k, v]) => Math.round(v / 1000) + 'ms ' + k), busy:busy.slice(0, 30) }; }
+  else await p.waitForTimeout(secs * 1000);
   Object.assign(out, await p.evaluate(() => { clearInterval(window.__tsI); const H = window.__H, F = window.__tsF.sort((a, b) => a - b), at = k => F.length ? +F[Math.min(F.length - 1, Math.floor(F.length * k))].toFixed(1) : 0;
     return { frame:{ p50:at(0.5), p95:at(0.95), max:at(1), n:F.length }, calls:H.PH.calls, tris:H.PH.tris }; }));
   if(opt('--eval')){ const body = fs.readFileSync(opt('--eval'), 'utf8'); try{ out.eval = await p.evaluate(`(async (H, S) => { ${body}\n})(window.__H, window.__H.S)`); }catch(e){ out.errors.push('eval: ' + String(e.message).slice(0, 400)); } }
+  if(has('--glslow')) out.glslow = await p.evaluate(() => { const t1 = window.__H && window.__H.PH && window.__H.PH.t1 || 0; return window.__glSlow.map(([t, ms, n, s]) => [+((t - t1) / 1000).toFixed(2), ms, n, s]); });
   if(has('--gpumem')){ out.gpu = await p.evaluate(() => window.__gpuMem());   // + what macOS charges this Chrome's processes (footprint: the GPU process holds the textures, the renderer the page)
     try{ const { execFileSync } = await import('node:child_process'), prof = path.join(os.tmpdir(), 'ts-chrome-profile'), L = execFileSync('ps', ['-Ao', 'pid=,command='], { encoding:'utf8' }).split('\n').filter(l => l.includes(prof));
       const pid = L.map(l => +l.trim().split(/\s+/)[0]).filter(Boolean), kind = Object.fromEntries(L.map(l => [+l.trim().split(/\s+/)[0], (l.match(/--type=([\w-]+)/) || [, 'browser'])[1]])), f = path.join(os.tmpdir(), 'ts-fp-' + process.pid + '.json');
