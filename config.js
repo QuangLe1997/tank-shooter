@@ -1493,7 +1493,7 @@ export const TREEFALL = { push:0.18, shotPush:0.7, trunk:0.75, hitH:9, minDmg:20
 //   a tower, mid copies in blotches) no land builds any more; the posts are three real models (Sketchfab, CC BY 4.0, via the Objaverse mirror — credits in
 //   assets/models/real/scene/SOURCES.txt), one per family, reused across the lands, each worn in the land's tone (scenery.js landTone):
 //   gt_watch the military watchtower (green steel frame, plank deck, camouflage roof), gt_hunt the steel lattice post with its rusted cabin, gt_roman the
-//   stone tower with a timber gallery (old lands). TOWER2 2: the procedural concrete `block` (a cardboard box: flat slabs, punched holes, blob sandbags)
+//   stone tower with a timber gallery (TOWER2 3: no land raises it — it reads as a stone keep, not a guard post). TOWER2 2: the procedural concrete `block` (a cardboard box: flat slabs, punched holes, blob sandbags)
 //   is retired — no free real concrete guard tower exists (the one scan, a GDR BT-11, lacks its shaft); gt_hunt's red cabin paint is toned to weathered grey-green.
 //   models: their SCENERY.models entries (h = true height m — a 1.78 m man stands at the rail; ar from the files; one = a single level, they are light;
 //   side 2 = drawn double-sided: thin sheet panels). kinds: deck = the share of the height the guards stand on (measured off the files' floors), feet = their
@@ -1506,9 +1506,9 @@ export const TOWERMODEL = {
     gt_hunt:{ vi:'THÁP CANH GIÀN THÉP', mat:'steel', deck:0.72, feet:0.03, r:2.0, hp:1.5, guards:[[-0.75, -1.1], [0.75, 0.1]], sl:[1.3, 1.2, -1.9] },
     gt_roman:{ vi:'THÁP CANH ĐÁ – GỖ', mat:'stone', deck:0.555, feet:0.03, r:2.5, hp:2.2, guards:[[0, 3.3], [3.3, 0.3], [-3.3, 0.3]], sl:[3.4, 1.0, -3.4] } },
   biome:{ DESERT:{ gt_watch:3, gt_hunt:1 }, SAVANNA:{ gt_watch:2, gt_hunt:2 }, TUNDRA:{ gt_watch:2, gt_hunt:2 }, ARCTIC:{ gt_watch:3, gt_hunt:2 },
-    FOUNDRY:{ gt_hunt:3, gt_watch:2 }, CITADEL:{ gt_roman:3, gt_watch:1 }, MEADOW:{ gt_roman:3, gt_watch:2 }, CITY:{ gt_watch:3, gt_hunt:2 },
-    HILLS:{ gt_roman:2, gt_watch:2 }, VILLAGE:{ gt_roman:2, gt_watch:2 }, RUINS:{ gt_watch:3, gt_hunt:2 }, STEELMILL:{ gt_hunt:3, gt_watch:2 },
-    VOLCANO:{ gt_watch:2, gt_hunt:2 }, QUARRY:{ gt_watch:2, gt_roman:2 }, CAVERN:{ gt_watch:2, gt_hunt:1 } } };
+    FOUNDRY:{ gt_hunt:3, gt_watch:2 }, CITADEL:{ gt_watch:3, gt_hunt:1 }, MEADOW:{ gt_watch:3, gt_hunt:2 }, CITY:{ gt_watch:3, gt_hunt:2 },
+    HILLS:{ gt_watch:2, gt_hunt:2 }, VILLAGE:{ gt_watch:2, gt_hunt:2 }, RUINS:{ gt_watch:3, gt_hunt:2 }, STEELMILL:{ gt_hunt:3, gt_watch:2 },
+    VOLCANO:{ gt_watch:2, gt_hunt:2 }, QUARRY:{ gt_watch:2, gt_hunt:2 }, CAVERN:{ gt_watch:2, gt_hunt:1 } } };
 // Z452 TOWER FALL (world/tower-fall.js): a watchtower / guard post / the radar mast shot down topples about the front edge of its base — g × gK (a little
 //   quicker than life), cg = where its weight sits (× height), lean = how far it already leans as the legs give, kick = the starting swing (rad/s) the
 //   hit gives, bounce = what is left of the swing after it strikes, restW = below this it stays down; bins = height bands its falling face is read in;
