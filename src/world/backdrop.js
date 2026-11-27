@@ -6,8 +6,8 @@
 //   dunes, volcanic cones, karst towers, a city or a works' stacks — grouped into a few masses round the circle rather than a fence of equal bumps,
 //   the biggest standing where the attack looks. Their haze is the air's (render/aerial.js): thick at the foot, thinner up the slope.
 import * as THREE from 'three';
-import { BACKDROP } from '../../config.js';
-import { AER, AER_GLSL, MOBILE, PLAIN_DROP, SKY, landform, scene } from '../hub.js';
+import { BACKDROP, MATLOOK } from '../../config.js';
+import { AER, AER_GLSL, ARENA, MOBILE, PLAIN_DROP, SKY, aoPass, landform, scene } from '../hub.js';
 
 export const BDP = { g:null, name:null, u:{ uBdFog:{ value:new THREE.Color() }, uBdFogD:{ value:0 }, uBdTop:{ value:new THREE.Color() }, uBdNight:{ value:0 }, uPC:{ value:new THREE.Color(0x808080) } } };   // (uPC: the plain's colour — Z440 the field's own ground leaning to the landform's, world/heightfield.js landColours)
 const hsh = (i, s) => { const h = Math.sin(i * 127.1 + s * 311.7) * 43758.5453; return h - Math.floor(h); };
@@ -22,7 +22,8 @@ const angd = (a, b) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
 function profile(kind, a, s, r){
   if(kind === 'peak') return Math.pow(ridge(a, 9, s, 6), 1.25);
   if(kind === 'hill') return Math.pow(fbm(a, 6, s, 5), 1.4) * 1.25;
-  if(kind === 'mesa'){ const b = fbm(a, 5, s, 5); return 0.25 * b + 0.75 * sm(0.48, 0.56, b) * (0.85 + 0.15 * fbm(a, 30, s + 3, 3)); }
+  if(kind === 'mesa'){ const b = fbm(a, 6, s, 5), e = fbm(a, 22, s + 9, 3), plate = sm(0.4, 0.63, b + (e - 0.5) * 0.14);   // MAT 4 the scarp's edge frays (buttes break off, gaps open) instead of
+    return 0.2 * Math.pow(fbm(a, 9, s + 5, 4), 1.2) + plate * (0.6 + 0.18 * fbm(a, 11, s + 3, 3)) + 0.12 * plate * Math.pow(ridge(a, 16, s + 7, 3), 2); }   //   one flat-topped wall round the horizon; talus below, a ragged rim on top
   if(kind === 'dune'){ const p = a * 14 + fbm(a, 4, s, 3) * 9, w = p - Math.floor(p); return (0.35 + 0.65 * fbm(a, 3, s + 1, 4)) * Math.pow(w < 0.7 ? w / 0.7 : (1 - w) / 0.3, 1.6); }
   if(kind === 'volcano'){ let h = 0.18 * fbm(a, 8, s, 4); for(let i = 0; i < 4; i++){ const c = hsh(i, s) * Math.PI * 2, w = 0.07 + 0.05 * hsh(i + 9, s), d = angd(a, c) / w;
       if(d < 1){ const cone = Math.pow(1 - d, 1.15) * (0.6 + 0.4 * hsh(i + 3, s)); h = Math.max(h, d < 0.08 ? cone - 0.06 : cone); } } return h; }
@@ -74,6 +75,11 @@ vec3 plainCol(vec2 p, out vec3 em){ em = vec3(0.0); float n1 = nh(p / 900.0), n2
 `;
 function mat(fs, extra){ return new THREE.ShaderMaterial({ vertexShader:VS, fragmentShader:fs, uniforms:{ ...AER.u, ...BDP.u, ...extra }, depthWrite:true, depthTest:true, fog:false, side:THREE.DoubleSide }); }
 const noHit = () => {};
+// MAT 4 the normals of a curtain whose skyline is low-passed over ±MATLOOK.horizon.smoothCols columns (each column its own slope made every 10 m of a range a stripe)
+function smoothNormals(top, seg, rows, r, h1, kind, idx){ const W = MATLOOK.horizon.smoothCols || 0, T = new Float32Array(seg); for(let k = 0; k < seg; k++){ let t = 0, w = 0; for(let j = -W; j <= W; j++){ const q = 1 - Math.abs(j) / (W + 1); t += top[(k + j + seg) % seg] * q; w += q; } T[k] = t / w; }
+  const P = []; for(let k = 0; k <= seg; k++){ const a = k / seg * Math.PI * 2, c = Math.cos(a), s = Math.sin(a), t0 = T[k % seg], back = Math.min(t0 * 1.7, r * 0.18);
+    for(let j = 0; j <= rows; j++){ const t = j / rows, rr = r - back * 0.25 + back * t, y = -h1 * 0.12 + (t0 + h1 * 0.12) * Math.pow(t, kind === 'city' || kind === 'stacks' ? 0.25 : 0.85); P.push(c * rr, y, s * rr); } }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setIndex(idx); g.computeVertexNormals(); const n = g.attributes.normal; g.dispose(); return n; }
 // one range: a ring of columns, each from its foot (near, below the plain) up its slope to its crest (set back)
 function curtain(L, i, look, seed){ const [r, h0, h1, kind, n, haze] = L, seg = Math.round((kind === 'city' || kind === 'stacks' ? 2400 : 900) * (MOBILE ? 0.5 : 1)), rows = 6, P = [], N = [], H = [], idx = [];
   const lead = i < 2 ? BACKDROP.lead : null, top = new Float32Array(seg);
@@ -82,7 +88,8 @@ function curtain(L, i, look, seed){ const [r, h0, h1, kind, n, haze] = L, seg = 
     for(let j = 0; j <= rows; j++){ const t = j / rows, rr = r - back * 0.25 + back * t, y = -h1 * 0.12 + (T + h1 * 0.12) * Math.pow(t, kind === 'city' || kind === 'stacks' ? 0.25 : 0.85);
       P.push(c * rr, y, s * rr); H.push(t * T / h1, t); } }
   for(let k = 0; k < seg; k++) for(let j = 0; j < rows; j++){ const a = k * (rows + 1) + j, b = a + rows + 1; idx.push(a, b, a + 1, a + 1, b, b + 1); }
-  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('aH', new THREE.Float32BufferAttribute(H, 2)); g.setIndex(idx); g.computeVertexNormals();
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('aH', new THREE.Float32BufferAttribute(H, 2)); g.setIndex(idx);
+  g.setAttribute('normal', smoothNormals(top, seg, rows, r, h1, kind, idx));   // MAT 4 lit from a smoothed skyline: a column ~10 m wide no longer takes its own light (the vertical "barcode" stripes)
   const snow = kind === 'peak' || kind === 'volcano' ? BACKDROP.snow * (look.snow ?? 1) : 0;
   const m = new THREE.Mesh(g, mat(FS, { uCol:{ value:new THREE.Color(look.base).lerp(new THREE.Color(look.hi), 0.15 * i) }, uHi:{ value:new THREE.Color(look.hi) }, uL:{ value:new THREE.Vector4(seg / 40, h1, snow, haze) } }));
   m.renderOrder = -9.3 + i * 0.1; m.frustumCulled = false; m.raycast = noHit; m.userData.backdrop = kind; return m; }
@@ -100,7 +107,12 @@ function plain(L){ const g = new THREE.RingGeometry(L && (L.form === 'plateau' |
 // (freed a while later: the stage's shader warm-up may still be compiling these materials — disposing them under it throws inside three)
 export function clearBackdrop(){ if(!BDP.g) return; const g = BDP.g; scene.remove(g); BDP.g = null; BDP.name = null; setTimeout(() => g.traverse(o => { if(o.geometry) o.geometry.dispose(); if(o.material) o.material.dispose(); }), 20000); }
 // look = { base, hi } colours of the land's ranges (world/horizon.js LOOK); called when the battlefield's horizon is built
-export function buildBackdrop(b, look){ if(BDP.g && BDP.name === b.name && !b.cave) return true;   // (the horizon is built again for the same land: the ranges stay)
+// MAT 4 the ambient occlusion is the battlefield's only: kilometres out the depth buffer steps every ~25 cm, and the AO read those steps as creases —
+//   every far range wore a grid of vertical stripes. The AO pass skips whatever lies past the field's box (GTAOPass's own scene clip box; MATLOOK.horizon.ao)
+let _aoBox = false;
+function aoClip(){ if(_aoBox) return; _aoBox = true; const A = MATLOOK.horizon.ao; if(!A || !aoPass || !aoPass.setSceneClipBox) return; const R = ARENA * A.r;
+  aoPass.setSceneClipBox(new THREE.Box3(new THREE.Vector3(-R, A.y[0], -R), new THREE.Vector3(R, A.y[1], R))); }
+export function buildBackdrop(b, look){ try{ aoClip(); }catch(e){} if(BDP.g && BDP.name === b.name && !b.cave) return true;   // (the horizon is built again for the same land: the ranges stay)
   clearBackdrop(); if(!BACKDROP.on || b.cave || typeof window === 'undefined') return false; let L = BACKDROP.biomes[b.name] ?? BACKDROP.biomes._; if(typeof L === 'string') L = BACKDROP.biomes[L];
   const LF = landform(b), g = new THREE.Group(); g.name = 'backdrop'; BDP.g = g; BDP.name = b.name; scene.add(g); g.add(plain(LF)); if(LF && LF.form === 'plateau') g.position.y = LF.plain === 'sea' ? -LF.h + 1.5 : -LF.h - PLAIN_DROP; const seed = (b.name.charCodeAt(0) * 7 + b.name.length * 13) % 97;   // (Z428 below a plateau the land and the sea lie at the cliffs' foot)
   (MOBILE ? [L[Math.min(BACKDROP.phone, L.length - 1)]] : L).forEach((l, i) => g.add(curtain(l, MOBILE ? 1 : i, look, seed))); updateBackdrop(); return true; }

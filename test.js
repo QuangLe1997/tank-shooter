@@ -2705,6 +2705,10 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
     'the real-skyscraper scans ('+N.retired.join(' ')+') stay on disk but are never placed; the city tower is '+N.cityTower+'; their credit and the old pagoda are gone');
   ok(C.INTRO_CITY.tower && !('l81' in C.INTRO_CITY) && /cap:WONDER\.name/.test(fs.readFileSync('src/game/intro.js','utf8')) && /export const bannerTex/.test(fs.readFileSync('src/world/heightfield.js','utf8')), 'the city film shows the invented tower name; our banner texture no longer carries a country code'); }
 
+// MAT 4 the far ranges without AO stripes or a flat wall, no ruin on the soldier's start (config MATLOOK.horizon / ruins; world/backdrop.js, world/ruins3d.js)
+{ const fs = await import('node:fs'), C = await import('./config.js'), R = f => fs.readFileSync(f, 'utf8'), M = C.MATLOOK, bd = R('src/world/backdrop.js'), ru = R('src/world/ruins3d.js');
+  ok(M.horizon.smoothCols >= 1 && M.horizon.smoothCols <= 12 && M.horizon.ao.r >= 1.1 && M.horizon.ao.r <= 3 && M.horizon.ao.y[0] < 0 && M.horizon.ao.y[1] > 100 && M.ruins.clearStart >= 10 && M.ruins.clearStart <= 60, 'the ranges lit from a smoothed skyline, AO kept to the field\'s box, ruins well clear of the start');
+  ok(/aoPass\.setSceneClipBox\(/.test(bd) && /smoothNormals\(top, seg, rows, r, h1, kind, idx\)/.test(bd) && /plate = sm\(0\.4, 0\.63/.test(bd) && /Math\.hypot\(x, z - ARENA \* 0\.55\) < r \+ MATLOOK\.ruins\.clearStart/.test(ru) && /p\.pos\.set\(0,0,ARENA\*0\.55\)/.test(R('src/game/flow.js')), 'GTAO clipped to the field (its own clip box), mesa scarps sloped, a ruin never stands where the soldier starts'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

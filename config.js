@@ -2306,6 +2306,11 @@ export const MATLOOK = {
       DESERT:{ dry:[1.08, 1.04, 0.94], lush:[1.04, 0.9, 0.8], dirt:0x6e5840, damp:0.12, dirtK:0.22 }, ARCTIC:{ dry:[1.02, 1.02, 1.04], lush:[0.92, 0.96, 1.03], dirt:0x5c6066, damp:0.3, dirtK:0.15 },
       VOLCANO:{ dry:[1.1, 1.0, 0.92], lush:[0.9, 0.9, 0.95], dirt:0x2a2522, damp:0.1, dirtK:0.3 }, CITY:{ dry:[1.04, 1.02, 0.98], lush:[0.95, 0.97, 1.0], dirt:0x3e3a34, damp:0.45, dirtK:0.2 } },
     rock:{ kinds:{ stone:0.2, masonry:0.1 }, m:[22, 70], warm:0.06 } },
+  // MAT 4 the far ranges (world/backdrop.js): smoothCols = their skyline low-passed over ± this many columns (~10 m each) for the light only — the silhouette keeps its detail;
+  //   ao = the box the ambient occlusion is kept to (r × ARENA round the centre, y [from, to] m): past it the depth is too coarse for AO and it striped the ranges
+  horizon:{ smoothCols:4, ao:{ r:1.6, y:[-150, 450] } },
+  // MAT 4 ruins (world/ruins3d.js): clearStart = metres kept between a ruin's footprint and the soldier's start (his follow camera stands ~6 m behind him)
+  ruins:{ clearStart:22 },
 };
 // Z400 CONTACT (world/decals.js paintContact, read by the ground's shader): things stood on the floor like cut-outs — a hard line where a wall met the grass, no
 //   shade under a rock, the same clean sand right up to a pipe. Once a stage is built every solid footprint (blocks: walls, cover, rocks, camps,

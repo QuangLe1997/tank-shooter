@@ -4,7 +4,7 @@
 // each other, and registered as zones so the flora and scatter keep off them); the models rise as soon as they have loaded. Tanks and rounds
 // collide with them along their length (a row of solid circles), like the city's buildings.
 import * as THREE from 'three';
-import { CORE_DEF, REALRUIN } from '../../config.js';
+import { CORE_DEF, MATLOOK, REALRUIN } from '../../config.js';
 import { ARENA, BIOME, LAND, ZONES, arena, blocks, heightAt, inField, inZone, loadGLTF, nearShape } from '../hub.js';
 
 const PREP = {}; let GEN = 0;
@@ -21,6 +21,7 @@ export function buildRuins(){ const B = REALRUIN.biomes[BIOME.name]; GEN++; if(!
   for(let i = 0, tries = 0; i < B.n && tries < 160; tries++){ const k = B.keys[i % B.keys.length], S = REALRUIN.models[k], r = (S.w || S.h) * 0.6;
     const a = Math.random() * Math.PI * 2, d = keep + r + Math.random() * (ARENA * 0.8 - keep - r), x = Math.cos(a) * d, z = Math.sin(a) * d;
     if(!inField(x, z, r + 3) || inZone(x, z, r + 4) || spots.some(p => Math.hypot(p.x - x, p.z - z) < p.r + r + 10)) continue;
+    if(Math.hypot(x, z - ARENA * 0.55) < r + MATLOOK.ruins.clearStart) continue;   // MAT 4 never on the soldier's start (game/flow.js): his first view was from inside a burnt scan's shell
     const s = { k, x, z, r, ry:Math.random() * Math.PI * 2 }; spots.push(s); ZONES.push({ kind:'landmark', x, z, r:r * 0.9 }); i++; }
   for(const s of spots) loadGLTF(s.k).then(gl => { if(!gl || gen !== GEN) return; place(s, prep(gl, s.k)); }); }
 function place(s, P){ const m = new THREE.Mesh(P.geo, P.mat); m.position.set(s.x, heightAt(s.x, s.z), s.z); m.rotation.y = s.ry; m.castShadow = true; m.receiveShadow = true;
