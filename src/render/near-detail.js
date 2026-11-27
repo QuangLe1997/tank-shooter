@@ -8,33 +8,31 @@
 //   in, one texture a frame; past reach × out — or crowded out by closer ones — for hold s they go back and the sharp ones are freed. A texture is never resized in place (three's storage is immutable): it is disposed and given a new Source, so the next draw
 //   uploads it afresh. Desktop only; `?nohd` switches it off (before / after).
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { NEARDETAIL } from '../../config.js';
-import { MOBILE, camera, loadGLTF, scene } from '../hub.js';
+import { MOBILE, camera, loadGLB, loadGLTF, scene } from '../hub.js';
 
 const DIR = 'assets/models/real/hd/', SRC = new WeakMap(), KEYS = {}, QUEUE = [], SLOT = { map:'map', nrm:'normalMap' };
-let INDEX = null, _last = 0, ON = null, _ldr = null; const GEO = {}, FRAME = [], SHAPES = new Set(), ASIS = {};
+let INDEX = null, _last = 0, ON = null; const GEO = {}, FRAME = [], SHAPES = new Set(), ASIS = {};
 const on = () => ON ?? (ON = typeof window !== 'undefined' && NEARDETAIL.on && !MOBILE && !/nohd/.test(location.search + location.hash) && install());   // (decided on first use: the hub is whole by then)
 const index = () => INDEX || (INDEX = fetch(DIR + 'index.json').then(r => r.ok ? r.json() : {}).catch(() => ({})));
 export const NEAR_DETAIL = { keys:KEYS, shapes:SHAPES, swaps:0, off:false };   // (off: every key handed back at once — a before / after toggle for screenshots)
 
 // a model just loaded (actors/models.js loadGLTF): its maps are tagged with the key, when the key has sharp ones (a clone shares its maps' Source)
 export function nearTag(key, gl){ if(!gl || !on()) return; index().then(IX => { const have = IX[key]; if(!have || KEYS[key]) return;
-  const R = KEYS[key] = { key, srcs:[], seen:new Set(), tex:new Set(), near:false, farFor:0, hd:null, d:Infinity }, mats = [], A = gl.parser && gl.parser.associations;
+  const R = KEYS[key] = { key, srcs:[], seen:new Set(), tex:new Set(), mats:new Set(), near:false, farFor:0, hd:null, d:Infinity }, mats = [], A = gl.parser && gl.parser.associations;
   gl.scene.traverse(o => { if(o.isMesh) for(const m of [].concat(o.material)) if(m && !mats.includes(m)) mats.push(m); });
   for(const m of mats){ const a = A && A.get(m), mi = a && a.materials != null ? a.materials : mats.indexOf(m);   // (the material's index in the file)
     for(const [s, slot] of Object.entries(SLOT)){ const t = m[slot]; if(!t || !have.includes(mi + '.' + s) || SRC.has(t.source)) continue;
-      const e = { R, file:`${DIR}${key}.${mi}.${s}.webp`, lo:t.source, hi:null }; R.srcs.push(e); SRC.set(t.source, e); } } }); }
+      const e = { R, slot, file:`${DIR}${key}.${mi}.${s}.webp`, lo:t.source, hi:null, twin:null }; R.srcs.push(e); SRC.set(t.source, e); } } }); }
 
 // MEM 1 a model dropped from its cache (actors/models.js releaseModels): its key forgotten here too, or its shipped maps' pictures (each entry's lo)
 //   stayed alive for good; a sharp copy nothing wears is freed, its queued swaps dropped. Loaded again, the model is tagged afresh.
 export function nearForget(key){ const R = KEYS[key]; if(!R) return; delete KEYS[key]; for(let i = QUEUE.length - 1; i >= 0; i--) if(QUEUE[i][0].R === R) QUEUE.splice(i, 1);
-  for(const e of R.srcs) if(e.hi && ![...R.tex].some(t => t.source === e.hi) && e.hi.data && e.hi.data.close) e.hi.data.close(); R.tex.clear(); R.seen.clear(); R.srcs.length = 0; }
+  for(const e of R.srcs) if(e.hi && ![...R.tex].some(t => t.source === e.hi) && e.hi.data && e.hi.data.close) e.hi.data.close(); R.tex.clear(); R.mats.clear(); R.seen.clear(); for(const e of R.srcs) if(e.twin) e.twin.dispose(); R.srcs.length = 0; }
 // the whole shape of a model (hd/<key>.glb: the original's triangles, meshopt-compressed) for whoever draws it whole up close — attributes back to
 //   plain floats, so it can be cut and scaled like the shipped one; null when the key has none (or on a phone / with ?nohd)
 export function nearModel(key){ if(GEO[key]) return GEO[key]; if(!on()) return Promise.resolve(null);
-  return (GEO[key] = index().then(IX => (IX[key] || []).includes('geo') ? (_ldr || (_ldr = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder))).loadAsync(DIR + key + '.glb') : null).then(gl => {
+  return (GEO[key] = index().then(IX => (IX[key] || []).includes('geo') ? loadGLB(DIR + key + '.glb') : null).then(gl => {
     if(gl) gl.scene.traverse(o => { if(!o.isMesh) return; const g = o.geometry;
       for(const [n, a] of Object.entries(g.attributes)) if(a.normalized || a.isInterleavedBufferAttribute || !(a.array instanceof Float32Array)){ const f = new Float32Array(a.count * a.itemSize);
         for(let i = 0; i < a.count; i++) for(let c = 0; c < a.itemSize; c++) f[i * a.itemSize + c] = a.getComponent ? a.getComponent(i, c) : [a.getX(i), a.getY(i), a.getZ(i), a.getW(i)][c];
@@ -44,7 +42,7 @@ export function nearModel(key){ if(GEO[key]) return GEO[key]; if(!on()) return P
 export function nearFrame(fn){ if(on()) FRAME.push(fn); }
 
 // (every object as it is drawn in the main pass: is it wearing a tagged map?)
-function see(o, m){ if(!m) return; for(const s of ['map', 'normalMap']){ const t = m[s], e = t && SRC.get(t.source); if(e){ e.R.seen.add(o); e.R.tex.add(t); } } }
+function see(o, m){ if(!m) return; for(const s of ['map', 'normalMap']){ const t = m[s], e = t && SRC.get(t.source); if(e){ e.R.seen.add(o); e.R.tex.add(t); e.R.mats.add(m); } } }
 // how near the nearest drawn wearer of a key is, as a share of its own reach: distance from the camera to its surface ÷ clamp(radius × rK, min, at) —
 //   a barracks is worth its sharp maps from 30 m, a sandbag only within a few (each instance of an instanced mesh; a skinned body by where it stands)
 const _c = new THREE.Vector3(), _p = new THREE.Vector3(), _m = new THREE.Matrix4(), _s = new THREE.Sphere();
@@ -56,7 +54,13 @@ function nearest(R){ _c.setFromMatrixPosition(camera.matrixWorld); let d = Infin
     else { _s.copy(bs).applyMatrix4(o.matrixWorld); const x = score(_c.distanceTo(_s.center), _s.radius); if(x < d) d = x; } }   // (a NaN never wins)
   return d; }
 // every texture wearing this map takes the other source (a fresh upload: disposed, then a new Source)
-function wear(e, src){ for(const t of e.R.tex) if(t.source !== src && (t.source === e.lo || t.source === e.hi)){ t.dispose(); t.source = src; t.needsUpdate = true; } }
+function wear(e, src){ for(const t of [...e.R.tex]) if(t.source !== src && (t.source === e.lo || t.source === e.hi)){ if(t.isCompressedTexture || t === e.twin){ twin(e, t, src); continue; } t.dispose(); t.source = src; t.needsUpdate = true; } }
+// DIET 2 a KTX2 map cannot take a picture as its source (three uploads it block by block): the sharp picture goes on a plain twin texture with the
+//   same sampling, put in the map's place on every material that wears it; handing back puts the KTX2 map back and frees the twin's upload
+function twin(e, t, src){ const hi = src === e.hi, lo = hi ? t : null;
+  if(hi && !e.twin){ const w = e.twin = new THREE.Texture(); w.source = e.hi; for(const k of ['flipY', 'colorSpace', 'wrapS', 'wrapT', 'magFilter', 'minFilter', 'anisotropy', 'channel']) w[k] = t[k]; w.repeat.copy(t.repeat); w.offset.copy(t.offset); w.userData.lo = t; w.needsUpdate = true; }
+  const from = hi ? lo : e.twin, to = hi ? e.twin : e.twin && e.twin.userData.lo; if(!from || !to) return;
+  for(const m of e.R.mats) if(m[e.slot] === from) m[e.slot] = to; e.R.tex.delete(from); e.R.tex.add(to); if(!hi) e.twin.dispose(); }
 const bitmap = f => fetch(f).then(r => r.ok ? r.blob() : null).then(b => b && window.createImageBitmap(b, { imageOrientation:'none' })).catch(() => null);   // (as three's GLTFLoader reads its own)
 // (the sharp source is watched too: what wears it is still near)
 function swapIn(R){ R.near = true; if(!R.hd || R.srcs.some(e => !e.hi && !e.ask)) R.hd = Promise.all(R.srcs.map(e => e.hi || e.ask || (e.ask = bitmap(e.file).then(b => { e.ask = null; if(b){ e.hi = new THREE.Source(b); SRC.set(e.hi, e); } }))));

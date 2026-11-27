@@ -32,7 +32,7 @@ So **bật / tắt trong cùng một trận**, vài lượt xen kẽ (mỗi tr�
 ```bash
 node tools/ts.mjs CITY 3 --seed 7 --novsync --size 1440x900 --dpr 2 --eval probe-ab.js
 ```
-`--novsync` (kèm `?nopace`) để khung hình không bị khoá 30 / 60. Trong probe đọc `H.PH.frm` (thời gian giữa hai khung game vẽ). Công tắc sẵn có để so: `?noview` (render/inst-view.js), `?notrooplod`, `?nodirector`, `?notactics`, `?nodiet`, `?nogov`.
+`--novsync` (kèm `?nopace`) để khung hình không bị khoá 30 / 60. `--gpumem` (DIET 1): đếm bộ nhớ GPU từ lệnh WebGL đầu tiên của trang (texture theo đúng định dạng, kể cả nén KTX2; buffer; renderbuffer) — in `gpu:{ texMB, bufMB, rbMB }`, probe đọc được `window.__gpuMem()`. `?noktx2` tắt KTX2 (đọc ảnh dự phòng), `?notreefar` tắt thân xa của cây. Trong probe đọc `H.PH.frm` (thời gian giữa hai khung game vẽ). Công tắc sẵn có để so: `?noview` (render/inst-view.js), `?notrooplod`, `?nodirector`, `?notactics`, `?nodiet`, `?nogov`.
 
 ## Khi máy đang bận (train model, build khác) hoặc chủ dự án bảo hạn chế GPU / trình duyệt
 Chỉ chạy bậc 1. Ghi rõ trong báo cáo và trong DOCS phần nào **chưa chạy thật**, đừng báo số đo lấy lúc máy bận.

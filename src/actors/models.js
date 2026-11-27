@@ -1,8 +1,7 @@
 // actors/models.js — Z247/Z248 REAL MODELS: glTF files put onto the procedural rigs — the photo-scanned CC0 rifle (Poly Haven) and the Meshy-generated war horse, operator and carbine (with their animation clips); each file loaded once and shared; while it loads, or if it is missing or fails, the procedural model stays (the game never breaks). `?procgun` in the URL keeps the procedural ones (before / after)
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MEM_TRIM, PHONE_LOD, REALAIR, REALRUIN, REALCITY, REALPROP, REALTREE, REALTURRET, REALROCK, REALFORT } from '../../config.js';
-import { S, matNormModel, nearForget, nearTag, renderer } from '../hub.js';
+import { S, loadGLB, matNormModel, nearForget, nearTag, renderer } from '../hub.js';
 
 export const MODEL_FILES = {
   // "Bolt Action Rifle 7.62" by Mateusz Sadek — polyhaven.com, CC0. ~20k tris, 1K PBR textures (5.8 MB).
@@ -48,9 +47,7 @@ for(const st of ['citadel','desert','arctic','volcano','meadow','ruins','quarry'
 MODEL_FILES.fort_kit = 'assets/models/real/fortkit/fort_kit.gltf';   // Z435 the forts' photographed stone kit (Poly Haven Modular Fort 01, CC0)
 for(const k of Object.keys(REALCITY.blds).concat(Object.keys(REALCITY.cars), Object.keys(REALCITY.props), REALCITY.traffic.files)) MODEL_FILES[k] = 'assets/models/real/city/' + (PHONE && PHONE_LOD.city.includes(k) ? 'm/' : '') + k + '.glb';   // Z292 the light buildings on phones
 const _load = {}, _gl = {};
-let _loader = null;
 const procOnly = () => typeof location !== 'undefined' && /procgun/.test((location.search || '') + (location.hash || ''));
-const loader = () => (_loader = _loader || new GLTFLoader());
 // the whole glTF (scene + animations), shared — clone the scene per use (SkeletonUtils.clone for skinned ones)
 // Z289 a normal squashed to ~zero by mesh simplification / quantisation makes normalize() NaN in the shader, and the NaN guard paints that
 //   triangle black (the black shards on the skyline towers). Any such vertex takes its triangle's own face normal when the model loads.
@@ -92,7 +89,7 @@ export function loadGLTF(key){
   useModel(key);
   if(_gl[key]) return _gl[key];
   if(procOnly() || typeof window === 'undefined') return (_gl[key] = Promise.resolve(null));
-  return (_gl[key] = loader().loadAsync(MODEL_FILES[key]).then(gl => {
+  return (_gl[key] = loadGLB(MODEL_FILES[key]).then(gl => {   // (DIET 1 meshopt + KTX2: render/asset-diet.js)
     gl.scene.traverse(o => { if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; fixNormals(o.geometry); } }); nearTag(key, gl); warmLater(gl); matNormModel(gl.scene, key);   // (Z395 its sharp maps while the camera is near · MAT 1 measured, pulled into its kind's band)
     const T = texOf(gl.scene); memRegister(key, T.tex, T.geo, () => warmLater(gl), () => { if(_gl[key] && MEM[key] && MEM[key].tex === T.tex){ delete _gl[key]; delete _load[key]; } nearForget(key); }); return gl;
   }).catch(e => { console.warn('[models]', key, 'not loaded — keeping the procedural one:', e && e.message); return null; })); }

@@ -1,0 +1,4 @@
+Third-party runtime files the game loads from here (vendored so the desktop / phone shells run offline — DIET 1, render/asset-diet.js):
+basis/basis_transcoder.js, basis/basis_transcoder.wasm — Basis Universal transcoder (Binomial LLC, Apache License 2.0), as shipped with three.js r169 (examples/jsm/libs/basis).
+basis/probe.ktx2 — a 4×4 test texture made by tools/asset-diet's encoder (the KTX2 reader is proven on it before any model asks for it).
+meshopt/meshopt_simplifier.module.js — meshoptimizer 0.21.0 (Arseny Kapoulkine, MIT License, meshopt/LICENSE.md), used by render/far-lod.js.

@@ -449,7 +449,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z247 real glTF models: the photo-scanned CC0 rifle on the general (loaded once, cloned; the procedural rifle stays if it fails)
 { const fs=await import('node:fs'); const mo=fs.readFileSync('src/actors/models.js','utf8'), ge=fs.readFileSync('src/actors/general.js','utf8');
-  ok(/GLTFLoader/.test(mo) && /export function loadModel/.test(mo) && /export function fitRealRifle/.test(mo) && /catch\(/.test(mo) && /CC0/.test(mo), 'real models: glTF loader, cached, falls back to the procedural model, licence noted');
+  ok(/GLTFLoader|loadGLB\(/.test(mo) && /export function loadModel/.test(mo) && /export function fitRealRifle/.test(mo) && /catch\(/.test(mo) && /CC0/.test(mo), 'real models: glTF loader, cached, falls back to the procedural model, licence noted');
   ok(/fitRealRifle\(G, u, GOFF\)/.test(ge), 'the general carries the scanned rifle');
   const m=JSON.parse(fs.readFileSync('assets/models/rifle/bolt_action_rifle_7_62_1k.gltf','utf8')); ok(m.buffers.every(b=>fs.existsSync('assets/models/rifle/'+b.uri)) && m.images.every(i=>fs.existsSync('assets/models/rifle/'+i.uri)), 'the rifle model ships with its buffer and textures'); }
 
@@ -837,7 +837,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z328 far models swap to a light copy (meshoptimizer), the ground scars are read by the ground's own shader
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'), fl=R('src/render/far-lod.js'), C=await import('./config.js');
-  ok(/meshoptimizer@0\.21\.0\/meshopt_simplifier\.module\.js/.test(fl) && /S\.simplify\(idx, pos, 3, target, FARLOD\.err, \[\]\)/.test(fl) && /new THREE\.LOD\(\)/.test(fl) && /lod\.addLevel\(lm, d, FARLOD\.hys\)/.test(fl) && C.FARLOD.on && C.FARLOD.keep<0.3 && C.FARLOD.far>=40, 'far LOD: a simplified copy past FARLOD.far, the model whole up close');
+  ok(/ASSETDIET\.simplifier/.test(fl) && /meshopt_simplifier\.module\.js/.test(C.ASSETDIET.simplifier) && /S\.simplify\(idx, pos, 3, target, FARLOD\.err, \[\]\)/.test(fl) && /new THREE\.LOD\(\)/.test(fl) && /lod\.addLevel\(lm, d, FARLOD\.hys\)/.test(fl) && C.FARLOD.on && C.FARLOD.keep<0.3 && C.FARLOD.far>=40, 'far LOD: a simplified copy past FARLOD.far, the model whole up close');
   ok(/host\.add\(m\); return farLOD\(m\); \}/.test(R('src/world/fortress.js')) && /farLOD\(hq\)/.test(R('src/actors/core.js')) && /render\/far-lod\.js/.test(R('src/hub.js')), 'fort towers, gatehouses, keeps and the HQ get their far copies');
   const d=R('src/world/decals.js'), g=R('src/world/ground.js');
   ok(!/terrainGeo\(\)/.test(d) && /DECAL_U\.decalS\.value = decalTex\(DECAL\.stat\)/.test(d) && /vec2 duv = vec2\(vWXZ\.x \* decalK \+ 0\.5, 0\.5 - vWXZ\.y \* decalK\)/.test(g) && /'macroGround5'/.test(g), 'ground scars are drawn by the ground shader, not by two extra copies of the terrain'); }
@@ -2777,6 +2777,13 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
     'everyday banners are one small line under the score bar; only a general down, a fort taken or the battle won gets the big plate');
   ok(/if\(HUDCLEAN2\.chiefLabel\)\{ c\.label=nameSprite/.test(fo) && /HUDCLEAN2\.medal\.touchHoldK/.test(mu) && /body\.touch \.mdl-toasts\{top:max\(46px/.test(mc) && /body\.touch \.mdl-toast small,body\.touch \.mdl-toast \.tx > span\{display:none/.test(mc),
     'no commander\'s name floats over him; on a phone a medal is a compact chip at the top right'); }
+// DIET 1 one loader for every model file: meshopt + KTX2 read compressed, the transcoder and the simplifier vendored, fallback pictures
+{ const fs=await import('node:fs'), C=await import('./config.js'), D=C.ASSETDIET, rd=f=>fs.readFileSync(f,'utf8'), ad=rd('src/render/asset-diet.js'), mo=rd('src/actors/models.js'), fl=rd('src/render/far-lod.js'), rt=rd('src/world/real-trees.js'), nd=rd('src/render/near-detail.js');
+  const head=f=>{ const b=fs.readFileSync(f); return JSON.parse(b.subarray(20, 20+b.readUInt32LE(12)).toString()); };
+  ok(typeof D.ktx2==='boolean' && ['basis_transcoder.js','basis_transcoder.wasm','probe.ktx2'].every(f=>fs.existsSync(D.basis+f)) && fs.existsSync(D.simplifier) && D.workers>=1 && D.workers<=8 && D.probeMs>=1000 && !/cdn\.jsdelivr/.test(fl) && /ASSETDIET\.simplifier/.test(fl),
+    'the KTX2 transcoder and the meshopt simplifier are vendored under assets/lib (the shells run offline), nothing fetched from a CDN to read a model');
+  ok(/setKTX2Loader\(_k2\)/.test(ad) && /setMeshoptDecoder\(MeshoptDecoder\)/.test(ad) && /probe\.ktx2/.test(ad) && /userData\.px/.test(ad) && /loadGLB\(MODEL_FILES\[key\]\)/.test(mo) && /isCompressedTexture \? map\.userData\.px/.test(rt) && /function twin\(e, t, src\)/.test(nd),
+    'every model file goes through one loader: KTX2 only once the transcoder proved itself, else the fallback pictures; pixel readers and the near-detail swap handle a compressed map'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
@@ -3295,7 +3302,7 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   ok(keys.every(k=>fs.existsSync(D+k+'.glb') && fs.existsSync(D+'m/'+k+'.glb') && (SC.models[k].one || (fs.existsSync(D+'l/'+k+'.glb') && fs.existsSync(D+'f/'+k+'.glb')))), 'each has its near file, its phone copy and (unless light) its mid and far copies');
   ok(keys.every(k=>{ const j=head(D+k+'.glb'); return j.extensionsRequired.includes('EXT_meshopt_compression') && fs.statSync(D+k+'.glb').size<50e6; }), 'the near files are compressed and each under 50 MB');
   const beats=Object.values(SC.biomes).flat(); ok(beats.every(b=>SC.models[b.k]) && Object.entries(SC.biomes).every(([n,L])=>L.every((b,i)=>!b.of || L.slice(0,i).some(q=>q.id===b.of))), 'every beat names a known model; pairs / rings follow the piece they hang on');
-  ok(['export function buildSceneSet','export class SceneLOD','export function scenePiece','export function towerModel'].every(k=>sc.includes(k)) && /setMeshoptDecoder\(MeshoptDecoder\)/.test(sc) && /sceneLevel\(this\.key, 'd'\)/.test(sc), 'scenery.js: levels by distance, the near scan fetched on approach');
+  ok(['export function buildSceneSet','export class SceneLOD','export function scenePiece','export function towerModel'].every(k=>sc.includes(k)) && /loadGLB\(DIR \+ SUB\[lv\]/.test(sc) && /sceneLevel\(this\.key, 'd'\)/.test(sc), 'scenery.js: levels by distance, the near scan fetched on approach');
   ok(/buildSceneSet\(\); (climbGate\(\); )?(hillTrees\(\); )?buildRuins\(\);/.test(R('src/world/landmarks.js')) && /WONDER\.a0 \?\?/.test(R('src/world/wonders.js')) && /WONDER\.a0 = a;/.test(sc), 'the set is laid out first, round the bearing the wonder then stands at');
   ok(/LAVA\.pools\.push\(\{ x:p\.x, z:p\.z, r, y, glow \}\)/.test(sc) && SC.models.lava_pit.lava>0, 'a lava pit holds live melt that burns like a pool');
   ok(/function realSupply\(gen\)/.test(sc) && /b\.kind !== 'fueltank'/.test(sc) && SC.supply.fueltank.h>0, 'the enemy fuel depot\'s tanks are the steel tank scan, inside each tank\'s own group');

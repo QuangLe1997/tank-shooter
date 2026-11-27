@@ -3631,3 +3631,8 @@ export const HUDCLEAN2 = {
   banner:{ bigHold:1.1, miniHold:1.6 },
   chiefLabel:false,
   medal:{ touchHoldK:0.55 } };
+// DIET 1–3 resource diet (render/asset-diet.js, tools/asset-diet.mjs): KTX2 maps read compressed (ktx2: off = every texture reads its fallback picture),
+//   the vendored Basis transcoder and meshopt simplifier (basis, simplifier: the shells run offline), the test file's time limit, transcoder workers
+//   A3 treeFar: past `at` m (stretched as the camera pulls back) a tree wears its species' phone copy (dir) when that has at most `max` × its triangles
+export const ASSETDIET = { ktx2:true, basis:'assets/lib/basis/', simplifier:'assets/lib/meshopt/meshopt_simplifier.module.js', workers:4, probeMs:8000,
+  treeFar:{ on:!(typeof location !== 'undefined' && /[?&]notreefar\b/.test(location.search)), dir:'assets/models/real/tree/m/', at:80, max:0.6 } };

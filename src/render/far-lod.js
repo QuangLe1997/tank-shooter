@@ -4,20 +4,22 @@
 //   shadow pass, so the shadow map gets the light copy too. If the simplifier cannot load, the model simply stays whole.
 import * as THREE from 'three';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
-import { FARLOD, SHADOWLOD } from '../../config.js';
+import { ASSETDIET, FARLOD, SHADOWLOD } from '../../config.js';
 import { MOBILE } from '../hub.js';
 
-const MS_URL = 'https://cdn.jsdelivr.net/npm/meshoptimizer@0.21.0/meshopt_simplifier.module.js';
 let _ms = null; const LO = new WeakMap();
-const simplifier = () => _ms || (_ms = import(MS_URL).then(m => m.MeshoptSimplifier.ready.then(() => m.MeshoptSimplifier)).catch(() => null));
+const simplifier = () => _ms || (_ms = import(new URL(ASSETDIET.simplifier, document.baseURI).href).then(m => m.MeshoptSimplifier.ready.then(() => m.MeshoptSimplifier)).catch(() => null));
 // PERF 3 ONE SIMPLIFICATION AT A TIME: a shadow rescan that met fifty new casters welded and simplified all fifty in the same frame (their callbacks all
 //   ran as one microtask burst) — 1.7 s frozen in a battle's first seconds. Every weld + simplify now waits its turn in a queue worked in its own task,
 //   at most JOB_MS a slice (always one job), a frame between slices; the light copies arrive a little later, nothing else changes.
 const JOBS = [], JOB_MS = 6; let _jobT = 0;
 function runJobs(){ _jobT = 0; const t0 = performance.now(); do JOBS.shift()(); while(JOBS.length && performance.now() - t0 < JOB_MS); if(JOBS.length) _jobT = setTimeout(runJobs, 16); }
 const job = fn => new Promise((res, rej) => { JOBS.push(() => { try{ res(fn()); }catch(e){ rej(e); } }); if(!_jobT) _jobT = setTimeout(runJobs, 0); });
+// A3 a light copy made offline (a species' phone copy: render/real-trees.js) stands in for any simplification of that geometry
+const SEED = new WeakMap();
+export function farSeed(geo, lo){ if(geo && lo) SEED.set(geo, lo); }
 // the light copy of a geometry (cached per geometry: every tower of a fort shares one)
-export function farGeo(geo, keep){ const K = keep || FARLOD.keep, C = LO.get(geo) || {}; if(!LO.has(geo)) LO.set(geo, C); if(C[K]) return C[K];   // Z412 keep: the share of triangles kept (one copy per share)
+export function farGeo(geo, keep){ if(SEED.has(geo)) return Promise.resolve(SEED.get(geo)); const K = keep || FARLOD.keep, C = LO.get(geo) || {}; if(!LO.has(geo)) LO.set(geo, C); if(C[K]) return C[K];   // Z412 keep: the share of triangles kept (one copy per share)
   const p = simplifier().then(S => S && job(() => { const g = geo.index ? geo : mergeVertices(geo, 1e-4), P = g.attributes.position;
     if(!g.index || !P || P.isInterleavedBufferAttribute) return null; const idx = Uint32Array.from(g.index.array), pos = Float32Array.from(P.array);
     const target = Math.max(192, Math.floor(idx.length * K / 3) * 3), [out] = S.simplify(idx, pos, 3, target, FARLOD.err, []);

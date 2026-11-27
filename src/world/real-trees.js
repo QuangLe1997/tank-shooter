@@ -21,7 +21,8 @@ export function loadRealTrees(){ if(_p) return _p; if(typeof window === 'undefin
 export function trackTrees(im){ if(Object.keys(SP).length) dressTrees(im); else { EXTRA.add(im); loadRealTrees(); } return im; }
 
 // read the texture once (small) to tell leaf from wood at each vertex's uv
-function sampler(map){ const img = map && map.image; if(!img || !img.width) return null; const N = 128, cv = document.createElement('canvas'); cv.width = cv.height = N;
+function sampler(map){ const img = map && (map.isCompressedTexture ? map.userData.px : map.image);   // (DIET 1 a KTX2 map: its small fallback picture)
+  if(!img || !img.width) return null; const N = 128, cv = document.createElement('canvas'); cv.width = cv.height = N;
   const x = cv.getContext('2d', { willReadFrequently:true }); x.drawImage(img, 0, 0, N, N); const d = x.getImageData(0, 0, N, N).data;
   return (u, v) => { const px = Math.min(N - 1, Math.max(0, Math.floor((u - Math.floor(u)) * N))), py = Math.min(N - 1, Math.max(0, Math.floor((1 - (v - Math.floor(v))) * N))), i = (py * N + px) * 4; return [d[i] / 255, d[i + 1] / 255, d[i + 2] / 255]; }; }
 function prepTree(gl, k, geoOnly, part){ let src = null, pi = 0; gl.scene.updateMatrixWorld(true); gl.scene.traverse(o => { if(o.isMesh && pi++ === (part || 0)) src = o; });   // (Z450 the part-th plant of the file)

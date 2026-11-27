@@ -12,7 +12,7 @@ const _p = new THREE.Vector3(), _bi = new THREE.Matrix4(), _c = new THREE.Color(
 // the colour of what he wears: his own texture read under the skin bound to the given bones (chest, shoulders, upper arms: the shirt) — the commonest colour
 // there (not the dark straps or the belt), as sRGB 0..1; null when there is no texture to read
 export function outfitColor(meshes, bones){ const out = []; if(typeof document === 'undefined') return null;
-  for(const m of meshes){ const mat = m.material, map = mat && mat.map, img = map && map.image, sk = m.skeleton, g = m.geometry, UV = g.attributes.uv, SI = g.attributes.skinIndex, SW = g.attributes.skinWeight;
+  for(const m of meshes){ const mat = m.material, map = mat && mat.map, img = map && (map.isCompressedTexture ? map.userData.px : map.image), sk = m.skeleton, g = m.geometry, UV = g.attributes.uv, SI = g.attributes.skinIndex, SW = g.attributes.skinWeight;
     if(!img || !sk || !UV || !SI || !SW) continue; const ids = new Set(bones.map(b => sk.bones.indexOf(b)).filter(i => i >= 0)); if(!ids.size) continue;
     const N = 512, cv = document.createElement('canvas'); cv.width = cv.height = N; const cx = cv.getContext('2d', { willReadFrequently:true }); try { cx.drawImage(img, 0, 0, N, N); } catch(e){ continue; }
     const px = cx.getImageData(0, 0, N, N).data, tint = mat.color ? _c.copy(mat.color).convertLinearToSRGB() : _c.setRGB(1, 1, 1), I = g.index, nt = I ? I.count / 3 : UV.count / 3;

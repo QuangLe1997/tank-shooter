@@ -7,13 +7,11 @@
 //   field is laid out (cover, camps and lava keep clear); a piece stops tanks and men by its true footprint (a box, an arch's two feet, a trunk),
 //   and a lava pit holds live melt that burns like any pool.
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { FUEL_DRUM, REALPROP, SCENERY, SKYLINE, FUEL_TANK, FARSITES } from '../../config.js';
-import { AER, PLAIN_DROP, landform, memRegister, useModel, warmTex, ARENA, BIOME, FORTS, HZN, LAND, LAVA, MOBILE, WALL_BANDS, WONDER, ZONES, arena, blendIn, blocks, cityBuildings, crushables, fieldR, groundGlowMesh, heightAt, inField, inZone, loadGLTF, loadRealCity, magmaMat, matNormModel, renderer, sectorize, SCENE_CUT } from '../hub.js';
+import { AER, PLAIN_DROP, landform, memRegister, useModel, warmTex, ARENA, BIOME, FORTS, HZN, LAND, LAVA, MOBILE, WALL_BANDS, WONDER, ZONES, arena, blendIn, blocks, cityBuildings, crushables, fieldR, groundGlowMesh, heightAt, inField, inZone, loadGLTF, loadRealCity, magmaMat, matNormModel, renderer, sectorize, SCENE_CUT, loadGLB } from '../hub.js';
 
 const DIR = 'assets/models/real/scene/', SUB = { d:'', l:'l/', f:'f/', m:'m/' }, LVL = {}, NORM = {};
-let _ldr = null, GEN = 0; const ldr = () => _ldr || (_ldr = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder));
+let GEN = 0;
 export const SCENE = { pieces:[] };
 const M = k => SCENERY.models[k];
 // a model's size in metres (x, y, z) from its config: h = its height, or w = its widest side
@@ -21,7 +19,7 @@ export function sceneDims(k, s = 1){ const C = M(k), a = C.ar; let f = C.h ? C.h
 // one level of a model: the mesh's geometry (quantized, as the file holds it), its material, the file's node transform
 export function sceneLevel(k, lv){ const id = k + ':' + lv; useModel('sc:' + id); if(LVL[id]) return LVL[id];   // (MEM 1 asked for by this field: kept)
   if(typeof window === 'undefined') return (LVL[id] = Promise.resolve(null));
-  const P = LVL[id] = ldr().loadAsync(DIR + SUB[lv] + k + '.glb').then(gl => { let src = null; gl.scene.updateMatrixWorld(true); gl.scene.traverse(o => { if(o.isMesh && !src) src = o; });
+  const P = LVL[id] = loadGLB(DIR + SUB[lv] + k + '.glb').then(gl => { let src = null; gl.scene.updateMatrixWorld(true); gl.scene.traverse(o => { if(o.isMesh && !src) src = o; });
     if(!src) return null; const g = src.geometry; if(!g.boundingBox) g.computeBoundingBox(); const mat = src.material, C = M(k) || {};
     mat.envMapIntensity = C.env ?? SCENERY.env; matNormModel(gl.scene, 'sc:' + k); blendIn(mat); if(lv !== 'd') warmTex(mat);   // (PERF 4 its maps to the GPU while no fight is on; the near one has warmMaps)
     memRegister('sc:' + id, ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap'].map(q => mat[q]).filter(t => t && t.isTexture), [g], () => { if(lv !== 'd') warmTex(mat); }, () => { if(LVL[id] === P) delete LVL[id]; });   // (MEM 1 a level no field asks for leaves the cache)

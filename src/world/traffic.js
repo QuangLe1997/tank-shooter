@@ -37,7 +37,8 @@ function bikeGeo(gl, len){ gl.scene.updateMatrixWorld(true); const sm = firstMes
   const m = sm.material.clone(); m.envMapIntensity = REALCITY.env; return { geo:g, mat:m }; }
 // Z269 a livery: the rider's green jacket and helmet (read from his own texture) turned to another colour — the app drivers' green, yellow or
 //   teal, or a plain navy / red jacket — the rest of the texture as it is
-function livery(tex, L){ const img = tex && tex.image; if(!img || !img.width) return tex; const W = img.width, H = img.height, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+function livery(tex, L){ const img = tex && tex.image; if(!img || !img.width || tex.isCompressedTexture) return tex;   // (DIET 2 its file keeps a JPEG colour map; a KTX2 one is left as it is)
+  const W = img.width, H = img.height, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
   const x = cv.getContext('2d', { willReadFrequently:true }); x.drawImage(img, 0, 0); const D = x.getImageData(0, 0, W, H), d = D.data, c = new THREE.Color(), hsl = {};
   for(let i = 0; i < d.length; i += 4){ c.setRGB(d[i] / 255, d[i + 1] / 255, d[i + 2] / 255); c.getHSL(hsl); const h = hsl.h * 360;
     if(h < 70 || h > 175 || hsl.s < 0.12 || hsl.l < 0.1 || hsl.l > 0.93) continue;

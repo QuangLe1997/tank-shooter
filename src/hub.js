@@ -33,6 +33,7 @@ export * from './fx/battle-light.js';   // Z318 one palette, pulse clock and glo
 export * from './render/surface.js';   // Z145
 export * from './fx/searchlight.js';   // Z146 (before world/biome.js: the floodlight masts are raised at boot)
 export * from './render/lod.js';
+export * from './render/asset-diet.js';   // DIET 1 one loader for every model file: meshopt geometry, KTX2 maps read compressed (vendored transcoder, fallback pictures)
 export * from './render/far-lod.js';   // Z328 big static models swap to a simplified copy far away
 export * from './render/shadow-split.js';   // SPLIT 1 the sun's shadow: the still part drawn once, the movers every frame
 export * from './render/quality.js';   // SPLIT 3 Thấp / Vừa / Cao + one level down after a load that never finished
