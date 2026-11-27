@@ -1123,6 +1123,17 @@ export const BODYHIT = { heavy:22, plate:{ lo:0.95, hi:1.55, pIn:0.5, pOut:0.3 }
   heat:{ op:0.6, fade:1.6, spark:0.8, n:2, reK:1.5 },
   vig:{ hit:1, fade:5.5, low:0.5, top:0.55 },
   low:{ below:0.3, beat:[0.62, 0.95], breath:2.6, beatG:0.5, breathG:0.22 } };
+// HURT 1 HIT FEEDBACK ON HIM (fx/soldier-fx.js hurtFlash · audio/body-hit.js) — he must SEE and HEAR every round that strikes him. on = false: HIT 1 as it was (a dev / probe switch)
+//   edge = the light-red rim flash, its own #hurtEdge (never #vignette: death / low health · never #bodyHeat: fire), run by the compositor (Web Animations: no per-frame
+//   write, it fades even while the loop is paused): peak = base + dmg × perDmg (dmg after armour), at most max; stack = the share of what still shows that a fresh hit
+//   adds (a burst builds it up); hold s at the peak, gone over fade s; shift = how far (share of the screen) the clear middle moves away from the shooter, so the rim
+//   is heavier on his side; turn = the least change of that direction (rad) that repaints the gradient; calm = its strength under prefers-reduced-motion (no hold)
+//   snd = what he hears on a round: gap s at least between two impacts (automatic fire: one thud per gap, not a machine-gun of them); punch = the body thwack played
+//   again punchRate× higher at this level (the old thwack lived under 170 Hz: a phone or laptop speaker never carried it); tock = the kevlar tick on a round that did
+//   not meet his plate; gruntGap s between his grunts; duck = the world's small arms dipped to this share for hold s, back in back s, on every hit (duckH a heavy one)
+export const HURTFX = { on:true,
+  edge:{ base:0.42, perDmg:0.016, max:0.9, stack:0.35, hold:0.06, fade:0.48, shift:0.12, turn:0.26, calm:0.55 },
+  snd:{ gap:0.08, punch:0.9, punchRate:2.2, tock:0.22, gruntGap:0.6, duck:0.62, duckH:0.45, hold:0.09, back:0.12 } };
 // SPACE — how much of the arena the fence encloses (custom battles); the campaign always fights on the full field
 export const SPACE = { small:{ vi:'HẸP', k:0.72, tx:'đánh giáp lá cà' }, mid:{ vi:'VỪA', k:0.86, tx:'cân bằng' }, wide:{ vi:'RỘNG', k:1, tx:'cơ động, bắn xa' } };
 // Z107 HULL FRONT MARKER — at speed the hull's heading is hard to read from above: a glowing chevron on the ground just ahead of the nose

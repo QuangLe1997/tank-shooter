@@ -2843,6 +2843,16 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   ok(Object.keys(F.looks).every(k=>G.looks[k] && typeof G.looks[k]==='object') && Object.keys(G.looks).every(k=>F.looks[k]), 'BOSSGRIP.looks: one row per boss look, none extra');
   ok(/function ik2\(/.test(src) && /function lay\(L\)/.test(src) && /u\.muzzle = mz/.test(src) && /u\.muzzle = L\.muzR/.test(src) && /L\.ikRest/.test(src) && /B\.look\.aimX = fo\.x/.test(fb), 'the gun on his aim, the IK, the rounds from the real muzzle (and the rig muzzle back at the strip), his man passed in'); }
 
+// HURT 1 he sees and hears every round that strikes him: a light-red rim of his own (#hurtEdge, faded by the compositor, never #vignette), heavier on the shooter's side;
+//   a thud a small speaker carries + the kevlar's tock, one per gap under automatic fire, the world's small arms dipped under it
+{ const fs=await import('node:fs'), { HURTFX:H }=await import('./config.js'), sf=fs.readFileSync('src/fx/soldier-fx.js','utf8'), bh=fs.readFileSync('src/audio/body-hit.js','utf8'), E=H&&H.edge, D=H&&H.snd;
+  ok(H && H.on===true && E.base>0.2 && E.base<E.max && E.max<=1 && E.perDmg>0 && E.base+20*E.perDmg<=E.max && E.stack>=0 && E.stack<0.6 && E.hold>=0 && E.hold<0.15 && E.hold+E.fade>=0.4 && E.hold+E.fade<=0.65 && E.shift>0 && E.shift<0.25 && E.calm>0 && E.calm<1,
+    'HURTFX.edge: a hit flashes '+E.base+'–'+E.max+', gone in '+(E.hold+E.fade).toFixed(2)+' s, softer ('+E.calm+'×) under reduced motion');
+  ok(D.gap>=0.05 && D.gap<=0.15 && D.punchRate>1.5 && D.punchRate<3 && D.punch>0 && D.punch<=1 && D.tock>0 && D.gruntGap>=0.4 && D.duck>0.4 && D.duck<1 && D.duckH<=D.duck && D.hold+D.back<0.4,
+    'HURTFX.snd: one impact per '+D.gap+' s at most, the thud again '+D.punchRate+'× higher, a grunt every '+D.gruntGap+' s at most, the world dipped to '+D.duck);
+  ok(/id = 'hurtEdge'/.test(sf) && /el\.animate\(/.test(sf) && /if\(HURTFX\.on\) hurtFlash\(dmg/.test(sf) && !/hurtEdge[^\n]*filter:/.test(sf) && /prefers-reduced-motion/.test(sf), 'the flash has its own rim, an opacity animation (no filter), and asks for reduced motion');
+  ok(/one\('thwack', D\.punch \* hk, D\.punchRate/.test(bh) && /now - BH\.hitAt >= D\.gap/.test(bh) && /dip\(heavy \? D\.duckH : D\.duck\)/.test(bh), 'his own round: the thud + its higher twin, rate-limited, the world dipped'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
