@@ -176,7 +176,7 @@ export function scoreBattle(spec, opts){ const n = spec && spec.plan && spec.cla
   const simK = k('sim.timeScale'), rateX = k('enemy.haste') * simK;
   const dmgX = k('enemy.dmg') * dmgS * d.dmg, accX = Math.pow(k('foe.aim'), 0.8) * Math.pow(k('foe.aware'), 0.4) * Math.pow(k('foe.iq'), 0.3) * Math.pow(k('elite.iq') * k('elite.aim'), 0.15);
   const mateX = Math.cbrt(k('mate.tough') * k('mate.aim') * k('mate.aware'));
-  const threat = dmgX * accX * Math.pow(rateX, 0.8) * Math.pow(numX, 0.7) * Math.pow(k('pace.ease'), 0.6);
+  const threat = dmgX * accX * Math.pow(rateX, 1.5) *   /* MIX 2 calibrated: speed 100 measured ×3.6 damage taken / min, ×2.4 pressure (one 55 s run) — 0.8 predicted ×1.3 */  Math.pow(numX, 0.7) * Math.pow(k('pace.ease'), 0.6);
   const sustain = (V['player.hp'].v / 150) * Math.pow((V['player.lives'].v + 1) / 6, 0.35) * Math.pow(k('loot.relief'), 0.3) * Math.pow(k('loot.drop'), 0.12) * Math.pow(k('loot.ammo'), 0.2) * Math.pow(k('pace.lull'), 0.15) * Math.pow(mateX, 0.25) * Math.pow(V['player.squad'].v / 6, 0.2);
   const grind = hpX * Math.pow(numX, 0.3) * Math.pow(k('boss.tough'), 0.15);
   const diffRaw = Math.log(threat * Math.sqrt(grind) / sustain), difficulty = clamp(50 + S.diffK * diffRaw / ln2, 0, 100);
