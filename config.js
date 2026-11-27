@@ -2518,6 +2518,56 @@ export const TROOPER = {
   general:{ hpK:70, dmg:7, fireCd:0.4, range:30, keep:13, speed:4.6, scale:1.18, hitCap:0.06, guards:3, callAt:0.5, callN:4, guardHpK:4, rageAt:0.3, rageFire:0.6, rageRun:1.3,
     fan:{ cd:6.5, n:9, arc:0.75, dmg:6, tel:0.75 }, nade:{ cd:8.5, n:3, R:3.4, dmg:36, lock:1.35, scatter:4.5 } },
 };
+// MEDAL 1–4 REWARDS AND PROGRESSION (C8): the soldier's CAREER across battles — experience, a Vietnamese army rank, guns opened by rank, medals by play
+//   style, the end-of-battle report (data/medal-rules.js the pure rules · game/medals.js the battle's ledger · ui/medals-ui.js the screens). The save:
+//   PROFILE.career = { v, xp, battles, won, kills, time, best:{ longest, multi }, m:{ <medal id>:[best tier, times] }, keep:[gun ids] } (medalCareerClean).
+//   ranks: the career's ladder, Binh nhì → Đại tướng. need: experience from rank r to r + 1 = need[0] + need[1]·r + need[2]·r².
+//   The battle's own ladder (TROOPER, game/soldier-rank.js: the perks, the gift crates) now reads BẬC 1… — only the career wears rank names.
+//   xp: what each line of the battle's ledger is worth (kills by kind, the play-style feats, a stage won / the campaign won, a medal by its tier) —
+//     cap: the most one battle can earn, live or at its end. statCap: the most any one count of a ledger can reach (a sanity bound, cleaned on every read).
+//   unlock: the career rank that opens each gun in the pre-battle gun strip (CHUẨN BỊ TRẬN · Kho súng). There is no shop any more (NO-TANKS 6), so nothing is
+//     ever bought twice: a locked gun is still picked up on the field (enemy drops, supply crates) — the rank only opens it as the gun he carries IN. The gun a
+//     save already carried in when the career began is kept open (keep).
+//   longM: a long shot (m from him to the man he killed) · markT: s a hit stays his (or his mate's) for the kill to be credited · multiT: s between kills of one
+//     multi-kill · rideM: m a ride must cover to count · lowHp / liveS / reset: a "near death" is health under lowHp of max, alive liveS s later (again only after
+//     it was back over reset) · perS: the most kills credited to one soldier in one second (more is dropped: a sanity bound, host-side in co-op).
+//   list: the medals — id, nm (name), ic (an icon of ui/icons.js or the screen's own: blade, bike), stat (the ledger's count it reads), tiers [đồng, bạc, vàng]
+//     (null = no such tier: a gold-only medal), ds (the rule, the tier numbers are added by the screen).
+//   toast: s a medal's toast stays, s between two, the most waiting · rankUp: s the career's rank-up card stays in battle · board: ms before the report opens
+//     over an end screen, ms the XP bar takes to fill.
+export const MEDALS = { on:true, v:1,
+  ranks:['BINH NHÌ','BINH NHẤT','HẠ SĨ','TRUNG SĨ','THƯỢNG SĨ','THIẾU ÚY','TRUNG ÚY','THƯỢNG ÚY','ĐẠI ÚY','THIẾU TÁ','TRUNG TÁ','THƯỢNG TÁ','ĐẠI TÁ','THIẾU TƯỚNG','TRUNG TƯỚNG','THƯỢNG TƯỚNG','ĐẠI TƯỚNG'],
+  need:[600, 400, 60],
+  xp:{ inf:10, veh:25, air:30, elite:15, general:300, boss:400, nemesis:200, long:5, stealth:8, blade:4, nade:3, trample:3, multi:5, team:2, save:50, side:80, escape:20,
+    won:150, final:500, tier:[0, 30, 70, 150], cap:6000 },
+  statCap:{ kills:400, inf:400, veh:120, air:60, elite:80, long:300, longest:600, stealth:200, blade:300, nade:300, trample:200, multiBest:30, multiX:400, streak:400, streakBest:400,
+    team:800, save:20, side:6, boss:4, general:4, nemesis:2, rides:40, rideM:20000, escape:20, hits:2000, dmg:100000, total:1200, t:7200 },
+  unlock:{ carbine:0, t_ak:0, t_m4:0, t_mp5:0, t_shotgun:1, t_rust:1, t_lmg:2, t_gl:2, t_flamer:3, t_saw:3, t_dmr:4, t_sniper:4, t_minigun:5, t_energy:5, t_rail:6 },
+  longM:45, markT:2, multiT:2.5, rideM:30, lowHp:0.15, liveS:10, reset:0.5, perS:12,
+  list:[
+    { id:'xathu',   nm:'XẠ THỦ',             ic:'crosshair', stat:'long',       tiers:[3, 8, 15],   ds:'Hạ địch từ 45 m trở lên' },
+    { id:'matung',  nm:'MẮT ƯNG',            ic:'sniper',    stat:'longest',    tiers:[60, 90, 130], ds:'Một phát hạ địch thật xa (m)' },
+    { id:'bongma',  nm:'BÓNG MA',            ic:'eyeOpen',   stat:'stealth',    tiers:[2, 5, 10],   ds:'Hạ gục mà không ai hay biết' },
+    { id:'thandao', nm:'THẦN ĐAO',           ic:'blade',     stat:'blade',      tiers:[5, 12, 25],  ds:'Hạ địch bằng đao hoặc dao găm' },
+    { id:'mualuu',  nm:'MƯA LỰU ĐẠN',        ic:'bomb',      stat:'nade',       tiers:[4, 10, 20],  ds:'Hạ địch bằng lựu đạn, M79' },
+    { id:'dasat',   nm:'ĐA SÁT',             ic:'burst',     stat:'multiBest',  tiers:[3, 5, 8],    ds:'Hạ liền nhiều địch, mỗi tên cách nhau dưới 2,5 giây' },
+    { id:'khongxx', nm:'KHÔNG VẾT XƯỚC',     ic:'shield',    stat:'streakBest', tiers:[10, 25, 50], ds:'Hạ liền bấy nhiêu địch mà không trúng một viên' },
+    { id:'cuutinh', nm:'CỨU TINH',           ic:'heart',     stat:'save',       tiers:[1, 2, 4],    ds:'Đỡ đồng đội đứng dậy, phá trại giải cứu tù binh' },
+    { id:'phathanh',nm:'PHÁ THÀNH',          ic:'bunker',    stat:'boss',       tiers:[1, 2, 3],    ds:'Hạ trùm giữ thành' },
+    { id:'hatuong', nm:'HẠ TƯỚNG',           ic:'star',      stat:'general',    tiers:[1, 2, 3],    ds:'Hạ tướng địch' },
+    { id:'kethu',   nm:'KẺ THÙ TRUYỀN KIẾP', ic:'alert',     stat:'nemesis',    tiers:[null, null, 1], ds:'Hạ viên tướng từng thoát khỏi tay anh' },
+    { id:'bactai',  nm:'BÁC TÀI THÂN THIẾT', ic:'bike',      stat:'rides',      tiers:[2, 4, 8],    ds:'Những chuyến xe ôm trên 30 m' },
+    { id:'xungphong',nm:'XUNG PHONG',        ic:'dash',      stat:'trample',    tiers:[3, 8, 15],   ds:'Lao ngựa, lao xe húc ngã địch' },
+    { id:'chienbinh',nm:'CHIẾN BINH',        ic:'rifle',     stat:'kills',      tiers:[25, 60, 120],ds:'Địch do chính tay anh hạ' },
+    { id:'dietxe',  nm:'DIỆT XE',            ic:'shell',     stat:'veh',        tiers:[2, 5, 10],   ds:'Xe địch bị anh phá huỷ' },
+    { id:'phongkhong',nm:'PHÒNG KHÔNG',      ic:'flak',      stat:'air',        tiers:[1, 3, 6],    ds:'Trực thăng, máy bay địch bị anh bắn rơi' },
+    { id:'tinhnhue',nm:'SĂN TINH NHUỆ',      ic:'target',    stat:'elite',      tiers:[2, 5, 10],   ds:'Lính tinh nhuệ bị anh hạ' },
+    { id:'chihuy',  nm:'CHỈ HUY',            ic:'team',      stat:'team',       tiers:[10, 25, 50], ds:'Địch do tổ của anh, đồng đội, pháo kích hạ' },
+    { id:'thoatchet',nm:'THOÁT CHẾT',        ic:'hourglass', stat:'escape',     tiers:[1, 2, 4],    ds:'Còn dưới 15% máu mà vẫn sống thêm 10 giây' },
+    { id:'dacnhiem',nm:'ĐẶC NHIỆM',          ic:'pack',      stat:'side',       tiers:[1, 2, 3],    ds:'Nhiệm vụ phụ hoàn thành' },
+  ],
+  toast:{ hold:3.4, gap:0.45, max:5 }, rankUp:{ hold:3.8 }, board:{ delay:900, fill:1600 },
+};
 // NEMESIS 1–3 THE ENEMY GENERAL REMEMBERS YOU (campaign/nemesis.js + the pure rules in data/nemesis-mem.js; the save: PROFILE.nemesis = { v, g:{ <general id>:
 //   { met, kills, fled, falls, out, loop, rank, how, gun, scar, traits, last } } }, cleaned by nemClean whenever it is read from a save or the cloud — it syncs).
 //   cap: the most a record counts (meetings, times he killed the player, escapes), his rank, the kill marks drawn beside his name, the traits he keeps.

@@ -3,7 +3,7 @@
 //   is taken, pick up a rifle and follow you into the fight.
 import * as THREE from 'three';
 import { POW, TROOPS } from '../../config.js';
-import { FT, MOBILE, S, addScore, burst, campMats, floatText, guardsLeft, heightAt, loopRewardMul, makeSoldierMesh, makeTent, radio, scene, sfx, soldierKneel, spawnAlly, spawnGuards, svgBadgeTex, tip, zonesOf, addTent } from '../hub.js';
+import { FT, MOBILE, S, addScore, burst, campMats, floatText, guardsLeft, heightAt, loopRewardMul, makeSoldierMesh, makeTent, radio, scene, sfx, soldierKneel, spawnAlly, spawnGuards, svgBadgeTex, tip, zonesOf, addTent, medalEvent } from '../hub.js';
 
 export const POWS=[];
 let _wireMat=null;
@@ -53,4 +53,4 @@ export function updatePOWs(dt, now){ const p=S.player; if(!p) return;
     w.badge.material.opacity=0.65+0.35*Math.sin(now*6);                                     // open: the badge blinks until someone reaches the gate
     const near=Math.hypot(p.pos.x-w.gate[0], p.pos.z-w.gate[1])<POW.freeR || Math.hypot(p.pos.x-w.x, p.pos.z-w.z)<POW.freeR;
     const walkIn=FT.some(a=>Math.hypot(a.pos.x-w.x, a.pos.z-w.z)<w.q.r*0.7);
-    if(near || walkIn) liberate(w); } }
+    if(near || walkIn){ if(near) medalEvent('save'); liberate(w); } } }   // MEDAL 2 he freed them himself: a save (game/medals.js)

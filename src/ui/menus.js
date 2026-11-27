@@ -1,5 +1,5 @@
 // ui/menus.js — title screen: greeting, the hero (CHƠI NGAY / CHƠI TIẾP), nickname dialog, and the shared tap helpers (tapBtn / tapEl / escapeHtml / capVi).
-import { dailyHome, buildSettings, launchGame, MOBILE, PROFILE, S, BS, biomeVi, buildTerrainPicker, campaignMax, hide, levelInfo, openBattleSetup, queueResize, saveProfile, sfx, show, TOD_LABEL } from '../hub.js';
+import { dailyHome, buildSettings, launchGame, MOBILE, PROFILE, S, BS, biomeVi, buildTerrainPicker, campaignMax, hide, levelInfo, openBattleSetup, queueResize, saveProfile, sfx, show, TOD_LABEL, medalHomeLine } from '../hub.js';
 
 // ----------------------------- PROFILE UI: nickname · arsenal/loadout · continue · reset -----------------------------
 // XK-UI sentence case for the data written in capitals (battlefields, hours, weather): "SA MẠC" → "Sa mạc"
@@ -15,6 +15,7 @@ export function refreshStartUI(){
   try{ const ps=document.getElementById('playSub'), I=levelInfo(campaignMax()); if(ps) ps.textContent='Cấp '+I.L+' · '+capVi(biomeVi(I.biome.name))+' · '+capVi(TOD_LABEL[I.tod]||'').toLocaleLowerCase('vi')+(I.boss?' · trận tướng':''); }catch(e){}   // Z152 what PLAY starts
   const hello=document.getElementById('hello');
   if(hello) hello.innerHTML = PROFILE.nickname ? ('<small>Chỉ huy</small><b>'+escapeHtml(PROFILE.nickname)+'</b>') : '';
+  medalHomeLine();   // MEDAL 3 his rank under the call-sign
   document.body.classList.toggle('hassave', hasSave);
   // XK-UI one hero: CHƠI TIẾP when a checkpoint exists (a new battle is then one tap away in Chọn trận), else CHƠI NGAY
   const play=document.getElementById('playBtn'), cont=document.getElementById('continueBtn');

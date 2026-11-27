@@ -1,7 +1,7 @@
 // game/player-damage.js — PLAYER DAMAGE / DEATH
 import * as THREE from 'three';
 import { BODYHIT, CAV, RIDE_ACT } from '../../config.js';
-import { bladeGuardK, bodyHitSound, modeOver, reportRun, soldierHitFX, BEST, CV, S, clampField, heightAt, camera, cavDeathStart, cavDeathUpdate, cavRespawn, enemies, floatText, haptic, padHit, recordRun, ringPulse, saveProfile, sayVoice, sfx, show, updateHUD, rideHit, driverBack, driverDone, driverSurrender, dirDeath, nemDeathLine, nemPlayerDied, coopDie, coopGameOver, coopHurtMate } from '../hub.js';
+import { bladeGuardK, bodyHitSound, modeOver, reportRun, soldierHitFX, BEST, CV, S, clampField, heightAt, camera, cavDeathStart, cavDeathUpdate, cavRespawn, enemies, floatText, haptic, padHit, recordRun, ringPulse, saveProfile, sayVoice, sfx, show, updateHUD, rideHit, driverBack, driverDone, driverSurrender, dirDeath, nemDeathLine, nemPlayerDied, coopDie, coopGameOver, coopHurtMate, medalEnd } from '../hub.js';
 
 // ----------------------------- PLAYER DAMAGE / DEATH -----------------------------
 // kind = what struck him: 'shot' (a round, the default) | 'blast' | 'fire' | 'fall'; hy = how high over his feet a round arrived (m, optional: the plate carrier's tick)
@@ -60,7 +60,7 @@ export function respawnPlayer(now){
 export function gameOver(reason){
   if(S.mode==='gameover') return;
   if(modeOver(reason)) return;   // MODE 3 a night defence / a daily challenge ends on its own result card: no campaign record, no report (campaign/mode-run.js)
-  S.mode='gameover'; coopGameOver();   /* COOP 6 (the guest's battle ends with the host's; nothing without a room) */ try{ reportRun({ cleared:false }); }catch(e){}
+  S.mode='gameover'; medalEnd('lost'); coopGameOver();   /* COOP 6 (the guest's battle ends with the host's; nothing without a room) */ try{ reportRun({ cleared:false }); }catch(e){}
   { const w=document.getElementById('go-why'), L=Math.max(0, S.player ? S.player.lives : 0);   // Z133 say WHY the battle was lost (the base core can fall while you still have lives)
     const nm=t=>{ t=String(t||'').toLocaleLowerCase('vi'); return t.charAt(0).toLocaleUpperCase('vi')+t.slice(1); };   // XK-UI the reason in plain sentence case
     if(w) w.innerHTML = reason==='HẾT MẠNG' ? '<b>Hết mạng.</b> Người lính ngã xuống khi không còn lượt hồi sinh.' : '<b>'+nm(reason)+'.</b> Mất Lõi căn cứ là thua ngay, dù còn ×'+L+' mạng. Để mắt tới thanh Lõi và chạy về chặn địch khi nó tụt.'; nemDeathLine(w); }   // NEMESIS 3 the general's word when the last life went to him

@@ -2,7 +2,7 @@
 //   (no-tanks: the tank's lock-on missile gun — its seeker, reticles, smart mini-missiles, homing — is gone; the file keeps its name)
 import * as THREE from 'three';
 import { LETHAL, SQUAD, FORT, TREEFALL, AIRAIM, LINE, GUNFX, GUNFEEL } from '../../config.js';
-import { hitConfirm, sfx, wrapAngle, ARC_G, ARENA, BVIS, DW, droneShot, FT, GLOW, MOBILE, S, UGRID, UNDER, _hot, addTrail, armorOf, ballisticInit, ballisticStep, ballisticTrailK, bloodSpurt, bulletFalloff, bulletPool, bullets, core, damageAlly, damageBlock, damageCore, damageEnemy, damagePlayer, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, fortIntactCross, fortWallCross, groundHit, heightAt, impactFX, lightning, nearMiss, orientShell, ringPulse, rocketExhaust, shellStretch, shellTrail, shootGuard, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, sweepPoint, tunnelBlast, typeMul, unitsNear, vaporWake, shotTree, trafficShot, dodgeShot, stealthShot, lineHit, inShape, dressRound, sandProof, bulletImpact, hitMat, climbPerch, tracerHit, fireFxOn, CO, coopBulletMate } from '../hub.js';
+import { hitConfirm, sfx, wrapAngle, ARC_G, ARENA, BVIS, DW, droneShot, FT, GLOW, MOBILE, S, UGRID, UNDER, _hot, addTrail, armorOf, ballisticInit, ballisticStep, ballisticTrailK, bloodSpurt, bulletFalloff, bulletPool, bullets, core, damageAlly, damageBlock, damageCore, damageEnemy, damagePlayer, damageSoldier, detonate, dirtGeyser, effectFeedback, enemies, envDmg, fenceShot, fortIntactCross, fortWallCross, groundHit, heightAt, impactFX, lightning, nearMiss, orientShell, ringPulse, rocketExhaust, shellStretch, shellTrail, shootGuard, siegeMul, soldiers, spawnPart, structMul, suppress, surfaceHit, sweepPoint, tunnelBlast, typeMul, unitsNear, vaporWake, shotTree, trafficShot, dodgeShot, stealthShot, lineHit, inShape, dressRound, sandProof, bulletImpact, hitMat, climbPerch, tracerHit, fireFxOn, CO, coopBulletMate, medalShot } from '../hub.js';
 
 // Z238 how high a block stands (world y of its top), measured once from its mesh and again after it has been damaged
 const _tb=new THREE.Box3();
@@ -127,7 +127,7 @@ export function updateBullets(dt, now){
           e._big = !b.inf && (b.aoe>0 || b.dmg>=30); e._blast=null; e._hitK=b.dmg/40; { const L=Math.hypot(b.vx,b.vz)||1; e._hx=b.vx/L; e._hz=b.vz/L; }
           if(e.def.inf) bloodSpurt(e.pos.x, e.pos.z, b.vx, b.vz, b.inf ? 0.7 : 1.4);   // Z113 every hit on a man shows   // Z112 a heavy round throws a soldier; small arms just drop him
           if(e.def.inf && !b.inf && LETHAL.heavyKills) dmg=Math.max(dmg, e.hp+1);   // Z104 a heavy round (AP slug, rocket, grenade) = one dead man
-          damageEnemy(e, dmg); if(b.reach) hitConfirm(e.hp<=0);   // GUN 3 his own round struck: the mark at the crosshair, the click (actors/gun-feel.js)
+          if(b.reach) medalShot(e, b); damageEnemy(e, dmg); if(b.reach) hitConfirm(e.hp<=0);   // GUN 3 his own round struck: the mark at the crosshair, the click (actors/gun-feel.js)
           const _bl=Math.hypot(b.vx,b.vz)||1, _imp=Math.min(15, (2.2+b.dmg*0.08)*(b.knock||1))/(e.def.scale||1);   // shove back along the shot; per-gun KNOCK; heavy tanks resist
           e.kbx+=(b.vx/_bl)*_imp; e.kbz+=(b.vz/_bl)*_imp; e.hitT=Math.max(e.hitT,0.16);
           if(b.chain){ let hits=b.chain;                                                                               // TESLA: arc to nearby enemies

@@ -13,7 +13,7 @@
 //   clocks count the frames' own dt (a pause stops them); a delayed line is a frame count too (modeSay), never a timer. The campaign director's memory of deaths
 //   (PROFILE.dirEase) is parked in PROFILE.modes.hold for the run and put back — at the next page load if the tab was closed in the middle of one.
 import { DIRECTOR, DRONEWAR, LOGISTICS, SIDEMISSION } from '../../config.js';
-import { fieldMark, coopSeedStep, BIOME, DIFF_META, PROFILE, S, SHOTS, TOD_LABEL, biomeVi, capVi, hide, knobApply, knobRefs, launchGame, modeClockTx, quitToMenu, radio, saveProfile, sfx, show, tapBtn } from '../hub.js';
+import { fieldMark, coopSeedStep, BIOME, DIFF_META, PROFILE, S, SHOTS, TOD_LABEL, biomeVi, capVi, hide, knobApply, knobRefs, launchGame, modeClockTx, quitToMenu, radio, saveProfile, sfx, show, tapBtn, medalEnd } from '../hub.js';
 
 const KNOBS = { DIRECTOR, DRONEWAR, LOGISTICS, SIDEMISSION };   // the config objects a modifier's `set` may name (test.js holds DAILY.mods to this list)
 const DEFS = {};                                                // id → the mode's handlers (modeDefine)
@@ -96,7 +96,7 @@ export function modeCard(o){ MODE.over = true; MODE.card = o; S.mode = 'gameover
   put('meStats', e => { e.replaceChildren(); for(const [l, v] of o.stats || []){ const d = document.createElement('div'), a = document.createElement('div'), b = document.createElement('div'); d.className = 'go-stat'; a.className = 'l'; b.className = 'v'; a.textContent = l; b.textContent = v; d.append(a, b); e.appendChild(d); } });
   put('meBest', e => { e.textContent = o.best || ''; e.classList.toggle('newbest', !!o.newBest); }); put('meHint', e => { e.textContent = o.hint || ''; });
   put('meGoT', e => { e.textContent = o.go || ''; }); put('meCopyT', e => { e.textContent = (o.copy && o.copy.label) || ''; }); put('meCopy', e => { e.style.display = o.share ? '' : 'none'; });
-  show('modeEnd'); sfx(o.lost ? 'alarm' : 'levelup'); }
+  show('modeEnd'); sfx(o.lost ? 'alarm' : 'levelup'); medalEnd(o.lost ? 'lost' : 'won'); }   // MEDAL 2 a mode's battle counts for the career too (its report opens over the card)
 // COPY RESULT: the text to the clipboard (the async API where the page may use it, else a hidden field and the old command); the button says what happened
 function copyText(t){ const old = () => { try{ const a = document.createElement('textarea'); a.value = t; a.setAttribute('readonly', ''); a.style.cssText = 'position:fixed;left:-99px;top:0;opacity:0'; document.body.appendChild(a); a.select(); const ok = document.execCommand('copy'); a.remove(); return !!ok; }catch(e){ return false; } };
   try{ if(navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(t).then(() => true, () => old()); }catch(e){} return Promise.resolve(old()); }

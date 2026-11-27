@@ -9,7 +9,7 @@
 //   the stage won, a restart, the menu). A life lost ends the mission in hand. One slow tick (SIDEMISSION.tick) does the thinking; a frame only moves what moves.
 import * as THREE from 'three';
 import { ENTRY, OUTPOST, SIDEMISSION, STORY, TROOPS } from '../../config.js';
-import { BIGEV, AMMO, ARENA, POWERUPS, S, UNDER, addScore, animateSoldier, aoeDamage, bigExplode, blocks, buildTransport, burst, callStrike, chute, dirOfferOk, dropPowerup, edgeEntry, enemies, entrySeen, fieldEdgePoint, fireball, floatText, gainXp, hatchEntry, heightAt, holoRing, inCamView, inField, loadGLTF, makeSoldierMesh, radio, ringPulse, scene, sfx, showBanner, soldierKneel, spawnAlly, spawnPart, spawnSquad, squadTypes, storyCue, svgBadgeTex } from '../hub.js';
+import { BIGEV, AMMO, ARENA, POWERUPS, S, UNDER, addScore, animateSoldier, aoeDamage, bigExplode, blocks, buildTransport, burst, callStrike, chute, dirOfferOk, dropPowerup, edgeEntry, enemies, entrySeen, fieldEdgePoint, fireball, floatText, gainXp, hatchEntry, heightAt, holoRing, inCamView, inField, loadGLTF, makeSoldierMesh, radio, ringPulse, scene, sfx, showBanner, soldierKneel, spawnAlly, spawnPart, spawnSquad, squadTypes, storyCue, svgBadgeTex, medalEvent } from '../hub.js';
 
 const C = SIDEMISSION, R2 = a => a[0] + Math.random() * (a[1] - a[0]), _pt = { x:0, y:0, z:0 }, _v = new THREE.Vector3();
 const OFF = typeof location !== 'undefined' && /noevents/.test(location.search + location.hash);
@@ -59,7 +59,7 @@ function unblock(b){ const i = b ? blocks.indexOf(b) : -1; if(i >= 0) blocks.spl
 function base(kind, K, x, z, r){ return { kind, K, t:K.t, x, z, r, prog:0, state:'go', endT:0, sub:'', men:[], strike:0 }; }
 // the mission is over: won (the reward, the line), lost or expired (the line) — its marker goes now, its card shows the outcome for endHold s, then cleanup
 function finish(M, state, now, key, sub){ const K = M.K, st = SIDEM.stats; M.state = state === 'won' ? 'won' : 'lost'; M.endT = C.endHold; M.sub = sub; markOff(); SIDEM.wait = R2(C.every); st[state]++; note(M.kind + ' ' + state, sub);
-  if(state === 'won'){ addScore(K.score, _v.set(M.x, heightAt(M.x, M.z) + 4, M.z)); gainXp(K.xp, M); showBanner('NHIỆM VỤ PHỤ HOÀN THÀNH', '#9be04a'); sfx('levelup'); }
+  if(state === 'won'){ addScore(K.score, _v.set(M.x, heightAt(M.x, M.z) + 4, M.z)); gainXp(K.xp, M); medalEvent('side'); showBanner('NHIỆM VỤ PHỤ HOÀN THÀNH', '#9be04a'); sfx('levelup'); }
   else if(state !== 'aborted') showBanner(state === 'expired' ? 'NHIỆM VỤ PHỤ: HẾT GIỜ' : 'NHIỆM VỤ PHỤ THẤT BẠI', '#ff9a7a');
   if(key) say(key, state === 'won'); }
 // everything the mission still has on the field (what it left behind was handed to SIDEM.props)

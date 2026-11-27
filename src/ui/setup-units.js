@@ -3,7 +3,7 @@
 //   honest bars (how quick, how tough, how wide he can fire) and what the driver does for him. Every picture is a photo from the game (assets/units).
 //   Also the loadout chips in the footer and the "ĐỘI HÌNH XUẤT KÍCH" strip on the briefing.
 import { TROOPER } from '../../config.js';
-import { GUNS, KIT_GUN, PRIMARY_GUNS, PROFILE, capVi, gunPicEl, saveProfile, sfx, storyMate, tapEl } from '../hub.js';
+import { GUNS, KIT_GUN, PRIMARY_GUNS, PROFILE, capVi, gunPicEl, saveProfile, sfx, storyMate, tapEl, medalGunLock, trooperMain } from '../hub.js';
 
 const PIC = k => 'assets/units/' + k + '.webp';
 export const RIDES = {
@@ -39,10 +39,10 @@ function soldierGear(host, refresh){ const wrap = el('div', 'su-eq inf'), tr = t
   rides.appendChild(rg); wrap.appendChild(rides);
   // Z359 the rifle he carries in (the B41 always comes too); the rest he finds on the field · Z411 every one of his guns (PRIMARY_GUNS), four in view and the
   //   row slid sideways for the rest (where it was left, the one picked always in view), the B41 last, marked as always carried
-  const gk = PRIMARY_GUNS.includes(PROFILE.trooperGun) ? PROFILE.trooperGun : 'carbine', gw = el('div', 'su-pg'); gw.appendChild(el('div', 'su-h', 'Súng chính <small>' + PRIMARY_GUNS.length + ' khẩu, luôn kèm B41 — súng khác nhặt trong trận</small>'));
-  const gg = el('div', 'su-pgrid'); for(const id of [...PRIMARY_GUNS, KIT_GUN]){ const G = GUNS[id], kit = id === KIT_GUN, c = el('div', 'su-pgun' + (id === gk ? ' on' : '') + (kit ? ' kit' : '')); if(!kit) c.dataset.pad = '1'; c.appendChild(gunPicEl(id, 'su-pgpic'));
-    c.appendChild(el('div', 'su-pgtx', '<b>' + G.name + '</b>' + (kit ? '<small class="su-kit">Luôn mang theo</small>' : '') + [['Sát thương', G.dmg * (G.frags || 1) / 16], ['Nhịp bắn', 0.068 / G.fireCd], ['Tầm', (G.rng || 1) / 1.15]].map(([l, k]) => '<div class="su-pr"><span>' + l + '</span>' + pips(Math.max(1, Math.round(k * 5))) + '</div>').join('')));
-    if(!kit) tapEl(c, () => { PROFILE.trooperGun = id; saveProfile(); sfx('click'); refresh(); }); gg.appendChild(c); }
+  const gk = trooperMain(), gw = el('div', 'su-pg'); gw.appendChild(el('div', 'su-h', 'Súng chính <small>' + PRIMARY_GUNS.length + ' khẩu, luôn kèm B41 — súng khác nhặt trong trận</small>'));
+  const gg = el('div', 'su-pgrid'); for(const id of [...PRIMARY_GUNS, KIT_GUN]){ const G = GUNS[id], kit = id === KIT_GUN, lock = kit ? '' : medalGunLock(id), c = el('div', 'su-pgun' + (id === gk ? ' on' : '') + (kit ? ' kit' : '') + (lock ? ' mdl-locked' : '')); if(!kit && !lock) c.dataset.pad = '1'; c.appendChild(gunPicEl(id, 'su-pgpic'));
+    c.appendChild(el('div', 'su-pgtx', '<b>' + G.name + '</b>' + (kit ? '<small class="su-kit">Luôn mang theo</small>' : lock ? '<small class="su-kit mdl-lk">' + lock + '</small>' : '') + [['Sát thương', G.dmg * (G.frags || 1) / 16], ['Nhịp bắn', 0.068 / G.fireCd], ['Tầm', (G.rng || 1) / 1.15]].map(([l, k]) => '<div class="su-pr"><span>' + l + '</span>' + pips(Math.max(1, Math.round(k * 5))) + '</div>').join('')));
+    if(!kit && !lock) tapEl(c, () => { PROFILE.trooperGun = id; saveProfile(); sfx('click'); refresh(); }); gg.appendChild(c); }
   gg.addEventListener('scroll', () => { _pgX = gg.scrollLeft; }, { passive:true });
   const place = () => { gg.scrollLeft = _pgX; const on = gg.querySelector('.su-pgun.on'); if(!on) return; const a = on.getBoundingClientRect(), b = gg.getBoundingClientRect();
     if(a.left < b.left || a.right > b.right) gg.scrollLeft += a.left - b.left - (b.width - a.width) / 2; };
@@ -55,7 +55,7 @@ function soldierGear(host, refresh){ const wrap = el('div', 'su-eq inf'), tr = t
 // ---- the footer's loadout chips (a tap goes back to that step) ----
 export function loadoutChips(host, goStep){ host.replaceChildren(); const add = (t, s, step) => { const c = el('div', 'su-chip', t + (s ? '<small>' + s + '</small>' : '')); c.dataset.pad = '1'; tapEl(c, () => { sfx('click'); goStep(step); }); host.appendChild(c); };
   const R = RIDES[rideOf()]; add(capVi(TROOPERS[trooperOf()].nm), 'người lính', 2); add(capVi(R.nm), R.drv ? 'bác tài lái' : 'tự cưỡi', 2);   // (XK-UI the 'NGƯỜI LÍNH · bộ binh' chip went: the soldier is the only unit since no-tanks)
-  add((GUNS[PRIMARY_GUNS.includes(PROFILE.trooperGun) ? PROFILE.trooperGun : 'carbine'] || {}).name || 'SÚNG', 'súng chính', 2); }
+  add((GUNS[trooperMain()] || {}).name || 'SÚNG', 'súng chính', 2); }
 // ---- the briefing: who is going in ----
 export function briefTeam(){ const host = document.getElementById('br-team'); if(!host) return; host.replaceChildren();
   const tile = (src, html, cls) => { const t = el('div', 'br-tm' + (cls ? ' ' + cls : '')); if(src) t.appendChild(img(src, 'br-tmp')); else t.appendChild(el('div', 'br-tmp', html[1])); t.appendChild(el('div', 'br-tmt', html[0])); host.appendChild(t); };

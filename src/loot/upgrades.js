@@ -1,9 +1,9 @@
 // loot/upgrades.js — THE STAGE WON: pick 1 of 3 of the soldier's perks (game/soldier-rank.js), then the next battlefield is built and briefed
 import { OBJECTIVES } from '../../config.js';
-import { modeSeed, SOLDIER, gpuHeld, gpuRelease, modelEpoch, BIOME, S, STAGE_TAGS, TOD_LABEL, WAVE, applyBiome, biomeVi, buildBlocks, buildLava, buildObjective, buildTrails, buildUnderground, clearRelic, clearSoldiers, conditionsText, deploySoldiers, hide, iconEl, opFor, openBriefing, parkAtSpawn, rebuildCore, sfx, show, showBanner, updateHUD, blendWhenReady, scene, soldierStagePerks, storyEpilogue, nemEpilogue, coopActive, coopBuildField } from '../hub.js';
+import { modeSeed, SOLDIER, gpuHeld, gpuRelease, modelEpoch, BIOME, S, STAGE_TAGS, TOD_LABEL, WAVE, applyBiome, biomeVi, buildBlocks, buildLava, buildObjective, buildTrails, buildUnderground, clearRelic, clearSoldiers, conditionsText, deploySoldiers, hide, iconEl, opFor, openBriefing, parkAtSpawn, rebuildCore, sfx, show, showBanner, updateHUD, blendWhenReady, scene, soldierStagePerks, storyEpilogue, nemEpilogue, coopActive, coopBuildField, medalEnd } from '../hub.js';
 
 export function openUpgrade(){
-  S.mode='upgrade';
+  S.mode='upgrade'; medalEnd('won');   // MEDAL 2 the stage won goes into the career; its report opens over this screen (game/medals.js)
   { const ep=document.getElementById('upEpi'); if(ep) ep.replaceChildren(...storyEpilogue(S.stage-1).map(t=>{ const s=document.createElement('span'); s.textContent=t; return s; })); nemEpilogue(ep, S.stage-1); }   // (NEMESIS 1 its first line gives way when the general got away)   // STORY 3 the two-line epilogue of the stage just won, over the rewards (S.stage already counts the next one)
   const wrap=document.getElementById('upcards'); wrap.replaceChildren();
   const pick=soldierStagePerks();   // Z350 the soldier picks from his own perks

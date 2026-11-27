@@ -3,35 +3,36 @@
 //   choice of one of three perks (the battle holds still while he picks — never while a stage is being won). Some ranks bring a reward of their own over the
 //   radio: a man for the squad, a supply drop, a stick of paratroopers, a barrage. Perks stack in levels; one card in three may be a call for help.
 //   Past the last rank, every step is a medal: one more pick. The same cards close a stage won against the general (loot/upgrades.js asks soldierStagePerks).
+//   (MEDAL 2 these steps now read BẬC 1…13: the rank names belong to the career across battles — game/medals.js — shown first on the same stripe.)
 import { TROOPER } from '../../config.js';
-import { S, airstrike, armsDrop, clampFieldXZ, enemies, floatText, launchParadrop, magCap, GUNS, radio, ringPulse, sfx, showBanner, spawnGift, squadGrow, squadRankUp, squadRoom, supplyDrop, updateGunHUD, updateHUD } from '../hub.js';
+import { S, airstrike, armsDrop, clampFieldXZ, enemies, floatText, launchParadrop, magCap, GUNS, radio, ringPulse, sfx, showBanner, spawnGift, squadGrow, squadRankUp, squadRoom, supplyDrop, updateGunHUD, updateHUD, medalKill, medalTick, medalRankName } from '../hub.js';
 
 export const CAREER = { xp:0, rank:0, lv:{}, chip:null };
 const R = CAREER, T = () => TROOPER;
 const NOW = () => performance.now() / 1000;
 // XP from rank r to r + 1
 export function rankNeed(r){ const [a, b, c] = T().step, n = r; return a + b * n + c * n * n; }
-export function rankName(r){ const L = T().ranks; return L[Math.min(r, L.length - 1)]; }
+export function rankName(r){ return 'BẬC ' + (Math.min(r, T().ranks.length - 1) + 1); }   // MEDAL 2 the battle's own ladder is BẬC 1…13 — the rank names are the career's (game/medals.js)
 const INS = ['›', '››', '▰', '▰▰', '▰▰▰', '★', '★★', '★★★', '★★★★', '★', '★★', '★★★', '★★★★'];
 const tierOf = r => r < 2 ? 0 : r < 5 ? 1 : r < 9 ? 2 : 3;   // enlisted · NCO · company officer · field officer
 export function rankReset(){ R.xp = 0; R.rank = 0; R.lv = {}; paintChip(); }
 function xpFor(e){ const K = T().xp.kill; if(e.general) return K.general;
   let x = K[e.type] ?? (e.def.inf ? K._inf : e.def.air ? K._air : K._veh); if(e.elite) x *= T().xp.eliteK; if(e.genGuard) x *= 2; return x; }
 // killEnemy asks this for every kill (his, his squad's, a strike's)
-export function soldierKill(e){ if(!S.player) return; gainXp(xpFor(e), e.pos); armsDrop(e); }
+export function soldierKill(e){ medalKill(e); if(!S.player) return; gainXp(xpFor(e), e.pos); armsDrop(e); }
 export function gainXp(n, at){ if(!S.player || !(n > 0)) return; R.xp += n;
   if(n >= 40 && at) floatText('+' + n + ' KN', '#ffd86a', { x:at.x, y:2.6, z:at.z }, 15);
   while(R.xp >= rankNeed(R.rank)){ R.xp -= rankNeed(R.rank); rankUp(); }
   paintChip(); }
 function rankUp(){ const p = S.player, top = R.rank >= T().ranks.length - 1, U = T().rankUp;
   if(!top){ R.rank++; p.maxHp += U.hp; } p.hp = Math.min(p.maxHp, p.hp + p.maxHp * U.heal); updateHUD();
-  const nm = top ? 'HUÂN CHƯƠNG CHIẾN CÔNG' : rankName(R.rank);
-  showBanner((top ? '★ ' : 'THĂNG CẤP: ') + nm, '#ffd86a'); ringPulse(p.pos, 0xffd86a, 4.5); sfx('levelup'); floatText('▲ ' + nm, '#ffd86a', p.pos, 22);
+  const nm = top ? 'CHIẾN CÔNG' : rankName(R.rank);
+  showBanner((top ? '★ ' : 'LÊN ') + nm, '#ffd86a'); ringPulse(p.pos, 0xffd86a, 4.5); sfx('levelup'); floatText('▲ ' + nm, '#ffd86a', p.pos, 22);
   squadRankUp(R.rank); if(!top) milestone(R.rank);
-  giftDrop(nm); }
+  giftDrop(top ? 'Chiến công' : 'Bậc ' + (R.rank + 1)); }
 // what a rank brings by itself, over the radio
-function milestone(r){ const m = T().milestone[r]; if(!m) return; const nm = rankName(r);
-  if(m === 'at' || m === 'mg'){ if(squadGrow(m === 'at' ? 'at' : 'mg')) radio('SCH: Chúc mừng ' + nm.toLowerCase() + '! Bổ sung cho tổ anh một ' + (m === 'at' ? 'lính B40.' : 'xạ thủ súng máy.')); }
+function milestone(r){ const m = T().milestone[r]; if(!m) return; const nm = 'Bậc ' + (r + 1);
+  if(m === 'at' || m === 'mg'){ if(squadGrow(m === 'at' ? 'at' : 'mg')) radio('SCH: Chiến công ' + nm.toLowerCase() + '! Bổ sung cho tổ anh một ' + (m === 'at' ? 'lính B40.' : 'xạ thủ súng máy.')); }
   else if(m === 'supply'){ supplyDrop(); radio('SCH: ' + nm + ' — bộ chỉ huy thả dù tiếp tế cạnh anh: súng mới và cứu thương.'); }
   else if(m === 'para'){ callPara(); radio('SCH: ' + nm + ' — trực thăng đang thả một tiểu đội lính dù xuống cạnh anh!'); }
   else if(m === 'barrage'){ callStrike(); setTimeout(callStrike, 1600); radio('SCH: ' + nm + '! Pháo kích toàn tuyến theo toạ độ của anh — cúi đầu xuống!'); } }
@@ -84,11 +85,12 @@ function giftDrop(nm){ const p = S.player, f = p.facing || 0, [x, z] = clampFiel
   spawnGift({ x, z }, () => { const k = pickPerks(1)[0]; if(!k) return; take(k, S.player); showBanner('QUÀ: ' + k.nm, '#ffd86a'); });   // (Z369 the crate under a parachute: loot/gift-crate.js)
   ringPulse({ x, z }, 0xffd86a, 3); radio('SCH: ' + nm + ' — bộ chỉ huy thả dù một thùng quà cạnh anh, ra nhận!'); }
 // once a frame in battle: keep the rank stripe on his health bar
-export function updateRank(){ 
+export function updateRank(){ medalTick();   // MEDAL 2 the battle's ledger (host and guest)
+
   if(R.chip && !R.chip.isConnected) paintChip(); }
 // the stripe over his health bar: insignia, rank, the gold line to the next one
 export function paintChip(){ const bar = document.getElementById('phpbar'); if(!bar) return; let c = R.chip;
   if(!c || !c.isConnected){ c = R.chip = document.createElement('em'); c.className = 'rk'; c.innerHTML = '<s></s><span></span><u><i></i></u>'; bar.appendChild(c); }
   c.style.display = '';
-  c.className = 'rk t' + tierOf(R.rank); c.children[0].textContent = INS[Math.min(R.rank, INS.length - 1)]; c.children[1].textContent = rankName(R.rank);
+  c.className = 'rk t' + tierOf(R.rank); c.children[0].textContent = INS[Math.min(R.rank, INS.length - 1)]; c.children[1].textContent = medalRankName() + ' · ' + rankName(R.rank);   // MEDAL 2 the career's rank · the battle's step
   c.querySelector('u i').style.width = Math.min(100, Math.round(100 * R.xp / rankNeed(R.rank))) + '%'; }

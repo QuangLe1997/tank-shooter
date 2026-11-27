@@ -7,7 +7,7 @@
 //   M79), a flame (the thrower), an arc that jumps to the next man (the energy rifle). Not the tank's: never in its shop, never kept in its arsenal.
 import * as THREE from 'three';
 import { RIDER_TURN, TROOPER, XHAIR, REAL } from '../../config.js';
-import { bladeFire, GUNS, MOBILE, PAD, PROFILE, S, fpvFire, boreNow, burstRound, burstSpread, camKick, shotCase, aimTarget, cMod, fireFlame, gunFlash, gunLight, fireMortar, floatText, magCap, playerRange, rifleFX, ringPulse, sfx, spawnBullet, spawnPart, startReload, updateGunHUD, airShot, CV, fireLine, climbPerch, gunSound, ammoOnGive, fireFxOn, rpgLaunchFX } from '../hub.js';
+import { bladeFire, GUNS, MOBILE, PAD, PROFILE, S, fpvFire, boreNow, burstRound, burstSpread, camKick, shotCase, aimTarget, cMod, fireFlame, gunFlash, gunLight, fireMortar, floatText, magCap, playerRange, rifleFX, ringPulse, sfx, spawnBullet, spawnPart, startReload, updateGunHUD, airShot, CV, fireLine, climbPerch, gunSound, ammoOnGive, fireFxOn, rpgLaunchFX, medalGunLock } from '../hub.js';
 import { swimFire } from '../hub.js';   // SWIM 1 (game/swim.js)
 
 const _v = new THREE.Vector3();
@@ -16,7 +16,8 @@ const _v = new THREE.Vector3();
 //   (KIT_GUN) is not: it always comes with him
 export const KIT_GUN = 't_rpg';
 export const PRIMARY_GUNS = Object.keys(GUNS).filter(id => GUNS[id].trooper && id !== KIT_GUN).sort((a, b) => (GUNS[a].tier || 1) - (GUNS[b].tier || 1));
-export function trooperGuns(){ const main = PRIMARY_GUNS.includes(PROFILE.trooperGun) ? PROFILE.trooperGun : 'carbine'; return [main, 't_rpg'].map(id => ({ id, ammo:GUNS[id].mag, rU:0, rD:0 })); }
+export function trooperMain(){ const g = PROFILE.trooperGun; return PRIMARY_GUNS.includes(g) && !medalGunLock(g) ? g : 'carbine'; }   // MEDAL 3 the gun he carries in, if his rank has opened it (ui/medals-ui.js)
+export function trooperGuns(){ const main = trooperMain(); return [main, 't_rpg'].map(id => ({ id, ammo:GUNS[id].mag, rU:0, rD:0 })); }
 // the guns the "SÚNG MỚI" crate can bring him: one he has not got yet, the heavier ones later in the campaign
 export function trooperGunPick(){ const p = S.player, have = new Set(p.guns.map(g => g.id)), stage = S.stage || 1;
   const pool = Object.keys(GUNS).filter(id => GUNS[id].trooper && !have.has(id) && (GUNS[id].tier || 1) <= Math.min(3, 1 + stage));
