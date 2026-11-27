@@ -2644,6 +2644,12 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
     'AIR.haze: the far hot ground ('+Z.near+'–'+Z.far+' m) wavers ≤ '+Z.px+' px — desert yes, snow and meadow no');
   ok(Object.values(D).every(m => Number.isInteger(m.col) && m.gain>0 && m.gain<=2) && D.ARCTIC && /function heatHaze\(U\)/.test(ap) && /NIGHT\.k/.test(ap) && /AIR\.motes/.test(du),
     'AIR.motes: the sunlit dust takes the battlefield\'s colour (ice crystals over the Arctic); the haze never at night'); }
+// AIR 4 less shimmer: specular anti-aliasing, calmer sharpening, motes never sub-pixel, wire fences with alpha-to-coverage
+{ const fs=await import('node:fs'), C=await import('./config.js'), A=C.AIR.aa, aa=fs.readFileSync('src/render/air-aa.js','utf8'), du=fs.readFileSync('src/fx/dust.js','utf8'), su=fs.readFileSync('src/world/supply.js','utf8');
+  ok(A && typeof A.on==='boolean' && A.spec[0]>0 && A.spec[0]<=1 && A.spec[1]>0 && A.spec[1]<=0.5 && A.cas[0]>=0 && A.cas[0]<=1 && A.cas[1]<A.cas[2] && A.motePx>=1 && A.motePx<=3,
+    'AIR.aa: specular AA σ² '+A.spec[0]+' (≤ '+A.spec[1]+'), sharpening eased off over local contrast '+A.cas[1]+'–'+A.cas[2]+', motes ≥ '+A.motePx+' px');
+  ok(/SHADER_HOOKS\.push\(inject\)/.test(aa) && /lights_physical_fragment/.test(aa) && /export function airAA\(on\)/.test(aa) && /uMinPx/.test(du) && (su.match(/alphaToCoverage:!MOBILE/g)||[]).length>=2,
+    'the specular AA hooks every physical material; the dust keeps its light when drawn wider; the chain-link fence and the nets use alpha-to-coverage'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

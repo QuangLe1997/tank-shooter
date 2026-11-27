@@ -24,7 +24,7 @@ const AE_FRAG = `uniform sampler2D tDiffuse, tPrev; uniform vec2 uK, uJ; varying
     gl_FragColor = vec4(mix(prev, s / w, k), 0.0, 0.0, 1.0); }`;
 const FRAG = `#include <tonemapping_pars_fragment>
   #include <packing>
-  uniform sampler2D tDiffuse, tBloom, tAE, tDepth; uniform float bloomOn; uniform vec4 uAE, uHaze; uniform vec2 uGrainK, uNF;
+  uniform sampler2D tDiffuse, tBloom, tAE, tDepth; uniform float bloomOn; uniform vec4 uAE, uHaze, uAA; uniform vec2 uGrainK, uNF;
   uniform float time,vig,grain,sharp,sat,contrast,aberr,flash,vib,toe; uniform vec3 lift,gain,shTint,hiTint; varying vec2 vUv;
   float gExp = 1.0; vec3 gB = vec3(0.0);
   vec3 hdr(vec2 uv){ return min(texture2D(tDiffuse, uv).rgb, vec3(64.0)); }   // (the NaN guard runs once, on the result)
@@ -52,7 +52,9 @@ const FRAG = `#include <tonemapping_pars_fragment>
     else c = disp(hdr(uv));
     if(sharp > 0.0){ vec2 px = 1.0 / vec2(textureSize(tDiffuse, 0)), dx = vec2(px.x, 0.0), dy = vec2(0.0, px.y);   // Z145 unsharp mask — AIR 1 on brightness alone, in a cheap display-like
       float fc = lum(uv), f1 = lum(uv + dx), f2 = lum(uv - dx), f3 = lum(uv + dy), f4 = lum(uv - dy);   // curve: tone-mapping all five taps cost 2.8 ms at 0.9 MP
-      float fs = fc + (fc - (f1 + f2 + f3 + f4) * 0.25) * sharp;
+      float mn = min(fc, min(min(f1, f2), min(f3, f4))), mx = max(fc, max(max(f1, f2), max(f3, f4)));
+      float fs = fc + (fc - (f1 + f2 + f3 + f4) * 0.25) * sharp * (1.0 - uAA.x * smoothstep(uAA.y, uAA.z, mx - mn));   // AIR 4 eased off on edges already hard (aliasing is not detail)
+      if(uAA.w > 0.0) fs = clamp(fs, mn, mx);   // AIR 4 … and never past its neighbours (no ringing, no sparkle)
       c *= max(fs, 0.0) / max(fc, 1e-4); }
     float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
     float s0 = max(c.r, max(c.g, c.b)) - min(c.r, min(c.g, c.b));
@@ -75,7 +77,7 @@ const TONES = { [THREE.LinearToneMapping]:'LINEAR_TONE_MAPPING', [THREE.ACESFilm
 const G = gradePass.uniforms, aeRT = () => new THREE.WebGLRenderTarget(2, 1, { type:THREE.HalfFloatType, format:THREE.RGBAFormat, minFilter:THREE.NearestFilter, magFilter:THREE.NearestFilter, depthBuffer:false });
 export const AIRPOST = { on:false, ae:{ a:aeRT(), b:aeRT(), reset:true, last:0, was:'' }, tone:-1,
   u:{ tDiffuse:{ value:null }, tBloom:{ value:null }, tAE:{ value:null }, bloomOn:{ value:1 }, toneMappingExposure:{ value:1 }, uAE:{ value:new THREE.Vector4(0, AIR.ae.k, AIR.ae.lo, AIR.ae.hi) },
-    uGrainK:{ value:new THREE.Vector2(AIR.grain.lo, AIR.grain.shape ? 1 : 0) }, tDepth:{ value:null }, uHaze:{ value:new THREE.Vector4() }, uNF:{ value:new THREE.Vector2(0.6, 600) },
+    uGrainK:{ value:new THREE.Vector2(AIR.grain.lo, AIR.grain.shape ? 1 : 0) }, tDepth:{ value:null }, uHaze:{ value:new THREE.Vector4() }, uAA:{ value:new THREE.Vector4() }, uNF:{ value:new THREE.Vector2(0.6, 600) },
     time:G.time, vig:G.vig, grain:G.grain, sharp:G.sharp, sat:G.sat, contrast:G.contrast, lift:G.lift, gain:G.gain, aberr:G.aberr, flash:G.flash, shTint:G.shTint, hiTint:G.hiTint, vib:G.vib, toe:G.toe } };
 const aeMat = new THREE.ShaderMaterial({ uniforms:{ tDiffuse:{ value:null }, tPrev:{ value:null }, uK:{ value:new THREE.Vector2(1, 1) }, uJ:{ value:new THREE.Vector2(0.5, 0.5) } }, vertexShader:VS, fragmentShader:AE_FRAG, depthTest:false, depthWrite:false, blending:THREE.NoBlending });
 const aeQuad = new FullScreenQuad(aeMat);

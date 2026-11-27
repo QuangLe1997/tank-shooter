@@ -27,7 +27,7 @@ function mats0(){ const V=(o)=>new THREE.MeshStandardMaterial(Object.assign({ ve
     const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(4,2); return t; })();
   _M={ paint:V({ map:propTex('steel'), roughness:0.58, metalness:0.2 }), conc:V({ map:propTex('concrete'), roughness:0.92, metalness:0.02 }), metal:V({ map:propTex('drum'), roughness:0.55, metalness:0.6 }),
     soil:V({ roughness:1, metalness:0 }), wood:V({ map:propTex('wood'), roughness:0.85 }), canvas:V({ map:propTex('burlap'), roughness:0.95 }),
-    net:new THREE.MeshStandardMaterial({ map:netT, alphaTest:0.45, side:THREE.DoubleSide, roughness:1 }), glow:new THREE.MeshStandardMaterial({ color:0x222018, emissive:0xffd890, emissiveIntensity:1.6 }) };
+    net:new THREE.MeshStandardMaterial({ map:netT, alphaTest:0.45, alphaToCoverage:!MOBILE, side:THREE.DoubleSide, roughness:1 }), glow:new THREE.MeshStandardMaterial({ color:0x222018, emissive:0xffd890, emissiveIntensity:1.6 }) };
   return _M; }
 // a kit collects coloured parts per material and bakes them into one mesh each (a structure = a handful of draw calls)
 export function kit(){ const P={}; return { add(m, geo, col){ (P[m]=P[m]||[]).push({ geo, col }); return geo; }, bake(own){ const g=new THREE.Group(), M=mats();
@@ -126,7 +126,7 @@ function bayGeo0(){ const P=[], L=3;
 let _chainMat=null;
 function chainMat(){ if(_chainMat) return _chainMat; const c=document.createElement('canvas'); c.width=c.height=64; const x=c.getContext('2d'); x.strokeStyle='#b8b8b0'; x.lineWidth=2.2;
   x.beginPath(); x.moveTo(0,32); x.lineTo(32,0); x.lineTo(64,32); x.lineTo(32,64); x.closePath(); x.moveTo(-32,32); x.lineTo(0,0); x.moveTo(64,0); x.lineTo(96,32); x.stroke();   // diamond mesh
-  const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=4; return _chainMat=new THREE.MeshStandardMaterial({ map:t, alphaTest:0.35, transparent:false, side:THREE.DoubleSide, color:0x9a9a94, roughness:0.45, metalness:0.8 }); }
+  const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=4; return _chainMat=new THREE.MeshStandardMaterial({ map:t, alphaTest:0.35, alphaToCoverage:!MOBILE, transparent:false, side:THREE.DoubleSide, color:0x9a9a94, roughness:0.45, metalness:0.8 }); }
 const _fM=new THREE.Matrix4(), _fQ=new THREE.Quaternion(), _fE=new THREE.Euler(0,0,0,'YXZ'), _fV=new THREE.Vector3(), _fS=new THREE.Vector3();
 function bayMatrix(sp, tilt){ _fE.set(tilt||0, sp.th, 0); _fQ.setFromEuler(_fE); _fS.set(sp.L/3*sp.K, sp.K*(tilt?0.9:1), sp.K); return _fM.compose(_fV.set(sp.x0, sp.y, sp.z0), _fQ, _fS); }
 // fence the rectangle x0..x1 × z0..z1 (base-local metres), a gate gap of width gw in the front side

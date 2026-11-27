@@ -3,7 +3,7 @@
 // look toward the sun (forward scattering) — the specks you see in a beam of light. Additive, soft-edged, off at night and on phones.
 import * as THREE from 'three';
 import { AIR, DUST } from '../../config.js';
-import { BIOME, MOBILE, NIGHT, heightAt, scene, sun } from '../hub.js';
+import { AIRAA, BIOME, MOBILE, NIGHT, heightAt, scene, sun } from '../hub.js';
 
 let PTS = null;
 const _f = new THREE.Vector3(), _c = new THREE.Vector3(), _d = new THREE.Vector3();
@@ -11,10 +11,10 @@ export function initDust(){ if(PTS || MOBILE || typeof window === 'undefined' ||
   for(let i = 0; i < N; i++){ pos[i * 3] = Math.random() * DUST.box[0]; pos[i * 3 + 1] = Math.random() * DUST.box[1]; pos[i * 3 + 2] = Math.random() * DUST.box[2]; seed[i] = Math.random(); }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('aSeed', new THREE.BufferAttribute(seed, 1));
   const U = { uTime:{ value:0 }, uCenter:{ value:new THREE.Vector3() }, uBox:{ value:new THREE.Vector3(...DUST.box) }, uShadowM:{ value:new THREE.Matrix4() }, tShadow:{ value:null },
-    uSunDir:{ value:new THREE.Vector3() }, uCam:{ value:new THREE.Vector3() }, uGain:{ value:0 }, uSize:{ value:DUST.size }, uCol:{ value:new THREE.Color(DUST.col) } };
+    uSunDir:{ value:new THREE.Vector3() }, uCam:{ value:new THREE.Vector3() }, uGain:{ value:0 }, uSize:{ value:DUST.size }, uCol:{ value:new THREE.Color(DUST.col) }, uMinPx:AIRAA.mote };
   const m = new THREE.ShaderMaterial({ uniforms:U, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending,
     vertexShader:`#include <packing>
-      uniform float uTime, uGain, uSize; uniform vec3 uCenter, uBox, uSunDir, uCam; uniform mat4 uShadowM; uniform sampler2D tShadow; attribute float aSeed; varying float vA;
+      uniform float uTime, uGain, uSize, uMinPx; uniform vec3 uCenter, uBox, uSunDir, uCam; uniform mat4 uShadowM; uniform sampler2D tShadow; attribute float aSeed; varying float vA;
       void main(){ vec3 drift = vec3(sin(uTime * 0.11 + aSeed * 40.0), sin(uTime * 0.07 + aSeed * 17.0) * 0.6 + 0.15, cos(uTime * 0.09 + aSeed * 29.0)) * uTime * 0.12;
         vec3 p = mod(position + drift - uCenter + uBox * 0.5, uBox) - uBox * 0.5 + uCenter;   // wrapped round the view, anchored in the world
         vec4 s = uShadowM * vec4(p, 1.0); s.xyz /= s.w; float lit = 1.0;
@@ -22,7 +22,8 @@ export function initDust(){ if(PTS || MOBILE || typeof window === 'undefined' ||
         float mu = dot(normalize(p - uCam), uSunDir), ph = 0.25 + 2.2 * pow(max(mu, 0.0), 6.0);
         float tw = 0.6 + 0.4 * sin(uTime * (1.5 + aSeed * 2.0) + aSeed * 60.0);
         vA = lit * ph * tw * uGain; vec4 mv = modelViewMatrix * vec4(p, 1.0); gl_Position = projectionMatrix * mv;
-        gl_PointSize = uSize * (0.6 + aSeed) * 300.0 / max(-mv.z, 1.0); }`,
+        gl_PointSize = uSize * (0.6 + aSeed) * 300.0 / max(-mv.z, 1.0);
+        if(gl_PointSize < uMinPx){ vA *= gl_PointSize * gl_PointSize / (uMinPx * uMinPx); gl_PointSize = uMinPx; } }`,   // AIR 4 a sub-pixel mote blinked as it crossed pixel centres: drawn wider, as bright in sum
     fragmentShader:`uniform vec3 uCol; varying float vA; void main(){ vec2 d = gl_PointCoord - 0.5; float a = smoothstep(0.5, 0.0, length(d)) * vA; if(a < 0.003) discard; gl_FragColor = vec4(uCol * a, a); }` });
   PTS = new THREE.Points(g, m); PTS.frustumCulled = false; PTS.renderOrder = 5;
   PTS.onBeforeRender = (r, sc, cam) => { const map = sun.shadow && sun.shadow.map; const M = AIR.motes && AIR.motes[BIOME.name]; U.uGain.value = map && sun.castShadow ? DUST.gain * (M ? M.gain : 1) * (1 - NIGHT.k) : 0; if(!U.uGain.value) return;

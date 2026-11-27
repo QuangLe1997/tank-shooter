@@ -27,6 +27,7 @@ export * from './render/aerial.js';   // Z427 the height and distance haze (a sh
 export * from './render/shafts.js';   // Z276 light shafts (before the renderer, which builds the pass)
 export * from './render/renderer.js';
 export * from './render/air-post.js';   // AIR 1 the frame's tail as one cinematic pass (after the renderer, whose composer it ends)
+export * from './render/air-aa.js';   // AIR 4 specular anti-aliasing + calmer sharpening (a shader hook of render/clouds.js)
 export * from './fx/battle-light.js';   // Z318 one palette, pulse clock and glowing-ring material for every gameplay light (before the rings built at load)
 export * from './render/surface.js';   // Z145
 export * from './fx/searchlight.js';   // Z146 (before world/biome.js: the floodlight masts are raised at boot)
