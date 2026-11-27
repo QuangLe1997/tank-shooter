@@ -2740,6 +2740,13 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
     'the still part: box re-centred '+sh.step+' m off (+'+sh.pad+' m wider), a caster still '+sh.settle+' frames joins it, drawn again ≥ '+sh.minGap+' s after something in it changed');
   ok(/shadowLOD\(renderer\);[^\n]*\nshadowSplit\(renderer\);/.test(rr) && /blitFramebuffer\(/.test(ss) && /COLOR_BUFFER_BIT \| gl\.DEPTH_BUFFER_BIT/.test(ss) && /nosplit/.test(ss) && /if\(sc !== scene \|\| !lights\.length/.test(ss) && /new Float64Array\(16\)/.test(ss),
     'installed right after the shadow LOD; colour + depth put back with one blit; ?nosplit switches it off; post passes and other scenes go through untouched; world matrices compared at full precision'); }
+// SPLIT 2 (A6) nothing compiled or uploaded in the fight's first frames, the load never waits for it + every hitch of a fight logged
+{ const fs=await import('node:fs'), C=await import('./config.js'), P=C.PERF_SPLIT, fw=fs.readFileSync('src/render/fight-warm.js','utf8'), br=fs.readFileSync('src/ui/briefing.js','utf8'), ph=fs.readFileSync('src/render/perfhud.js','utf8');
+  ok(P.warm.on===true && P.warm.ms>0 && P.warm.ms<=12 && P.warm.propWait>0 && P.warm.propWait<3 && P.hitchMs>=33 && P.hitchKeep>=8,
+    'the battlefield\'s cold maps uploaded during the 3-2-1, '+P.warm.ms+' ms of work a frame; what rises at GO compiled then (models awaited ≤ '+P.warm.propWait+' s); frames over '+P.hitchMs+' ms logged ('+P.hitchKeep+' kept)');
+  ok(/prewarmStage\(\); fightWarm\(\);/.test(br) && /renderer\.initTexture\(t\)/.test(fw) && /__version !== t\.version/.test(fw) && /const counting = \(\) => S\.mode === 'countdown'/.test(fw) && /if\(run !== FWARM\.run \|\| !counting\(\)\) return;/.test(fw)
+    && /renderer\.compile\(g, camera, scene\)/.test(fw) && /export function relicWarm\(\)\{ return build\(\); \}/.test(fs.readFileSync('src/loot/relic.js','utf8')) && /PH\.long\.push\(/.test(ph),
+    'started beside the shader prewarm at the countdown and stopped when it ends (the load never waits); the relic compiled off the scene with the battle\'s lights; the fight\'s long frames in PH.long'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
