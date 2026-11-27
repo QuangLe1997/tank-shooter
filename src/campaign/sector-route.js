@@ -5,7 +5,7 @@
 //   the route not taken leaves its `skip`; each sector's start applies them (knobs put back by the run) and the rail shows them as icons. EVENT CARDS: at a sector's start
 //   (not the first) a card may be drawn — the same one on a replay — and played for that sector only; a chip by the rail names it.
 import { SECROUTE, SECTOR, AWARE, BALANCE, CAV, DIRECTOR, FORTBOSS } from '../../config.js';
-import { FT, LOGI, PROFILE, S, SECT, bigEventStart, callFireteam, callStrike, enemies, radio, scene, sectorEventChip, sectorForkCard, sectorKnob, sectorParse, sectorRailCons, spawnAlly } from '../hub.js';
+import { BIOME, FT, LOGI, PROFILE, S, SECT, bigEventStart, callFireteam, callStrike, enemies, radio, scene, sectorEventChip, sectorForkCard, sectorKnob, sectorParse, sectorRailCons, spawnAlly } from '../hub.js';
 
 const R = SECROUTE, Y = R.say;
 // a small seeded generator (mulberry32): the deal and the cards are a pure function of the attempt's seed
@@ -29,14 +29,17 @@ export function sectorDeal(tokens, land, seed, night){ const rnd = seededRng(see
   return out.filter(Boolean); }
 // the routes' card lines: route k's reward = its own win (else its reward line), its consequence = what the other route's skip leaves
 export function forkLines(F){ return F.map((r, k) => { const o = F[1 - k], w = r.meta.win && R.cons[r.meta.win], c = o.meta.skip && R.cons[o.meta.skip];
-  return { k, ttl:r.vi + ' · ' + SECTOR.types[r.type].vi, diff:r.meta.diff || 1, reward:w ? w.tx : r.meta.reward || Y.none, cons:c ? c.vi + ': ' + c.tx : Y.none, bad:!!c, icon:w ? w.icon : '' }; }); }
+  return { k, place:r.vi, ttl:SECTOR.types[r.type].vi, diff:r.meta.diff || 1, reward:w ? w.tx : r.meta.reward || Y.none, cons:c ? c.vi + ': ' + c.tx : Y.noCons, bad:!!c, icon:R.icon[r.type] || 'flag', img:'assets/maps/' + String(BIOME.name).toLowerCase() + '.webp', hue:R.hue[k] }; }); }   // SECTOR 5 the card's header: the land's own picture, tinted per route, the mission's icon
 const easier = F => (F[1].meta.diff || 1) < (F[0].meta.diff || 1) ? 1 : 0;
 
 // ---- THE FORK (campaign/sectors.js transit: open → the card; done(k) → the sector) ----
-export function forkOpen(c, done){ const F = c.fork, def = easier(F); let left = R.fork.pickT, fin = false;
-  const pick = k => { if(fin) return; fin = true; sectorForkCard(null); done(k); };
-  sectorForkCard({ kick:Y.fork, ttl:Y.pick, routes:forkLines(F), def, auto:fill(Y.auto, { s:left }), onPick:pick });
-  return { tick(dt){ if(fin) return true; left -= dt; sectorForkCard({ auto:fill(Y.auto, { s:Math.max(0, Math.ceil(left)) }) }, true); if(left <= 0) pick(def); return fin; }, pick, def }; }
+export function forkOpen(c, done){ const F = c.fork, def = easier(F), T0 = R.fork.pickT; let left = T0, fin = false, chosen = -1, hold = 0;
+  const pick = k => { if(chosen >= 0 || fin) return; chosen = k; hold = R.fork.confirm; sectorForkCard({ picked:k }, true); };   // SECTOR 5 the picked card lights up (✓) for a beat, then the column moves
+  const tx = () => fill(Y.auto, { s:Math.max(0, Math.ceil(left)), r:def ? 'B' : 'A' });
+  sectorForkCard({ kick:Y.fork, ttl:Y.pick, routes:forkLines(F), def, auto:tx(), frac:1, onPick:pick });
+  return { tick(dt){ if(fin) return true;
+      if(chosen >= 0){ if((hold -= dt) <= 0){ fin = true; sectorForkCard(null); done(chosen); } return fin; }
+      left -= dt; sectorForkCard({ auto:tx(), frac:Math.max(0, left / T0) }, true); if(left <= 0) pick(def); return fin; }, pick, def }; }
 const fill = (t, o) => String(t ?? '').replace(/\{(\w+)\}/g, (m, k) => o && o[k] != null ? o[k] : '');
 // the pick made: the sector becomes that route; the route not taken leaves its skip
 export function forkTake(i, k){ const c = SECT.list[i], F = c && c.fork; if(!F) return null; const r = F[k], o = F[1 - k];

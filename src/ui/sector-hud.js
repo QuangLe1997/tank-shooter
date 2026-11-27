@@ -39,19 +39,25 @@ export function sectorRailCons(L){ if(!railEl()) return; const sig = L && L.leng
 // SECTOR 4 the sector's event card as a chip: { vi, tx, icon, good } · null: none
 export function sectorEventChip(o){ if(!railEl()) return; if(!o){ _chip.classList.add('hidden'); _chip.dataset.k = ''; return; }
   _chip.className = 'sr-c ' + (o.good ? 'ok' : 'bad'); _chip.dataset.k = o.vi; _chip.title = o.tx; _chip.innerHTML = svgMarkup(o.icon, 2) + '<b>' + esc(o.vi) + '</b>'; }
-// SECTOR 4 THE FORK CARD: { kick, ttl, routes:[{ ttl, diff, reward, cons, bad }], def, auto, onPick(k) } · (o, true) = only its clock line · null = gone
+// SECTOR 4–5 THE FORK CARD — a decision moment on a full backdrop: two big selection cards of the ui-kit (corner brackets on hover / focus, ✓ when picked), each the
+//   land's own picture tinted per route with the mission's icon, the place small, the mission big, ★ difficulty, the reward in amber, the consequence in red (or cyan when
+//   there is none to fear), the key; under them the default route's clock as a draining bar.
+//   o = { kick, ttl, routes:[{ place, ttl, diff, reward, cons, bad, icon, img, hue }], def, auto, frac, onPick(k) } · (o, true) = update { auto, frac } or { picked:k } · null = gone
 let _fk = null, _fkKey = null;
 export function sectorForkCard(o, part){ const T = trEl(); if(!T) return;
   if(!_fk){ _fk = document.createElement('div'); _fk.className = 'st-fork overlay hidden'; T.d.appendChild(_fk); }
   if(!o){ _fk.classList.add('hidden'); _fk.replaceChildren(); if(_fkKey){ removeEventListener('keydown', _fkKey, true); _fkKey = null; } return; }
-  if(part){ const a = _fk.querySelector('.sf-auto'); if(a && a.textContent !== o.auto) a.textContent = o.auto; return; }
-  const S0 = { reward:'Phần thưởng', cons:'Hệ quả', diff:'Độ khó' };
-  _fk.innerHTML = '<p class="sf-kick">' + esc(o.kick) + '</p><h3 class="sf-ttl">' + esc(o.ttl) + '</h3><div class="sf-row">' + o.routes.map((r, k) =>
-    '<div class="sf-r' + (k === o.def ? ' def' : '') + '" data-pad data-k="' + k + '" role="button" tabindex="0"><em>' + (k ? 'B' : 'A') + '</em><b>' + esc(r.ttl) + '</b>' +
-    '<span class="sf-d">' + S0.diff + ' <i>' + '★'.repeat(r.diff) + '<s>' + '★'.repeat(Math.max(0, 3 - r.diff)) + '</s></i></span>' +
-    '<span class="sf-l ok"><u>' + S0.reward + '</u>' + esc(r.reward) + '</span><span class="sf-l' + (r.bad ? ' bad' : '') + '"><u>' + S0.cons + '</u>' + esc(r.cons) + '</span><kbd>' + (k + 1) + '</kbd></div>').join('') +
-    '</div><p class="sf-auto">' + esc(o.auto) + '</p>';
-  _fk.classList.remove('hidden');
+  if(part){ if(o.picked != null){ for(const el of _fk.querySelectorAll('.sf-r')) el.classList.toggle('on', +el.dataset.k === o.picked); _fk.classList.add('done'); return; }
+    const a = _fk.querySelector('.sf-auto'); if(a && a.textContent !== o.auto) a.textContent = o.auto; const b = _fk.querySelector('.sf-bar i'); if(b) b.style.transform = 'scaleX(' + o.frac.toFixed(3) + ')'; return; }
+  _fk.innerHTML = '<div class="sf-in"><p class="sf-kick">' + esc(o.kick) + '</p><h3 class="sf-ttl">' + esc(o.ttl) + '</h3><div class="sf-row">' + o.routes.map((r, k) =>
+    '<div class="sf-r' + (k === o.def ? ' def' : '') + '" data-pad data-k="' + k + '" role="button" tabindex="0" style="--sf-h:' + r.hue + '">' +
+      '<div class="sf-img" style="background-image:linear-gradient(180deg,transparent 30%,rgba(9,11,8,.92)),linear-gradient(var(--sf-h),var(--sf-h)),url(' + r.img + ')"><span class="sf-ic">' + svgMarkup(r.icon, 1.8) + '</span>' +
+      '<em>' + (k ? 'B' : 'A') + '</em><small>' + esc(r.place) + '</small></div>' +
+      '<div class="sf-body"><b>' + esc(r.ttl) + '</b><span class="sf-d"><i>' + '★'.repeat(r.diff) + '</i><s>' + '★'.repeat(Math.max(0, 3 - r.diff)) + '</s>' + (k === o.def ? '<u>mặc định</u>' : '') + '</span>' +
+      '<span class="sf-l rw"><u>Phần thưởng</u>' + esc(r.reward) + '</span><span class="sf-l ' + (r.bad ? 'bad' : 'safe') + '"><u>Hệ quả</u>' + esc(r.cons) + '</span></div>' +
+      '<kbd>' + (k + 1) + '</kbd></div>').join('') +
+    '</div><div class="sf-bar"><i></i></div><p class="sf-auto">' + esc(o.auto) + '</p></div>';
+  _fk.classList.remove('hidden', 'done');
   for(const el of _fk.querySelectorAll('.sf-r')) el.addEventListener('click', () => o.onPick(+el.dataset.k));
   if(_fkKey) removeEventListener('keydown', _fkKey, true);
   _fkKey = e => { if(e.key === '1' || e.key === '2'){ e.preventDefault(); e.stopPropagation(); o.onPick(+e.key - 1); } else if(e.key === 'Enter'){ const f = _fk.querySelector('.sf-r.padfocus, .sf-r:focus'); if(f){ e.preventDefault(); o.onPick(+f.dataset.k); } } };

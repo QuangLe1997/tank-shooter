@@ -17,6 +17,7 @@
 //   SECTOR 2 four more missions — rescue · breach · infiltrate · pursuit — live in campaign/sector-goals.js (a start, a tick, a clear each); an infiltration's sector is
 //   built at night (rebuild turns the run's hour for it). The rail carries the sector's objective line (g.sub) beside its clock; the side missions' card stays hidden.
 //   Co-op: host-only for now — a co-op room plays the ordinary battle (sectorBegin stays off).
+import * as THREE from 'three';
 import { SECTOR, SIDEMISSION, CONTRACTS, OBJECTIVES, SECROUTE } from '../../config.js';
 import { FORTS, startBoss } from '../hub.js';   // SECTOR 4
 import { enemies, bullets, parts, renderer } from '../hub.js';
@@ -76,7 +77,7 @@ export function sectorBattle(spec, onWon){ const d = spec == null || spec === fa
   if(_starting && T.on && !coopActive()){ if(d) openRun(d.spec, d.onWon); else sectorEnd(); return true; }   // the battle is being set up: it applies at once
   _decl = d; return false; }   // else the next battle's
 // nothing of a run is left: its knobs, its rail, its overlay (a new battle · quitting to the menu)
-export function sectorEnd(){ unknob(); SECT.on = false; SECT.spec = null; SECT.state = ''; SECT.tr = null; SECT.g = null; SECT.onWon = null; SECT.seq++; _starting = false; goQuiet(false); sectorGoalClear(); routeEnd(); runTag(false); sectorRail(null); sectorTransitShow(null); }
+export function sectorEnd(){ unknob(); SECT.on = false; SECT.spec = null; SECT.state = ''; SECT.tr = null; SECT.g = null; SECT.onWon = null; SECT.seq++; _starting = false; goQuiet(false); sectorGoalClear(); routeEnd(); railFree(); runTag(false); sectorRail(null); sectorTransitShow(null); }
 
 // ---- the checkpoint ----
 function snapTake(){ const p = S.player; if(!p) return null;
@@ -196,7 +197,17 @@ function transitEnd(){ const tr = SECT.tr; SECT.stats.transits.push({ i:SECT.i, 
 // a sector's 3-2-1 runs hidden (css/sector.css body.sectgo): the place and the goal were on the transit's card, its start goes to the top edge
 function goQuiet(on){ if(typeof document !== 'undefined' && document.body) document.body.classList.toggle('sectgo', !!on); }
 // THE RAIL: the sectors, the one in hand lit; `upto` = how many are done (a sector just won is ticked before the transit)
-function rail(upto){ if(!SECT.on) return; const i = upto != null ? upto : SECT.i, g = SECT.g, F = SECT.state === 'fight' && g;
+// SECTOR 5 the rail's strip kept clear of the world's own labels: our base's core bar (core/helpers.js #chpbar: the monument at the field's middle, straight ahead
+//   from the spawn, so it projects right under the score bar) and a fort's gate bar far ahead — hidden while they stand on the strip, shown again once they leave it
+//   or the run ends. The boxes are read twice a second, the forts' bars projected each frame (a handful).
+const _rv = new THREE.Vector3(); let _rb = null, _rbAt = 0;
+function railClear(now){ if(now > _rbAt){ _rbAt = now + 0.5; const el = typeof document !== 'undefined' && document.getElementById('secRail'); _rb = el && !el.classList.contains('hidden') ? el.getBoundingClientRect() : null;
+    const cb = typeof document !== 'undefined' && document.getElementById('chpbar'); if(cb){ const r = cb.getBoundingClientRect(), hit = !!_rb && r.width > 0 && r.right > _rb.left - 8 && r.left < _rb.right + 8 && r.bottom > _rb.top - 6 && r.top < _rb.bottom + 10; if(cb.classList.contains('sr-off') !== hit) cb.classList.toggle('sr-off', hit); } }
+  for(const f of FORTS){ const b = f.bar; if(!b) continue; let inS = false;
+    if(_rb && (b.g.visible || f._railHid)){ _rv.copy(b.g.position).project(camera); const x = (_rv.x + 1) / 2 * innerWidth, y = (1 - _rv.y) / 2 * innerHeight; inS = _rv.z < 1 && x > _rb.left - 70 && x < _rb.right + 70 && y > _rb.top - 14 && y < _rb.bottom + 26; }
+    if(inS && b.g.visible){ b.g.visible = false; f._railHid = true; } else if(!inS && f._railHid){ b.g.visible = true; f._railHid = false; } } }
+function railFree(){ for(const f of FORTS) if(f._railHid){ if(f.bar) f.bar.g.visible = true; f._railHid = false; } _rb = null; const cb = typeof document !== 'undefined' && document.getElementById('chpbar'); if(cb) cb.classList.remove('sr-off'); }
+function rail(upto){ if(!SECT.on) return; const i = upto != null ? upto : SECT.i, g = SECT.g, F = SECT.state === 'fight' && g; if(F) railClear(performance.now() / 1000);
   const ck = F && g.type === 'sabotage' ? clock(g.clock) : F && g.type === 'hold' && g.start ? Math.round(g.k * 100) + '%' : F && sectorGoalHas(g.type) ? sectorGoalClock(g) : '';
   sectorRail(SECT.list, i, ck, F ? g.sub || '' : ''); }   // SECTOR 2 the objective's line beside the clock
 // dev / probes: the run in a line

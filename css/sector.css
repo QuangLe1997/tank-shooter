@@ -51,25 +51,49 @@ body.sectgo #countdown,body.sectgo #cdSub{display:none!important;}   /* a sector
   border:1px solid currentColor;background:rgba(9,11,8,.62);}
 #secRail .sr-c svg{width:11px;height:11px;} #secRail .sr-c.ok{color:#9fdc58;} #secRail .sr-c.bad{color:#ffb27a;}
 body.touch #secRail .sr-c b{max-width:22vw;overflow:hidden;text-overflow:ellipsis;}
-/* SECTOR 4 THE FORK CARD — a menu moment in the transit (the fight stopped, the field black): two routes side by side, the default one marked, a clock to the auto pick */
-#secTransit .st-fork{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);width:min(760px,92vw);pointer-events:auto;text-align:center;}
+/* SECTOR 4–5 THE FORK CARD — a decision moment: a full backdrop of its own (no blur from .overlay), two big ui-kit selection cards, the default route's draining bar */
+#secTransit .st-fork{position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;pointer-events:auto;text-align:center;
+  background:radial-gradient(ellipse at 50% 55%,rgba(24,28,19,.96),rgba(5,6,4,.99) 70%);backdrop-filter:none !important;-webkit-backdrop-filter:none !important;}
 #secTransit .st-fork.hidden{display:none;}
-#secTransit .sf-kick{margin:0 0 4px;font:600 11px/1 var(--k-ui,'Saira Condensed',sans-serif);letter-spacing:.32em;color:var(--k-acc,#ffae34);}
-#secTransit .sf-ttl{margin:0 0 14px;font:400 clamp(20px,2.6vw,32px)/1 var(--k-stencil,'Saira Stencil One',sans-serif);letter-spacing:.05em;color:#ece0c2;}
-#secTransit .sf-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
-#secTransit .sf-r{position:relative;display:flex;flex-direction:column;gap:7px;text-align:left;padding:14px 16px 16px;cursor:pointer;border:1px solid rgba(214,226,196,.28);
-  background:linear-gradient(180deg,rgba(28,32,22,.92),rgba(12,14,10,.94));color:#e6e0cc;transition:border-color .15s,transform .15s;}
-#secTransit .sf-r:hover,#secTransit .sf-r.padfocus,#secTransit .sf-r:focus{border-color:var(--k-acc-hi,#ffd27a);transform:translateY(-2px);outline:none;}
-#secTransit .sf-r.def{box-shadow:inset 0 2px 0 var(--k-acc,#ffae34);}
-#secTransit .sf-r em{position:absolute;right:12px;top:10px;font:400 22px/1 var(--k-stencil,'Saira Stencil One',sans-serif);color:rgba(255,210,122,.35);font-style:normal;}
-#secTransit .sf-r b{font:700 15px/1.15 var(--k-ui,'Saira Condensed',sans-serif);letter-spacing:.08em;text-transform:uppercase;color:#f2e6c6;padding-right:24px;}
-#secTransit .sf-d{font:600 11px/1 var(--k-ui,'Saira Condensed',sans-serif);letter-spacing:.14em;text-transform:uppercase;color:rgba(230,224,204,.6);}
-#secTransit .sf-d i{font-style:normal;letter-spacing:.1em;color:var(--k-acc-hi,#ffd27a);} #secTransit .sf-d s{text-decoration:none;color:rgba(230,224,204,.22);}
-#secTransit .sf-l{font:500 12.5px/1.3 var(--k-ui,'Saira Condensed',sans-serif);color:#d8d2bc;}
-#secTransit .sf-l u{display:block;text-decoration:none;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:rgba(230,224,204,.5);margin-bottom:1px;}
-#secTransit .sf-l.ok{color:#bfe39a;} #secTransit .sf-l.bad{color:#ffb08a;}
-#secTransit .sf-r kbd{position:absolute;right:12px;bottom:10px;font:400 11px/1 var(--k-mono,'Share Tech Mono',monospace);color:rgba(230,224,204,.45);border:1px solid rgba(230,224,204,.25);padding:2px 5px;}
-#secTransit .sf-auto{margin:12px 0 0;font:500 12px/1 var(--k-mono,'Share Tech Mono',monospace);color:rgba(191,227,154,.75);}
+#secTransit .sf-in{width:min(900px,94vw);}
+#secTransit .sf-kick{margin:0 0 6px;font:700 13px/1 var(--k-ui,'Saira Condensed',sans-serif);letter-spacing:.42em;color:var(--k-acc,#ffae34);}
+#secTransit .sf-ttl{margin:0 0 22px;font:400 clamp(26px,3.4vw,44px)/1 var(--k-stencil,'Saira Stencil One',sans-serif);letter-spacing:.05em;color:var(--k-text,#eee7d2);text-shadow:0 3px 18px rgba(0,0,0,.8);}
+#secTransit .sf-row{display:grid;grid-template-columns:1fr 1fr;gap:clamp(12px,2.4vw,28px);}
+#secTransit .sf-r{--k-bk:transparent;position:relative;display:flex;flex-direction:column;text-align:left;cursor:pointer;min-height:44px;border:1px solid var(--k-edge2,rgba(214,226,196,.3));
+  background:linear-gradient(180deg,rgba(255,255,255,.04),transparent 40%),var(--k-scan),var(--k-p2,#171b14);color:var(--k-text,#eee7d2);
+  transition:transform var(--k-med,.22s) var(--k-ease,ease),border-color var(--k-fast,.14s) ease,box-shadow var(--k-med,.22s) ease,--k-bk var(--k-fast,.14s) ease;}
+#secTransit .sf-r::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:3;
+  background:linear-gradient(var(--k-bk) 0 0) 0 0/18px 3px no-repeat,linear-gradient(var(--k-bk) 0 0) 0 0/3px 18px no-repeat,linear-gradient(var(--k-bk) 0 0) 100% 0/18px 3px no-repeat,
+    linear-gradient(var(--k-bk) 0 0) 100% 0/3px 18px no-repeat,linear-gradient(var(--k-bk) 0 0) 0 100%/18px 3px no-repeat,linear-gradient(var(--k-bk) 0 0) 0 100%/3px 18px no-repeat,
+    linear-gradient(var(--k-bk) 0 0) 100% 100%/18px 3px no-repeat,linear-gradient(var(--k-bk) 0 0) 100% 100%/3px 18px no-repeat;}
+@media (hover:hover){ #secTransit .sf-r:hover{--k-bk:rgba(255,210,122,.85);border-color:var(--k-edge3,rgba(236,228,206,.55));transform:translateY(-3px);} }
+#secTransit .sf-r.padfocus,#secTransit .sf-r:focus-visible{--k-bk:#fff6dc;outline:2px solid #fff6dc !important;outline-offset:3px;}
+#secTransit .sf-r.on{--k-bk:var(--k-acc-hi,#ffd27a);border-color:var(--k-acc,#ffae34);transform:scale(1.03);box-shadow:0 0 0 1px var(--k-acc,#ffae34),0 0 30px var(--k-acc-a,rgba(255,174,52,.32)),inset 0 0 30px rgba(255,174,52,.16);}
+#secTransit .sf-r.on::before{content:'✓';position:absolute;z-index:4;top:12px;right:52px;width:26px;height:26px;display:grid;place-items:center;font:700 16px/1 var(--k-ui,'Saira Condensed',sans-serif);
+  color:var(--k-acc-ink,#1b1104);background:linear-gradient(180deg,var(--k-acc-hi,#ffd27a),var(--k-acc,#ffae34));clip-path:polygon(5px 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%,0 5px);}
+#secTransit .st-fork.done .sf-r:not(.on){opacity:.35;transform:scale(.97);}
+#secTransit .sf-img{position:relative;height:clamp(96px,15vh,150px);background-size:cover;background-position:center;background-blend-mode:normal,color,normal;}
+#secTransit .sf-ic{position:absolute;left:16px;bottom:12px;width:44px;height:44px;display:grid;place-items:center;color:var(--k-acc-hi,#ffd27a);border:1px solid rgba(255,210,122,.6);background:rgba(9,11,8,.6);}
+#secTransit .sf-ic svg{width:26px;height:26px;}
+#secTransit .sf-img em{position:absolute;right:14px;top:8px;font:400 40px/1 var(--k-stencil,'Saira Stencil One',sans-serif);color:rgba(255,246,220,.9);font-style:normal;text-shadow:0 2px 10px #000;}
+#secTransit .sf-img small{position:absolute;left:70px;bottom:16px;font:700 13px/1 var(--k-ui,'Saira Condensed',sans-serif);letter-spacing:.24em;color:rgba(255,246,220,.85);text-shadow:0 1px 6px #000;}
+#secTransit .sf-body{display:flex;flex-direction:column;gap:9px;padding:14px 18px 20px;}
+#secTransit .sf-body b{font:700 clamp(20px,2.2vw,28px)/1.05 var(--k-ui,'Saira Condensed',sans-serif);letter-spacing:.06em;text-transform:uppercase;color:#fff6dc;}
+#secTransit .sf-d{display:flex;align-items:center;gap:2px;font-size:18px;line-height:1;}
+#secTransit .sf-d i{font-style:normal;color:var(--k-acc-hi,#ffd27a);} #secTransit .sf-d s{text-decoration:none;color:rgba(238,231,210,.2);}
+#secTransit .sf-d u{margin-left:10px;text-decoration:none;font:700 10.5px/1 var(--k-ui,'Saira Condensed',sans-serif);letter-spacing:.2em;text-transform:uppercase;padding:3px 6px;border:1px solid rgba(255,174,52,.5);color:var(--k-acc,#ffae34);}
+#secTransit .sf-l{font:600 clamp(14px,1.35vw,17px)/1.25 var(--k-ui,'Saira Condensed',sans-serif);}
+#secTransit .sf-l u{display:block;text-decoration:none;font:700 10.5px/1 var(--k-ui,'Saira Condensed',sans-serif);letter-spacing:.22em;text-transform:uppercase;color:var(--k-mute,rgba(238,231,210,.62));margin-bottom:3px;}
+#secTransit .sf-l.rw{color:var(--k-acc-hi,#ffd27a);} #secTransit .sf-l.bad{color:var(--k-danger-hi,#ff7457);} #secTransit .sf-l.safe{color:var(--k-info,#58d2e6);}
+#secTransit .sf-r kbd{position:absolute;right:14px;bottom:14px;font:400 13px/1 var(--k-mono,'Share Tech Mono',monospace);color:var(--k-text,#eee7d2);border:1px solid var(--k-edge3,rgba(236,228,206,.55));padding:4px 8px;background:rgba(9,11,8,.6);}
+#secTransit .sf-bar{height:5px;margin:22px auto 0;width:min(520px,80%);background:rgba(238,231,210,.12);overflow:hidden;}
+#secTransit .sf-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--k-acc,#ffae34),var(--k-acc-hi,#ffd27a));transform-origin:0 50%;transition:transform .2s linear;}
+#secTransit .sf-auto{margin:10px 0 0;font:600 14px/1 var(--k-ui,'Saira Condensed',sans-serif);letter-spacing:.12em;text-transform:uppercase;color:var(--k-mute,rgba(238,231,210,.62));}
 body.touch #secTransit .sf-r kbd{display:none;}
-@media (orientation:landscape) and (max-height:520px){ #secTransit .st-fork{top:54%;width:94vw;} #secTransit .sf-ttl{font-size:17px;margin-bottom:8px;} #secTransit .sf-r{padding:9px 11px 10px;gap:4px;}
-  #secTransit .sf-r b{font-size:13px;} #secTransit .sf-l{font-size:11px;} #secTransit .sf-auto{margin-top:6px;font-size:10.5px;} }
+@media (orientation:landscape) and (max-height:520px){ #secTransit .sf-in{width:96vw;} #secTransit .sf-kick{font-size:10px;margin-bottom:3px;} #secTransit .sf-ttl{font-size:20px;margin-bottom:10px;}
+  #secTransit .sf-img{height:58px;} #secTransit .sf-ic{width:34px;height:34px;left:10px;bottom:8px;} #secTransit .sf-ic svg{width:20px;height:20px;} #secTransit .sf-img em{font-size:28px;right:10px;top:6px;}
+  #secTransit .sf-img small{left:52px;bottom:11px;font-size:11px;} #secTransit .sf-body{gap:5px;padding:8px 12px 10px;} #secTransit .sf-body b{font-size:18px;} #secTransit .sf-d{font-size:14px;}
+  #secTransit .sf-l{font-size:12.5px;} #secTransit .sf-l u{font-size:9px;margin-bottom:1px;} #secTransit .sf-bar{margin-top:10px;} #secTransit .sf-auto{margin-top:6px;font-size:11px;} }
+/* SECTOR 5 the rail owns the top centre: the contract chip steps aside while a sector run is up (it sat on the rail) */
+body.sectrun #contractChip{display:none !important;}
+#chpbar.sr-off{visibility:hidden !important;}   /* SECTOR 5 our base's core bar while it stands on the rail's strip (campaign/sectors.js railClear) */

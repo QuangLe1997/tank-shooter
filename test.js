@@ -2940,6 +2940,13 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   ok(/sectorRailCons\(/.test(sr) && /sectorEventChip\(\{ vi:E\.vi/.test(sr) && /#secRail \.sr-x\{/.test(R('css/sector.css')) && /#secRail \.sr-c\{/.test(R('css/sector.css')), 'consequences as icons and the card as a chip in the rail\'s top band');
   ok(/g\.noFort = !FORTS\.some\(f => f\.tier === 3 && !f\.captured\)/.test(sc) && /startBoss\(now, null\)/.test(sc) && X.types.boss.wait>0, 'a general\'s sector with no citadel standing: he comes out in the open — the battle never stalls'); }
 
+// SECTOR 5 the fork card as a decision moment (ui-kit selection cards, the land's picture, a draining bar) and the rail's strip kept to itself
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { SECROUTE:Q }=await import('./config.js'), css=R('css/sector.css'), hud=R('src/ui/sector-hud.js'), sc=R('src/campaign/sectors.js');
+  ok(Q.fork.pickT===12 && Q.fork.confirm>0 && Q.fork.confirm<1 && Q.hue.length===2 && ['hold','sabotage','rescue','pursuit','breach','infiltrate'].every(k=>Q.icon[k]) && /\{s\}/.test(Q.say.auto) && /\{r\}/.test(Q.say.auto), 'SECROUTE: a 12 s default pick naming its route, a short ✓ beat, a tint per route, an icon per mission');
+  ok(/backdrop-filter:none !important/.test(css) && /#secTransit \.sf-r\.on::before\{content:'✓'/.test(css) && /#secTransit \.sf-r::after\{/.test(css) && /min-height:44px/.test(css) && /\.sf-bar i\{/.test(css) && /\.sf-l\.bad\{color:var\(--k-danger-hi/.test(css) && /\.sf-l\.safe\{color:var\(--k-info/.test(css), 'the fork card: no blur behind it, corner brackets, ✓ when picked, 44 px targets, reward amber, consequence red or cyan, a draining bar');
+  ok(/url\(' \+ r\.img \+ '\)/.test(hud) && /svgMarkup\(r\.icon, 1\.8\)/.test(hud) && /assets\/maps\/' \+ String\(BIOME\.name\)\.toLowerCase\(\)/.test(R('src/campaign/sector-route.js')), 'each route card wears the land\'s own picture and the mission\'s icon');
+  ok(/body\.sectrun #contractChip\{display:none !important;\}/.test(css) && /#chpbar\.sr-off\{visibility:hidden !important;\}/.test(css) && /function railClear\(now\)/.test(sc) && /railFree\(\);/.test(sc), 'the rail owns the top centre: the contract chip steps aside, the core and gate bars leave its strip'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

@@ -3876,7 +3876,8 @@ export const SECTOR = { on:true, retries:3,
 // SECTOR 4 THE ROUTE (campaign/sector-route.js · the fork card, the icons and the chip: ui/sector-hud.js). A run's token '*' is a FREE SLOT, dealt from the land's deck
 //   (decks[land], else _) by a seed fixed for the attempt (a checkpoint replays the same deal; a new attempt deals again); an infiltration is dealt only into a night battle.
 //   fork: at a free slot once every[0]…every[1] sectors have passed (and at the last free slot when none has come yet) the transit stops on a FORK CARD — two routes, each
-//     its difficulty, its reward, its consequence; a tap / click / the pad / keys 1·2 pick; pickT s without one takes the easier. pick: the easier is the default (a tie: the first).
+//     its difficulty, its reward, its consequence; a tap / click / the pad / keys 1·2 pick (the picked card shows its ✓ for confirm s); pickT s without one takes the easier
+//     (a tie: the first). icon / hue (SECTOR 5): each mission's icon on its card, route A's / B's tint over the land's own picture.
 //   meta (by type:obj, place:type or type): diff 1–3 · win = the consequence its sector won leaves · skip = the one the route NOT taken leaves · reward = the card's line when it has no win
 //   cons — carried to the end of the battle, an icon each by the rail: strike — one air strike `at` s into the general's sector · mate — one more man with him in every sector ·
 //     ammoLess — his reserves × k now and each refill's ammo × refill · guards — the general's bodyguards + add · noColumn — every wave `wave` men fewer (at least 1)
@@ -3884,7 +3885,8 @@ export const SECTOR = { on:true, retries:3,
 //     marksmen — the director's marksmen: chance at least `chance`, max + add, dmg × · wounded — on foot run / sprint × speed · blackout — no radio · early — our fireteam now and n more men ·
 //     bombing / crash / fire / jam — that big event `at` s in. Shown as a chip by the rail.
 export const SECROUTE = { on:true,
-  fork:{ every:[1, 2], pickT:12 },
+  fork:{ every:[1, 2], pickT:12, confirm:0.45 },
+  icon:{ hold:'flag', sabotage:'bolt', rescue:'heart', pursuit:'target', breach:'bolt', infiltrate:'star' }, hue:['rgba(255,174,52,.42)', 'rgba(88,210,230,.36)'],   // SECTOR 5 the fork card: each mission's icon, route A's / B's tint over the land's picture
   decks:{ _:['bridge:sabotage:radio', 'village:rescue:civ', 'outskirts:pursuit', 'village:sabotage:depot', 'village:rescue:pilot', 'gate:breach', 'outskirts:hold', 'village:infiltrate:command'],
           DESERT:['village:rescue:pilot', 'village:sabotage:depot', 'outskirts:pursuit', 'bridge:sabotage:radar', 'outskirts:hold', 'village:rescue:civ'],
           SAVANNA:['outskirts:pursuit', 'village:rescue:civ', 'bridge:sabotage:radar', 'village:sabotage:depot', 'outskirts:hold', 'village:rescue:pilot'],
@@ -3912,4 +3914,4 @@ export const SECROUTE = { on:true,
     early:{ vi:'VIỆN BINH TA TỚI SỚM', tx:'Tổ bộ binh tới ngay', icon:'team', good:true, n:3 },
     bombing:{ vi:'NÉM BOM THẢM', tx:'Máy bay địch rải bom', icon:'bolt', good:false, at:14 }, crash:{ vi:'MÁY BAY RƠI', tx:'Một chiếc máy bay sắp rơi', icon:'bolt', good:false, at:14 },
     fire:{ vi:'CHÁY CỎ', tx:'Lửa lan trên đồng', icon:'bolt', good:false, at:14 }, jam:{ vi:'NHIỄU SÓNG', tx:'Địch phá sóng', icon:'mag', good:false, at:14 } },
-  say:{ fork:'NGÃ RẼ', pick:'Chọn hướng tiến', auto:'Tự chọn sau {s} giây', diff:'Độ khó', reward:'Phần thưởng', cons:'Hệ quả', none:'—', key:'Phím {k}', took:'Đã chọn: {r}' } };
+  say:{ fork:'NGÃ RẼ', pick:'Chọn hướng tiến', auto:'Tự đi hướng {r} sau {s} giây', noCons:'Không có hệ quả xấu', diff:'Độ khó', reward:'Phần thưởng', cons:'Hệ quả', none:'—', key:'Phím {k}', took:'Đã chọn: {r}' } };
