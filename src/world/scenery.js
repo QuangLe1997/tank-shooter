@@ -54,13 +54,15 @@ export class SceneLOD extends THREE.LOD {
 //   shared by every level painted the near scan's maps on the mid / far level's UVs (camouflage blotches from ~40 m on: the quarry's limestone rocks,
 //   the watchtowers, the toned bunkers); the copy keeps the piece's shader (blend-in, the limestone's drain) and follows its flash and fade
 function levelMat(tpl, L){ const c = tpl.clone(); c.onBeforeCompile = tpl.onBeforeCompile; c.customProgramCacheKey = tpl.customProgramCacheKey; takeMaps(c, L.mat); return c; }
-function follow(mesh, tpl){ const s = { e:-1, i:-1, o:-1, t:null }; mesh.onBeforeRender = () => { const c = mesh.material; if(!c || c === tpl) return; const e = tpl.emissive ? tpl.emissive.getHex() : 0;
+function follow(mesh, tpl){ const s = { e:-1, i:-1, o:-1, t:null }; mesh.onBeforeRender = function(r, sc, cam, geo, mat, grp){ THREE.Mesh.prototype.onBeforeRender.call(this, r, sc, cam, geo, mat, grp); const c = mesh.material; if(!c || c === tpl) return;   // (TOWER2 the shared hook first: render/asset-diet.js refills a KTX2 map whose GPU copy a past battle freed — an own hook here hid it, and a tower met again battle after battle stood bare white)
+  const e = tpl.emissive ? tpl.emissive.getHex() : 0;
   if(e !== s.e || tpl.emissiveIntensity !== s.i){ s.e = e; s.i = tpl.emissiveIntensity; if(c.emissive && tpl.emissive) c.emissive.copy(tpl.emissive); c.emissiveIntensity = tpl.emissiveIntensity; }   // (only when it changed: a hit's flash on the piece's material)
   if(tpl.opacity !== s.o || tpl.transparent !== s.t){ s.o = tpl.opacity; s.t = tpl.transparent; c.opacity = tpl.opacity; if(c.transparent !== tpl.transparent){ c.transparent = tpl.transparent; c.needsUpdate = true; } } }; }
 function takeMaps(to, from){ for(const k of ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap']) to[k] = from[k]; to.color.copy(from.color); to.emissive.copy(from.emissive);
   to.roughness = from.roughness; to.metalness = from.metalness; to.envMapIntensity = from.envMapIntensity; to.needsUpdate = true; }
 // Z375 a watchtower / water tower of world/tower-kinds.js: the scan stood in the tower's body (it topples with it), its own material returned for the fade
-export function towerModel(body, K){ const mat = new THREE.MeshStandardMaterial({ color:0x8a8a84, roughness:0.8 }); mat.userData.own = true; blendIn(mat); body.add(scenePiece(K.model, 1, { mat, tone:landTone() })); return mat; }
+export function towerModel(body, K){ const mat = new THREE.MeshStandardMaterial({ color:0x8a8a84, roughness:0.8, side:M(K.model).side || THREE.FrontSide }); mat.userData.own = true;   // (TOWER2 side 2: a model of thin sheets)
+  blendIn(mat); body.add(scenePiece(K.model, 1, { mat, tone:landTone() })); return mat; }
 // Z420 the land's tone (REALPROP.cast.tint, × share SCENERY.tone) that the forts' bunkers and the guard towers wear over their own colour: one palette per field
 export function landTone(){ const t = REALPROP.cast.tint, c = new THREE.Color(t[BIOME.name] ?? t._); return new THREE.Color(1, 1, 1).lerp(c, SCENERY.tone); }
 // a piece ready to stand somewhere (its levels fetched in the background): the light ones now, the near one when it is wanted

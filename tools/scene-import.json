@@ -233,5 +233,8 @@
   "ice_pillar": { "src": "Z462_glacial_citadel", "tris": 0, "tex": 2048, "m": 6000 },
   "ice_serac": { "src": "Z462_ice_wall", "tris": 60000, "tex": 2048, "m": 8000, "lodBase": 40000 },
   "ice_block": { "src": "Z462_iceberg01", "tris": 60000, "tex": 2048, "m": 8000, "lodBase": 40000 },
-  "ice_floe": { "src": "Z462_floe", "tris": 0, "tex": 1024, "m": 4000 }
+  "ice_floe": { "src": "Z462_floe", "tris": 0, "tex": 1024, "m": 4000 },
+  "gt_watch": { "src": "TOWER2_watch", "tris": 0, "tex": 1024, "m": 4000 },
+  "gt_hunt": { "src": "TOWER2_hunt", "tris": 0, "tex": 2048, "m": 8000 },
+  "gt_roman": { "src": "TOWER2_roman", "tris": 0, "tex": 2048, "m": 6000 }
 }

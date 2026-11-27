@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { SCENERY } from '../../config.js';
+import { SCENERY, TOWERMODEL } from '../../config.js';
 import { towerModel } from '../hub.js';
 
 const nI=q=>{ const n=q.index?q.toNonIndexed():q; for(const a of Object.keys(n.attributes)) if(!['position','normal','uv'].includes(a)) n.deleteAttribute(a); n.clearGroups(); if(!n.attributes.uv) n.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(n.attributes.position.count*2),2)); return n; };
@@ -107,15 +107,14 @@ export const TOWER_KINDS = {
   gt_winter: { vi:'THÁP PHÁO ĐÀI TUYẾT', mat:'stone', model:'gt_winter', deck:0.94, r:4.4, hp:2.4, guards:[[0.9,-0.8],[-1.2,-1.7]], build(P,h){ return { sl:[0, h+1.4, -2.0] }; } },
   gt_broken: { vi:'THÁP ĐỔ NÁT', mat:'stone', model:'gt_broken', deck:0.98, r:2.9, hp:1.6, guards:[[1.3,1.3],[-1.3,-1.3]], build(P,h){ return { sl:[1.4, h+1.0, -1.4] }; } },
 };
+// TOWER2 the real guard towers (config TOWERMODEL): their files join the scenery's models, each a kind built like the gt_* ones (the model IS the tower)
+Object.assign(SCENERY.models, TOWERMODEL.models);
+for(const [k, Q] of Object.entries(TOWERMODEL.kinds)) TOWER_KINDS[k] = { ...Q, model:k, build(P, h){ return { sl:[Q.sl[0], h + Q.sl[1], Q.sl[2]] }; } };
 for(const K of Object.values(TOWER_KINDS)) if(K.model){ K.h=SCENERY.models[K.model].h*K.deck; K.dress=body=>towerModel(body, K); }   // Z375 (towers.js buildTower hands it the tower's body)
 // which kinds each land builds (weights)
-//   Z420 the guard posts are the new scans only, each land its own architecture: concrete and steel where the war is modern (desert, works, city,
-//   volcano), dressed stone where the land is old (citadel, ruins, quarry), stone-and-timber in the green country, the snow bastion in the ice
-export const TOWER_BIOME = {
-  DESERT:{ gt_concrete:3, gt_round:2 }, SAVANNA:{ gt_round:2, gt_concrete:2, gt_sentinel:1 }, TUNDRA:{ gt_winter:2, gt_sentinel:2, gt_round:1 }, ARCTIC:{ gt_winter:3, gt_sentinel:2, gt_round:1 },
-  FOUNDRY:{ gt_sentinel:3, gt_round:2, gt_concrete:1 }, CITADEL:{ gt_stone:3, gt_castle:1 }, MEADOW:{ gt_limes:3, gt_stone:2 }, CITY:{ gt_sentinel:3, gt_concrete:2 },
-  HILLS:{ gt_limes:3, gt_stone:2 }, VILLAGE:{ gt_limes:3, gt_stone:1 }, RUINS:{ gt_broken:2, gt_stone:2, gt_round:1 },
-  STEELMILL:{ gt_sentinel:3, gt_round:2, gt_concrete:1 }, VOLCANO:{ gt_sentinel:2, gt_concrete:2 }, QUARRY:{ gt_stone:2, gt_concrete:2, gt_sentinel:1 }, CAVERN:{ gt_sentinel:2, gt_concrete:1 } };
+//   TOWER2 the military watchtower everywhere the war is modern, the steel lattice post by the works, in the cold and the ruins, the hardened concrete
+//   block in the desert, the city and the ruins, the stone tower with its timber gallery in the old green and stone lands (config TOWERMODEL.biome)
+export const TOWER_BIOME = TOWERMODEL.biome;   // TOWER2 the real models + the concrete block (the Z420 table of gt_* scans retired)
 export function pickTowerKind(biome){ const W=TOWER_BIOME[biome]||{ wood:1 }; let tot=0; for(const k in W) tot+=W[k]; let r=Math.random()*tot; for(const k in W){ if((r-=W[k])<=0) return k; } return 'wood'; }
 // merged geometry per material for one kind (built once, shared by every tower of that kind)
 const _TK={};

@@ -52,7 +52,7 @@ export function buildTower(x, z, kindId){
   const lamp=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.28,0.4,12), M.tin); lamp.rotation.x=Math.PI/2; sl.add(lamp);
   const bg=new THREE.Group(); bg.rotation.x=0.55; sl.add(bg); const light=makeSearchlight(sl, bg, 26, 0.24, 3.4, gy), beam=light.beam;   // Z146 volumetric beam + ground pool + glare
   // Z175 the guards: one per post of this kind (sometimes a post is empty) — every man up there fires, so the tower's firepower IS its garrison
-  const guards=[], posts=K.guards.slice(), nG=posts.length-(posts.length>2 && Math.random()<0.3 ? 1 : 0), fy=K.h+(K.mat==='conc'?0.16:K.mat==='steel'?0.07:0.12);
+  const guards=[], posts=K.guards.slice(), nG=posts.length-(posts.length>2 && Math.random()<0.3 ? 1 : 0), fy=K.h+(K.feet ?? (K.mat==='conc'?0.16:K.mat==='steel'?0.07:0.12));
   for(let k=0;k<nG;k++){ const [px,pz]=posts[k], s=makeSoldierMesh({enemy:true}); s.scale.setScalar(HUMAN_SCALE); s.position.set(px, fy, pz); body.add(s); guards.push({ g:s, alive:true, fireAt:performance.now()/1000+1+Math.random()*2 }); }
   scene.add(g);
   const hp=Math.round(TOWER.hp*K.hp*loopHpMul()*diffHpMul());

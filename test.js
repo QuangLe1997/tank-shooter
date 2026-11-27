@@ -2860,6 +2860,14 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   ok(/rideStopStep\(H, p, dt, own1 \? ask : want,/.test(src) && /own1=HORSERIDE\.on && !H\.bike/.test(src), 'the horse\'s hard stop reads the rider\'s ask, the bike keeps its capped want');
   ok(/ask=topR\*inp\*/.test(src) && !/ask=Math\.min\(AV\.vcap/.test(src), 'the ask is the hand alone: no avoid cap in it'); }
 
+// TOWER2 the guard towers made real: three Sketchfab models (CC BY, credited) replace the Meshy-made gt_* posts in every land; guards on the measured floor
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { TOWERMODEL:TM, DEFENSE }=await import('./config.js'), tk=R('src/world/tower-kinds.js'), D='assets/models/real/scene/';
+  const ks=Object.keys(TM.kinds), head=f=>{ const b=fs.readFileSync(f), n=b.readUInt32LE(12); return JSON.parse(b.slice(20,20+n)); };
+  ok(ks.length===3 && ks.every(k=>TM.models[k] && TM.models[k].h>=10 && TM.models[k].h<=14 && TM.models[k].one && fs.existsSync(D+k+'.glb') && fs.existsSync(D+'m/'+k+'.glb') && head(D+k+'.glb').extensionsUsed.includes('KHR_texture_basisu')), 'TOWERMODEL: three real towers 10–14 m tall, near + phone files, KTX2 maps');
+  ok(ks.every(k=>{ const K=TM.kinds[k], h=TM.models[k].h*K.deck; return K.deck>0.4 && K.deck<0.9 && h>=6 && h<=10.5 && K.guards.length>=2 && K.guards.every(g=>Math.hypot(g[0],g[1])<TM.models[k].h*0.4) && K.sl.length===3 && K.r>=1.5 && K.hp>0; }), 'each: a deck 6–10.5 m up, two or more posts on it, a searchlight, a block circle');
+  const allK=new Set([...ks,'block']); ok(Object.values(TM.biome).every(W=>Object.keys(W).length && Object.keys(W).every(k=>allK.has(k))) && allK.has(DEFENSE.pockets.tower), 'every land and the RUINS nests raise only the real towers and the concrete block');
+  ok(/Object\.assign\(SCENERY\.models, TOWERMODEL\.models\)/.test(tk) && /fy=K\.h\+\(K\.feet \?\?/.test(R('src/world/towers.js')) && /side:M\(K\.model\)\.side \|\| THREE\.FrontSide/.test(R('src/world/scenery.js')) && ks.every(k=>R(D+'SOURCES.txt').includes(k+'.glb = ')) && /function follow\(mesh, tpl\)\{[^\n]*THREE\.Mesh\.prototype\.onBeforeRender\.call\(this/.test(R('src/world/scenery.js')), 'wired: models registered, guards on the measured floor, sheet panels double-sided, authors credited, a toned piece still refills its freed KTX2 maps'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
@@ -3035,7 +3043,7 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
 // Z174b real tank proportions · Z175 watchtower kinds (timber / steel / concrete by land), garrison = firepower, our rocket men hit towers
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const cfg=await import('./config.js'), tk=R('src/world/tower-kinds.js'), WD=await import('./src/data/world.js'); const ft=R('src/actors/fireteam.js');
   const kinds=[...tk.matchAll(/\n  (\w+): \{ vi:'[^']+', mat:'(\w+)', h:([\d.]+), r:[\d.]+, hp:([\d.]+), guards:\[((?:\[[^\]]+\],?)+)\]/g)], mats=new Set(kinds.map(k=>k[2])), tb=tk.slice(tk.indexOf('export const TOWER_BIOME'));
-  ok(kinds.length>=7 && ['wood','steel','conc','bamboo'].every(m=>mats.has(m)) && WD.BIOMES.every(b=>new RegExp('\\b'+b.name+':\\{').test(tb)) && kinds.every(k=>(k[5].match(/\[/g)||[]).length>=2 && +k[3]>=6 && +k[4]>0), 'seven watchtower builds in timber, bamboo, steel and concrete; every land raises the kinds it would really have');
+  ok(kinds.length>=7 && ['wood','steel','conc','bamboo'].every(m=>mats.has(m)) && WD.BIOMES.every(b=>cfg.TOWERMODEL.biome[b.name]) && kinds.every(k=>(k[5].match(/\[/g)||[]).length>=2 && +k[3]>=6 && +k[4]>0), 'seven watchtower builds in timber, bamboo, steel and concrete; every land raises the kinds it would really have');
   ok(/posts\.length-\(posts\.length>2/.test(R('src/world/towers.js')) && /K\.hp\*loopHpMul/.test(R('src/world/towers.js')), 'a tower is manned post by post (its firepower is its garrison) and its strength follows its material');
   ok(/kind:'towerAT'/.test(ft) && /function rocketHitsTower/.test(ft) && /n=all\?live\.length:Math\.ceil\(live\.length\/2\)/.test(ft), 'our soldiers with a launcher fire up into a manned tower: half its guards — or all of them — are killed'); }
 
@@ -3077,7 +3085,7 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   ok(['setCamPitch','setCamDist','setCamFov','setCamAhead'].every(id=>st.includes("'"+id+"'")), 'settings: pitch, distance, field of view and look-ahead steppers'); }
 
 // Z187 three new battlefields: abandoned steelworks · volcanic caldera (lava burns) · Carrara marble quarry — present in every per-battlefield table
-{ const fs=await import('node:fs'); const files=['src/data/world.js','src/data/text-vi.js','src/world/ground.js','src/world/regional.js','src/world/tower-kinds.js','src/world/env-events.js','src/world/props.js','src/world/wonders.js','src/world/flora.js','src/world/atmosphere.js'];
+{ const fs=await import('node:fs'); const files=['src/data/world.js','src/data/text-vi.js','src/world/ground.js','src/world/regional.js','config.js','src/world/env-events.js','src/world/props.js','src/world/wonders.js','src/world/flora.js','src/world/atmosphere.js'];
   const src=files.map(f=>[f, fs.readFileSync(f,'utf8')]); const miss=[];
   for(const n of ['VOLCANO','QUARRY']) for(const [f,s] of src) if(!s.includes(n)) miss.push(n+' @ '+f);
   ok(!miss.length, 'every per-battlefield table knows VOLCANO / QUARRY'+(miss.length?' — missing: '+miss.join(', '):''));
@@ -3373,9 +3381,9 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), SC=C.SCENERY, tk=R('src/world/tower-kinds.js'), D='assets/models/real/scene/';
   const tool=R('tools/scene-import.mjs'), spec=JSON.parse(R('tools/scene-import.json')), sc=R('src/world/scenery.js');
   ok(/EXT_meshopt_compression/.test(tool) && /KHR_mesh_quantization/.test(tool) && /reorderMesh/.test(tool) && /S\.simplify\(G\.idx, G\.pos, 3/.test(tool) && /'Permissive'/.test(tool), 'the import tool: seam-locked simplify (loose only for foliage copies), quantized + meshopt-compressed GLBs');
-  const keys=Object.keys(SC.models), head=f=>{ const b=fs.readFileSync(f), n=b.readUInt32LE(12); return JSON.parse(b.slice(20,20+n)); };
-  ok(keys.every(k=>spec[k]) && Object.keys(spec).filter(k=>k!=='_' && !spec[k].out).every(k=>SC.models[k]), 'every scanned model has its import spec and its scenery entry (the hand weapons, out: gun/inf, are the arsenal\'s)');
-  ok(keys.every(k=>fs.existsSync(D+k+'.glb') && fs.existsSync(D+'m/'+k+'.glb') && (SC.models[k].one || (fs.existsSync(D+'l/'+k+'.glb') && fs.existsSync(D+'f/'+k+'.glb')))), 'each has its near file, its phone copy and (unless light) its mid and far copies');
+  const MD={ ...SC.models, ...C.TOWERMODEL.models }, keys=Object.keys(MD), head=f=>{ const b=fs.readFileSync(f), n=b.readUInt32LE(12); return JSON.parse(b.slice(20,20+n)); };
+  ok(keys.every(k=>spec[k]) && Object.keys(spec).filter(k=>k!=='_' && !spec[k].out).every(k=>MD[k]), 'every scanned model has its import spec and its scenery entry (the hand weapons, out: gun/inf, are the arsenal\'s)');
+  ok(keys.every(k=>fs.existsSync(D+k+'.glb') && fs.existsSync(D+'m/'+k+'.glb') && (MD[k].one || (fs.existsSync(D+'l/'+k+'.glb') && fs.existsSync(D+'f/'+k+'.glb')))), 'each has its near file, its phone copy and (unless light) its mid and far copies');
   ok(keys.every(k=>{ const j=head(D+k+'.glb'); return j.extensionsRequired.includes('EXT_meshopt_compression') && fs.statSync(D+k+'.glb').size<50e6; }), 'the near files are compressed and each under 50 MB');
   const beats=Object.values(SC.biomes).flat(); ok(beats.every(b=>SC.models[b.k]) && Object.entries(SC.biomes).every(([n,L])=>L.every((b,i)=>!b.of || L.slice(0,i).some(q=>q.id===b.of))), 'every beat names a known model; pairs / rings follow the piece they hang on');
   ok(['export function buildSceneSet','export class SceneLOD','export function scenePiece','export function towerModel'].every(k=>sc.includes(k)) && /loadGLB\(DIR \+ SUB\[lv\]/.test(sc) && /sceneLevel\(this\.key, 'd'\)/.test(sc), 'scenery.js: levels by distance, the near scan fetched on approach');
@@ -3383,7 +3391,7 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   ok(/LAVA\.pools\.push\(\{ x:p\.x, z:p\.z, r, y, glow \}\)/.test(sc) && SC.models.lava_pit.lava>0, 'a lava pit holds live melt that burns like a pool');
   ok(/function realSupply\(gen\)/.test(sc) && /b\.kind !== 'fueltank'/.test(sc) && SC.supply.fueltank.h>0, 'the enemy fuel depot\'s tanks are the steel tank scan, inside each tank\'s own group');
   ok([['mtower','watchtower'],['wtower','wt_steel'],['wrust','wt_rust']].every(([k,m])=>new RegExp(k+": \\{ vi:'[^']+', mat:'steel', model:'"+m+"', deck:0\\.\\d+").test(tk) && SC.models[m]) && /K\.h=SCENERY\.models\[K\.model\]\.h\*K\.deck; K\.dress=body=>towerModel\(body, K\)/.test(tk) && /if\(K\.dress\) mats\.push\(K\.dress\(body\)\)/.test(R('src/world/towers.js')), 'the real towers: guards at the measured deck height, the scan stood in the tower body');
-  ok(['DESERT','FOUNDRY','QUARRY','RUINS','ARCTIC','CITADEL','MEADOW','CITY'].every(b=>new RegExp(b+':\\{\\s*gt_\\w+:\\d+(,\\s*gt_\\w+:\\d+)*\\s*\\}').test(tk)), 'the lands raise only the new guard posts (Z420 gt_*), each its own architecture'); }
+  ok(/export const TOWER_BIOME = TOWERMODEL\.biome;/.test(tk) && ['DESERT','FOUNDRY','QUARRY','RUINS','ARCTIC','CITADEL','MEADOW','CITY'].every(b=>Object.keys(C.TOWERMODEL.biome[b]).every(k=>C.TOWERMODEL.kinds[k] || k==='block')), 'the lands raise only the real guard towers (TOWER2) and the concrete block'); }
 
 // Z383 the horizon for real: scanned summits / cones between the ranges, forest edges, a ruined city and the works in place of the box skylines (desktop)
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), K=C.SKYLINE, hz=R('src/world/horizon.js'), sc=R('src/world/scenery.js');

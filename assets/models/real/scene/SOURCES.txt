@@ -66,3 +66,9 @@ ice_pillar / ice_serac / ice_block / ice_floe (Z462, the arctic's icebergs) — 
   by Vistaful (https://www.meshy.ai/posts/019e464d-6c78-74bb-859f-f4e7296949aa), ice_block.glb = "Iceberg_01" by SandersonArts
   (https://www.meshy.ai/posts/0198eeb4-c71f-7643-882f-ad7f9fd0d10e), ice_floe.glb = "an iceberg floating on sea" by ap17296174
   (https://www.meshy.ai/posts/01975999-09ce-7685-a445-cef7244ca616). The glow maps two of them carry are switched off in the game (world/iceberg.js).
+gt_watch / gt_hunt / gt_roman (TOWER2, the guard towers) — Sketchfab models, CC BY 4.0, downloaded as GLB from the Objaverse mirror
+  (huggingface.co/datasets/allenai/objaverse) and packed by tools/scene-import.mjs (gt_hunt and gt_roman: their several tiled materials baked onto one
+  atlas first; gt_watch and gt_hunt: the metalness of their painted / rusted steel lowered to a quarter):
+  gt_watch.glb = "Watch tower" by _SeF_ (https://sketchfab.com/3d-models/042f327a0f4c4fc9bf458903666bb257),
+  gt_hunt.glb = "Old Hunting Tower" by David06 (https://sketchfab.com/3d-models/149a450d56c447a5ac45ad3c659d29bf),
+  gt_roman.glb = "Rectangular stone watchtower" by cimec (https://sketchfab.com/3d-models/9e2bf602191149dc84788e424e4ab986).

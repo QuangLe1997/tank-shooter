@@ -1489,6 +1489,25 @@ export const TUFT = { h:[0.42, 0.58, 0.78, 1.0], n:[3, 3, 4, 4], w:0.72, lean:0.
 //   radius r fells trees within blastK·r (blasts under minBlast m don't); g, cg = where its weight sits (× height); bounce = what is left after it lands
 export const TREEFALL = { push:0.18, shotPush:0.7, trunk:0.75, hitH:9, minDmg:20, minBlast:2.5, blastK:0.75, g:9.8, cg:0.45, bounce:0.18,
   band:[0.4, 1.3], giantBand:[0.6, 2.2] };   // Z404 the trunk a vehicle meets: the drawn bark between band m over the foot (a giant's higher, over its roots), its median distance from the axis
+// TOWER2 THE GUARD TOWERS MADE REAL (world/tower-kinds.js, world/towers.js): the Meshy-made guard posts (gt_sentinel … gt_broken: soft clay walls, a silo for
+//   a tower, mid copies in blotches) no land builds any more; the posts are three real models (Sketchfab, CC BY 4.0, via the Objaverse mirror — credits in
+//   assets/models/real/scene/SOURCES.txt), one per family, reused across the lands, each worn in the land's tone (scenery.js landTone):
+//   gt_watch the military watchtower (green steel frame, plank deck, camouflage roof), gt_hunt the steel lattice post with its rusted cabin, gt_roman the
+//   stone tower with a timber gallery (old lands); hardened concrete stays the procedural `block`.
+//   models: their SCENERY.models entries (h = true height m — a 1.78 m man stands at the rail; ar from the files; one = a single level, they are light;
+//   side 2 = drawn double-sided: thin sheet panels). kinds: deck = the share of the height the guards stand on (measured off the files' floors), feet = their
+//   soles over it, guards [x, z] posts on that floor, sl [x, up, z] the searchlight (up m over the deck), r the block circle, hp × TOWER.hp.
+//   biome = TOWER_BIOME (weights per land; the RUINS nests' sniper post is DEFENSE.pockets.tower)
+export const TOWERMODEL = {
+  models:{ gt_watch:{ one:true, h:12, ar:[0.41, 1, 0.41], sink:0.004, solid:null }, gt_hunt:{ one:true, h:11.5, ar:[0.32, 1, 0.41], sink:0.004, solid:null, side:2 },
+    gt_roman:{ one:true, h:13, ar:[0.65, 1, 0.66], sink:0.01, solid:null } },
+  kinds:{ gt_watch:{ vi:'THÁP CANH QUÂN SỰ', mat:'steel', deck:0.78, feet:0.03, r:2.5, hp:1.6, guards:[[-0.8, 0.75], [0.8, -0.75]], sl:[1.5, 1.2, 1.5] },
+    gt_hunt:{ vi:'THÁP CANH GIÀN THÉP', mat:'steel', deck:0.72, feet:0.03, r:2.0, hp:1.5, guards:[[-0.75, -1.1], [0.75, 0.1]], sl:[1.3, 1.2, -1.9] },
+    gt_roman:{ vi:'THÁP CANH ĐÁ – GỖ', mat:'stone', deck:0.555, feet:0.03, r:2.5, hp:2.2, guards:[[0, 3.3], [3.3, 0.3], [-3.3, 0.3]], sl:[3.4, 1.0, -3.4] } },
+  biome:{ DESERT:{ gt_watch:3, block:2 }, SAVANNA:{ gt_watch:2, gt_hunt:2, block:1 }, TUNDRA:{ gt_watch:2, gt_hunt:2 }, ARCTIC:{ gt_watch:3, gt_hunt:2 },
+    FOUNDRY:{ gt_hunt:3, gt_watch:2, block:1 }, CITADEL:{ gt_roman:3, gt_watch:1 }, MEADOW:{ gt_roman:3, gt_watch:2 }, CITY:{ gt_watch:3, block:2, gt_hunt:1 },
+    HILLS:{ gt_roman:2, gt_watch:2 }, VILLAGE:{ gt_roman:2, gt_watch:2 }, RUINS:{ gt_watch:3, gt_hunt:2, block:1 }, STEELMILL:{ gt_hunt:3, gt_watch:2 },
+    VOLCANO:{ gt_watch:2, gt_hunt:2, block:1 }, QUARRY:{ gt_watch:2, gt_roman:2, block:1 }, CAVERN:{ gt_watch:2, block:1 } } };
 // Z452 TOWER FALL (world/tower-fall.js): a watchtower / guard post / the radar mast shot down topples about the front edge of its base — g × gK (a little
 //   quicker than life), cg = where its weight sits (× height), lean = how far it already leans as the legs give, kick = the starting swing (rad/s) the
 //   hit gives, bounce = what is left of the swing after it strikes, restW = below this it stays down; bins = height bands its falling face is read in;
@@ -2155,7 +2174,7 @@ export const DEFENSE = { on:true, rb:8, rbMobile:6,
   line:{ step:3.4, pill:40, box:'bunker_dome', boxS:0.55 }, hedge:{ step:7, tri:[[0, 0], [1.9, 1.6], [-1.9, 1.6]] }, crate:{ len:6.0, stack:0.3 },
   curtain:{ k:'castle_wall', w:20, gate:'gatehouse', gateS:0.75 }, bocage:{ step:6.5, trees:['tree_oak', 'tree_pine'], s:[0.5, 0.7], bank:'sandbag' },   // (Z431 the bank: sandbags, not a log pile — log piles read fake)
   lava:{ step:18, s:[0.65, 0.95], rocks:['lava_rock_a', 'lava_rock_b', 'lava_rock_c'] }, terraces:{ rows:3, gap:15, run:18, hole:11, span:1.2 },
-  kopje:{ n:[4, 4, 5, 5, 6], ring:5.2, bags:8, gap:50 }, pockets:{ keys:['ruin_overgrown', 'skeleton_block', 'gargoyle_wall', 'corner_store', 'temple', 'gothic_gate'], towers:2, tower:'gt_broken' },
+  kopje:{ n:[4, 4, 5, 5, 6], ring:5.2, bags:8, gap:50 }, pockets:{ keys:['ruin_overgrown', 'skeleton_block', 'gargoyle_wall', 'corner_store', 'temple', 'gothic_gate'], towers:2, tower:'gt_watch' },
   streets:{ n:4, gap:55, block:['road_barrier', 'tire_wall'] },
   // the men who hold the posts (garrisonDefense): at most max[stage] (× mobileK on phones), rpg = share with a launcher from stage 2, loot = share that drop something
   garrison:{ max:[10, 14, 18, 22, 26], mobileK:0.5, rpg:0.25, loot:0.2 },
