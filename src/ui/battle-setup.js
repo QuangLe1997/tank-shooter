@@ -93,7 +93,7 @@ export function goBattle(){ hide('battleSetup');
   else { const C=PROFILE.custom; saveProfile(); launchGame({ mode:'custom', level:C.lvl, biome:C.biome, tod:C.tod, wx:C.wx, space:C.space }); } }
 tapBtn('bsBack', closeBattleSetup); tapBtn('bsGo', goBattle); tapBtn('bsNext', () => { sfx('click'); setStep(BS.step + 1); }); tapBtn('bsPrev', () => { sfx('click'); setStep(BS.step - 1); });
 document.querySelectorAll('#battleSetup .bs-mode').forEach(m=>tapEl(m, ()=>{ setSetupTab(m.dataset.m); sfx('click'); }));
-document.querySelectorAll('#bsRail .bs-rs').forEach(r=>tapEl(r, ()=>{ sfx('click'); setStep(+r.dataset.s); }));
+document.querySelectorAll('#bsRail .bs-rs').forEach(r=>tapEl(r, ()=>{ sfx('click'); if(+r.dataset.s === 4) goBattle(); else setStep(+r.dataset.s); }));   // UIX stop 3 of the rail (XUẤT KÍCH) goes in, like the footer button
 // back from the arsenal (closeLoadout returns here): show the guns as they are now
 export function setupBack(){ if(BS.step === 2) regear(); else paintFoot(); }
 // Enter: the next step, or into battle from the last

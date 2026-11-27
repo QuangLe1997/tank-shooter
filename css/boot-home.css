@@ -100,8 +100,6 @@
   #start .panel .btn::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;
     background:linear-gradient(112deg,transparent 40%,rgba(255,255,255,.22) 50%,transparent 60%);transform:translateX(-130%);}
   #start .panel .btn:hover::before{transform:translateX(130%);transition:transform .65s ease;}
-  #start #playBtn::before{background:linear-gradient(112deg,transparent 38%,rgba(255,255,255,.5) 50%,transparent 62%);
-    animation:shineX 3.8s ease-in-out 1.2s infinite;}
   .btn:active,.btn-arsenal:active,.btn-terrain:active,.btn-mini:active{transform:scale(.972);}
   /* portrait hint on the title screen (menus work in portrait — the battle itself wants landscape) */
   .rot-hint{display:none;align-items:center;gap:8px;font-size:10.5px;font-weight:800;letter-spacing:2.5px;color:#ffe8b6;

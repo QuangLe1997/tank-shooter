@@ -51,6 +51,7 @@
 <link rel="stylesheet" href="css/medals.css" />
 <link rel="stylesheet" href="css/hud-slim.css" />
 <link rel="stylesheet" href="css/ui-xk.css" />
+<link rel="stylesheet" href="css/ui-kit.css" />
 </head>
 <body>
 <!-- BOOT GATE — holds a clean branded screen until the world is live (and on touch: one tap → audio + fullscreen) -->
@@ -345,7 +346,7 @@
   <div class="bs-top">
     <div class="xb xb-ghost xk-back bs-back" id="bsBack" role="button" data-back="1"><span class="ic" data-icon="back"></span><span>Trang chủ</span></div>
     <!-- Z354 the steps into battle: with what, where (a real sequence, so numbered) -->
-    <div class="bs-rail" id="bsRail"><div class="bs-rs" data-s="2" role="button"><b>1</b><span>Trang bị</span></div><i></i><div class="bs-rs" data-s="3" role="button"><b>2</b><span>Chiến trường</span></div></div>
+    <div class="bs-rail" id="bsRail"><div class="bs-rs" data-s="2" role="button"><b>1</b><span>Trang bị</span></div><i></i><div class="bs-rs" data-s="3" role="button"><b>2</b><span>Chiến trường</span></div><i></i><div class="bs-rs bs-rs-go" data-s="4" role="button"><b>3</b><span>Xuất kích</span></div></div>
     <div class="bs-modes"><div class="bs-mode on" data-m="campaign" role="tab">Chiến dịch<small>vượt từng cấp</small></div><div class="bs-mode" data-m="custom" role="tab">Tự chọn<small>bản đồ, thời tiết</small></div><div class="bs-mode" data-m="night" role="tab">Thủ đêm<small>giữ căn cứ đến sáng</small></div></div>
   </div>
   <div class="bs-step bs-s2" id="bsS2"></div>
@@ -423,6 +424,7 @@
   <header class="xk-top">
     <div class="xb xb-ghost xk-back" id="dp-back" role="button" data-back="1"><span class="ic" data-icon="back"></span><span>Quay lại</span></div>
     <div class="xk-head"><h2 class="xk-ttl" id="dp-op">Bố trí trận địa</h2><p class="xk-sub dp-total" id="dp-total"></p></div>
+    <div class="bs-rail ro" aria-hidden="true"><div class="bs-rs done"><b>1</b><span>Trang bị</span></div><i></i><div class="bs-rs done"><b>2</b><span>Chiến trường</span></div><i></i><div class="bs-rs on"><b>3</b><span>Xuất kích</span></div></div>
   </header>
   <div class="xk-body">
     <div class="dp-body">
@@ -460,6 +462,8 @@
   <header class="xk-top">
     <div class="xb xb-ghost xk-back" id="brBack" role="button" data-back="1"><span class="ic" data-icon="back"></span><span id="brBackT">Quay lại</span></div>
     <div class="xk-head"><p class="xk-kick br-op" id="br-op">Chiến dịch</p><h2 class="xk-ttl">Sẵn sàng xuất kích</h2></div>
+    <!-- UIX the steps into battle, read-only here: equipment and battlefield are behind, this is stop 3 -->
+    <div class="bs-rail ro" aria-hidden="true"><div class="bs-rs done"><b>1</b><span>Trang bị</span></div><i></i><div class="bs-rs done"><b>2</b><span>Chiến trường</span></div><i></i><div class="bs-rs on"><b>3</b><span>Xuất kích</span></div></div>
   </header>
   <div class="xk-body">
     <div class="br-grid">

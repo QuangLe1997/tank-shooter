@@ -1,0 +1,332 @@
+/* =====================================================================================================
+   UIX · THE GAMING KIT — loads LAST (after css/ui-xk.css, whose band layout it keeps) and gives every menu one military-
+   shooter look: gunmetal-olive panels with a scanline grain and a thin bright edge, ONE hot amber for the thing to do,
+   red only for danger, cyan only for information. Buttons are chamfered (clip-path) and live: a light sweep + lift on
+   hover, a sink + flash on press, a bright double edge for keyboard / pad focus. Cards you pick from carry corner
+   brackets on hover / focus and, once picked, a bright edge, an inner glow, a check badge and a gentle scale.
+   Type: Saira Stencil One for the big titles only, Saira Condensed for the UI (tracked capitals on buttons and titles),
+   Share Tech Mono for numbers. Only transform / opacity animate (cheap on a phone); prefers-reduced-motion stops them.
+   The --xk-* tokens of ui-xk.css are re-pointed here, so every older rule that reads them follows the kit.
+   ===================================================================================================== */
+@property --k-bk{syntax:'<color>';inherits:true;initial-value:transparent;}
+:root{
+  /* panels: gunmetal with an olive cast */
+  --k-p0:#090b08; --k-p1:#10130e; --k-p2:#171b14; --k-p3:#20261b;
+  --k-edge:rgba(214,226,196,.15); --k-edge2:rgba(214,226,196,.3); --k-edge3:rgba(236,228,206,.55);
+  /* text */
+  --k-text:#eee7d2; --k-mute:rgba(238,231,210,.62); --k-faint:rgba(238,231,210,.38);
+  /* the one hot accent, danger, info */
+  --k-acc:#ffae34; --k-acc-hi:#ffd27a; --k-acc-lo:#d17f14; --k-acc-ink:#1b1104; --k-acc-a:rgba(255,174,52,.32);
+  --k-danger:#e5462c; --k-danger-hi:#ff7457; --k-info:#58d2e6; --k-ok:#9fdc58;
+  /* type */
+  --k-ui:'Saira Condensed',Rajdhani,system-ui,sans-serif; --k-stencil:'Saira Stencil One','Saira Condensed',sans-serif; --k-mono:'Share Tech Mono',ui-monospace,monospace;
+  /* shape + motion */
+  --k-cut:10px; --k-ease:cubic-bezier(.2,.8,.2,1); --k-fast:.14s; --k-med:.22s;
+  --k-scan:repeating-linear-gradient(0deg,rgba(0,0,0,.22) 0 1px,transparent 1px 3px);
+  --k-chamfer:polygon(var(--k-cut) 0,100% 0,100% calc(100% - var(--k-cut)),calc(100% - var(--k-cut)) 100%,0 100%,0 var(--k-cut));
+  /* the older system's tokens, re-pointed */
+  --xk-ol:var(--k-p1); --xk-ol2:var(--k-p2); --xk-ol3:var(--k-p3); --xk-sand:var(--k-text); --xk-brass:var(--k-acc); --xk-brass2:var(--k-acc-hi);
+  --xk-mute:var(--k-mute); --xk-faint:var(--k-faint); --xk-line:var(--k-edge); --xk-line2:var(--k-edge2); --xk-stamp:var(--k-danger); --xk-ink:var(--k-acc-ink);
+  --xk-band:rgba(11,13,10,.97); --xk-font:var(--k-ui);
+}
+
+/* ================================ BUTTONS — one family ================================
+   .xb is drawn in three layers: the element itself is the EDGE colour clipped to the chamfer, ::before the FILL one pixel
+   inside it (same chamfer), ::after the light that sweeps across on hover. The words sit above both (isolation). */
+.xb{--b-edge:var(--k-edge2);--b-fill:rgba(14,17,12,.86);--b-ink:var(--k-text);--b-in:1px;
+  border:0 !important;border-radius:0 !important;background:var(--b-edge) !important;color:var(--b-ink) !important;isolation:isolate;overflow:hidden;
+  clip-path:var(--k-chamfer);font-family:var(--k-ui);font-weight:700;text-transform:uppercase;letter-spacing:.075em;font-size:15.5px;
+  transition:transform var(--k-fast) var(--k-ease),filter var(--k-fast) ease,opacity var(--k-fast) ease;}
+.xb::before{content:'';position:absolute;inset:var(--b-in);z-index:-2;pointer-events:none;
+  clip-path:polygon(calc(var(--k-cut) - .4px) 0,100% 0,100% calc(100% - var(--k-cut) + .4px),calc(100% - var(--k-cut) + .4px) 100%,0 100%,0 calc(var(--k-cut) - .4px));
+  background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,0) 46%),var(--k-scan),var(--b-fill);transition:filter .2s ease;}
+.xb::after{content:'';position:absolute;top:0;bottom:0;left:0;width:60%;z-index:-1;pointer-events:none;
+  background:linear-gradient(100deg,rgba(255,240,205,0) 20%,rgba(255,240,205,.3) 50%,rgba(255,240,205,0) 80%);transform:translateX(-110%) skewX(-18deg);}
+.xb .ic{position:relative;}
+@media (hover:hover){
+  .xb:hover{--b-edge:var(--k-acc);--b-ink:var(--k-acc-hi);transform:translateY(-1px);}
+  .xb:hover::after{transform:translateX(230%) skewX(-18deg);transition:transform .55s var(--k-ease);}
+}
+.xb:active{transform:translateY(1px) scale(.985) !important;}
+.xb:active::before{filter:brightness(1.18);transition:none;}
+/* primary: the hot amber slab — the one thing to do on a screen */
+.xb-pri{--b-edge:var(--k-acc-hi);--b-fill:var(--k-acc);--b-ink:var(--k-acc-ink);}
+.xb-pri::before{background:linear-gradient(180deg,rgba(255,250,230,.38),rgba(255,250,230,0) 48%,rgba(0,0,0,.12)),
+  repeating-linear-gradient(-45deg,rgba(0,0,0,.07) 0 6px,transparent 6px 12px) right/34% 100% no-repeat,var(--b-fill);box-shadow:inset 0 -3px 0 rgba(0,0,0,.16);}
+@media (hover:hover){ .xb-pri:hover{--b-edge:#fff3d0;--b-fill:#ffbb4e;--b-ink:var(--k-acc-ink);} }
+/* secondary: dark slab, bright edge on hover */
+.xb-sec{--b-edge:var(--k-edge2);--b-fill:rgba(16,19,13,.9);}
+/* ghost: words only until hovered */
+.xb-ghost{--b-edge:transparent;--b-fill:transparent;--b-ink:var(--k-mute);}
+.xb-ghost::before{background:transparent;}
+@media (hover:hover){ .xb-ghost:hover{--b-edge:var(--k-edge2);--b-fill:rgba(22,26,19,.94);--b-ink:var(--k-text);} .xb-ghost:hover::before{background:var(--k-scan),var(--b-fill);} }
+.overlay .xb-ghost.padfocus::before,.xb-ghost:focus-visible::before{background:rgba(14,17,12,.94);}
+.overlay .xb-ghost.padfocus,.xb-ghost:focus-visible{--b-ink:var(--k-text);}
+/* danger: leave / reset / give up */
+.xb-danger,#xkConfirm.danger #xkcYes{--b-edge:#ff8d74;--b-fill:var(--k-danger);--b-ink:#fff3ea;}
+@media (hover:hover){ .xb-danger:hover,#xkConfirm.danger #xkcYes:hover{--b-edge:#ffc2b2;--b-fill:#f25637;--b-ink:#fff;} .xk-menu .xk-leave:hover{--b-edge:rgba(229,70,44,.7);--b-ink:#ffb4a2;background:var(--b-edge) !important;} }
+#xkConfirm.danger #xkcYes{background:var(--b-edge) !important;}
+.xb-danger::before,#xkConfirm.danger #xkcYes::before{background:linear-gradient(180deg,rgba(255,240,230,.26),rgba(255,240,230,0) 50%,rgba(0,0,0,.14)),var(--b-fill);}
+/* icon: a small square slab */
+.xb-icon{--k-cut:7px;--b-ink:var(--k-mute);width:44px;min-height:44px;}
+/* disabled: dim, flat, not clickable */
+.xb.off,.xb.is-off,.xb[aria-disabled="true"]{opacity:.4;filter:grayscale(.85);pointer-events:none;}
+/* keyboard / controller focus: a bright double edge (an outline would be cut by the chamfer) */
+.overlay .xb.padfocus,.overlay .xb:focus-visible,.xb:focus-visible{--b-edge:#fff6dc;--b-in:2px;outline:0 !important;}
+.overlay .xb-pri.padfocus,.overlay .xb-pri:focus-visible{--b-edge:#fff;}
+.overlay .xb-pri.padfocus::before,.overlay .xb-pri:focus-visible::before{box-shadow:inset 0 0 0 2px rgba(27,17,4,.55);}
+/* the big hero on the home screen */
+.xb-hero{--k-cut:16px;font-size:26px;letter-spacing:.08em;}
+.xb-hero small{text-transform:none;letter-spacing:.02em;font-weight:600;color:rgba(27,17,4,.72) !important;}
+.xb-hero .ic{width:26px;height:26px;}
+#start #playBtn.xb-hero,#start #continueBtn.xb-hero{--h:78px;}
+/* the hero catches the light every few seconds so the eye lands on it (transform only) */
+@keyframes kSweep{0%,72%{transform:translateX(-110%) skewX(-18deg)}100%{transform:translateX(230%) skewX(-18deg)}}
+#start .xb-hero::after{animation:kSweep 4.2s ease-in-out 1.4s infinite;}
+.xb-hero::before{background:linear-gradient(180deg,rgba(255,250,230,.42),rgba(255,250,230,0) 50%,rgba(0,0,0,.14)),
+  repeating-linear-gradient(-45deg,rgba(0,0,0,.08) 0 7px,transparent 7px 14px) right/30% 100% no-repeat,var(--b-fill);}
+
+/* segmented choices (settings) and the small option chips (battle setup) — chamfered too */
+.xs-seg{border:1px solid var(--k-edge2) !important;border-radius:0 !important;background:rgba(9,11,8,.72) !important;clip-path:var(--k-chamfer);--k-cut:8px;}
+.xs-opt{font-family:var(--k-ui);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:14.5px;transition:background-color var(--k-fast) ease,color var(--k-fast) ease,transform var(--k-fast) ease;}
+.xs-opt small{text-transform:none;letter-spacing:.01em;}
+.xs-opt.on{background:linear-gradient(180deg,var(--k-acc-hi),var(--k-acc) 55%,var(--k-acc-lo)) !important;color:var(--k-acc-ink) !important;box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 0 16px var(--k-acc-a);}
+.xs-opt.on small{color:rgba(27,17,4,.7) !important;}
+@media (hover:hover){ .xs-opt:not(.on):hover{background:rgba(255,174,52,.12) !important;color:var(--k-acc-hi);} }
+.xs-acts{clip-path:none;border:0 !important;background:none !important;}
+.xs-acts .xs-opt{border:1px solid var(--k-edge2) !important;clip-path:var(--k-chamfer);--k-cut:8px;}
+.xs-danger .xs-opt{color:#ff9d86 !important;border-color:rgba(229,70,44,.6) !important;}
+.overlay .xs-opt.padfocus,.overlay .xs-opt:focus-visible{outline:0 !important;box-shadow:inset 0 0 0 2px #fff6dc !important;}
+
+/* =============================== SCREEN CHROME =============================== */
+/* bands top and bottom: gunmetal with a scanline grain, a thin bright edge and an amber tick under the title */
+.xk-top,#battleSetup .bs-top{position:relative;
+  background:linear-gradient(90deg,var(--k-acc) 0 72px,transparent 72px) left bottom/100% 2px no-repeat,var(--k-scan),linear-gradient(180deg,rgba(24,28,20,.98),rgba(10,12,9,.98)) !important;
+  border-bottom:1px solid var(--k-edge) !important;box-shadow:0 1px 0 rgba(0,0,0,.6),0 10px 30px rgba(0,0,0,.35);}
+.xk-foot,#battleSetup .bs-foot{position:relative;
+  background:var(--k-scan),linear-gradient(0deg,rgba(24,28,20,.98),rgba(10,12,9,.98)) !important;border-top:1px solid var(--k-edge) !important;box-shadow:0 -10px 30px rgba(0,0,0,.35);}
+.xk-tabs{background:var(--k-scan),rgba(10,12,9,.97) !important;}
+.xk-tab{font-family:var(--k-ui);font-weight:700;text-transform:uppercase;letter-spacing:.07em;font-size:15px;}
+.xk-tab.on{color:var(--k-acc-hi);}
+.xk-tab::after{height:3px;background:var(--k-acc);box-shadow:0 0 12px var(--k-acc-a);clip-path:polygon(4px 0,calc(100% - 4px) 0,100% 100%,0 100%);}
+/* the way back sits in the same place on every screen: top-left of the band, level with the title */
+.xk-top{align-items:center;}
+.xk-top .xk-back,#battleSetup .bs-back{align-self:center;flex:none;white-space:nowrap;}
+@media (max-width:640px){ .xk-top{align-items:flex-start;} .xk-top .xk-back{align-self:flex-start;margin-top:2px;} }
+/* titles: tracked capitals; the stencil only where a title is BIG */
+.xk-ttl{font-family:var(--k-ui);font-weight:700;text-transform:uppercase;letter-spacing:.06em;}
+.xk-kick,.bs-kick,#briefing .br-op{font-family:var(--k-ui);font-weight:700;text-transform:uppercase;letter-spacing:.14em;font-size:12.5px;color:var(--k-acc) !important;}
+.xk-big,#pause .xk-ttl,.bs-name,#briefing .br-sub b{font-family:var(--k-stencil) !important;font-weight:400 !important;text-transform:uppercase;letter-spacing:.03em !important;}
+#pause .xk-ttl{font-size:clamp(32px,3.4vw,46px);}
+.xk-big{text-shadow:0 4px 30px rgba(0,0,0,.6);}
+#gameover .xk-big{color:#ffd9cf;}
+/* numbers in the mono face */
+.xk-result .go-stat .v,#ranking .rk-sc,#ranking .rk-n,.bs-lvn,#deploy .dp-step .v,#deploy .dp-total b,.xs-val,.mdl-cst b{font-family:var(--k-mono) !important;letter-spacing:.02em;}
+.xk-result .go-stat .v{color:var(--k-acc-hi) !important;text-shadow:0 0 18px var(--k-acc-a);}
+.xk-result .go-stats{border-top:1px solid var(--k-edge2);}
+.xk-result .go-stat .l,.bs-fact span{text-transform:uppercase;letter-spacing:.1em;font-size:11.5px;font-weight:700;}
+
+/* the screen opens in a short beat (≤ 220 ms): the overlay fades, its body rises a few pixels */
+@keyframes kFade{from{opacity:0}to{opacity:1}}
+@keyframes kRise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes kDrop{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+.overlay:not(.hidden){animation:kFade .18s ease-out both;}
+.overlay.xk-screen:not(.hidden) > .xk-body,#battleSetup:not(.hidden) .bs-step,.overlay.xk-dlg:not(.hidden) > .xk-card{animation:kRise .22s var(--k-ease) both;}
+.overlay.xk-screen:not(.hidden) > .xk-top,#battleSetup:not(.hidden) .bs-top{animation:kDrop .2s var(--k-ease) both;}
+
+/* ============================ PANELS — framed with corner ticks ============================ */
+.xk-card,#battleSetup .bs-side,#battleSetup .su-col,#battleSetup .su-pg,#deploy .dp-col,#keysDlg .ks-grp,.mdl-rk,#coopLobby .xk-card{--k-bk:rgba(255,174,52,.55);
+  background:linear-gradient(var(--k-bk) 0 0) 0 0/14px 2px no-repeat,linear-gradient(var(--k-bk) 0 0) 0 0/2px 14px no-repeat,
+    linear-gradient(var(--k-bk) 0 0) 100% 100%/14px 2px no-repeat,linear-gradient(var(--k-bk) 0 0) 100% 100%/2px 14px no-repeat,
+    linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,0) 30%),var(--k-scan),linear-gradient(180deg,rgba(22,26,19,.94),rgba(12,14,10,.96)) !important;
+  background-origin:border-box !important;border:1px solid var(--k-edge) !important;border-radius:0 !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 18px 50px rgba(0,0,0,.45) !important;}
+.xk-card{border-color:var(--k-edge2) !important;}
+#xkConfirm.danger .xk-card{--k-bk:var(--k-danger);border-color:rgba(229,70,44,.45) !important;}
+.su-h,.bs-lbl,#deploy .dp-h,#keysDlg .ks-gt,.mdl-h{text-transform:uppercase !important;letter-spacing:.1em !important;font-weight:700 !important;}
+.su-h small,#keysDlg .ks-gt i{text-transform:none !important;letter-spacing:.01em !important;}
+#battleSetup .su-h{font-size:14px !important;color:var(--k-acc-hi) !important;}
+#battleSetup .bs-lbl{font-size:12.5px;color:var(--k-acc-hi);}
+.bs-fact{border-radius:0 !important;background:linear-gradient(180deg,rgba(255,255,255,.03),transparent),rgba(14,17,12,.92) !important;border:1px solid var(--k-edge) !important;border-left:2px solid var(--k-acc) !important;}
+
+/* ======================= SELECTION CARDS — brackets, edge, glow, check =======================
+   The brackets live in ::after (above the photo, below nothing that matters); on the photo cards the same ::after keeps
+   the dark gradient that makes their words readable. --k-bk is the bracket colour: clear at rest, amber on hover / focus /
+   picked (it is a registered colour, so it fades). */
+.bs-lv,.bs-map,.su-man,.su-ride,.su-pgun,#loadout .ldcard,#upcards .upcard,#relicCards .upcard,#briefing .brcard{position:relative;--k-bk:transparent;border-radius:0 !important;
+  transition:transform var(--k-med) var(--k-ease),border-color var(--k-fast) ease,box-shadow var(--k-med) ease,--k-bk var(--k-fast) ease !important;}
+.bs-lv::after,.bs-map::after,.su-man::after,.su-ride::after,.su-pgun::after,#loadout .ldcard::after,#upcards .upcard::after,#relicCards .upcard::after,#briefing .brcard::after{
+  content:'' !important;display:block !important;position:absolute;inset:0;pointer-events:none;border-radius:0;
+  background:linear-gradient(var(--k-bk) 0 0) 0 0/16px 3px no-repeat,linear-gradient(var(--k-bk) 0 0) 0 0/3px 16px no-repeat,
+    linear-gradient(var(--k-bk) 0 0) 100% 0/16px 3px no-repeat,linear-gradient(var(--k-bk) 0 0) 100% 0/3px 16px no-repeat,
+    linear-gradient(var(--k-bk) 0 0) 0 100%/16px 3px no-repeat,linear-gradient(var(--k-bk) 0 0) 0 100%/3px 16px no-repeat,
+    linear-gradient(var(--k-bk) 0 0) 100% 100%/16px 3px no-repeat,linear-gradient(var(--k-bk) 0 0) 100% 100%/3px 16px no-repeat;}
+.bs-lv::after,.bs-map::after{background:linear-gradient(var(--k-bk) 0 0) 0 0/16px 3px no-repeat,linear-gradient(var(--k-bk) 0 0) 0 0/3px 16px no-repeat,
+    linear-gradient(var(--k-bk) 0 0) 100% 0/16px 3px no-repeat,linear-gradient(var(--k-bk) 0 0) 100% 0/3px 16px no-repeat,
+    linear-gradient(var(--k-bk) 0 0) 0 100%/16px 3px no-repeat,linear-gradient(var(--k-bk) 0 0) 0 100%/3px 16px no-repeat,
+    linear-gradient(var(--k-bk) 0 0) 100% 100%/16px 3px no-repeat,linear-gradient(var(--k-bk) 0 0) 100% 100%/3px 16px no-repeat,
+    linear-gradient(0deg,rgba(5,6,4,.94) 0%,rgba(5,6,4,.36) 56%,rgba(5,6,4,.06) 100%) !important;}
+@media (hover:hover){
+  .bs-lv:not(.lock):hover,.bs-map:hover,.su-man:hover,.su-ride:hover,.su-pgun:not(.kit):not(.mdl-locked):hover,#loadout .ldcard:not(.mdl-locked):hover,#upcards .upcard:hover,#relicCards .upcard:hover,#briefing .brcard:hover{
+    --k-bk:rgba(255,210,122,.85);border-color:var(--k-edge3) !important;transform:translateY(-2px) !important;}
+}
+.overlay .bs-lv.padfocus,.overlay .bs-map.padfocus,.overlay .su-man.padfocus,.overlay .su-ride.padfocus,.overlay .su-pgun.padfocus,.overlay .ldcard.padfocus,.overlay .upcard.padfocus,.overlay .brcard.padfocus,
+.bs-lv:focus-visible,.bs-map:focus-visible,.su-man:focus-visible,.su-ride:focus-visible{--k-bk:#fff6dc;outline:2px solid #fff6dc !important;outline-offset:2px;}
+/* picked */
+.bs-lv.on,.bs-map.on,.su-man.on,.su-ride.on,.su-pgun.on,#loadout .ldcard.on,#briefing .brcard.on{--k-bk:var(--k-acc-hi);border-color:var(--k-acc) !important;
+  box-shadow:0 0 0 1px var(--k-acc),0 0 24px var(--k-acc-a),inset 0 0 26px rgba(255,174,52,.16) !important;}
+.bs-lv.on,.bs-map.on,.su-man.on,.su-ride.on,#loadout .ldcard.on{transform:scale(1.025) !important;z-index:2;}
+@media (hover:hover){ .bs-lv.on:hover,.bs-map.on:hover,.su-man.on:hover,.su-ride.on:hover,#loadout .ldcard.on:hover{transform:scale(1.025) translateY(-2px) !important;} }
+/* the check badge: an amber chamfered square, top-right (the ladder shows its own state there, so it gets none) */
+.bs-map.on::before,.su-man.on::before,.su-ride.on::before,.su-pgun.on::before{content:'✓';position:absolute;z-index:4;top:6px;right:6px;width:22px;height:22px;display:grid;place-items:center;
+  font:700 14px/1 var(--k-ui);color:var(--k-acc-ink);background:linear-gradient(180deg,var(--k-acc-hi),var(--k-acc));border-radius:0;
+  clip-path:polygon(5px 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%,0 5px);box-shadow:none;animation:kPop .22s var(--k-ease) both;}
+.su-pgun.on::before{top:4px;right:4px;width:18px;height:18px;font-size:12px;}
+@keyframes kPop{from{transform:scale(.4);opacity:0}to{transform:none;opacity:1}}
+.su-pgun{position:relative;border-radius:0 !important;}
+#briefing .brcard.on{background:linear-gradient(90deg,rgba(255,174,52,.16),rgba(255,174,52,.04)) !important;}
+#briefing .brcard.on .nm{color:var(--k-acc-hi);}
+#upcards .upcard,#relicCards .upcard{background:linear-gradient(180deg,rgba(255,255,255,.04),transparent 40%),var(--k-scan),var(--k-p2) !important;border:1px solid var(--k-edge2) !important;}
+#upcards .upcard .ic,#relicCards .upcard .ic{filter:drop-shadow(0 0 10px var(--k-acc-a));}
+#upcards .upcard .nm,#relicCards .upcard .nm{text-transform:uppercase;letter-spacing:.06em;font-weight:700;}
+#loadout .ldcard .pick{border-radius:0 !important;}
+#loadout .ldcard.on .pick{background:linear-gradient(180deg,var(--k-acc-hi),var(--k-acc)) !important;box-shadow:0 0 12px var(--k-acc-a);}
+#loadout .ldcard .nm,.su-cap b,.su-pgtx b,.bs-map span b,.bs-lvm{text-transform:uppercase;letter-spacing:.06em !important;}
+/* photo cards: the one picked is in full colour, the rest a touch muted (the words stay bright) */
+.su-man:not(.on) .su-ph,.su-ride:not(.on) .su-ph{filter:saturate(.55) brightness(.72);}
+.su-pips i{border-radius:0 !important;clip-path:polygon(2px 0,100% 0,calc(100% - 2px) 100%,0 100%);}
+.su-pips i.on{background:linear-gradient(90deg,var(--k-acc-lo),var(--k-acc-hi)) !important;}
+.su-badge{border-radius:0 !important;text-transform:uppercase;letter-spacing:.08em !important;clip-path:polygon(5px 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%,0 5px);}
+/* the ride cards on a wide screen are short: name on the left, the three bars on the right (they no longer push the name off the card) */
+@media (min-width:701px) and (min-height:561px){
+  #battleSetup .su-ride .su-cap{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:16px;align-items:end;padding:22px 14px 10px;}
+  #battleSetup .su-ride .su-cap > b{grid-column:1;grid-row:1;} #battleSetup .su-ride .su-cap > small{grid-column:1;grid-row:2;align-self:start;}
+  #battleSetup .su-ride .su-cap > .su-pr{grid-column:2;margin-top:2px;}
+  #battleSetup .su-ride .su-cap > .su-pr:nth-of-type(1){grid-row:1;} #battleSetup .su-ride .su-cap > .su-pr:nth-of-type(2){grid-row:2;} #battleSetup .su-ride .su-cap > .su-pr:nth-of-type(3){grid-row:3;}
+  #battleSetup .su-ride .su-cap > b{font-size:19px;} #battleSetup .su-ride .su-ph{object-position:50% 45%;}
+  #battleSetup .su-ride .su-badge{left:auto;right:34px;top:6px;z-index:3;}   /* top-right, left of the check: the name owns the left now */
+}
+/* a phone on its side: the equipment step used to overflow (the gun row's slides set the grid's minimum width, so the ride
+   column ran off the screen and the gun row slid up over the soldiers) — every track may shrink, every block has its own height */
+@media (orientation:landscape) and (max-height:560px){
+  #battleSetup .su-eq.inf{grid-template-columns:minmax(0,.62fr) minmax(0,2fr) !important;grid-template-rows:auto auto auto !important;width:100%;}
+  #battleSetup .su-eq > *,#battleSetup .su-pgrid{min-width:0;}
+  #battleSetup .su-col{min-height:auto !important;}
+  #battleSetup .su-mgrid{flex:none;height:142px;min-height:0 !important;} #battleSetup .su-rgrid{flex:none;height:142px;min-height:0 !important;}
+  #battleSetup .su-drv > span{white-space:normal;}
+  .su-man.on,.su-ride.on{transform:none !important;}
+}
+/* small option chips (hour, weather, size, enemy level) and the three modes */
+.bs-op,.bs-mode,.su-chip{border-radius:0 !important;clip-path:var(--k-chamfer);--k-cut:8px;transition:background-color var(--k-fast) ease,color var(--k-fast) ease,transform var(--k-fast) ease !important;}
+.bs-op{font-weight:700;text-transform:uppercase;letter-spacing:.05em;border:1px solid var(--k-edge2) !important;min-height:44px;}
+.bs-op small{text-transform:none;letter-spacing:.01em;}
+.bs-op.on,.bs-mode.on{background:linear-gradient(180deg,var(--k-acc-hi),var(--k-acc) 55%,var(--k-acc-lo)) !important;border-color:var(--k-acc-hi) !important;color:var(--k-acc-ink) !important;}
+.bs-op.on small,.bs-mode.on small{color:rgba(27,17,4,.72) !important;}
+@media (hover:hover){ .bs-op:not(.on):not(.lock):hover,.bs-mode:not(.on):hover{background:rgba(255,174,52,.13) !important;color:var(--k-acc-hi);} }
+.bs-op:active,.bs-mode:active{transform:scale(.97);}
+.bs-modes{border-radius:0 !important;clip-path:var(--k-chamfer);--k-cut:10px;border:1px solid var(--k-edge2) !important;}
+.bs-mode{clip-path:none;font-weight:700;text-transform:uppercase;letter-spacing:.07em;}
+.bs-mode small{text-transform:none;letter-spacing:.01em;}
+.su-chip{border:1px solid var(--k-edge2) !important;text-transform:uppercase;letter-spacing:.05em;font-weight:700;}
+.su-chip small{text-transform:none;}
+@media (hover:hover){ .su-chip:hover{border-color:var(--k-acc) !important;color:var(--k-acc-hi);} }
+.bs-st,.bs-badge,.bs-ng{border-radius:0 !important;text-transform:uppercase;letter-spacing:.07em !important;font-weight:700 !important;clip-path:polygon(4px 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100%,0 4px);}
+.bs-st.go{background:linear-gradient(180deg,var(--k-acc-hi),var(--k-acc)) !important;}
+.bs-st.ok{color:var(--k-ok) !important;border-color:rgba(159,220,88,.55) !important;background:rgba(6,9,5,.75) !important;}
+.bs-ng{color:var(--k-info) !important;}
+.bs-badge.boss{background:var(--k-danger) !important;}
+
+/* ======================= THE STEPS INTO BATTLE — one rail, three stops =======================
+   1 TRANG BỊ → 2 CHIẾN TRƯỜNG → 3 XUẤT KÍCH. Done stops show a check, the current one glows, the line between fills. The
+   same rail (read-only) heads the briefing and the deployment, at stop 3. */
+.bs-rail{display:flex;align-items:center;gap:0;}
+.bs-rail > i{width:40px;height:2px;margin:0 4px;background:var(--k-edge2) !important;position:relative;overflow:hidden;}
+.bs-rail > i::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,var(--k-acc),var(--k-acc-hi));transform:scaleX(0);transform-origin:0 50%;transition:transform .3s var(--k-ease);}
+.bs-rs.done + i::after,.bs-rail.at3 > i::after{transform:scaleX(1);}
+.bs-rs{gap:9px;padding:6px 10px 6px 4px !important;border-radius:0 !important;font-family:var(--k-ui);font-weight:700 !important;text-transform:uppercase;letter-spacing:.09em !important;font-size:14px !important;color:var(--k-faint) !important;background:none !important;box-shadow:none !important;}
+.bs-rs b{width:28px !important;height:28px !important;border-radius:0 !important;display:grid;place-items:center;font:400 14px/1 var(--k-mono) !important;letter-spacing:0 !important;
+  border:1px solid var(--k-edge2) !important;background:rgba(9,11,8,.7) !important;color:var(--k-mute) !important;box-shadow:none !important;
+  clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px);transition:background-color var(--k-fast) ease,color var(--k-fast) ease;}
+@media (hover:hover){ .bs-rs:hover{color:var(--k-text) !important;} .bs-rs:hover b{border-color:var(--k-acc) !important;} }
+.bs-rs.on{color:var(--k-acc-hi) !important;}
+.bs-rs.on b{background:linear-gradient(180deg,var(--k-acc-hi),var(--k-acc)) !important;border-color:var(--k-acc-hi) !important;color:var(--k-acc-ink) !important;}
+.bs-rs.done{color:var(--k-text) !important;}
+.bs-rs.done b{background:rgba(255,174,52,.16) !important;border-color:var(--k-acc) !important;color:transparent !important;position:relative;}
+.bs-rs.done b::after{content:'✓';position:absolute;inset:0;display:grid;place-items:center;font:700 15px/1 var(--k-ui);color:var(--k-acc-hi);}
+.bs-rs.bs-rs-go:not(.on) b{border-style:dashed;}
+.bs-rail.ro .bs-rs{cursor:default;}
+/* the rail on the briefing and deployment bands: right side, small */
+.xk-top .bs-rail{margin-left:auto;flex:none;}
+@media (max-width:900px){ .xk-top .bs-rail{display:none;} }
+
+/* a phone: numbers only for the stops not on screen, short links, so the rail never covers the way back */
+@media (max-width:640px){
+  #battleSetup .bs-top{grid-template-columns:auto minmax(0,1fr) !important;}
+  #battleSetup .bs-rail{justify-self:end;min-width:0;}
+  .bs-rail > i{width:12px;margin:0 2px;}
+  .bs-rs{gap:6px;padding:4px 3px !important;font-size:12.5px !important;letter-spacing:.06em !important;}
+  .bs-rs b{width:24px !important;height:24px !important;font-size:12.5px !important;}
+  .bs-rs:not(.on) span{display:none;}
+  #battleSetup .bs-back{padding:0 8px !important;}
+}
+
+/* ============================== THE BATTLE SETUP FOOT ============================== */
+#battleSetup .bs-go,#briefing .xk-foot .xb-pri,#deploy .xk-foot .xb-pri{--k-cut:14px;font-size:20px !important;letter-spacing:.1em;}
+#battleSetup .bs-sum{font-family:var(--k-ui);}
+#battleSetup .bs-sum b{color:var(--k-acc-hi);text-transform:uppercase;letter-spacing:.06em;}
+
+/* ================================ HOME ================================ */
+#start .brand-word{filter:drop-shadow(0 6px 30px rgba(0,0,0,.55));}
+#start .xk-grid .xb,#start .xk-util .xb{font-size:14.5px !important;letter-spacing:.07em;}
+#start .xk-util .xb{--b-ink:var(--k-mute);}
+#start .hello b{font-family:var(--k-ui);text-transform:uppercase;letter-spacing:.06em;color:var(--k-acc-hi);}
+.mdl-home{border-radius:0 !important;clip-path:var(--k-chamfer);--k-cut:8px;}
+
+/* the boot screen's call to start: the same amber slab, chamfered, the light sweeping across it */
+#boot .bt-cta{position:relative;overflow:hidden;isolation:isolate;border-radius:0;clip-path:var(--k-chamfer);--k-cut:12px;min-height:48px;
+  background:linear-gradient(180deg,rgba(255,250,230,.4),rgba(255,250,230,0) 50%,rgba(0,0,0,.12)),var(--k-acc);color:var(--k-acc-ink);text-transform:uppercase;letter-spacing:.12em;}
+#boot .bt-cta::after{content:'';position:absolute;top:0;bottom:0;left:0;width:60%;z-index:-1;pointer-events:none;
+  background:linear-gradient(100deg,rgba(255,255,255,0) 20%,rgba(255,255,255,.45) 50%,rgba(255,255,255,0) 80%);transform:translateX(-110%) skewX(-18deg);}
+#boot.ready .bt-cta{animation:none;} #boot.ready .bt-cta::after{animation:kSweep 3.2s ease-in-out .8s infinite;}
+@media (hover:hover){ #boot .bt-cta:hover{background:linear-gradient(180deg,rgba(255,250,230,.5),rgba(255,250,230,0) 50%,rgba(0,0,0,.1)),#ffbb4e;transform:translateY(-1px);} }
+#boot .bt-cta:focus-visible{outline:0;box-shadow:inset 0 0 0 2px #fff;}
+
+/* ================================ DIALOG BITS ================================ */
+#nickInput{border-radius:0 !important;background:rgba(0,0,0,.35) !important;border:1px solid var(--k-edge2) !important;font-family:var(--k-ui) !important;text-transform:uppercase;letter-spacing:.08em !important;
+  clip-path:var(--k-chamfer);--k-cut:8px;transition:border-color var(--k-fast) ease,box-shadow var(--k-fast) ease;}
+#nickInput:focus{border-color:var(--k-acc) !important;box-shadow:inset 0 0 0 1px var(--k-acc),inset 0 0 20px rgba(255,174,52,.12);}
+#coopLobby select{border-radius:0;border-color:var(--k-edge2) !important;background:rgba(0,0,0,.4) !important;}
+#coopLobby .cl-row{border-left-color:var(--k-edge2);} #coopLobby .cl-row.ok{border-left-color:var(--k-ok);}
+#ranking .rk-row.me{box-shadow:inset 3px 0 0 var(--k-acc) !important;background:linear-gradient(90deg,rgba(255,174,52,.14),transparent 70%) !important;}
+#ranking .rk-row.top1 .rk-n,#ranking .rk-row.top2 .rk-n,#ranking .rk-row.top3 .rk-n{color:var(--k-acc-hi);text-shadow:0 0 12px var(--k-acc-a);}
+#keysDlg .bind-chip,#keysDlg .ks-k b,.overlay kbd{border-radius:0 !important;font-family:var(--k-mono) !important;}
+#guide .guide-row .g-tx b{text-transform:uppercase;letter-spacing:.06em !important;}
+#deploy .dp-step .s{border-radius:0 !important;clip-path:polygon(5px 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%,0 5px);min-width:30px;}
+@media (hover:hover){ #deploy .dp-step .s:not(.off):hover{border-color:var(--k-acc) !important;color:var(--k-acc-hi) !important;} }
+#deploy #dp-map{border-radius:0 !important;border-color:var(--k-edge2) !important;}
+/* the medal screen on an upright phone: the rank card stacks instead of squeezing its words to a sliver */
+@media (max-width:560px){ .mdl-me{grid-template-columns:1fr !important;} .mdl-rkcard .mdl-ins{width:92px !important;} .mdl-rkcard{gap:14px;} }
+
+/* ================================ PAUSE + RESULTS ================================ */
+.xk-menu .xb{justify-content:flex-start;}
+.xk-menu .xb-pri{font-size:20px;}
+#pause > .xk-body{background:linear-gradient(90deg,rgba(9,11,8,.78) 0%,rgba(9,11,8,.2) 46%,rgba(9,11,8,0) 70%);}
+.xk-result .go-best{text-transform:uppercase;letter-spacing:.08em;}
+.xk-result .go-best.newbest{color:var(--k-acc-hi);text-shadow:0 0 16px var(--k-acc-a);}
+
+@media (orientation:landscape) and (max-height:500px){ #pause .xk-ttl{font-size:28px;} #pause > .xk-body{align-items:flex-start;overflow-y:auto;} }   /* the menu fits under the band */
+
+/* ========================= IN BATTLE — same look, nothing moved or resized ========================= */
+#tipCard .tc-box{border-radius:0 !important;}
+#tipCard .tc-ok{background:linear-gradient(180deg,var(--k-acc-hi),var(--k-acc)) !important;color:var(--k-acc-ink) !important;}
+#tipCard .tc-bar{background:var(--k-acc) !important;}
+#mPause,#mCmd .mcm,.camBtn{border-color:rgba(255,174,52,.45) !important;}
+#mCmd .mcm b{color:var(--k-acc-hi);}
+
+/* ================================ REDUCED MOTION ================================ */
+@media (prefers-reduced-motion:reduce){
+  .overlay:not(.hidden),.overlay:not(.hidden) *,#battleSetup .bs-step{animation:none !important;}
+  .xb,.xb::after,.bs-lv,.bs-map,.su-man,.su-ride,.su-pgun,.ldcard,.upcard,.brcard,.bs-op,.bs-mode,.xs-opt,.bs-rail > i::after{transition:none !important;}
+  .xb::after,#boot .bt-cta::after{display:none;}
+  .bs-lv.on,.bs-map.on,.su-man.on,.su-ride.on,#loadout .ldcard.on{transform:none !important;}
+}
