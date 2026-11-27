@@ -2276,7 +2276,7 @@ export const MATLOOK = {
     rules:[['^(trooper|operator|soldier|horse|carbine|rifle|blade_|inf_|drv_|ride_|wild_|boss|troopgun|ride(gallop|walk)|proj|missile|art_|siege_|mortar_|loot_)', 'skip'],
       ['^(bld_|sc:brownstone|sc:corner_store|sc:duga|sc:elevador)', 'building'], ['^(heli_|air_|mil_|car_|turret_|sc:radar|sc:tank_|sc:rail_)', 'metal'],
       ['tree|palm|bush|grove|hedge(?!hog)', 'foliage'], ['ice_|snow|igloo|iceberg', 'ice'],
-      ['rock|stone|boulder|cliff|crag|ledge|outcrop|sea_stack|lava_|volcano|sphinx|lion|gargoyle|arch|skeleton|giza|quarry', 'stone'],
+      ['rock|stone|boulder|cliff|crag|ledge|outcrop|sea_stack|lava_|volcano|sphinx|lion|gargoyle|arch|skeleton|wonder_giza|quarry', 'stone'],
       ['tire', 'rubber'],
       ['fort|keep_|castle|castel|citadel|gate|wall|ruin|wonder_|temple|bastion|parapet|tower|belfry|lighthouse|fountain|bunker|pillbox|gt_|block|culvert|tunnel|dam_|jersey|concrete|teeth|hesco|sandbag', 'masonry'],
       ['camp_hq|hq_|quonset|barracks|store|furnace|crane|scaffold|house|villa|shelter', 'building'],
