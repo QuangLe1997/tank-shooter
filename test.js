@@ -2632,6 +2632,12 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
     'AIR.bloom: what shines blooms in full, plain bright surfaces keep '+A.bloom.keep+' of it; the grain lives in the mid-tones');
   ok(/export function airPost\(on\)/.test(ap) && /nanPass\.enabled = outPass\.enabled = gradePass\.enabled = !AIRPOST\.on/.test(ap) && hub.indexOf("'./render/air-post.js'")>hub.indexOf("'./render/renderer.js'") && /time:G\.time, vig:G\.vig/.test(ap),
     'one pass replaces the NaN guard, the bloom write-back, OutputPass and the grade (the grade\'s own uniforms shared), loaded after the renderer'); }
+// AIR 2 the ground mist per battlefield (render/aerial.js)
+{ const fs=await import('node:fs'), C=await import('./config.js'), M=C.AIR.mist, ae=fs.readFileSync('src/render/aerial.js','utf8'), L=['DESERT','RUINS','ARCTIC','FOUNDRY','CITADEL','MEADOW','CITY','SAVANNA','VOLCANO','QUARRY'];
+  ok(M && typeof M.on==='boolean' && L.every(b => M[b] && M[b].k>0 && M[b].k<0.02 && M[b].h>=1 && M[b].h<=15 && Number.isInteger(M[b].tint) && M[b].mix>=0 && M[b].mix<=1 && (M[b].patch??0.6)>=0 && (M[b].patch??0.6)<=1),
+    'AIR.mist: every battlefield has its own low mist (k < 0.02 /m, 1–15 m deep, tinted, in banks)');
+  ok(['day','noon','sunset','night'].every(t => M.tod[t]>=0 && M.tod[t]<=2) && M.ARCTIC.k>=M.DESERT.k && /uMist\.w > 0\.0/.test(ae) && /export function updateMist\(cam\)/.test(ae) && /MOBILE \&\& PROFILE\.quality !== 'low'/.test(ae),
+    'the mist by the hour, thickest over the Arctic, skipped in the shader when off, never on phones or the low setting'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

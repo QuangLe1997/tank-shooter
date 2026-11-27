@@ -2813,9 +2813,17 @@ export const AERIAL = { on:true, fall:1 / 55, h0:12, keep:[0.42, 0.06], keepH:[5
 //   lens a little, back in the sun it closes, and over slow s it settles on the battlefield's own grade again. bloom: selective — what really shines
 //   (saturated light: fire, flashes, tracers, lamps; or over hot × the threshold) blooms in full, bright plain surfaces (sunlit sand, snow, white
 //   walls, the sky) keep only keep of it; knee = the soft threshold's width. grain: film grain strongest in the mid-tones, lo × in the shadows and
-//   highlights.
+//   highlights. mist (AIR 2, render/aerial.js): a ground-hugging layer per battlefield — density k per m at the ground, falling off as exp(−y / h)
+//   above base m; tint mixed into the haze colour by mix (× bright); patch = how much it gathers into drifting banks of scale m (0 = an even layer),
+//   moved at drift × the cloud wind; tod = × per hour (global, then the battlefield's own). Off on phones / the low setting.
 export const AIR = { post:{ on:true }, ae:{ on:true, fast:0.7, slow:40, k:0.5, lo:0.86, hi:1.4 }, bloom:{ sel:true, sat:0.4, hot:3.5, keep:0.3, knee:0.4 },
-  grain:{ shape:true, lo:0.4 } };
+  grain:{ shape:true, lo:0.4 },
+  mist:{ on:true, drift:0.6, tod:{ day:0.8, noon:0.55, sunset:0.9, night:1 },
+    ARCTIC:{ k:0.0045, h:3.2, tint:0xe4eef8, mix:0.55, bright:0.96, patch:0.7, scale:55 }, MEADOW:{ k:0.0035, h:2.2, tint:0xd8e0dc, mix:0.3, patch:0.75, scale:45, tod:{ noon:0.4, sunset:1.4 } },
+    DESERT:{ k:0.0028, h:3.5, tint:0xd8b888, mix:0.45, patch:0.6, scale:70 }, SAVANNA:{ k:0.0025, h:3, tint:0xd0b080, mix:0.4, patch:0.6, scale:70 },
+    CITY:{ k:0.003, h:7, tint:0xa8a49c, mix:0.35, patch:0.5, scale:80 }, RUINS:{ k:0.0032, h:4, tint:0xb0a898, mix:0.35, patch:0.6, scale:60 },
+    FOUNDRY:{ k:0.0035, h:6, tint:0x9a9088, mix:0.4, patch:0.55, scale:70 }, VOLCANO:{ k:0.003, h:5, tint:0x8a7468, mix:0.45, bright:0.9, patch:0.6, scale:60 },
+    CITADEL:{ k:0.0025, h:3, tint:0xd0c0a8, mix:0.35, patch:0.6, scale:60 }, QUARRY:{ k:0.003, h:3.5, tint:0xc8c0b0, mix:0.4, patch:0.6, scale:55 } } };
 // OUTSKIRTS: the land between the fence and the far ranges rolls instead of lying flat — hills that rise from the field's edge over ramp × ARENA, crest,
 //   and sink back to the plain by fade × ARENA past the edge (so where the near world is cut off at the far plane, it is flat land like the backdrop's);
 //   amp = the crests' height (m), wave = their spacing (m), dune = long wind-shaped ridges instead of round hills; seg = [round, radial] mesh resolution
