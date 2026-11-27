@@ -2836,6 +2836,12 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   ok(SLING && SLING.rough>=0.8 && SLING.rough<=1 && SLING.metal>=0 && SLING.metal<=0.1 && SLING.env>=0 && SLING.env<=1, 'SLING: a rough, non-metal, dull webbing strap');
   ok(/g\.setAttribute\('normal', new THREE\.BufferAttribute\(new Float32Array\(NP \* 6\), 3\)\)/.test(src) && /nrm\.needsUpdate = true/.test(src) && /toArray\(na, i \* 6\)/.test(src), 'the ribbon has a normal per vertex, written with its points every frame');
   ok(/MeshStandardMaterial\(\{ color:GUNCARRY\.strap\.color, roughness:SLING\.rough, metalness:SLING\.metal/.test(src) && !/MeshLambertMaterial\(\{ color:GUNCARRY\.strap\.color/.test(src), 'the ribbon wears the matte SLING material'); }
+// BGUN the fort boss's heavy gun held along his aim (BOSSGRIP, actors/fort-boss-glb.js hold): butt at the right shoulder, both hands pulled on by a two-bone IK
+{ const fs=await import('node:fs'), { BOSSGRIP:G, FORTBOSS:F }=await import('./config.js'), src=fs.readFileSync('src/actors/fort-boss-glb.js','utf8'), fb=fs.readFileSync('src/campaign/fort-boss.js','utf8'), v3=a=>Array.isArray(a) && a.length===3 && a.every(Number.isFinite);
+  ok(G && G.on===true && [G.butt, G.rh, G.lh, G.poleR, G.poleL].every(v3) && G.butt.every(x=>Math.abs(x)<0.2) && G.poleR[1]<0 && G.poleL[1]<0 && G.poleR[0]>0 && G.poleL[0]<0, 'BOSSGRIP: offsets small (m), both elbows lean down, the right one out to his right, the left to his left');
+  ok(G.hg>0.15 && G.hg<0.7 && G.reach>0.8 && G.reach<=1 && G.slide>=0 && G.slide<0.6 && G.pitch[0]<0 && G.pitch[1]>0 && G.pitch[1]<45 && G.low>0 && G.low<60 && G.ease>0 && G.chest>0.8 && G.chest<2, 'BOSSGRIP: handguard, reach, slide, pitch range, low-ready dip, ease and aim height are sane');
+  ok(Object.keys(F.looks).every(k=>G.looks[k] && typeof G.looks[k]==='object') && Object.keys(G.looks).every(k=>F.looks[k]), 'BOSSGRIP.looks: one row per boss look, none extra');
+  ok(/function ik2\(/.test(src) && /function lay\(L\)/.test(src) && /u\.muzzle = mz/.test(src) && /u\.muzzle = L\.muzR/.test(src) && /L\.ikRest/.test(src) && /B\.look\.aimX = fo\.x/.test(fb), 'the gun on his aim, the IK, the rounds from the real muzzle (and the rig muzzle back at the strip), his man passed in'); }
 
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');

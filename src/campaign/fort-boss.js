@@ -133,7 +133,7 @@ function step(B, dt, now){ const e = B.e, f = B.f, H = home(f), fo = foe(e), ox 
   B.stepD += Math.hypot(e.pos.x - ox, e.pos.z - oz); if(B.stepD > C.step){ B.stepD = 0; footfall(e); }
   fortBossGlow(B.look, dt, 1 - k, B.phase === 3); guardsFollow(B, now); bar(B, true);
   { const v = dt > 0 && B.lx != null ? Math.hypot(e.pos.x - B.lx, e.pos.z - B.lz) / dt : 0, A = B.act, cs = B.st === 'charge' && A && A.t < C.charge.tel ? 'chargeT' : B.st;   // BOSS 2 his motion
-    B.lx = e.pos.x; B.lz = e.pos.z; fortBossAnim(B.look, dt, cs, v, now - (e.shotAt || -9) < 0.3 || (B.st === 'sweep' && A && A.t > C.sweep.tel) || (B.st === 'rocket' && A && A.t > C.rocket.tel), now); } }
+    B.lx = e.pos.x; B.lz = e.pos.z; if(B.look){ B.look.aimX = fo.x; B.look.aimZ = fo.z; }   /* BGUN his gun pitched to his man (actors/fort-boss-glb.js hold) */ fortBossAnim(B.look, dt, cs, v, now - (e.shotAt || -9) < 0.3 || (B.st === 'sweep' && A && A.t > C.sweep.tel) || (B.st === 'rocket' && A && A.t > C.rocket.tel), now); } }
 // pose and draw him this frame when this file moves him (held: the infantry AI skips him — ai/tactics.js)
 function place(e, face, dt, st, firing, ox, oz){ e.facing = face; e.mesh.position.set(e.pos.x, heightAt(e.pos.x, e.pos.z), e.pos.z); e.mesh.rotation.y = face;
   animateSoldier(e.mesh, Math.hypot(e.pos.x - ox, e.pos.z - oz) / e.def.scale, dt, firing); poseSoldier(e.mesh, st, dt); }

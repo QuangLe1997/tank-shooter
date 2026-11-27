@@ -2,14 +2,14 @@
 //   Mixamo skeleton with his own motions (packed by tools/boss-pack.mjs out of the game's Mixamo library: walk, run, aim, fire, fire on the walk, crouch,
 //   hit, stagger, throw, two deaths) stands in for the rifleman's rig, which stays underneath — unseen (its batch body off: userData.clipDraw), still
 //   moved and aimed by the infantry AI, its muzzle laid on the heavy gun's every frame. The model is scaled to FORTBOSS.h (the guards are 1.8 m); the
-//   squad machine gun (the game's own lmg scan) is held between his hands, laid from the right hand toward the left every frame; the breakable plates
+//   squad machine gun (the game's own lmg scan) is held along his aim (BGUN: butt at the right shoulder, both hands pulled onto it — BOSSGRIP, hold below); the breakable plates
 //   (actors/fort-boss-look.js shapes, × plateK) are bolted to his bones where his own surface is — chest, both shoulders, the crown of the head, the
 //   power pack on his back. fortBossAnim picks the motion from what he is doing; at his death the model leaves the rig, plays its fall and sinks.
 //   The body and the plates fade together in the camera's see-through (render/see-through.js seeMat). Which look a fort gets: FORTBOSS.pick.
 import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
-import { FORTBOSS, INFGUN } from '../../config.js';
-import { BIOME, MODEL_FILES, fbBolt, fbGeos, fbMats, fbMesh, heightAt, loadGLTF, renderer, scene, seeMat } from '../hub.js';
+import { BOSSGRIP, FORTBOSS, INFGUN } from '../../config.js';
+import { BIOME, MODEL_FILES, S, fbBolt, fbGeos, fbMats, fbMesh, heightAt, loadGLTF, renderer, scene, seeMat } from '../hub.js';
 
 const C = FORTBOSS, GL = {}, CORPSES = [], _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _d = new THREE.Vector3();
 const GUNS = {};
@@ -61,7 +61,9 @@ export function fortBossGlb(e, def){ const id = fortBossLookId(def), look = C.lo
   // the heavy gun between his hands (its grip at the origin, the barrel along +Z)
   const GN = GUNS[look.gun || C.gun]; if(GN && GN.scene){ const g0 = GN.scene.clone(true), bb = new THREE.Box3().setFromObject(g0), c = bb.getCenter(new THREE.Vector3()), L0 = bb.max.z - bb.min.z || 1, G2 = INFGUN.guns[look.gun || C.gun], len = G2.len * (look.gunK || C.gunK) * look.h / 1.8;
     g0.position.sub(c); const t = new THREE.Group(); t.add(g0); t.rotation.y = G2.muzzle > 0 ? 0 : Math.PI; const sg = new THREE.Group(); sg.add(t); sg.scale.setScalar(len / L0); sg.position.set(0, -0.06 * len, G2.grip * len);
-    const gun = new THREE.Group(); gun.add(sg); gun.userData.len = len; gun.traverse(o => { if(o.isMesh){ o.castShadow = true; o.material = o.material.clone(); seeMat(o.material); } }); root.add(gun); L.gun = gun; }
+    const gun = new THREE.Group(); gun.add(sg); gun.userData.len = len; gun.traverse(o => { if(o.isMesh){ o.castShadow = true; o.material = o.material.clone(); seeMat(o.material); } }); root.add(gun); L.gun = gun;
+    if(BOSSGRIP.on && u.muzzle){ const mz = new THREE.Object3D(); mz.position.set(0, -0.02 * len, len * (0.5 + G2.grip)); gun.add(mz); L.muzR = u.muzzle; u.muzzle = mz; } }   // BGUN the rounds leave the real gun's muzzle (the rig's own muzzle back at the strip)
+  L.ikRest = ['LeftArm', 'LeftForeArm', 'RightArm', 'RightForeArm'].filter(n => B[n] && !gl.animations.every(c => c.tracks.some(t => t.name === B[n].name + '.quaternion'))).map(n => [B[n], B[n].quaternion.clone()]);   // (a bone no clip moves: its rest put back before the IK, or the IK would pile up)
   play(L, 'aim', 0); e.fbLook = L; return L; }
 // a motion: cross-faded in over f s (loops), or once and then back (once: true)
 function play(L, name, f, once){ const a = L.acts[name]; if(!a || L.cur === a && !once) return; a.reset(); a.setLoop(once ? THREE.LoopOnce : THREE.LoopRepeat, Infinity); a.clampWhenFinished = !!once; a.setEffectiveWeight(1); a.play();
@@ -76,7 +78,7 @@ export function fortBossAnim(L, dt, st, v, firing, now){ if(!L || !L.glb || L.de
   play(L, want, A.fade); if(L.cur) L.cur.timeScale = Math.max(0.5, Math.min(1.8, ts)); step(L, dt); }
 // a one-off: the throw, a plate's blow
 export function fortBossAct(L, name, now){ if(!L || !L.glb || L.dead || !L.acts[name]) return; play(L, name, 0.12, now + L.acts[name].getClip().duration * 0.92); }
-function step(L, dt){ L.mixer.update(dt); sway(L, dt); L.root.updateMatrixWorld(true); hold(L);
+function step(L, dt){ L.mixer.update(dt); sway(L, dt); for(const [b, q] of L.ikRest) b.quaternion.copy(q); L.root.updateMatrixWorld(true); hold(L, dt);
   if(L.flashT > 0){ L.flashT -= dt; const k = Math.max(0, L.flashT / 0.12); const e0 = L.look.emit ? 1 : 0; for(const m of L.mats){ m.emissive.setRGB(e0 + 0.5 * k, e0 + 0.12 * k, e0 + 0.08 * k); } } }
 // the wings beat slowly standing, hard on the run; the tail sways (rest × a turn: the wings about his front–back axis, the tail about the upright)
 const _q = new THREE.Quaternion(), _ax = new THREE.Vector3();
@@ -84,13 +86,46 @@ function sway(L, dt){ const W = L.look.sway, S2 = L.sway; if(!W || !S2) return; 
   L.swayT += dt * hz * Math.PI * 2; const fl = Math.sin(L.swayT) * amp;
   for(const [j, sgn] of [['wingL', 1], ['wingR', -1]]){ const s = S2[j]; if(s) s.b.quaternion.copy(s.q0).multiply(_q.setFromAxisAngle(_ax.set(0, 0, 1), sgn * fl)); }
   const t = S2.tail; if(t) t.b.quaternion.copy(t.q0).multiply(_q.setFromAxisAngle(_ax.set(0, 1, 0), Math.sin(L.swayT * 0.45) * W.tail)); }
-// the gun laid from his right hand toward his left; the rig's muzzle put on its muzzle (the rounds leave the real gun)
-function hold(L){ const g = L.gun, B = L.B; if(!g || !B.RightHand || !B.LeftHand) return; B.RightHand.getWorldPosition(_a); B.LeftHand.getWorldPosition(_b);
+// (the fallen, or BOSSGRIP off) the gun laid from his right hand toward his left; the rig's muzzle put on its muzzle
+function lay(L){ const g = L.gun, B = L.B; if(!g || !B.RightHand || !B.LeftHand) return; B.RightHand.getWorldPosition(_a); B.LeftHand.getWorldPosition(_b);
   g.parent.worldToLocal(_c.copy(_a)); g.position.copy(_c); g.lookAt(_d.copy(_b).addScaledVector(_c.subVectors(_b, _a), 2)); g.updateMatrixWorld(true);
   const u = L.e.mesh.userData; if(u.muzzle && u.muzzle.parent){ _d.subVectors(_b, _a).normalize(); _c.copy(_a).addScaledVector(_d, g.userData.len * (0.5 + INFGUN.guns[L.gk].grip) * L.ws); u.muzzle.parent.updateWorldMatrix(true, false); u.muzzle.position.copy(u.muzzle.parent.worldToLocal(_c)); } }
+// BGUN the gun along his aim: the butt at his right shoulder, the barrel on his forward pitched to his man's chest (L.aimX/aimZ, set by the fight; else
+//   the player), dipped at the run / the stagger / the throw; then the right hand pulled onto the grip and the left onto the handguard (two-bone IK)
+const BG = BOSSGRIP, D2R = Math.PI / 180, _f = new THREE.Vector3(), _r = new THREE.Vector3(), _up = new THREE.Vector3(0, 1, 0), _bt = new THREE.Vector3(), _dir = new THREE.Vector3(), _gp = new THREE.Vector3(),
+  _tg = new THREE.Vector3(), _pl = new THREE.Vector3(), _sl = new THREE.Vector3(), _s = new THREE.Vector3(), _e = new THREE.Vector3(), _w = new THREE.Vector3(), _u = new THREE.Vector3(), _n = new THREE.Vector3(),
+  _v1 = new THREE.Vector3(), _v2 = new THREE.Vector3(), _q1 = new THREE.Quaternion(), _q2 = new THREE.Quaternion(), _pw = new THREE.Quaternion();
+const off = (v, o, sc) => v.addScaledVector(_r, o[0] * sc).addScaledVector(_up, o[1] * sc).addScaledVector(_f, o[2] * sc);   // (his frame: right, up, forward)
+function hold(L, dt){ const g = L.gun, B = L.B; if(!g || !B.RightHand || !B.LeftHand) return; if(L.dead || !BG.on || !L.muzR || !B.RightForeArm || !B.LeftForeArm) return lay(L);
+  const e = L.e, P = BG.looks[L.id] || {}, sc = L.ws * L.look.h / 1.8, a = e.facing + (P.yaw || 0) * D2R, len = g.userData.len * L.ws, G2 = INFGUN.guns[L.gk], A = L.acts;
+  _f.set(Math.sin(a), 0, Math.cos(a)); _r.set(-Math.cos(a), 0, Math.sin(a));   // (his left is +X)
+  const thr = !!(L.once && L.once.a === A.throw), low = thr || L.cur === A.run || L.cur === A.stagger;
+  B.RightArm.getWorldPosition(_bt); off(_bt, P.butt || BG.butt, sc);
+  let want = -BG.low * D2R; if(!low){ const p = S.player, tx = L.aimX ?? (p && p.pos.x), tz = L.aimZ ?? (p && p.pos.z); want = 0;
+    if(tx != null) want = Math.max(BG.pitch[0] * D2R, Math.min(BG.pitch[1] * D2R, Math.atan2(heightAt(tx, tz) + BG.chest - _bt.y, Math.max(2, Math.hypot(tx - _bt.x, tz - _bt.z))))); }
+  L.pit = L.pit == null ? want : L.pit + (want - L.pit) * Math.min(1, (dt || 0) * BG.ease);
+  _dir.copy(_f).multiplyScalar(Math.cos(L.pit)).addScaledVector(_up, Math.sin(L.pit)); _gp.copy(_bt).addScaledVector(_dir, len * (0.5 - G2.grip));   // (the grip: the butt + its stock)
+  B.RightArm.getWorldPosition(_s); B.RightForeArm.getWorldPosition(_e); B.RightHand.getWorldPosition(_w); { const R = (_s.distanceTo(_e) + _e.distanceTo(_w)) * BG.reach;   // (his arm too short for the stock — the magma brute: the gun slid back into his shoulder till the hand meets the grip)
+    off(_tg.copy(_gp), P.rh || BG.rh, sc); _v1.subVectors(_tg, _s); const k = _dir.dot(_v1), c = _v1.lengthSq() - R * R; if(c > 0){ const q = k * k - c, back = q >= 0 ? k - Math.sqrt(q) : k; if(back > 0) _gp.addScaledVector(_dir, -Math.min(back, BG.slide * sc)); } }
+  g.parent.worldToLocal(_c.copy(_gp)); g.position.copy(_c); g.lookAt(_d.copy(_gp).add(_dir)); if(P.roll) g.rotateZ(P.roll * D2R); g.updateMatrixWorld(true);
+  ik2(B.RightArm, B.RightForeArm, B.RightHand, off(_tg.copy(_gp), P.rh || BG.rh, sc), off(_pl.set(0, 0, 0), BG.poleR, 1));
+  if(thr) return;   // (the throw's hand is busy)
+  // the handguard: hg ahead of the grip, nearer when his left arm cannot reach that far (where the barrel meets his reach), never past the muzzle
+  B.LeftArm.getWorldPosition(_sl); B.LeftForeArm.getWorldPosition(_e); B.LeftHand.getWorldPosition(_w); const R = (_sl.distanceTo(_e) + _e.distanceTo(_w)) * BG.reach;
+  let s = Math.min((P.hg || BG.hg) * sc, len * (0.5 + G2.grip) - 0.1 * sc); _v1.subVectors(_gp, _sl); const k = _dir.dot(_v1), c = _v1.lengthSq() - R * R, q = k * k - c;
+  if(q >= 0) s = Math.max(0.12 * sc, Math.min(s, -k + Math.sqrt(q)));
+  ik2(B.LeftArm, B.LeftForeArm, B.LeftHand, off(_tg.copy(_gp).addScaledVector(_dir, s), P.lh || BG.lh, sc), off(_pl.set(0, 0, 0), BG.poleL, 1)); }
+// two-bone IK (world): the upper bone turned so the elbow lies in the plane of the pole at the reach the target asks, then the lower so the end meets it
+function ik2(up, lo, end, t, pole){ up.getWorldPosition(_s); lo.getWorldPosition(_e); end.getWorldPosition(_w); const a = _s.distanceTo(_e), b = _e.distanceTo(_w);
+  _u.subVectors(t, _s); let d = _u.length(); if(d < 1e-5 || a < 1e-5 || b < 1e-5) return; _u.divideScalar(d); d = Math.max(Math.abs(a - b) + 1e-4, Math.min(d, (a + b) * 0.999));
+  const ca = (a * a + d * d - b * b) / (2 * a * d), sa = Math.sqrt(Math.max(0, 1 - ca * ca)); _n.copy(pole).addScaledVector(_u, -pole.dot(_u)); if(_n.lengthSq() < 1e-8) _n.set(0, -1, 0); _n.normalize();
+  turn(up, _v1.subVectors(_e, _s).normalize(), _v2.copy(_u).multiplyScalar(ca).addScaledVector(_n, sa));
+  lo.getWorldPosition(_e); end.getWorldPosition(_w); turn(lo, _v1.subVectors(_w, _e).normalize(), _v2.copy(_s).addScaledVector(_u, d).sub(_e).normalize()); }
+// a bone turned in the world by the turn that takes from → to (its local rotation: parent⁻¹ · turn · parent · own)
+function turn(bone, from, to){ _q1.setFromUnitVectors(from, to); bone.parent.getWorldQuaternion(_pw); _q2.copy(_pw).invert().multiply(_q1).multiply(_pw); bone.quaternion.premultiply(_q2); bone.updateMatrixWorld(true); }
 export function fortBossFlash(L){ if(L && L.glb) L.flashT = 0.12; }
 // he is down (or the battle is gone): the plates fly (fort-boss-look.js), the model leaves the rig and falls — or, reset, is simply taken away
-export function fortBossGlbStrip(L, fly){ const u = L.e.mesh.userData; u.clipDraw = false; if(u.muzzle && L.muz0) u.muzzle.position.copy(L.muz0);
+export function fortBossGlbStrip(L, fly){ const u = L.e.mesh.userData; u.clipDraw = false; if(L.muzR){ u.muzzle = L.muzR; L.muzR = null; } if(u.muzzle && L.muz0) u.muzzle.position.copy(L.muz0);
   if(fly && L.wrap.parent){ L.dead = true; scene.attach(L.wrap); const a = L.acts[Math.random() < 0.5 ? 'deathB' : 'deathF']; if(a){ if(L.cur) L.cur.stop(); a.reset(); a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true; a.play(); a.time = C.anim.deathAt || 0; }   /* (BOSS 3 the fall begins at once: the clip's first beat of standing skipped) */ CORPSES.push({ L, t:0 }); }
   else { if(L.wrap.parent) L.wrap.parent.remove(L.wrap); drop(L); } }
 function drop(L){ for(const m of L.mats) m.dispose(); L.mixer.stopAllAction(); }

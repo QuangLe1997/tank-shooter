@@ -2746,6 +2746,16 @@ export const FORTBOSS = { on:true, model:'glb', h:[3.0, 3.15, 3.3], baseH:1.82,
     STEELMILL:{ t:'LÒ LUYỆN', c:0x463a32, glow:0xff7a22 }, QUARRY:{ t:'THẠCH QUỶ', c:0x837c70 }, CITY:{ t:'THÉP ĐÔ THỊ', c:0x50565e }, CITADEL:{ t:'THIẾT VỆ', c:0x4e4e48 },
     RUINS:{ t:'BÓNG MA', c:0x5e5e52 }, MEADOW:{ t:'HẮC MỘC', c:0x44503a }, HILLS:{ t:'HẮC MỘC', c:0x44503a }, VILLAGE:{ t:'HẮC MỘC', c:0x44503a } },
   cue:{ APPEAR:40, PLATE:41, ATK:42, TAKEN:43 } };
+// BGUN BOSSGRIP (actors/fort-boss-glb.js hold): how a fort boss (the rigged model) holds his heavy gun — no longer laid from his right hand toward his left
+//   (a clip with the hands side by side put the barrel across his chest, 15–55° off his aim) but along his aim: the butt at his right shoulder, the barrel
+//   on his body's forward pitched to his man's chest, the right hand pulled onto the grip and the left onto the handguard by a two-bone IK on each arm.
+//   Lengths in metres for a 1.8 m man (scaled to his height); offsets [x his right, y up, z forward] · butt: the butt off his right shoulder joint ·
+//   rh / lh: the right / left wrist off the grip / the handguard point · hg: the handguard, m ahead of the grip (nearer when his arm cannot reach: reach ×
+//   arm length) · slide: at most this far the gun slides back into his shoulder when his right arm is too short for its stock · poleR / poleL: where each elbow leans · chest: the aim point's height over the ground · pitch: [min, max] deg · low: deg the barrel dips
+//   at the run, the stagger, the throw (low ready) · ease: /s the pitch follows · looks: per look trims { butt, rh, lh, hg, yaw, roll (deg) }
+export const BOSSGRIP = { on:true, butt:[-0.02, -0.06, 0.07], rh:[0.02, -0.03, -0.03], lh:[-0.02, -0.05, 0.0], hg:0.36, reach:0.97, slide:0.3, poleR:[0.7, -1, -0.25], poleL:[-0.35, -1, 0.1],
+  chest:1.3, pitch:[-25, 18], low:24, ease:8,
+  looks:{ titan:{}, revenant:{}, demon:{}, miner:{}, cbrn:{}, mech:{}, arctic:{}, raider:{}, soldierF:{}, cyborgF:{}, spy:{}, magma:{}, stalker:{}, guardian:{} } };
 // Z374 SCENERY (world/scenery.js): every battlefield composed from the Meshy community scans (tools/scene-import.mjs → assets/models/real/scene) — a
 //   skyline beyond the fence, one landmark the field turns on, framing pairs, groves, a rail siding, a pole line, a tank farm, rocks to fight from.
 //   lod: a model is drawn whole (the near file, fetched once the camera comes within mid + near m) up to mid m, then its mid copy, past far m its far copy
