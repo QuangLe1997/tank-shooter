@@ -7,7 +7,7 @@
 //   button — are renders of the same models (128 px WebP, LOOT_REAL.iconDir). ?nolootreal: the drawn ones · ?nolootinst: one mesh a drop.
 import * as THREE from 'three';
 import { LOOT_REAL as LR } from '../../config.js';
-import { MODEL_FILES, iconEl, loadGLTF, scene, svgGlyphTex } from '../hub.js';
+import { MODEL_FILES, compileReady, iconEl, loadGLTF, scene, svgGlyphTex } from '../hub.js';
 
 let _reg = false; const reg = () => { if(_reg) return; _reg = true; for(const k of LR.keys) MODEL_FILES['loot_' + k] = LR.dir + k + '.glb'; };   // (the files join actors/models.js's list on first use)
 // the model a drop wears / the picture it shows (null: the drawn one)
@@ -19,7 +19,7 @@ export function lootPreload(){ if(LR.on) for(const k of LR.keys) lootGLTF(k); }
 // a copy of a model (its own meshes, the file's geometry and material shared) → onto `parent` when loaded; resolves to it (null: none)
 export function lootModelInto(parent, k, mat){ return lootGLTF(k).then(gl => { if(!gl) return null; const m = gl.scene.clone(true);
   m.traverse(o => { if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; o.userData.lootShared = true; if(mat) o.material = mat(o.material); } });   // (its geometry is the file's: never disposed by a user)
-  parent.add(m); return m; }); }
+  return compileReady(m).then(() => { parent.add(m); return m; }); }); }   // SPLIT 4 its shaders linked before it is shown (the relic's crystal: ~200 ms in a fight's second frame)
 
 // ---- the drops of one model as one InstancedMesh: a slot (an empty Object3D) in each drop's group; lootInstSync copies the slots' places each frame ----
 const INST = {};

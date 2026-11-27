@@ -5,16 +5,27 @@
 //     every material in the battle's scene the GPU does not hold yet is uploaded (renderer.initTexture), biggest first, PERF_SPLIT.warm.ms of work a
 //     frame (always one) — only while the countdown runs: when it ends, whatever is left is left to the first draw as before.
 //   · shaders: what rises at GO is not in the scene during the 3-2-1, so prewarmStage never saw it and its programs were built in the first live frame
-//     (~280 ms, two programs). The props of FWARM.props (the relic, its downloaded altar and glowing crystal; fightWarmProp adds more) are built off
-//     the scene and compiled with the battle's own lights (renderer.compile(props, camera, scene)) — waiting at most warm.propWait s for their models.
+//     (~280 ms, two programs). The props of FWARM.props (the relic's plinth, light column, rune rings; fightWarmProp adds more) are built off the scene
+//     and compiled with the battle's own lights — waiting at most warm.propWait s for any models they ask for. Nothing is downloaded for it: the
+//     relic's altar and crystal arrive after GO as before and are compiled before they are shown (loot/loot-real.js lootModelInto → compileReady).
+//   · compileFor: every warm-up compile (this, ui/briefing.js compileQuiet, game/intro.js) with the scene pass's render target bound. three keys a program
+//     on the target it is built for — the canvas gets tone mapping + sRGB out, the scene pass's half-float target neither — so a compile with no target
+//     bound built variants the game never draws with, and the real ones were built at their first draw anyway.
 //   FWARM.stat: maps found / uploaded / ms / left when the countdown ended · props compiled / new programs (the fight's long frames are in PH.long).
 import * as THREE from 'three';
 import { PERF_SPLIT } from '../../config.js';
-import { S, camera, lootPreload, relicWarm, renderer, scene } from '../hub.js';
+import { S, camera, relicWarm, renderPass, renderer, scene } from '../hub.js';
 
 export const FWARM = { stat:{ found:0, up:0, ms:0, left:0, props:0, progs:0 }, run:0 };
 const PROPS = [() => relicWarm()];
-export function fightWarmProp(fn){ PROPS.push(fn); }   // another module's thing that first appears at GO: fn() → an Object3D built off the scene (userData.real: a promise of its models)
+export function fightWarmProp(fn){ PROPS.push(fn); }
+// renderer.compile with the scene pass's target bound (the same tone mapping / output as the real draw), the caller's target put back
+export function compileFor(root, cam, sc){ const r = renderer, prev = r.getRenderTarget(), ac = r.getActiveCubeFace(), am = r.getActiveMipmapLevel();
+  try{ r.setRenderTarget(renderPass.rt); return r.compile(root, cam || camera, sc || scene); } finally{ r.setRenderTarget(prev, ac, am); } }
+// … and resolved once every program it built has linked (KHR_parallel_shader_compile; a material without a program counts as done), at most maxMs
+export function compileReady(root, maxMs = 1500){ let mats; try{ mats = compileFor(root); }catch(e){ return Promise.resolve(); } const t0 = performance.now();
+  return new Promise(res => { const check = () => { try{ for(const m of mats){ const pr = renderer.properties.get(m).currentProgram; if(!pr || pr.isReady()) mats.delete(m); } }catch(e){ mats.clear(); }
+    if(!mats.size || performance.now() - t0 > maxMs) res(); else setTimeout(check, 16); }; check(); }); }   // another module's thing that first appears at GO: fn() → an Object3D built off the scene (userData.real: a promise of its models)
 const KEYS = ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'aoMap', 'emissiveMap', 'alphaMap', 'bumpMap', 'displacementMap', 'lightMap', 'specularMap', 'clearcoatNormalMap', 'sheenColorMap', 'transmissionMap', 'specularColorMap', 'specularIntensityMap'];
 function cold(t){ if(!t || !t.isTexture || t.isRenderTargetTexture || t.isVideoTexture || t.version === 0) return false;
   const im = t.image; if(!t.isDataTexture && !t.isCompressedTexture && !(im && (im.width || im.length))) return false;
@@ -30,11 +41,10 @@ export function fightWarm(){ const W = PERF_SPLIT.warm; if(!W.on) return; const 
     T.ms += performance.now() - t0; T.left = Q.length; if(Q.length) requestAnimationFrame(step); };
   requestAnimationFrame(step); warmProps(run); }
 async function warmProps(run){ const W = PERF_SPLIT.warm, T = FWARM.stat, g = new THREE.Group(), waits = [];
-  try{ lootPreload(); }catch(e){}   // (spawnRelic asked for the loot models only at GO)
   for(const f of PROPS){ try{ const o = f(); if(!o) continue; g.add(o); if(o.userData && o.userData.real) waits.push(o.userData.real); }catch(e){} }
   if(waits.length) await Promise.race([Promise.all(waits).catch(() => {}), new Promise(r => setTimeout(r, W.propWait * 1000))]);
   if(run !== FWARM.run || !counting() || !g.children.length) return;
   const n0 = renderer.info.programs ? renderer.info.programs.length : 0;
-  try{ T.props = renderer.compile(g, camera, scene).size; }catch(e){ return; }   // (programs built now link in the background where the browser can: KHR_parallel_shader_compile)
+  try{ T.props = compileFor(g).size; }catch(e){ return; }   // (programs built now link in the background where the browser can: KHR_parallel_shader_compile)
   T.progs = (renderer.info.programs ? renderer.info.programs.length : 0) - n0;
   g.traverse(o => { const m = o.material; if(m) for(const x of Array.isArray(m) ? m : [m]) for(const k of KEYS) if(cold(x[k])) try{ renderer.initTexture(x[k]); T.up++; }catch(e){} }); }   // + their few maps

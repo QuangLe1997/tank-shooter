@@ -5,7 +5,8 @@
 //   hidden, changed its geometry or its instances for PERF_SPLIT.shadow.settle frames becomes "still"; a still one that changes (a wall knocked down,
 //   a bush crushed, a crater in the ground) goes back to moving and the still part is drawn again within minGap s. The map's box no longer slides
 //   with every step: it is re-centred once the soldier is `step` m off its centre (a little wider, `pad`), and the still part is drawn again then —
-//   and whenever the box's size (zoom), the sun's direction (hour, battlefield) or the scene changes. `?nosplit` switches it off (before / after).
+//   and whenever the box's size (zoom), the sun's direction (hour, battlefield) or the scene changes. SPLIT 4: off by default (PERF_SPLIT.shadow.on) — the A/B
+//   against main showed no GPU gain and +1–4.5 ms CPU on this Mac; `?split` turns it on, `?nosplit` keeps it off.
 import * as THREE from 'three';
 import { PERF_SPLIT } from '../../config.js';
 import { MOBILE, S, SHADOW_EXT, scene, sun } from '../hub.js';
@@ -69,12 +70,12 @@ function split(base, lights, sc, camera){
   ST.length = 0; for(const R of REC.values()) if(R.st) ST.push(R.o);
   castOff(ST); try{ base(SUN1, sc, camera); } finally{ castBack(); _mode = 0; } }
 // PERF_SPLIT.shadow on, a desktop with shadows, the battle's own scene (the shop's showroom and the warm-up draws go through untouched)
-export function shadowSplit(renderer){ if(MOBILE || /[?&]nosplit\b/.test(location.search)) return; shadowSplit.r = renderer;   // (called while render/renderer.js loads: nothing of this module's own state is touched until the first draw)
+export function shadowSplit(renderer){ if(MOBILE || !(PERF_SPLIT.shadow.on || /[?&]split\b/.test(location.search)) || /[?&]nosplit\b/.test(location.search)) return; /* SPLIT 4 off unless asked (?split): no GPU gain measured, +1–4.5 ms CPU */ shadowSplit.r = renderer;   // (called while render/renderer.js loads: nothing of this module's own state is touched until the first draw)
   const sm = renderer.shadowMap, base = sm.render.bind(sm), clr = renderer.clear.bind(renderer);
   renderer.clear = (c, d, s) => { if(_mode && renderer.getRenderTarget() === sun.shadow.map){ if(_mode === 1){ if(blit(RT, sun.shadow.map)) SSHADOW.stat.restores++; else clr(c, d, s); } return; } return clr(c, d, s); };
   sm.render = (lights, sc, camera) => {
     if(sc !== scene || !lights.length || !lights.includes(sun)) return base(lights, sc, camera);   // every post pass's full-screen quad comes through here too
-    if(!SSHADOW.on || !PERF_SPLIT.shadow.on || !sm.enabled || (!sm.autoUpdate && !sm.needsUpdate) || S.mode === 'intro'){
+    if(!SSHADOW.on || !sm.enabled || (!sm.autoUpdate && !sm.needsUpdate) || S.mode === 'intro'){
       if(_r){ _r = 0; const c = sun.shadow.camera, r = SHADOW_EXT.r; c.left = -r; c.right = r; c.top = r; c.bottom = -r; c.far = 180 + r; c.updateProjectionMatrix(); }   // back to the box that follows every step
       _ax = NaN; return base(lights, sc, camera); }
     SUN1[0] = sun; return split(base, lights, sc, camera); }; }

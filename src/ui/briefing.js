@@ -1,7 +1,7 @@
 // ui/briefing.js — STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin; XK-UI its back button: to the battle setup (a fresh launch from it) or home (asks mid-run)
 import { CONTRACTS, DMG_TYPE, LOOT_REAL, OBJECTIVES, OBJ_REWARD } from '../../config.js';
 import { setLootIcon, bladeChip, modeBrief, bigEventsReset, sideMissionsReset, directorReset, opTitle, placeLine, capVi, askConfirm, quitToMenu, openBattleSetup, BS, BIOME, GUNS, PROFILE, S, WAVE, biomeVi, bossForStage, camera, coachFirstRun, conditionsText, escapeHtml, floatText, gunPicEl, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, renderer, resetEnvEvents, resetSurprises, saveProfile, sayVoice, scene, setFocus, setIcon, sfx, show, spawnRelic, storyBrief, storyReset, tapEl, voiceStage, spellNow, briefTeam, nemBrief, droneWarReset, ammoHud, coopActive, coopGate } from '../hub.js';
-import { fightWarm } from '../hub.js';   // SPLIT 2 (render/fight-warm.js)
+import { compileFor, fightWarm } from '../hub.js';   // SPLIT 2 (render/fight-warm.js)
 
 // ----- STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin -----
 export let _brCtx = null;   // what chooseContract should do on confirm: {first?} (stage1) or {stage,biomeName,accentHex} (stage 2+)
@@ -142,6 +142,6 @@ export function prewarmStage(){ if(_warm){ _again=true; return; }   // one pass 
 // Z323 three's compileAsync waits on every material's program with no guard: a material changed or disposed mid-compile throws (an uncaught TypeError in a
 //   timer) and the promise never settles. Compile, then poll readiness ourselves — a material without a program counts as done — and stop waiting after WARM_MAX
 const WARM_MAX = 12000;
-export function compileQuiet(){ let mats; try { mats = renderer.compile(scene, camera); } catch(e){ return; } const t0 = performance.now();
+export function compileQuiet(){ let mats; try { mats = compileFor(scene, camera); } catch(e){ return; } /* SPLIT 4 for the scene pass's target: the variants the game draws with */ const t0 = performance.now();
   return new Promise(res => { const check = () => { try { for(const m of mats){ const pr = renderer.properties.get(m).currentProgram; if(!pr || pr.isReady()) mats.delete(m); } } catch(e){ mats.clear(); }
       if(!mats.size || performance.now() - t0 > WARM_MAX) res(); else setTimeout(check, 16); }; check(); }); }

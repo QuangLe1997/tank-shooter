@@ -2736,7 +2736,7 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   ok(/attribute float aBorn;/.test(wm) && /diffuseColor\.a \*= vMk;/.test(wm) && !/new THREE\.Quaternion\(\)\.setFromAxisAngle/.test(wm), 'wall marks fade with age; no new Quaternion per strike'); }
 // SPLIT 1 (A1) the sun's shadow in two parts: the still casters drawn once and kept, the movers drawn on top every frame
 { const fs=await import('node:fs'), C=await import('./config.js'), sh=C.PERF_SPLIT.shadow, ss=fs.readFileSync('src/render/shadow-split.js','utf8'), rr=fs.readFileSync('src/render/renderer.js','utf8');
-  ok(sh.on===true && sh.step>0 && sh.pad>=0 && sh.pad<=sh.step && sh.settle>=5 && sh.settleMax>=sh.settle && sh.minGap>0 && sh.promoteGap>=sh.minGap && sh.editWin>0 && sh.rescan>=1,
+  ok(typeof sh.on==='boolean' && sh.step>0 && sh.pad>=0 && sh.pad<=sh.step && sh.settle>=5 && sh.settleMax>=sh.settle && sh.minGap>0 && sh.promoteGap>=sh.minGap && sh.editWin>0 && sh.rescan>=1,
     'the still part: box re-centred '+sh.step+' m off (+'+sh.pad+' m wider), a caster still '+sh.settle+' frames joins it, drawn again ≥ '+sh.minGap+' s after something in it changed');
   ok(/shadowLOD\(renderer\);[^\n]*\nshadowSplit\(renderer\);/.test(rr) && /blitFramebuffer\(/.test(ss) && /COLOR_BUFFER_BIT \| gl\.DEPTH_BUFFER_BIT/.test(ss) && /nosplit/.test(ss) && /if\(sc !== scene \|\| !lights\.length/.test(ss) && /new Float64Array\(16\)/.test(ss),
     'installed right after the shadow LOD; colour + depth put back with one blit; ?nosplit switches it off; post passes and other scenes go through untouched; world matrices compared at full precision'); }
@@ -2745,7 +2745,7 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   ok(P.warm.on===true && P.warm.ms>0 && P.warm.ms<=12 && P.warm.propWait>0 && P.warm.propWait<3 && P.hitchMs>=33 && P.hitchKeep>=8,
     'the battlefield\'s cold maps uploaded during the 3-2-1, '+P.warm.ms+' ms of work a frame; what rises at GO compiled then (models awaited ≤ '+P.warm.propWait+' s); frames over '+P.hitchMs+' ms logged ('+P.hitchKeep+' kept)');
   ok(/prewarmStage\(\); fightWarm\(\);/.test(br) && /renderer\.initTexture\(t\)/.test(fw) && /__version !== t\.version/.test(fw) && /const counting = \(\) => S\.mode === 'countdown'/.test(fw) && /if\(run !== FWARM\.run \|\| !counting\(\)\) return;/.test(fw)
-    && /renderer\.compile\(g, camera, scene\)/.test(fw) && /export function relicWarm\(\)\{ return build\(\); \}/.test(fs.readFileSync('src/loot/relic.js','utf8')) && /PH\.long\.push\(/.test(ph),
+    && /compileFor\(g\)/.test(fw) && /export function relicWarm\(\)\{ return build\(true\); \}/.test(fs.readFileSync('src/loot/relic.js','utf8')) && /PH\.long\.push\(/.test(ph),
     'started beside the shader prewarm at the countdown and stopped when it ends (the load never waits); the relic compiled off the scene with the battle\'s lights; the fight\'s long frames in PH.long'); }
 // SPLIT 3 (A9) Thấp / Vừa / Cao + one level down after a load that never finished
 { const fs=await import('node:fs'), C=await import('./config.js'), P=C.PERF_SPLIT, T=P.tiers, q=fs.readFileSync('src/render/quality.js','utf8'), st=fs.readFileSync('src/game/startup.js','utf8'), fl=fs.readFileSync('src/game/flow.js','utf8'), se=fs.readFileSync('src/ui/settings.js','utf8'), pr=fs.readFileSync('src/core/profile.js','utf8');
@@ -2753,6 +2753,12 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
     'three levels of the same world: render scale '+T.low.dpr+' / '+T.medium.dpr+' / '+T.high.dpr+', occlusion only on Cao, Thấp a '+T.low.shadow+' shadow map, small pieces fade '+T.low.detailK+'× / '+T.medium.detailK+'× earlier');
   ok(P.crash.on===true && typeof P.crash.key==='string' && P.crash.okS>0 && /tierBoot\(\);[^\n]*\n[^\n]*\nbuildCore\(1\);/.test(st) && /launchGame\(arg\)\{ loadMark\(\);/.test(fl) && /_setQ\('medium'\)/.test(se) && /pr\.quality==='medium'/.test(pr) && /TIER_ORDER\[i - 1\]/.test(q),
     'a load that never finished (the note '+P.crash.key+' still there at the next start) → one level down before anything is built; the note goes after '+P.crash.okS+' s of fight; Vừa in Settings and in the saved profile'); }
+// SPLIT 4 every warm-up compiles for the scene pass's target; loot models shown once their shaders linked; the shadow split off unless ?split
+{ const fs=await import('node:fs'), C=await import('./config.js'), rd=f=>fs.readFileSync(f,'utf8'), fw=rd('src/render/fight-warm.js'), br=rd('src/ui/briefing.js'), it=rd('src/game/intro.js'), lr=rd('src/loot/loot-real.js'), ss=rd('src/render/shadow-split.js'), ph=rd('src/render/perfhud.js');
+  ok(/r\.setRenderTarget\(renderPass\.rt\); return r\.compile\(/.test(fw) && /finally\{ r\.setRenderTarget\(prev, ac, am\); \}/.test(fw) && /mats = compileFor\(scene, camera\)/.test(br) && /else compileFor\(scene, camera\)/.test(it) && !/lootPreload/.test(fw),
+    'warm-up compiles (the go-time props, compileQuiet, the intro) bind the scene pass\'s target, so they build the variants the game draws with; nothing is downloaded during the 3-2-1');
+  ok(/return compileReady\(m\)\.then\(\(\) => \{ parent\.add\(m\); return m; \}\)/.test(lr) && /relicWarm\(\)\{ return build\(true\); \}/.test(rd('src/loot/relic.js')) && C.PERF_SPLIT.shadow.on===false && /\[\?&\]split\\b/.test(ss) && /PH\.t1=0; PH\.pc=/.test(ph),
+    'a loot model joins the field once its shaders have linked; the shadow split stays off unless ?split; the shader log counts from the countdown'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
@@ -2884,7 +2890,7 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
 // Z168 smoother battle start, steadier controller focus, UI fit pass, weightier shots
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const tips=R('src/ui/tips.js'), br=R('src/ui/briefing.js'), gp=R('src/input/gamepad.js'), css=R('css/ui152.css'), mcss=R('css/menus.css');
   ok(!/S\.mode='tip'/.test(tips) && /tickTip/.test(R('src/game/loop.js')) && /#tipCard\.hidden,#tipCard\.away/.test(css), 'first-time tips no longer pause the battle (a pad could not close them): a side card that times out and hides under menus');
-  ok(/prewarmStage\(\)/.test(br) && /renderer\.compile\(scene, camera\)/.test(br) && /function compileQuiet/.test(br) && /typeof pr\.introSeen!=='object'/.test(R('src/core/profile.js')), 'stage shaders compile in the background during the briefing and the 3-2-1; a bad introSeen value can no longer crash the intro');
+  ok(/prewarmStage\(\)/.test(br) && /compileFor\(scene, camera\)/.test(br) && /function compileQuiet/.test(br) && /typeof pr\.introSeen!=='object'/.test(R('src/core/profile.js')), 'stage shaders compile in the background during the briefing and the 3-2-1; a bad introSeen value can no longer crash the intro');
   ok(/PAD\.ensAt=now\+0\.25/.test(gp) && !/filter:brightness\(1\.38\)/.test(mcss) && /body\.pad :is\(/.test(css), 'controller menus: no per-frame re-scan, no full-card filter pulse, mouse hover off while a pad drives');
    }
 

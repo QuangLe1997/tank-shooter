@@ -3596,9 +3596,9 @@ export const BODYFULL = {
   tube:{ pouch:[0.0, -0.05, 0.22], palm:true } };
 // SPLIT 1–3 RUNTIME PERFORMANCE (plan A1 · A6 · A9): the sun's shadow in a still part drawn once + the movers every frame, nothing uploaded in a fight's first seconds, three quality levels + one down after a crashed load
 export const PERF_SPLIT = {
-  // A1 render/shadow-split.js: re-centre the box `step` m off (and `pad` m wider) · a caster still for `settle` frames joins the still part (doubled, up to settleMax, each time it moves again)
+  // A1 render/shadow-split.js (off unless on / ?split — SPLIT 4: no GPU gain measured, +1–4.5 ms CPU): re-centre the box `step` m off (and `pad` m wider) · a caster still for `settle` frames joins the still part (doubled, up to settleMax, each time it moves again)
   //   · the still part is drawn again ≥ minGap s after something in it changed, ≥ promoteGap s for newly still ones · edited twice inside editWin s = it moves · casters re-listed every `rescan` frames
-  shadow:{ on:true, step:3, pad:1.5, settle:20, settleMax:600, minGap:0.2, promoteGap:1.5, editWin:2, rescan:30 },
+  shadow:{ on:false, step:3, pad:1.5, settle:20, settleMax:600, minGap:0.2, promoteGap:1.5, editWin:2, rescan:30 },
   // A6 render/fight-warm.js: the battlefield's maps the GPU does not hold yet, uploaded during the 3-2-1 only — ms of work a frame; what rises at GO compiled then, its models awaited ≤ propWait s · render/perfhud.js PH.long: a fight's frames over hitchMs (hitchKeep kept)
   warm:{ on:true, ms:6, propWait:1.5 }, hitchMs:50, hitchKeep:24,
   // A9 render/quality.js: Thấp / Vừa / Cao — top render scale (desktop / phone), the occlusion pass, the sun's map size (0 = SHADOW_MAP), light shafts, × LOD.detailPx

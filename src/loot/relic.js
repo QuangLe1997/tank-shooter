@@ -28,7 +28,7 @@ function mats(){ if(_M) return _M;
        ring:new THREE.MeshBasicMaterial({ color:0xffd27a, transparent:true, opacity:0.75, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide }),
        fill:new THREE.MeshBasicMaterial({ color:0xffb43c, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide }) };
   return _M; }
-function build(){ const M=mats(), g=new THREE.Group();
+function build(bare){ const M=mats(), g=new THREE.Group();
   const base=new THREE.Mesh(new THREE.CylinderGeometry(2.0,2.4,0.7,6), M.stone); base.position.y=0.35; base.castShadow=true; base.receiveShadow=true; g.add(base);
   const step=new THREE.Mesh(new THREE.CylinderGeometry(1.5,1.8,0.45,6), M.stone); step.position.y=0.92; step.castShadow=true; g.add(step);
   const trim=new THREE.Mesh(new THREE.TorusGeometry(2.2,0.07,6,6), M.gold); trim.rotation.x=Math.PI/2; trim.position.y=0.72; g.add(trim);
@@ -39,7 +39,7 @@ function build(){ const M=mats(), g=new THREE.Group();
   const beam=new THREE.Mesh(new THREE.CylinderGeometry(0.75,0.75,46,16,1,true), M.beam); beam.position.y=23; beam.renderOrder=6; g.add(beam);
   const ring=holoRing(RELIC.r-0.1, { kind:'ally', col:'loot', ticks:64, tickLen:0.4, spin:0.02, gain:2.2 }); ring.position.y=0.08; g.add(ring);   // Z318 battle-light gold; its lit arc fills as the relic wakes
   const fill=new THREE.Mesh(new THREE.CircleGeometry(RELIC.r-0.22, 64), M.fill); fill.rotation.x=-Math.PI/2; fill.position.y=0.06; g.add(fill);
-  g.userData={ cr, crM:M.crystal, cy:3.0, glow:0, r1, r2, beam, ring, fill }; g.userData.real=realRelic(g, [base, step, trim, ...g.children.filter(o=>o.geometry && o.geometry.type==='ConeGeometry')], oct); return g; }   // (SPLIT 2 real: when its models are in)
+  g.userData={ cr, crM:M.crystal, cy:3.0, glow:0, r1, r2, beam, ring, fill }; g.userData.real=bare ? null : realRelic(g, [base, step, trim, ...g.children.filter(o=>o.geometry && o.geometry.type==='ConeGeometry')], oct); return g; }   // (SPLIT 2 real: when its models are in)
 // LOOT 1 the plinth is a downloaded stone altar and the crystal a downloaded stone that glows its own colours (loot/loot-real.js); the light column, the rune rings
 //   and the ring on the ground stay. The drawn plinth and crystal stay only if the models cannot load.
 function realRelic(g, plinth, oct){ if(!LOOT_REAL.on) return null; const ud=g.userData, L=LOOT_REAL.relic;
@@ -55,8 +55,8 @@ export function spawnRelic(){ removeRelic(); lootPreload();   // (LOOT 1 the bat
   const [x,z]=spot(); const g=build(); g.position.set(x, heightAt(x,z), z); scene.add(g);
   Object.assign(RELIC, { g, x, z, prog:0, alerted:false, live:true, t:0 });
   setTimeout(()=>{ if(RELIC.live && S.mode==='playing') radio('SCH: Phát hiện THÁNH TÍCH CỔ — cột sáng vàng trên bản đồ. Đứng trong vòng sáng để đánh thức nó!'); }, 4500); }
-// SPLIT 2 (render/fight-warm.js) a relic nobody sees, built during the 3-2-1 so its shaders (and the downloaded altar / glowing crystal's) are compiled before it rises at GO
-export function relicWarm(){ return build(); }
+// SPLIT 2 (render/fight-warm.js) a relic nobody sees, built during the 3-2-1 so its shaders are compiled before it rises at GO
+export function relicWarm(){ return build(true); }   // (bare: its altar and crystal are not fetched for it)
 export function removeRelic(){ if(RELIC.g){ scene.remove(RELIC.g); RELIC.g.traverse(o=>{ if(o.geometry && !o.userData.lootShared) o.geometry.dispose(); else if(o.isMesh && o.material.emissiveMap) o.material.dispose(); }); } RELIC.g=null; RELIC.live=false; relicBar(-1); }
 // stage over / new run: the powers fade with the stage
 export function clearRelicBoons(){ const p=S.player; for(const u of RELIC.undo) try{ u(p); }catch(e){} RELIC.undo.length=0; document.body.classList.remove('relic-on'); }

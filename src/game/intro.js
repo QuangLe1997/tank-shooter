@@ -1,7 +1,7 @@
 // game/intro.js — INTRO CINEMATIC (deploy showcase)
 import * as THREE from 'three';
 import { INTRO, INTRO_CITY, OPERATIONS } from '../../config.js';
-import { compileQuiet, placeLine, opTitle, veilStep, ARENA, BIOME, FORTS, MOBILE, PROFILE, RIVER, S, SKY, TOD_LABEL, WAVE, WONDER, arena, biomeVi, camOff, camRestPose, camera, composer, doResize, openBriefing, renderer, saveProfile, scene, smoother, spawnPart, TRAFFIC, heightAt, GROUND_READY, grassReady, loadRealTrees, loadRealCity, buildIntroClouds, clearIntroClouds, updateIntroClouds, blendScene } from '../hub.js';
+import { compileFor, compileQuiet, placeLine, opTitle, veilStep, ARENA, BIOME, FORTS, MOBILE, PROFILE, RIVER, S, SKY, TOD_LABEL, WAVE, WONDER, arena, biomeVi, camOff, camRestPose, camera, composer, doResize, openBriefing, renderer, saveProfile, scene, smoother, spawnPart, TRAFFIC, heightAt, GROUND_READY, grassReady, loadRealTrees, loadRealCity, buildIntroClouds, clearIntroClouds, updateIntroClouds, blendScene } from '../hub.js';
 
 // ----------------------------- INTRO CINEMATIC (deploy showcase) -----------------------------
 // Z239 desktop: ONE grand, wide, unhurried move — the camera opens high over the whole battlefield, glides a quarter of the way round it
@@ -121,7 +121,7 @@ async function warmUp(){ try{ await assetsReady(); }catch(e){} try{ blendScene(s
   const keep=camera.position.clone(), q=camera.quaternion.clone(), fog=scene.fog?scene.fog.density:null;
   const A=intro.tour?0.05:0.72, B=intro.tour?0.5:0.35;
   try{ placeAt(A); camera.updateMatrixWorld();
-    if(renderer.compileAsync) await Promise.race([compileQuiet(), new Promise(r=>setTimeout(r, INTRO.compileWait))]); else renderer.compile(scene, camera);
+    if(renderer.compileAsync) await Promise.race([compileQuiet(), new Promise(r=>setTimeout(r, INTRO.compileWait))]); else compileFor(scene, camera);   // SPLIT 4 (render/fight-warm.js)
     if(!intro.active) return; placeAt(A); composer.render(); placeAt(B); composer.render(); }
   catch(e){}
   camera.position.copy(keep); camera.quaternion.copy(q); if(fog!=null && scene.fog) scene.fog.density=fog; }
