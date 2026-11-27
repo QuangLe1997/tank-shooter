@@ -249,6 +249,7 @@ export * from './ui/confirm.js';   // XK-UI the one confirmation dialog (leave t
 export * from './ui/hud-prefs.js';   // Z324 what the battle HUD shows: on-screen dialogue, info cards, banners (CÀI ĐẶT)
 export * from './ui/loadout.js';
 export * from './ui/medals-ui.js';   // MEDAL 3 insignia, medal discs, the toasts, the rank-up card, the battle report, the Quân hàm & huân chương screen
+export * from './ui/result-fx.js';   // UIX 3 the result screens' numbers count up when they open
 export * from './ui/ranking.js';   // Z163 leaderboard screen
 export * from './core/helpers.js';
 export * from './game/update.js';

@@ -405,6 +405,7 @@
     <div class="xb xb-ghost xk-back" id="goHomeBtn" role="button" data-back="1"><span class="ic" data-icon="back"></span><span>Trang chủ</span></div>
   </header>
   <div class="xk-body xk-result">
+    <div class="xk-rpanel">
     <p class="xk-kick xk-lost">Nhiệm vụ thất bại</p>
     <h2 class="xk-big">Thất bại</h2>
     <p class="go-why" id="go-why"></p>
@@ -414,8 +415,9 @@
       <div class="go-stat"><div class="l">Đợt</div><div class="v" id="go-wave">1</div></div>
     </div>
     <p class="go-best" id="go-best"></p>
+    <div class="xk-ract"><div class="xb xb-pri" id="retryBtn" role="button"><span class="ic" data-icon="undo"></span><span>Thử lại</span></div><span class="xk-hint">Thử lại bắt đầu lại đúng trận này.</span></div>
+    </div>
   </div>
-  <footer class="xk-foot"><span class="xk-hint">Thử lại bắt đầu lại đúng trận này.</span><div class="xb xb-pri" id="retryBtn" role="button"><span class="ic" data-icon="undo"></span><span>Thử lại</span></div></footer>
 </div>
 
 <!-- UPGRADE PICK (roguelite) -->
@@ -488,13 +490,15 @@
     <div class="xb xb-ghost xk-back" id="vicHomeBtn" role="button" data-back="1"><span class="ic" data-icon="back"></span><span>Trang chủ</span></div>
   </header>
   <div class="xk-body xk-result">
+    <div class="xk-rpanel">
     <p class="xk-kick">Bạo Chúa đã ngã — chiến dịch hoàn thành</p>
     <h2 class="xk-big">Chiến thắng</h2>
     <p class="go-why" id="vicEpi"></p>
     <p class="go-why" id="vicSub">Vòng mới đang chờ.</p>
     <div class="go-stats"><div class="go-stat"><div class="l">Điểm</div><div class="v" id="vic-score">0</div></div></div>
+    <div class="xk-ract"><div class="xb xb-pri" id="ngplusBtn" role="button"><span id="ngplusT">Vào vòng mới</span><span class="ic" data-icon="play"></span></div><span class="xk-hint">Vòng mới giữ nguyên trang bị, địch mạnh hơn.</span></div>
+    </div>
   </div>
-  <footer class="xk-foot"><span class="xk-hint">Vòng mới giữ nguyên trang bị, địch mạnh hơn.</span><div class="xb xb-pri" id="ngplusBtn" role="button"><span id="ngplusT">Vào vòng mới</span><span class="ic" data-icon="play"></span></div></footer>
 </div>
 
 <!-- MODE 3 THE RESULT of a night defence / a daily challenge (campaign/mode-run.js modeCard): the design system's end screen, filled by the mode -->
@@ -503,13 +507,15 @@
     <div class="xb xb-ghost xk-back" id="meHome" role="button" data-back="1"><span class="ic" data-icon="back"></span><span>Trang chủ</span></div>
   </header>
   <div class="xk-body xk-result">
+    <div class="xk-rpanel">
     <p class="xk-kick" id="meKick"></p>
     <h2 class="xk-big" id="meBig"></h2>
     <p class="go-why" id="meWhy"></p>
     <div class="go-stats" id="meStats"></div>
     <p class="go-best" id="meBest"></p>
+    <div class="xk-ract"><div class="xb xb-pri" id="meGo" role="button"><span id="meGoT">Thử lại</span><span class="ic" data-icon="play"></span></div><div class="xb xb-sec" id="meCopy" role="button"><span class="ic" data-icon="pack"></span><span id="meCopyT">Chép kết quả</span></div><span class="xk-hint" id="meHint"></span></div>
+    </div>
   </div>
-  <footer class="xk-foot"><span class="xk-hint" id="meHint"></span><div class="xb xb-sec" id="meCopy" role="button"><span class="ic" data-icon="pack"></span><span id="meCopyT">Chép kết quả</span></div><div class="xb xb-pri" id="meGo" role="button"><span id="meGoT">Thử lại</span><span class="ic" data-icon="play"></span></div></footer>
 </div>
 
 <!-- XK-UI CONFIRM (ui/confirm.js askConfirm): leaving a battle, restarting a stage, wiping progress — the last overlay in the page, so it is
