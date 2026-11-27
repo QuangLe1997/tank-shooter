@@ -1921,6 +1921,9 @@ export const GUNCARRY = { on:!(typeof location !== 'undefined' && /[?&]oldcarry\
   shoulder:{ k:4 },
   hands:{ off:[0.02, 0.3, 0.45, 0.8], reach:0.95, hang:[0.07, 0.93, 0.1], swing:0.3, crouch:0.55, drone:[0.1, -0.12, 0.26], revive:[0.06, -0.5, 0.38], knife:[0.2, 0.58, -0.08] },
   strap:{ color:0x23241f, w:0.028, rear:0.4, front:-0.24, under:-0.03, sag:0.09, top:0.09, back:[[0.1, 0.02, -0.25], [0, -0.1, -0.29], [-0.12, -0.2, -0.35], [-0.26, -0.3, -0.1], [-0.2, -0.38, 0.2]], neck:[0.07, 0.03] } };
+// SLING 1 THE SLING'S WEBBING (actors/gun-carry.js strap): the ribbon (GUNCARRY.strap, its colour) is a matte nylon strap — rough = its roughness (0–1),
+//   metal = metalness, env = how much of the sky's reflection it takes (a dull strap: little). It now carries normals: it was drawn white without them
+export const SLING = { rough:0.95, metal:0, env:0.3 };
 // Z343 HIS UPPER BODY IN TIME WITH HIS LEGS (actors/soldier-upper.js): the chest's speed and acceleration smoothed (/s), the acceleration capped (m/s²),
 //   a jump of more than `reset` m starts it afresh; the lean into a change of pace (rad per m/s² ahead / to the side, at most leanMax, on a spring of
 //   stiffness leanK and damping leanZ); the shoulders' turn against each stride and the trunk's sway over the standing foot (rad); breathing (rad, Hz);

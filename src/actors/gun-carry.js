@@ -28,7 +28,7 @@
 //   Hooks: holdReal calls carryGun (once the gun's place is decided, before the hands go on) and updateRealCav calls carryAfter (after the hold);
 //   climbArms calls carryBack. Nothing allocates per frame. GUNCARRY.on false / ?oldcarry: none of it runs.
 import * as THREE from 'three';
-import { GUNCARRY, GUNFEEL, GUNHOLD, INFGUN, LOGISTICS, REALCAV } from '../../config.js';
+import { GUNCARRY, GUNFEEL, GUNHOLD, INFGUN, LOGISTICS, REALCAV, SLING } from '../../config.js';
 import { backGap, hangState, hangStep, bladeHeld, CV, FIT, LEGKIT, MATE, QUIET, S, climbW, fpvFlying, graphOwned, graphState, headLevel } from '../hub.js';
 import { swimSlung } from '../hub.js';   // SWIM 1 (game/swim.js)
 import { HSWIM2 } from '../../config.js';
@@ -40,7 +40,7 @@ const _co = V3(), _cr = V3(), _cu = V3(), _cb = V3(), _cq = Q4(), _cm = new THRE
 const _f = V3(), _r = V3(), _x = V3(), _y = V3(), _z = V3(), _p = V3(), _t = V3(), _t2 = V3(), _q = Q4(), _q2 = Q4(), _q3 = Q4(), _qa = Q4();
 const _hp = V3(), _hq = Q4(), _hs = V3(), _sp = V3(), _sq = Q4(), _np = V3(), _nq = Q4(), _op = V3(), _oq = Q4(), _g0 = V3(), _g3 = V3(), _w1 = V3(), _w2 = V3(), _q1 = Q4(), _fq = Q4(), _fpos = V3();
 const _ia = V3(), _ib = V3(), _ic = V3(), _id = V3(), _if = V3(), _ig = V3(), _it = V3(), _ie = V3(), _ix = V3(), _iq = Q4(), _iqw = Q4(), _iqp = Q4();
-const _tg = V3(), _pl = V3(), _fr = V3(), _fp = V3(), _el = V3(), _sh = V3(), _hw = Q4(), _wg = V3(), _ws = V3(), _a = V3(), _b = V3(), _n = V3(), _w = V3();
+const _tg = V3(), _pl = V3(), _fr = V3(), _fp = V3(), _el = V3(), _sh = V3(), _hw = Q4(), _wg = V3(), _ws = V3(), _a = V3(), _b = V3(), _n = V3(), _w = V3(), _nn = V3();
 const _A = Array.from({ length:8 }, V3), _P = Array.from({ length:NP }, V3), _L = Array.from({ length:NP }, V3);
 
 // ---- his state (kept on the rig: the other player's soldier has his own) ----
@@ -188,10 +188,12 @@ function unwear(R, k){ const m = R.arms._metric[k]; if(!m) return; if(m.parent !
 // ---- THE SLING ITSELF: a ribbon of NP points from the gun's rear swivel to its front one, laid in G's frame. Three ways it runs, mixed by weight:
 //   a shallow loop under the gun (what is left of wb + wh) · wb round his trunk for a gun on his back (over the shoulder its upper end is at, across
 //   the chest, round the far side) · wh round his neck for a gun hung in front ----
+// SLING 1 the ribbon carries its own normals, written with its points (it had none: the lit material read a zero normal, normalize(0) = NaN on the GPU,
+//   and the frame's clamp turned it into a blown-out WHITE streak under every gun in his hands) — a matte webbing strap (SLING: rough, metal, env)
 let _mat = null;
-function strapMesh(R, cy, j){ if(cy.st[j]) return cy.st[j]; const g = new THREE.BufferGeometry(), ix = []; g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(NP * 6), 3));
+function strapMesh(R, cy, j){ if(cy.st[j]) return cy.st[j]; const g = new THREE.BufferGeometry(), ix = []; g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(NP * 6), 3)); g.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(NP * 6), 3));
   for(let i = 0; i + 1 < NP; i++) ix.push(2 * i, 2 * i + 1, 2 * i + 2, 2 * i + 1, 2 * i + 3, 2 * i + 2); g.setIndex(ix);
-  const m = new THREE.Mesh(g, _mat || (_mat = new THREE.MeshLambertMaterial({ color:GUNCARRY.strap.color, side:THREE.DoubleSide }))); m.name = 'gunSling'; m.frustumCulled = false; m.castShadow = false; R.arms._G.add(m); return (cy.st[j] = m); }
+  const m = new THREE.Mesh(g, _mat || (_mat = new THREE.MeshStandardMaterial({ color:GUNCARRY.strap.color, roughness:SLING.rough, metalness:SLING.metal, envMapIntensity:SLING.env, side:THREE.DoubleSide }))); m.name = 'gunSling'; m.frustumCulled = false; m.castShadow = false; R.arms._G.add(m); return (cy.st[j] = m); }
 function anchors(n){ for(let i = 0; i < NP; i++){ const u = i / (NP - 1) * (n - 1), a = Math.min(n - 2, Math.floor(u)); _L[i].lerpVectors(_A[a], _A[a + 1], u - a); } }
 function strap(R, cy, D, G, j, m, k, sig, wb, wh){ const K = GUNCARRY.strap, mesh = strapMesh(R, cy, j), len = m.userData.len, up = upOf(k), wl = clamp(1 - wb - wh, 0, 1); mesh.visible = true;
   m.updateWorldMatrix(true, false); _a.set(K.rear * len, K.under, 0).applyMatrix4(m.matrixWorld); _b.set(K.front * len, K.under, 0).applyMatrix4(m.matrixWorld);   // the two swivels
@@ -203,10 +205,11 @@ function strap(R, cy, D, G, j, m, k, sig, wb, wh){ const K = GUNCARRY.strap, mes
   if(wh > 0){ const T = K.neck; _A[0].copy(_a); cy.B.a[0].getWorldPosition(_A[1]).addScaledVector(UP, K.top).addScaledVector(_r, -0.04); (D.Neck || D.Spine2).getWorldPosition(_A[2]).addScaledVector(_f, -T[0]).addScaledVector(UP, T[1]);
     cy.B.a[1].getWorldPosition(_A[3]).addScaledVector(UP, K.top).addScaledVector(_r, 0.04); _A[4].copy(_b); anchors(5); for(let i = 0; i < NP; i++) _P[i].addScaledVector(_L[i], wh); }
   // the ribbon: its width lies along the surface it is on (square to its run and to the way out from his spine)
-  const pos = mesh.geometry.attributes.position, arr = pos.array; _mi.copy(G.matrixWorld).invert();
+  const pos = mesh.geometry.attributes.position, arr = pos.array, nrm = mesh.geometry.attributes.normal, na = nrm.array; _mi.copy(G.matrixWorld).invert();
   for(let i = 0; i < NP; i++){ _t.subVectors(_P[Math.min(NP - 1, i + 1)], _P[Math.max(0, i - 1)]); _n.subVectors(_P[i], _co); _n.addScaledVector(_cu, -_n.dot(_cu)); _w.crossVectors(_t, _n); if(_w.lengthSq() < 1e-10) _w.copy(_cu); _w.setLength(K.w / 2);
-    _t2.copy(_P[i]).add(_w).applyMatrix4(_mi).toArray(arr, i * 6); _t2.copy(_P[i]).sub(_w).applyMatrix4(_mi).toArray(arr, i * 6 + 3); }
-  pos.needsUpdate = true; }
+    _t2.copy(_P[i]).add(_w).applyMatrix4(_mi).toArray(arr, i * 6); _t2.copy(_P[i]).sub(_w).applyMatrix4(_mi).toArray(arr, i * 6 + 3);
+    _nn.crossVectors(_w, _t); if(_nn.lengthSq() < 1e-12) _nn.copy(_n); if(_nn.lengthSq() < 1e-12) _nn.copy(UP); _nn.transformDirection(_mi).toArray(na, i * 6); _nn.toArray(na, i * 6 + 3); }   // (SLING 1 its face, both edges)
+  pos.needsUpdate = true; nrm.needsUpdate = true; }
 
 // ---- every frame after the hold (actors/real-cav.js): the sling, the front hang, the swap, the weapon on his back, the hands, the straps ----
 export function carryAfter(R, G, dt, P){ const C = GUNCARRY, D = R.pup && R.pup.D, M = R.arms._metric, met = M && M[R.armK]; if(!C.on || !D || !met || !met.visible || !D.Spine || !D.Spine1 || !D.Spine2 || !D.LeftShoulder || !D.RightShoulder || !D.LeftUpLeg || !D.RightUpLeg) return;

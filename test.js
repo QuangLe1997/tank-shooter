@@ -2831,6 +2831,12 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   ok([['gameover','retryBtn'],['victory','ngplusBtn'],['modeEnd','meGo']].every(([id,b])=>{ const h=blk(id), p=h.indexOf('class="xk-rpanel"'), a=h.indexOf('class="xk-ract"'); return p>0 && a>p && h.indexOf('id="'+b+'"')>a && !h.includes('xk-foot'); }) && /\.xk-big[^{]*\{line-height:1\.1[2-9]/.test(kit) && /#gameover \.xk-rpanel/.test(kit), 'result screens: a framed panel, the primary action inside it, room for stacked accents over the stencil, defeat in its own tone');
   const P=fx.countParse; ok(P('1.080').n===1080 && P('×3').pre==='×' && P('45 m').post===' m' && P('0:42')===null && P('—')===null && P('1,5')===null, 'the count-up reads vi-VN numbers and leaves times, decimals and dashes alone'); }
 
+// SLING 1 the sling's ribbon is lit as a matte strap: it carries normals (none = a white streak under the gun), on a rough non-metal material
+{ const fs=await import('node:fs'), src=fs.readFileSync('src/actors/gun-carry.js','utf8'), { SLING }=await import('./config.js');
+  ok(SLING && SLING.rough>=0.8 && SLING.rough<=1 && SLING.metal>=0 && SLING.metal<=0.1 && SLING.env>=0 && SLING.env<=1, 'SLING: a rough, non-metal, dull webbing strap');
+  ok(/g\.setAttribute\('normal', new THREE\.BufferAttribute\(new Float32Array\(NP \* 6\), 3\)\)/.test(src) && /nrm\.needsUpdate = true/.test(src) && /toArray\(na, i \* 6\)/.test(src), 'the ribbon has a normal per vertex, written with its points every frame');
+  ok(/MeshStandardMaterial\(\{ color:GUNCARRY\.strap\.color, roughness:SLING\.rough, metalness:SLING\.metal/.test(src) && !/MeshLambertMaterial\(\{ color:GUNCARRY\.strap\.color/.test(src), 'the ribbon wears the matte SLING material'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
