@@ -14,7 +14,7 @@ export function progress(s, rep, nowMs, cap){ rep=rep||{}; const m=s.meta||(s.me
   m.lastRunAt=nowMs; if(clears){ m.lastClearAt=nowMs; m.reach=Math.max(reach, lvl); }
   return { clears, lvl:Math.min(lvl, (m.reach|0)+1) }; }
 
-// LEADERBOARD — the week a moment belongs to, in Vietnam time (ISO week: Monday start), e.g. "2026-W46"
+// LEADERBOARD — the week a moment belongs to, in UTC+7 time (ISO week: Monday start), e.g. "2026-W46"
 export function weekKey(ms){ const d=new Date(ms+7*3600e3); const day=(d.getUTCDay()+6)%7; d.setUTCDate(d.getUTCDate()-day+3);
   const y=d.getUTCFullYear(), w1=new Date(Date.UTC(y,0,4)), wk=1+Math.round(((d-w1)/864e5-3+((w1.getUTCDay()+6)%7))/7); return y+'-W'+String(wk).padStart(2,'0'); }
 // a run's score as the server believes it: each report may only add what its score bucket allows (plus a bonus on a validated clear)

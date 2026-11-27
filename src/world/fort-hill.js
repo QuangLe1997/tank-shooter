@@ -79,7 +79,7 @@ function steepRocks(forts, C){ const S = C.steep; if(!S) return; const tone = ne
     const key = C.cliffs[(Math.random() * C.cliffs.length) | 0], D = sceneDims(key), drop = Math.min(S.h[1], Math.max(S.h[0], c.sl * S.reach)), sc = drop * 1.5 / D.y, m = scenePiece(key, sc, rockOpt(key));
     m.scale.setScalar(sc); m.position.set(c.x, heightAt(c.x, c.z) - D.y * sc * 0.42, c.z); m.rotation.y = -c.a + Math.PI / 2 + (Math.random() < 0.5 ? Math.PI : 0) + _R(-0.2, 0.2); scene.add(m); PAVE.rocks.push(m); put.push(c);
     blocks.push({ mesh:new THREE.Object3D(), x:c.x, z:c.z, r:Math.min(D.x, D.z) * sc * 0.45, hp:Infinity, maxHp:Infinity, steel:true, loot:false, kind:'crag' }); } }
-// Z455 rock spires on the ridges' crests and at the knolls' shoulders (FORTHILL.spire): a rock face stood tall and narrow, like the limestone teeth over a Carrara ridge
+// Z455 rock spires on the ridges' crests and at the knolls' shoulders (FORTHILL.spire): a rock face stood tall and narrow, like the limestone teeth over a marble ridge
 function spires(forts, C){ const S = C.spire; if(!S) return; const tone = new THREE.Color().setRGB(...(C.tone || [1, 1, 1])), pts = CRESTS.slice();
   for(const k of KNOLLS) for(let q = 0; q < S.perKnoll; q++){ const a = Math.random() * 6.283, d = k.R * _R(0.3, 0.55); pts.push({ x:k.x + Math.cos(a) * d, z:k.z + Math.sin(a) * d, a }); }
   let n = 0; for(const p of pts){ if(n >= S.n * (MOBILE ? 0.5 : 1) || Math.random() > S.share) continue; const x = p.x + _R(-4, 4), z = p.z + _R(-4, 4);

@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { ENTRY, RAMP, OPERATIONS, OBJECTIVES, OBJ_REWARD } from '../../config.js';
-import { ARENA, S, WAVE, _canvasTex, realObjective, addScore, aoeDamage, bigExplode, blocks, camera, clampFieldXZ, decalScorch, deformCrater, diffHpMul, fireball, freeEnemyBar, getEnemyBar, heightAt, hitFlash, inField, loopHpMul, makeFlag, panelTex, propTex, radioType, ringPulse, sayVoice, scene, sfx, showBanner, spawnPart, spawnSquad, storyOp, unwave, vnTex, voiceKeyFor, CO, coopRadio } from '../hub.js';
+import { ARENA, S, WAVE, _canvasTex, realObjective, addScore, aoeDamage, bigExplode, blocks, camera, clampFieldXZ, decalScorch, deformCrater, diffHpMul, fireball, freeEnemyBar, getEnemyBar, heightAt, hitFlash, inField, loopHpMul, makeFlag, panelTex, propTex, radioType, ringPulse, sayVoice, scene, sfx, showBanner, spawnPart, spawnSquad, storyOp, unwave, bannerTex, voiceKeyFor, CO, coopRadio } from '../hub.js';
 
 // ===== Z83 · CAMPAIGN OPERATIONS — named operation per stage: briefing, radio chatter, scripted waves and a high-value objective =====
 export let OBJ=null; export const OBJ_SCALE=1.5;   // objectives read as big, important structures
@@ -55,8 +55,8 @@ export function buildObjMesh(kind){
     put(new THREE.BoxGeometry(5.6,0.06,4.6), mat('net',{color:0x4a5530,roughness:1,transparent:true,opacity:0.85,side:THREE.DoubleSide}), 0,2.65,0, 0.04,0,0.03);   // camo net
     for(const sx of [-2.2,2.2]) put(new THREE.CylinderGeometry(0.04,0.04,4.5,5), dark, sx,4.6,-1.8);
     ud.blink=put(new THREE.SphereGeometry(0.14,8,6), red, 2.2,6.9,-1.8);
-    const vnF=makeFlag(vnTex(),1.6,1.05,1); vnF.material=new THREE.MeshStandardMaterial({ map:_canvasTex(160,100,(x,W,H)=>{ x.fillStyle='#2a2a2a'; x.fillRect(0,0,W,H); x.fillStyle='#c8202a'; x.fillRect(0,H*0.35,W,H*0.3); }), side:THREE.DoubleSide, roughness:0.9 });
-    vnF.position.set(-2.2,6.2,-1.8); g.add(vnF); bags(4.6,16); ud.h=5.2;
+    const ourF=makeFlag(bannerTex(),1.6,1.05,1); ourF.material=new THREE.MeshStandardMaterial({ map:_canvasTex(160,100,(x,W,H)=>{ x.fillStyle='#2a2a2a'; x.fillRect(0,0,W,H); x.fillStyle='#c8202a'; x.fillRect(0,H*0.35,W,H*0.3); }), side:THREE.DoubleSide, roughness:0.9 });
+    ourF.position.set(-2.2,6.2,-1.8); g.add(ourF); bags(4.6,16); ud.h=5.2;
   }
   g.userData=ud; return g;
 }

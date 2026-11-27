@@ -4,7 +4,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { fortBossReset, fortBossWake } from '../hub.js';   // BOSS 1 (campaign/fort-boss.js)
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { CAM_ROOM, FORT, FORTBOSS, FORT_CMD, COMMAND, HOME_GAP, HUMAN_SCALE, REALFORT, FORT_GAP, BREAKUP, SCENERY, WORLD_FLAGS } from '../../config.js';
-import { cosmetic, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, HF, MOBILE, S, UNDER, ZONES, bigExplode, biomePlace, blocks, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, propTex, radio, rallyFlagTex, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, vnTex, wallMat, loadGLTF, buildOutpost, farLOD, landTone, sceneDims, scenePiece, decalAsh, breakScar, decalScorch, hillCfg, paveYard, raiseFortHills, raiseWard , riseHere, dirSallyOk } from '../hub.js';
+import { cosmetic, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, HF, MOBILE, S, UNDER, ZONES, bigExplode, biomePlace, blocks, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, propTex, radio, rallyFlagTex, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, bannerTex, wallMat, loadGLTF, buildOutpost, farLOD, landTone, sceneDims, scenePiece, decalAsh, breakScar, decalScorch, hillCfg, paveYard, raiseFortHills, raiseWard , riseHere, dirSallyOk } from '../hub.js';
 
 export const FORTS=[];
 const R2=(r)=>r[0]+Math.random()*(r[1]-r[0]), RI=(r)=>Math.round(R2(r));
@@ -489,13 +489,13 @@ function animFlag(f, dt){ const F=f.flagFall, G=f.flagG; F.t+=dt;
   if(F.t<1.4){ const k=Math.min(1, F.t/1.4), e=k*k; G.rotation.set(Math.sin(F.dir)*e*1.45, 0, Math.cos(F.dir)*e*1.45); if(k>=0.99){ S.shake=Math.max(S.shake,0.6); burst({x:f.x+Math.cos(F.dir)*f.flagH*0.7, z:f.z-Math.sin(F.dir)*f.flagH*0.7}, 0x8a7a60, 6, 5, { y:0.5, life:1.2, size:1.8, smoke:true, grav:-0.3, drag:1.6, up:1.2, op:0.5 }); sfx('clang'); } return; }
   if(!F.ours){ F.ours=true; unwave(f.flag); f.g.remove(G); const ng=new THREE.Group(); ng.position.copy(G.position); f.g.add(ng); f.flagG=ng;
     const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.11,0.16,f.flagH,8), _iron); pole.position.y=f.flagH/2; if(WORLD_FLAGS.on) ng.add(pole);
-    const fl=makeFlag(vnTex(), 4.4, 2.8, 1); fl.position.set(0, f.flagH-1.8, 0); ng.add(fl); f.flag=fl; ng.scale.set(1,0.01,1); }
+    const fl=makeFlag(bannerTex(), 4.4, 2.8, 1); fl.position.set(0, f.flagH-1.8, 0); ng.add(fl); f.flag=fl; ng.scale.set(1,0.01,1); }
   const u=Math.min(1,(F.t-1.6)/1.6); if(u>0) f.flagG.scale.y=Math.max(0.01,u); if(u>=1) f.flagFall=null; }
 // ---- capture: the commander is dead → the fortress is ours, its treasury opens ----
 function capture(f, now, guest){ if(f.captured) return; f.captured=true; f.active=false;
   if(f.flagG){ f.flagFall={ t:0, dir:Math.random()*6.28 }; } else { unwave(f.flag); f.g.remove(f.flag); const fl=makeFlag(rallyFlagTex(), 3.2, 2.0, 1); fl.position.set(0, 8.2, 0); f.g.add(fl); f.flag=fl; }   // Z140 the enemy colours come crashing down
   if(f.label){ f.label.material.opacity=0.45; }
-  for(const fl of (f.towerFlags||[])) fl.material.map=vnTex(); if(f.coreFlag && !f.coreDown) f.coreFlag.material.map=vnTex();   // Z176 our colours on every tower
+  for(const fl of (f.towerFlags||[])) fl.material.map=bannerTex(); if(f.coreFlag && !f.coreDown) f.coreFlag.material.map=bannerTex();   // Z176 our colours on every tower
   for(const e of f.units) if(enemies.includes(e)) fortSendOut(f, e, now);
   if(f.bar){ freeEnemyBar(f.bar); f.bar=null; } if(!f.breached){ f.breached=true; const i=blocks.indexOf(f.gate); if(i>=0) blocks.splice(i,1); for(const L of f.leaves) L.open=0.001; }
   const L=FORT.loot;

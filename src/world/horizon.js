@@ -81,7 +81,7 @@ export function buildHorizon(b){ clearHorizon(); if(b.cave) return; texes(); con
   const R0=ARENA*1.55, kind=L[2], H=L[3]*(MOBILE?0.85:1);
   let SK=!MOBILE && SKYLINE.on && !/noscene/.test(location.search+location.hash) && SKYLINE.biomes[b.name]; if(typeof SK==='string') SK=SKYLINE.biomes[SK]; const real=!!(SK && SK.skyline);   // Z383 the scanned summits, forests, ruins and works on this horizon (desktop); real = they are its near skyline
   const rk = SK && SK.rings || (kind==='city'||kind==='stacks' ? 'hill' : kind);   // behind a skyline there are still hills (Z383 or the ranges the real horizon asks for)
-  const flatCity = kind==='city' && realCityReady() && REALCITY.flatHorizon;   // Z268 Saigon is flat: no peaks behind the city, more city fading into the haze instead
+  const flatCity = kind==='city' && realCityReady() && REALCITY.flatHorizon;   // Z268 the harbour city is flat: no peaks behind the city, more city fading into the haze instead
   // Z399 the first city stage builds its horizon before the city's models are in (they load with the stage): it stood as flat untextured blocks and
   //   pale peaks for the whole battle. Built again with the real towers once they are
   if(kind==='city' && !MOBILE && !realCityReady() && typeof window!=='undefined') loadRealCity().then(ok => { if(ok && realCityReady() && BIOME===b && HZN.g===g) buildHorizon(b); });

@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { CORE_DEF, LOOK, WORLD_FLAGS } from '../../config.js';
 import { REALCAMP } from '../../config.js';
-import { GLOW, NIGHT, camera, loadGLTF, _canvasTex, _mergeColored, bigExplode, flameFX, gameOver, makeFlag, propTex, radio, ringPulse, scene, sfx, showBanner, spawnPart, unwave, updateHUD, vnTex, farLOD } from '../hub.js';
+import { GLOW, NIGHT, camera, loadGLTF, _canvasTex, _mergeColored, bigExplode, flameFX, gameOver, makeFlag, propTex, radio, ringPulse, scene, sfx, showBanner, spawnPart, unwave, updateHUD, bannerTex, farLOD } from '../hub.js';
 
 // ----------------------------- CORE (base to defend) -----------------------------
 export let core=null;
@@ -72,7 +72,7 @@ export function buildCore(stage=1){
   const flags=[], poles=[];
   for(const sx of [-1,1]){ const px=sx*3.3, pz=-1.4;
     { const pl=add(new THREE.CylinderGeometry(0.05,0.07,9,8), brass, px,4.5,pz), kn=add(new THREE.SphereGeometry(0.12,10,8), brass, px,9.05,pz); pl.visible=kn.visible=WORLD_FLAGS.on; poles.push(pl); }
-    const fm=makeFlag(vnTex(), 2.6, 1.7, sx); fm.position.set(px,8.1,pz); g.add(fm); flags.push(fm); }   // Liên Quân Thép banners over the command post
+    const fm=makeFlag(bannerTex(), 2.6, 1.7, sx); fm.position.set(px,8.1,pz); g.add(fm); flags.push(fm); }   // Liên Quân Thép banners over the command post
   const light=new THREE.PointLight(th.glow,1.6,40); light.position.y=6.25; g.add(light);
   g.remove(halo); G0.add(halo); const pod=podium(G0, g, PH, brass);
   scene.add(G0);

@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { REALCAMP, WORLD_FLAGS } from '../../config.js';
-import { BIOME, MOBILE, S, ZONES, loadGLTF, bakeGroup, blocks, capGeo, capMat, core, enemies, heightAt, makeFlag, makeSoldierMesh, poseSoldier, scene, sfx, spawnBullet, spawnPart, towerRoof, unwave, vnTex, wallMat, dressCoreGun } from '../hub.js';
+import { BIOME, MOBILE, S, ZONES, loadGLTF, bakeGroup, blocks, capGeo, capMat, core, enemies, heightAt, makeFlag, makeSoldierMesh, poseSoldier, scene, sfx, spawnBullet, spawnPart, towerRoof, unwave, bannerTex, wallMat, dressCoreGun } from '../hub.js';
 
 export const CORE_DEF = { R:24, H:9.4, T:2.8, gateW:9, range:54, cd:1.5, dmg:18, turn:2.4, guns:[], mgs:[], guards:[], g:null, mg:{ range:40, cd:0.07, burst:14, rest:0.9, dmg:4, turn:4.5 } };   // Z227 a bigger, taller citadel
 function box(w,h,d){ const g=new THREE.BoxGeometry(w,h,d), uv=g.attributes.uv, p=g.attributes.position, n=g.attributes.normal;   // UVs in world metres (4 m per tile)
@@ -30,7 +30,7 @@ function makeGun(){ const m=gunMats(), root=new THREE.Group(), yaw=new THREE.Gro
 
 // Z227 OUR CITADEL — never mistaken for theirs: pale dressed stone, gold trim, lime ID light, our banners and emblem shields on every face;
 //   one shared plan (octagon, eight towers, a grand gatehouse facing our lines, three side gates, cannon towers + automatic MG towers) built in
-//   five styles by land: Huế imperial (tiled hip roofs), desert domes, northern spires, steel-and-concrete, basalt keep
+//   five styles by land: imperial (tiled hip roofs), desert domes, northern spires, steel-and-concrete, basalt keep
 const OUR_STYLE = {
   hue:  { key:'OUR_hue',  pat:'ashlar',   base:'#dcd4c2', seam:'#8e8672', rough:0.88, metal:0.02, cap:'tile',   roof:'hue',   round:false, trim:0xd8b040 },
   dome: { key:'OUR_dome', pat:'ashlar',   base:'#e8dcc0', seam:'#9c8a66', rough:0.88, metal:0.02, cap:'merlon', roof:'dome',  round:true,  trim:0xd8b040 },
@@ -85,7 +85,7 @@ export function buildCoreWalls(){ clearCoreWalls(); const D=CORE_DEF, R=D.R, H=D
     if(gate){ const mx=(x0+x1)/2, mz=(z0+z1)/2, th=main?H+9:H+7, ts=main?5.6:3.6;   // Z281 the main gatehouse no longer towers over the whole compound   // Z241 a towering main gatehouse
       for(const sd of [-1,1]){ const px=mx+ux*sd*(gw/2+ts*0.5), pz=mz+uz*sd*(gw/2+ts*0.5); tower(px, pz, ts, th, ry);
         if(main){ const lm=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.9,0.5), OM.lamp); lm.position.set(px+nx*out*(ts*0.55), H+0.5, pz+nz*out*(ts*0.55)); g.add(lm);
-          const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.12,7,6), gm.steel); pole.position.set(px, th+2.6, pz); if(WORLD_FLAGS.on) g.add(pole); const fl=makeFlag(vnTex(), 4.2, 2.7, 1); fl.position.set(px, th+5, pz); g.add(fl); } }
+          const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.12,7,6), gm.steel); pole.position.set(px, th+2.6, pz); if(WORLD_FLAGS.on) g.add(pole); const fl=makeFlag(bannerTex(), 4.2, 2.7, 1); fl.position.set(px, th+5, pz); g.add(fl); } }
       geos.push(at(box(gw+0.8, main?2.2:1.0, TH*1.2), mx, (main?H+2.0:H+1.0), mz, ry)); gold.push(at(new THREE.BoxGeometry(gw+1.0, 0.25, TH*1.3), mx, main?H+0.8:H+0.4, mz, ry));
       if(main){ const em=new THREE.Mesh(new THREE.CircleGeometry(1.9,40), OM.emblem); em.position.set(mx+nx*out*(TH*0.6+0.08), H+2.0, mz+nz*out*(TH*0.6+0.08)); em.rotation.y=Math.atan2(nx*out, nz*out); g.add(em); } } }
   // eight towers on the corners: cannon towers and automatic MG towers in turn
@@ -98,7 +98,7 @@ export function buildCoreWalls(){ clearCoreWalls(); const D=CORE_DEF, R=D.R, H=D
     else { const mg=makeMG(); mg.root.position.set(vx, deckY, vz); mg.root.scale.setScalar(1.25); g.add(mg.root); dressCoreGun(mg, 'mg');   // Z424 the real weapon station
       CORE_DEF.mgs.push({ x:vx, z:vz, y:y0+deckY+1.5, ...mg, aim:Math.atan2(vx,vz), fireAt:0, burst:0, target:null, thinkAt:0, spin:0 }); }
     const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.11,8,6), gm.steel), ox=vx*1.06, oz=vz*1.06; pole.position.set(ox, H+7, oz); if(WORLD_FLAGS.on) g.add(pole);
-    const fl=makeFlag(vnTex(), 3.2, 2.1, 1); fl.position.set(ox, H+9.8, oz); g.add(fl); }
+    const fl=makeFlag(bannerTex(), 3.2, 2.1, 1); fl.position.set(ox, H+9.8, oz); g.add(fl); }
   const wall=new THREE.Mesh(mergeGeometries(geos.map(q=>q.index?q.toNonIndexed():q), false), WM); geos.forEach(q=>q.dispose()); wall.castShadow=true; wall.receiveShadow=true; g.add(wall);
   const gw=new THREE.Mesh(mergeGeometries(gold.map(q=>q.index?q.toNonIndexed():q), false), OM.gold); gold.forEach(q=>q.dispose()); gw.castShadow=true; g.add(gw);
   const lw=new THREE.Mesh(mergeGeometries(lime.map(q=>q.index?q.toNonIndexed():q), false), OM.lime); lime.forEach(q=>q.dispose()); g.add(lw);

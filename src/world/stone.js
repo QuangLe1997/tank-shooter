@@ -1,6 +1,6 @@
 // world/stone.js — Z259 PHOTO STONE for built and natural rock: a material that starts in a plain stone colour and takes a photographed CC0 set
 // (Poly Haven, fetched by tools/ground-photos.mjs into assets/ground/<set>/) when it loads — colour, normal, AO / roughness — and geometry helpers
-// that lay world-aligned UVs (one texture tile = the set's real size in metres) so blocks keep their true scale on every face. Used by the Giza
+// that lay world-aligned UVs (one texture tile = the set's real size in metres) so blocks keep their true scale on every face. Used by the desert
 // pyramids (limestone courses with ragged, robbed-out edges and a smooth casing cap) and by the highland cliffs / rocks.
 import * as THREE from 'three';
 import { STONE, STREET } from '../../config.js';
@@ -26,7 +26,7 @@ export function stoneBox(w, h, d, x, y, z, tile, tone, ry){ const g = new THREE.
   const c = new THREE.Color(tone), col = new Float32Array(g.attributes.position.count * 3); for(let i = 0; i < col.length; i += 3){ col[i] = c.r; col[i + 1] = c.g; col[i + 2] = c.b; }
   g.setAttribute('color', new THREE.BufferAttribute(col, 3)); return g; }
 
-// a Giza pyramid of s m half-height-ish (as the old one): course on course of limestone, each a core and four edge strips cut short or run long at
+// a pyramid of s m half-height-ish (as the old one): course on course of limestone, each a core and four edge strips cut short or run long at
 // random (the robbed, weathered corners), a few courses missing whole stretches; `cap` = the last casing stones (smooth, paler) on the top fifth
 export function pyramidGeos(x, z, s, cap, rnd){ const P = STONE.pyramid, n = Math.round(s / P.course), st = s / n, w0 = s * 1.9, tile = P.tile, out = [];
   const tone = k => { const t = P.tones[(k * 7 + (k >> 2)) % P.tones.length]; return new THREE.Color(t).multiplyScalar(0.92 + rnd() * 0.12).getHex(); };

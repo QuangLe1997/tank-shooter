@@ -1,6 +1,6 @@
 // world/regional.js — Z140 REGIONAL ARCHITECTURE: every battlefield builds its strongholds its own way — our Core compound and the enemy forts share the
 //   look of the land (adobe in the desert, ice blocks on the tundra, riveted plate at the foundry, concrete T-walls in the city, log palisades in the hills,
-//   red brick with tiled gate roofs in the Vietnamese village…) but stay military: thick walls, merlons, wire, stakes. Materials + cap / roof geometry, cached.
+//   red brick with tiled gate roofs in the river village…) but stay military: thick walls, merlons, wire, stakes. Materials + cap / roof geometry, cached.
 import * as THREE from 'three';
 import { cosmetic, BIOME, TEX_K, _mergeColored, _xf, detailize, hiResMaps, photoSet } from '../hub.js';
 import { WALLSKIN } from '../../config.js';
@@ -9,18 +9,18 @@ import { WALLSKIN } from '../../config.js';
 export const REGION = {
   DESERT:  { pat:'ashlar',   base:'#d2b47c', seam:'#9a7448', rough:0.95, metal:0.0,  cap:'merlon', roof:'cornice',trim:0x8a5a2c },  // Z144 Egyptian sandstone, pylon cornices
   RUINS:   { pat:'concrete', base:'#8e8f8c', seam:'#5e5f5c', rough:0.9,  metal:0.05, cap:'wire',   roof:'flat',  trim:0x4a4c4e },
-  TUNDRA:  { pat:'brick',    base:'#a8402e', seam:'#e0d8cc', rough:0.85, metal:0.0,  cap:'swallow',roof:'tent',  trim:0x6f8597 },   // Z144 Kremlin-style red brick, swallowtail merlons, tent roofs
+  TUNDRA:  { pat:'brick',    base:'#a8402e', seam:'#e0d8cc', rough:0.85, metal:0.0,  cap:'swallow',roof:'tent',  trim:0x6f8597 },   // Z144 old-fortress red brick, swallowtail merlons, tent roofs
   FOUNDRY: { pat:'plate',    base:'#6a5a50', seam:'#3a2e28', rough:0.5,  metal:0.75, cap:'spike',  roof:'flat',  trim:0x9a4a2a },
   CITADEL: { pat:'ashlar',   base:'#b8805a', seam:'#7a4a30', rough:0.92, metal:0.02, cap:'merlon', roof:'chhatri',trim:0x6a5424 },  // Z144 Rajasthan red sandstone, chhatri pavilions
   MEADOW:  { pat:'log',      base:'#7a5a3a', seam:'#4a3420', rough:0.88, metal:0.0,  cap:'stake',  roof:'cone',  trim:0x4a5a30 },
   CITY:    { pat:'concrete', base:'#a2a4a6', seam:'#6a6c70', rough:0.88, metal:0.05, cap:'wire',   roof:'flat',  trim:0x3a3d40 },
-  HILLS:   { pat:'ashlar',   base:'#8a8a80', seam:'#5a5a52', rough:0.92, metal:0.0,  cap:'merlon', roof:'pagoda',trim:0x56603a },   // Z144 Great-Wall grey stone, Chinese tiled roofs
+  HILLS:   { pat:'ashlar',   base:'#8a8a80', seam:'#5a5a52', rough:0.92, metal:0.0,  cap:'merlon', roof:'pagoda',trim:0x56603a },   // Z144 rampart grey stone, sweeping tiled roofs
   VILLAGE: { pat:'brick',    base:'#b5643e', seam:'#d8c8a8', rough:0.9,  metal:0.0,  cap:'tile',   roof:'tile',  trim:0x7a3a22 },
   SAVANNA: { pat:'adobe',    base:'#b0704a', seam:'#7a4a2c', rough:0.95, metal:0.0,  cap:'toron',  roof:'pinnacle',trim:0x8a5a34 },  // Z144 Sudano-Sahelian mud: toron beams, pinnacles
   ARCTIC:  { pat:'ice',      base:'#d8ecf6', seam:'#9ab8cc', rough:0.3,  metal:0.05, cap:'snow',   roof:'snow',  trim:0x8aa0b0 },
   STEELMILL:{ pat:'brick',   base:'#8a4430', seam:'#3a2418', rough:0.85, metal:0.05, cap:'spike',  roof:'flat',  trim:0xa85a2a },   // Z187 soot-stained industrial red brick, iron spikes
   VOLCANO:  { pat:'ashlar',  base:'#3a3432', seam:'#1e1a18', rough:0.95, metal:0.02, cap:'merlon', roof:'flat',  trim:0xff5a1a },   // Z187 black basalt blocks, lava-lit trim
-  QUARRY:   { pat:'ashlar',  base:'#e4ded2', seam:'#a8a090', rough:0.8,  metal:0.02, cap:'merlon', roof:'cornice',trim:0x8a8478 },  // Z187 white Carrara marble
+  QUARRY:   { pat:'ashlar',  base:'#e4ded2', seam:'#a8a090', rough:0.8,  metal:0.02, cap:'merlon', roof:'cornice',trim:0x8a8478 },  // Z187 white quarry marble
   CAVERN:   { pat:'ashlar',  base:'#7a7264', seam:'#3a342c', rough:0.95, metal:0.02, cap:'merlon', roof:'flat',  trim:0xffa040 },   // Z225 limestone blocks, torch-orange trim
 };
 export const regionOf = (name)=>(typeof name==='object' && name) ? name : (REGION[name||BIOME.name]||REGION.CITADEL);
@@ -105,8 +105,8 @@ export function capGeo(name, H, TH, L){ const st=regionOf(name), key=st.cap+'|'+
   else if(st.cap==='snow'){ const s=new THREE.BoxGeometry(L*1.02, 0.28, TH*1.1); _xf(s,0,H+0.92,0); P.push({geo:s,col:0xf6fbff}); for(const sx of [-L*0.25,L*0.25]){ const c=new THREE.BoxGeometry(L*0.32,0.2,TH); _xf(c,sx,H+1.0,0); P.push({geo:c,col:0xffffff}); } }
   else if(st.cap==='wire'){ for(let k=0;k<3;k++){ const c=new THREE.TorusGeometry(0.34,0.025,4,10); c.rotateY(Math.PI/2); _xf(c, -L/2+0.5+k*(L-1)/2, H+1.25, 0); P.push({geo:c,col:0x9a9a92}); }
     const post=new THREE.BoxGeometry(0.06,0.9,0.06); _xf(post,0,H+1.15,0); P.push({geo:post,col:0x4a4a44}); }
-  else if(st.cap==='swallow'){ for(const sx of [-L*0.25,L*0.25]) for(const q of [-0.28,0.28]){ const m=new THREE.BoxGeometry(0.32,0.9,TH*0.9); m.rotateZ(q*0.9); _xf(m, sx+q, H+1.25, 0); P.push({geo:m,col:0xa8402e}); } }   // Kremlin swallowtail merlons
-  else if(st.cap==='toron'){ for(let k=0;k<5;k++) for(const sd of [-1,1]){ const t=new THREE.CylinderGeometry(0.06,0.07,0.9,5); t.rotateX(Math.PI/2); _xf(t, -L/2+0.3+k*(L-0.6)/4, H*(sd>0?0.55:0.85), sd*(TH/2+0.3)); P.push({geo:t,col:0x6a4a2a}); } }   // Djenné toron palm beams
+  else if(st.cap==='swallow'){ for(const sx of [-L*0.25,L*0.25]) for(const q of [-0.28,0.28]){ const m=new THREE.BoxGeometry(0.32,0.9,TH*0.9); m.rotateZ(q*0.9); _xf(m, sx+q, H+1.25, 0); P.push({geo:m,col:0xa8402e}); } }   // swallowtail merlons
+  else if(st.cap==='toron'){ for(let k=0;k<5;k++) for(const sd of [-1,1]){ const t=new THREE.CylinderGeometry(0.06,0.07,0.9,5); t.rotateX(Math.PI/2); _xf(t, -L/2+0.3+k*(L-0.6)/4, H*(sd>0?0.55:0.85), sd*(TH/2+0.3)); P.push({geo:t,col:0x6a4a2a}); } }   // mud-brick toron palm beams
   else if(st.cap==='spike'){ for(let k=0;k<6;k++){ const s=new THREE.ConeGeometry(0.09,0.7,4); _xf(s, -L/2+0.25+k*(L-0.5)/5, H+1.15, 0); P.push({geo:s,col:0x3a3632}); } }
   else if(st.cap==='tile'){ const sh=new THREE.Shape(); sh.moveTo(-TH*0.75,0); sh.lineTo(TH*0.75,0); sh.lineTo(0,0.55); sh.closePath();   // a little tiled coping, like a village wall
     const g=new THREE.ExtrudeGeometry(sh,{depth:L*1.01,bevelEnabled:false}); g.translate(0,0,-L*0.505); g.rotateY(Math.PI/2); _xf(g,0,H+0.82,0); P.push({geo:g,col:0x9e4a2a}); }
@@ -132,9 +132,9 @@ function lathe(pts, s, seg){ return new THREE.LatheGeometry(pts.map(([r,y])=>new
 function ridgeOrn(P, len, y, col){ const r=new THREE.BoxGeometry(len, 0.22, 0.26); _xf(r,0,y+0.11,0); P.push({geo:r,col});
   for(const sx of [-1,1]){ const t=new THREE.ConeGeometry(0.16,0.75,6); t.rotateZ(-sx*0.55); _xf(t, sx*len/2, y+0.42, 0); P.push({geo:t,col}); } }
 export function towerRoof(name, s, y){ const st=regionOf(name), P=[];
-  if(st.roof==='tile'){ const h=s*0.55, g=hipRoof(s*0.82, s*0.82, h, { ridge:0.35, curve:1.5, lift:s*0.2, flare:0.12 }); _xf(g,0,y,0); P.push({geo:g,col:0xa84a2a});   // Z146b Vietnamese gate roof: sweeping tiles, curled corners
+  if(st.roof==='tile'){ const h=s*0.55, g=hipRoof(s*0.82, s*0.82, h, { ridge:0.35, curve:1.5, lift:s*0.2, flare:0.12 }); _xf(g,0,y,0); P.push({geo:g,col:0xa84a2a});   // Z146b village gate roof: sweeping tiles, curled corners
     ridgeOrn(P, s*0.6, y+h, 0x7a3a22); }
-  else if(st.roof==='tent'){ const dr=new THREE.CylinderGeometry(s*0.5,s*0.52,s*0.55,8); _xf(dr,0,y+s*0.27,0,0,Math.PI/8); P.push({geo:dr,col:0xa8402e});   // Z146b Kremlin: octagonal drum, tall tent, dormers, gilt finial
+  else if(st.roof==='tent'){ const dr=new THREE.CylinderGeometry(s*0.5,s*0.52,s*0.55,8); _xf(dr,0,y+s*0.27,0,0,Math.PI/8); P.push({geo:dr,col:0xa8402e});   // Z146b red fortress: octagonal drum, tall tent, dormers, gilt finial
     const band=new THREE.CylinderGeometry(s*0.56,s*0.56,0.18,8); _xf(band,0,y+s*0.55,0,0,Math.PI/8); P.push({geo:band,col:0xe8e0d0});
     const t=lathe([[0.62,0],[0.54,0.12],[0.4,0.55],[0.24,1.1],[0.08,1.75],[0.02,1.95]], s, 8); t.rotateY(Math.PI/8); _xf(t,0,y+s*0.55,0); P.push({geo:t,col:0x3a6a4a});
     for(let k=0;k<4;k++){ const a=k*Math.PI/2, d=new THREE.BoxGeometry(s*0.16,s*0.2,s*0.16), dx=Math.sin(a)*s*0.42, dz=Math.cos(a)*s*0.42; _xf(d,dx,y+s*0.95,dz,0,a); P.push({geo:d,col:0xe8e0d0});
@@ -146,7 +146,7 @@ export function towerRoof(name, s, y){ const st=regionOf(name), P=[];
     const o=lathe([[0.3,0],[0.38,0.06],[0.46,0.2],[0.49,0.36],[0.45,0.52],[0.34,0.68],[0.2,0.82],[0.09,0.94],[0.04,1.04],[0.03,1.12]], s, 24); _xf(o,0,y+s*0.6,0);
     P.push({geo:o,col:[0x2a8a5a,0xd8a830,0x3a6ac8,0xc83a3a][(Math.random()*4)|0]});
     const v=new THREE.BoxGeometry(0.06,s*0.42,0.06); _xf(v,0,y+s*1.92,0); P.push({geo:v,col:0xd8b040}); const hz=new THREE.BoxGeometry(s*0.22,0.06,0.06); _xf(hz,0,y+s*2.02,0); P.push({geo:hz,col:0xd8b040}); }
-  else if(st.roof==='pagoda' || st.roof==='hue'){ const hue=st.roof==='hue', c1=hue?0xd8a828:0x2a6a4a, c2=hue?0x3a8a5a:0xc8a030, h1=s*0.38;   // Z146b two sweeping tiers (Chinese gate-tower / Huế Ngọ Môn glaze)
+  else if(st.roof==='pagoda' || st.roof==='hue'){ const hue=st.roof==='hue', c1=hue?0xd8a828:0x2a6a4a, c2=hue?0x3a8a5a:0xc8a030, h1=s*0.38;   // Z146b two sweeping tiers (gate-tower / imperial gate glaze)
     const g1=hipRoof(s*0.85, s*0.85, h1, { ridge:0.55, curve:1.7, lift:s*0.22, flare:0.14 }); _xf(g1,0,y,0); P.push({geo:g1,col:c1});
     const b=new THREE.BoxGeometry(s*0.66,s*0.36,s*0.66); _xf(b,0,y+h1*0.7+s*0.18,0); P.push({geo:b,col:0xa8302a});                                     // upper hall: red lacquer
     for(const qx of [-1,1]) for(const qz of [-1,-0.33,0.33,1]){ const c=new THREE.CylinderGeometry(0.07,0.07,s*0.36,6); _xf(c,qx*s*0.35,y+h1*0.7+s*0.18,qz*s*0.35); P.push({geo:c,col:0x6a1a14}); }

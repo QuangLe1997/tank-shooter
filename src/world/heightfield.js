@@ -109,7 +109,7 @@ export function syncRelief(j0, j1){ const g=terrainGeo(), a=g.attributes.aRelief
 export const WAVING=[];
 // Z145 our side flies a FICTIONAL banner (no real nation's flag): "LIÊN QUÂN THÉP" — forest green over steel navy, a bronze hoist chevron
 //   bearing a white cog-star, a thin gold rule between the fields. Woven-cloth grain on top.
-export function vnFlagTex(){ return _canvasTex(240,160,(x,W,H)=>{ x.fillStyle='#2f5a3a'; x.fillRect(0,0,W,H/2); x.fillStyle='#1e2e4a'; x.fillRect(0,H/2,W,H/2);
+export function bannerFlagTex(){ return _canvasTex(240,160,(x,W,H)=>{ x.fillStyle='#2f5a3a'; x.fillRect(0,0,W,H/2); x.fillStyle='#1e2e4a'; x.fillRect(0,H/2,W,H/2);
   x.fillStyle='#c8a24a'; x.fillRect(0,H/2-3,W,6);
   x.fillStyle='#b8862e'; x.beginPath(); x.moveTo(0,0); x.lineTo(W*0.42,H/2); x.lineTo(0,H); x.closePath(); x.fill();
   x.strokeStyle='#e8c870'; x.lineWidth=3; x.beginPath(); x.moveTo(0,0); x.lineTo(W*0.42,H/2); x.lineTo(0,H); x.stroke();
@@ -118,7 +118,7 @@ export function vnFlagTex(){ return _canvasTex(240,160,(x,W,H)=>{ x.fillStyle='#
   x.fillStyle='#f4f0e4'; x.beginPath(); for(let i=0;i<12;i++){ const a=-Math.PI/2+i*Math.PI/6, r=i%2?H*0.035:H*0.085; x.lineTo(cx+Math.cos(a)*r, cy+Math.sin(a)*r); } x.closePath(); x.fill();   // six-point star in the cog
   for(let i=0;i<260;i++){ x.fillStyle='rgba(0,0,0,'+_R(0.02,0.07).toFixed(2)+')'; x.fillRect(_R(0,W),_R(0,H),2,2); }
   x.fillStyle='rgba(255,255,255,0.04)'; for(let yy=0;yy<H;yy+=3) x.fillRect(0,yy,W,1); }); }
-export let _VN=null; export const vnTex=()=>(_VN||(_VN=vnFlagTex()));
+export let _BANNER=null; export const bannerTex=()=>(_BANNER||(_BANNER=bannerFlagTex()));
 const NOFLAG_GEO = new THREE.BufferGeometry(), NOFLAG_MAT = new THREE.MeshBasicMaterial({ visible:false });
 export function makeFlag(tex, w, h, side){ if(!WORLD_FLAGS.on){ const m=new THREE.Mesh(NOFLAG_GEO, NOFLAG_MAT); m.visible=false; return m; }   // (flags gone: a hidden stand-in, so whoever holds it still can)
   const geo=new THREE.PlaneGeometry(w,h,12,7); geo.translate(w/2*(side||1),0,0);

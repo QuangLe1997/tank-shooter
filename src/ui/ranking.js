@@ -2,7 +2,7 @@
 import { CLOUDSAVE, cloudFB, escapeHtml, hide, initCloud, sfx, show, tapBtn, tapEl } from '../hub.js';
 
 export const RANK = { tab:'week', from:'start', cache:{} };
-// same week key as the server (Vietnam time, ISO week)
+// same week key as the server (UTC+7 time, ISO week)
 export function rankWeek(ms){ const d=new Date((ms||Date.now())+7*3600e3); const day=(d.getUTCDay()+6)%7; d.setUTCDate(d.getUTCDate()-day+3);
   const y=d.getUTCFullYear(), w1=new Date(Date.UTC(y,0,4)), wk=1+Math.round(((d-w1)/864e5-3+((w1.getUTCDay()+6)%7))/7); return y+'-W'+String(wk).padStart(2,'0'); }
 const lvlTxt=l=>l>0 ? 'Màn '+l : '';

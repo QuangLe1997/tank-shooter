@@ -2691,6 +2691,20 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   ok(/export function medalHush\(\)\{ try\{ voiceStage\(\); \}catch\(e\)\{\} /.test(gm) && /getElementById\('voiceSub'\)/.test(gm) && /medalHush\(\); show\('mdlBoard'\)/.test(ui) && /openMedals\(from\)\{ _from = from \|\| 'start'; medalHush\(\);/.test(ui) && /medalEnd\('quit'\); medalHush\(\);/.test(rd('src/game/flow.js'))
     && /#mdlBoard,#mdlScreen\):not\(\.hidden\)\) :is\(#voiceSub,#radio\)\{display:none !important;\}/.test(rd('css/medals.css')) && /b\.id = 'medalsBtn'/.test(ui) && />Huân chương<\/span>/.test(ui),
     'MEDAL 4 leaving a battle (its report, quitting, the career screen) clears the voice queue, the SCH panel and the spoken subtitle, which never show over a menu; home has a Huân chương button beside the rank'); }
+// NAMES 1 fictional places only: no real country / city / monument in any player-visible text, the real-tower scans retired, every land's names invented
+{ const fs=await import('node:fs'), path=await import('node:path'); const C=await import('./config.js'), tv=await import('./src/data/text-vi.js'), wd=await import('./src/data/world.js'), N=C.NAMES;
+  const walk=(d,o=[])=>{ for(const f of fs.readdirSync(d)){ const p=path.join(d,f); fs.statSync(p).isDirectory() ? walk(p,o) : /\.(js|css|html|json|md|webmanifest)$/.test(f) && o.push(p); } return o; };
+  const files=walk('src').concat(walk('css'), walk('docs'), ['index.html','config.js','sw.js','manifest.webmanifest','tools/voice/lines.json','mobile/capacitor.config.json','desktop/package.json','desktop/README.md','mobile/README.md','mobile/HANDOFF.md','GAME_DESIGN.md','LEVELS.md','ARCHITECTURE.md','CLAUDE.md','functions/index.js','functions/score.js'].filter(f=>fs.existsSync(f)));
+  const esc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), RX=new RegExp('(?<![\\p{L}\\p{N}_])('+N.banned.map(esc).join('|')+')(?![\\p{L}\\p{N}_])','giu'), hits=[];
+  for(const f of files){ let t=fs.readFileSync(f,'utf8'); if(f==='config.js') t=t.replace(/export const NAMES = \{[\s\S]*?\] \};/,''); for(const m of t.matchAll(RX)) hits.push(f+': '+m[0]); }
+  ok(Array.isArray(N.banned) && N.banned.length>=100 && N.banned.every(s=>typeof s==='string' && s.trim()===s && s.length>=3) && files.length>=250 && !hits.length, 'no banned real place name in '+files.length+' player-visible files'+(hits.length?' — '+hits.slice(0,6).join(' · '):''));
+  const P=Object.entries(tv.BIOME_PLACE), all=P.flatMap(([,p])=>p.forts);
+  ok(wd.BIOMES.every(b=>tv.BIOME_PLACE[b.name] && tv.BIOME_BLURB[b.name]) && P.every(([,p])=>/^[^·]+ · [^·]+$/.test(p.at) && p.forts.length>=8 && new Set(p.forts).size===p.forts.length) && new Set(all).size===all.length, 'every land has an invented place (NAME · REGION) and 8+ fort names, none shared between lands');
+  const blds=Object.keys(C.REALCITY.blds), w=fs.readFileSync('src/world/wonders.js','utf8'), html=fs.readFileSync('index.html','utf8');
+  ok(N.retired.length===4 && N.retired.every(k=>!blds.includes(k) && !C.REALCITY.skyline.some(t=>t.k===k) && !w.includes(k) && fs.existsSync('assets/models/real/city/'+k+'.glb')) && blds.includes(N.cityTower) && !N.retired.includes(N.cityTower) && !/Joefrance1995/.test(html) && !/VILLAGE:\[/.test(w),
+    'the real-skyscraper scans ('+N.retired.join(' ')+') stay on disk but are never placed; the city tower is '+N.cityTower+'; their credit and the old pagoda are gone');
+  ok(C.INTRO_CITY.tower && !('l81' in C.INTRO_CITY) && /cap:WONDER\.name/.test(fs.readFileSync('src/game/intro.js','utf8')) && /export const bannerTex/.test(fs.readFileSync('src/world/heightfield.js','utf8')), 'the city film shows the invented tower name; our banner texture no longer carries a country code'); }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
@@ -2873,7 +2887,7 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
 // Z176 fortress gates carry a carved name stone; flags fly on every great tower; a command post in every fort that can be shelled to ruins
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const fo=R('src/world/fortress.js');
   ok(/function plaqueMat\(name, place, tier\)/.test(fo) && /plaqueMat\(f\.name, biomePlace\(BIOME\.name\), f\.tier\)/.test(fo), 'every gate has a carved, gilded name stone: the fort and the place');
-  ok(/FLAGS\.push\(\[px,pz,TH2\]\)/.test(fo) && /f\.towerFlags\.push\(fl\)/.test(fo) && /for\(const fl of \(f\.towerFlags\|\|\[\]\)\) fl\.material\.map=vnTex\(\)/.test(fo), 'flags fly from the great towers and turn to our colours when the fort is taken');
+  ok(/FLAGS\.push\(\[px,pz,TH2\]\)/.test(fo) && /f\.towerFlags\.push\(fl\)/.test(fo) && /for\(const fl of \(f\.towerFlags\|\|\[\]\)\) fl\.material\.map=bannerTex\(\)/.test(fo), 'flags fly from the great towers and turn to our colours when the fort is taken');
   ok(/buildCore\(f, g, WM\)/.test(fo) && /kind:'fortcore'/.test(fo) && /fortCoreHit\(b, dmg\)/.test(R('src/world/cover.js')) && /function coreCrater/.test(fo) && /f\.coreDown\) return;/.test(fo), 'a command post in every fort (main and lesser) — shelled to ruins it burns, and the fort loses its reserves and its sorties'); }
 
 // Z177 loot markers: no light columns — the object blinks gold; a loot tank shows one small blinking light at its hatch
