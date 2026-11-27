@@ -374,6 +374,14 @@ export const RIDEFEEL = {
     squat:1.8, squatMax:0.07, crest:2.4, heave:0.9, wheelie:{ wind:0.26, dip:0.045, crouch:0.16, rise:7, drop:0.2, fall:13, wobble:[0.025, 5.5], bounce:[0.9, 0.5], hold:1 },
     slope:{ probe:2.2, up:0.55, down:0.2, min:0.62, max:1.06 } },
   horse:{ slope:{ probe:2, up:0.9, down:0.15, min:0.55, max:1.05 }, body:{ len:0.75, maxPitch:0.32, rate:7, bank:1 } } };
+// HORSE 1 THE HORSE STAYS A HORSE (game/cavalry.js): the hard stop (RIDEFEEL.stop: sat on its haunches, clips faded to a stand, sliding on planted hooves
+//   with a plough of dust) is the RIDER's — the push let go, an about-turn. It was fed the speed AFTER the mount's own caps (RIDE 1 the avoid's line round
+//   something: awayV / gapV / creep / its brake curve; the ford, the swim, the climb), so riding on past cover the horse sat down by itself and slid metres in a
+//   cloud like a skidding car, again and again. on: the stop reads only the rider's ask; capDecel: a cap under the ask is met at this m/s² IN STRIDE (the gait
+//   runs on, slowing — hoof dust only). The xe ôm is left as it was (its driver brakes on the cap, skid and all).
+//   endGap: the stop (the horse's) ends once the ask is back within endGap m/s of its pace — it was held on until the ask beat the pace by RIDEFEEL.stop.resume,
+//   so a horse asked for a canter it already had stayed sat down, frozen, sliding along at that canter in its plough of dust.
+export const HORSERIDE = { on:true, capDecel:8.5, endGap:0.3 };
 // Z279 colossal forts (world/fortress.js dressFort; Tripo 4K): each battlefield's style (fort_<style>_{wall,tower,gate}.glb), wall height / thickness ×,
 //   tower width ×, extra height, the donjon's size ×, the gatehouse width ×, and the doorway cut out of the gatehouse (share of its width, height)
 export const REALFORT = { biomes:{ CITADEL:'citadel', MEADOW:'meadow', RUINS:'ruins', HILLS:'meadow', VILLAGE:'meadow', DESERT:'desert', SAVANNA:'savanna', QUARRY:'quarry', ARCTIC:'arctic', TUNDRA:'arctic', VOLCANO:'volcano', FOUNDRY:'foundry', STEELMILL:'foundry', CITY:'city' },   // Z399 the city's fort too: the works' concrete and steel (it stood as plain boxes in a stone wrap)

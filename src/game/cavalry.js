@@ -1,6 +1,6 @@
 // game/cavalry.js — Z245 CAVALRY MODE: the player is a general in full plate — on his armoured war horse (walk · trot · canter · gallop surge, firing from the saddle, trampling infantry) or on foot (run, sprint, crouch, prone, crawl, auto-cover) — mount / dismount (G), whistle the horse back, hoof beats and dust, all on the tank player's interface so enemies, guns, camera and HUD work unchanged
 import * as THREE from 'three';
-import { CAV, HORSE, HUMAN_SCALE, RIDE, RIDEFEEL, XEOM, XHAIR } from '../../config.js';
+import { CAV, HORSE, HORSERIDE, HUMAN_SCALE, RIDE, RIDEFEEL, XEOM, XHAIR } from '../../config.js';
 import { bladeFoot, bladeTick, ARENA, BIOME, MOBILE, S, actx, afxHoof, afxOn, pushOutRocks, aimTarget, animateHorse, animateSoldier, autoFire, barrelFixed, blocks, buildGeneral, buildHorse, burst, clampField, cloakFoot, controlScheme, core, damageEnemy, endFall, enemies, fitRealCav, floatText, getMoveDir, heightAt, master, playerRange, poseRider, poseSoldier, scene, sfx, spawnPart, startFall, stepFall, turnInput, trackOnTarget, trackTarget, turretTracks, updateRealCav, buildBikeMount, bikeWheelie, horseAir, rideBump, rideClear, rideCollide, rideLeap, rideReset, rideSpeedK, rideImpacts, callRide, rideNote, hudOn, rideCallStep, rideCallUi, rideCanCome, soldierFire, trooperGuns, soldierJump, footStance, footMotion, footPose, footMoveState, heldAction, solidShape, pushOutShape, mountDur, mountMove, mountOwn, aimAwake, seatTurnOff, driverBack, rideHull, ridePower, rideOver, rideRam, rideLowReset, RIDE_LOW, rideAvoid, rideAvoidReset, rideStopStep, rideStopEase, rideStopReset, rideSlopeK, climbStep, climbAfter, climbOver, climbPh, climbReset, climbUi, climbing, footY, medalHit } from '../hub.js';
 import { swimPlace, swimStep } from '../hub.js';   // SWIM 1 (game/swim.js)
 import { horseSwimBlock, horseSwimDef, horseSwimHoof, horseSwimStep, horseSwimTop, horseSwimTurn } from '../hub.js';   // HSWIM 1 (game/horse-swim.js)
@@ -82,18 +82,18 @@ export function updateCavalry(dt, now){
   else if(CV.mounted){
     // the horse: steer toward where you push (or the reins: W/S speed, A/D turn), speed builds and settles, he turns tighter when slow
     const Hc=CAV.horse, surge=now<CV.surgeUntil, top=(surge?Hc.gallop:Hc.cruise)*p.speedMul*wade*rideSpeedK(CV.H)*rideSlopeK(H, p, CV.facing, dt), topW=horseSwimTop(H, top);   // (HSWIM 1 the depth caps it: wading, swimming)   // (Z303 a worn ride has lost its top end · RIDE 3 a climb costs it speed)
-    let want=0, turn=0, own=false;
+    let want=0, turn=0, own=false, ask=0; const topR=(surge?Hc.gallop:Hc.cruise)*p.speedMul*rideSpeedK(CV.H);   // HORSE 1 ask: what the rider's hand asks for, before the mount's own caps
     // RIDE 1 where he pushes is where it goes — but the line is the mount's own: round what is in the way, eased off for it, stood only when every way is shut (game/ride-avoid.js)
-    if(turnCtl){ want = TI.thr>0 ? topW*TI.thr : TI.thr<0 ? -Hc.back : 0; turn=TI.turn; const AV = want>0 ? rideAvoid(H, p, dt, CV.facing, CV.facing+turn*0.6, CV.speed, surge) : rideAvoidReset();
+    if(turnCtl){ want = TI.thr>0 ? topW*TI.thr : TI.thr<0 ? -Hc.back : 0; ask = TI.thr>0 ? topR*TI.thr : want; turn=TI.turn; const AV = want>0 ? rideAvoid(H, p, dt, CV.facing, CV.facing+turn*0.6, CV.speed, surge) : rideAvoidReset();
       if(AV.act) turn=Math.max(-1, Math.min(1, turn+wrapA(AV.head-CV.facing)*AV.gain)); if(want>0) want=Math.min(want, AV.vcap); own=AV.act; }
     else if(inp>0.1){ const tgt=Math.atan2(dir.x, dir.z), AV=rideAvoid(H, p, dt, CV.facing, tgt, CV.speed, surge), df=wrapA((AV.act ? AV.head : tgt)-CV.facing);
-      want=Math.min(AV.vcap, topW*inp*Math.max(0.25, Math.cos(Math.min(Math.PI/2, Math.abs(df))*0.8))); turn=Math.max(-1, Math.min(1, df*(AV.act ? AV.gain : 2))); own=AV.act; }
+      want=Math.min(AV.vcap, topW*inp*Math.max(0.25, Math.cos(Math.min(Math.PI/2, Math.abs(df))*0.8))); ask=topR*inp*(AV.act ? 1 : Math.max(0.25, Math.cos(Math.min(Math.PI/2, Math.abs(df))*0.8))); turn=Math.max(-1, Math.min(1, df*(AV.act ? AV.gain : 2))); own=AV.act; }   // (HORSE 1 on its own line round something he still pushes on: the angle it takes is the horse's, not his)
     else rideAvoidReset();
     // RIDE 2 reined in from speed (the push let go, the way shut, an about-turn): braked as hard as the ground holds — sat on its haunches / the fork dived (game/ride-feel.js)
-    const SF=RIDEFEEL.stop, hs=rideStopStep(H, p, dt, want, CV.speed, !turnCtl && inp>0.1 && !own ? wrapA(Math.atan2(dir.x, dir.z)-CV.facing) : 0), ST=H.stop;   // (no about-turn while it is on its own line round something)
+    const own1=HORSERIDE.on && !H.bike, SF=RIDEFEEL.stop, hs=rideStopStep(H, p, dt, own1 ? ask : want, CV.speed, !turnCtl && inp>0.1 && !own ? wrapA(Math.atan2(dir.x, dir.z)-CV.facing) : 0), ST=H.stop;   // (no about-turn while it is on its own line round something)
     if(ST.on && ST.about) want=Math.min(want, SF.aboutV);
     const tr=(Hc.turnLow+(Hc.turnHigh-Hc.turnLow)*Math.min(1, Math.abs(CV.speed)/Hc.gallop))*(ST.about ? 1+((H.bike ? SF.bike : SF.horse).pivot-1)*Math.min(1, ST.k*2) : 1)*horseSwimTurn(H), dY=turn*tr*dt; CV.facing=wrapA(CV.facing+dY); CV.yawRate=CV.yawRate+(dY/Math.max(dt,1e-3)-CV.yawRate)*Math.min(1, dt*8);
-    const acc = want>CV.speed ? (surge?Hc.surgeAccel:Hc.accel) : (hs || Hc.decel); CV.speed += Math.max(-acc*dt, Math.min(acc*dt, want-CV.speed));
+    const acc = want>CV.speed ? (surge?Hc.surgeAccel:Hc.accel) : (hs || (own1 && want<ask-0.5 ? Math.max(Hc.decel, HORSERIDE.capDecel) : Hc.decel)); CV.speed += Math.max(-acc*dt, Math.min(acc*dt, want-CV.speed));   // (HORSE 1 checked by its own cap: in stride)
     p.facing=CV.facing; p.vel.set(Math.sin(CV.facing)*CV.speed, 0, Math.cos(CV.facing)*CV.speed); p.throttle=0;
     p.radius=CAV.radius.mounted; p.defK=CAV.defK.mounted*horseSwimDef(H); p.camK=CAV.camK.mounted;
   } else if(climbStep(p, dt, now)){ CV.moveT=0; p.radius=CAV.radius.foot; p.defK=CAV.defK.stand; p.camK=CAV.camK.foot; horseAlone(p, dt); }   // Z451 on the face of a rock / a wall: the climb moves him (game/soldier-climb.js)

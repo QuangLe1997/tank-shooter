@@ -6,7 +6,7 @@
 //   The xe ôm's fork dives and comes back up ONCE (game/xeom.js: at rest the fork is let go past level — H.stop.reb — on a stiffer damper while H.stop.hold runs), its locked rear tyre draws a dark skid and
 //   smokes dust, the tail steps out a little; driver and pillion are thrown forward by the same deceleration and settle back (they already ride the springs).
 // An about-turn (the way pushed is behind it) plants it the same way, then it comes round on the spot — quicker than it turns at a walk, leant into it.
-import { RIDEFEEL } from '../../config.js';
+import { HORSERIDE, RIDEFEEL } from '../../config.js';
 import { BIOME, NIGHT, S, groundMark, heightAt, sfx, spawnPart, wadeAt } from '../hub.js';
 
 // on — braking hard now · k — how far into the pose (0…kMax, eased; H.stop.k for the animators) · v0 — the speed it came in at · d — how far it has slid (m)
@@ -25,7 +25,7 @@ export function rideStopEase(H, dt){ const T = STOP; if(!T.on && T.k < 1e-3 && !
 export function rideStopStep(H, p, dt, want, v, df){ const C = RIDEFEEL.stop, K = H.bike ? C.bike : C.horse, T = STOP, about = Math.abs(df) > C.aboutA, HS = H.stop || (H.stop = { on:false, k:0, about:0, hold:0, grip:1, reb:0 });
   if(!T.on){ if(v > C.minV && (want < v * C.rein || about)){ T.on = true; T.t = 0; T.v0 = v; T.d = 0; T.n++; T.grip = rideGrip(p.pos.x, p.pos.z); T.about = about ? Math.sign(df) : 0; hoofOn = false;
       T.kMax = clamp((v - C.minV) / (K.fullV - C.minV), C.kMin, 1); S.shake = Math.min(1.4, S.shake + C.shake * T.kMax); sfx('crunch', undefined, 0.3 + 0.3 * T.kMax); } }
-  else { T.t += dt; T.d += Math.abs(v) * dt; if(v < (T.about ? C.aboutV + 0.25 : C.endV) || !about && want > v + C.resume){ T.on = false; T.hold = K.hold || 0; T.dLast = T.d; T.tLast = T.t; T.vLast = T.v0; if(v < C.endV + 0.3) T.reb = T.kMax; } }   // pulled up (or slow enough to come round) · or he pushes on again
+  else { T.t += dt; T.d += Math.abs(v) * dt; if(v < (T.about ? C.aboutV + 0.25 : C.endV) || !about && want > v + C.resume || !about && !H.bike && HORSERIDE.on && want > v - HORSERIDE.endGap){ T.on = false; T.hold = K.hold || 0; T.dLast = T.d; T.tLast = T.t; T.vLast = T.v0; if(v < C.endV + 0.3) T.reb = T.kMax; } }   // pulled up (or slow enough to come round) · or he pushes on again · (HORSE 1 the horse: or it is asked for about the pace it has — no longer braking, it is not sat on its haunches; that sat it down and slid it along at a canter, frozen, in a plough of dust)
   T.k += ((T.on ? T.kMax : 0) - T.k) * Math.min(1, dt * (T.on ? K.inRate : K.outRate)); T.hold = Math.max(0, T.hold - dt); if(!T.on && T.k < 0.02) T.about = 0;
   if(!H.bike){ const I = H.inert || (H.inert = { acc:0, lat:0, vy:0, p:0, r:0 }); I.acc = T.k * K.lean; }   // (the rider braces back: actors/real-cav.js rideSway reads it as a push from ahead)
   T.reb += -T.reb * Math.min(1, dt * (K.rebRate || 4)); HS.reb = T.reb;
