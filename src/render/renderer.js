@@ -125,7 +125,7 @@ export const nanPass = new ShaderPass({ uniforms:{ tDiffuse:{ value:null } }, ve
 composer.addPass(nanPass);
 export const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth*BLOOM_SCALE, innerHeight*BLOOM_SCALE), LIGHT.bloom, 0.42, 0.88);   // Z244 0.45 → 0.24: glow on what really shines, not a haze over the whole frame   // tighter radius: no blocky halos from the low mips
 composer.addPass(bloom);
-composer.addPass(new OutputPass());
+export const outPass = new OutputPass(); composer.addPass(outPass);   // (AIR 1 render/air-post.js folds this, the NaN guard, bloom's write-back and the grade into one pass)
 export const gradePass = new ShaderPass(GradeShader); composer.addPass(gradePass);
 // lights (refs captured so applyAtmosphere can re-tint them): hard key sun + sky/ground bounce; little flat ambient = real contrast
 export const ambient = new THREE.AmbientLight(0x4a4636, 0.14); scene.add(ambient);

@@ -2624,6 +2624,14 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   ok(T.on && T.hue > 0 && T.hue < 0.5 && T.hueM > T.dampM && T.dampM > T.dirtM && T.dirtM >= 10 && T.dampAt > 0.3 && T.dampAt < 0.9 && T.gloss > 0 && T.gloss < 1, 'the land drifts over a few hundred metres, damp and dirt patches are tens of metres, damp is glossier');
   ok(Object.values(T.biome).every(b => !b || (rgb(b.dry || [1, 1, 1]) && rgb(b.lush || [1, 1, 1]) && (b.damp == null || (b.damp >= 0 && b.damp <= 1)) && (b.dirtK == null || (b.dirtK >= 0 && b.dirtK <= 0.6)))) && T.biome._ && T.rock.kinds.stone > T.rock.kinds.masonry && T.rock.m[0] < T.rock.m[1] && T.rock.warm < 0.2, 'each land\'s colours are gentle multipliers; big rocks drift more than masonry');
   ok(/tileGround\(sh\)/.test(gr) && /#define TILE_LITE/.test(gr) && /lights_physical_fragment/.test(gr) && /notile/.test(gr) && /ROCK_GLSL/.test(bi) && /tileRockUniform\(m\)/.test(bi) && /tileStage\(BIOME\.name\)/.test(bi), 'in the floor\'s own shader after the hexes and scars (phones: the drift only), and in big rocks\' shader; set per battlefield; ?notile = off'); }
+// AIR 1 the frame's tail as one cinematic pass: auto exposure, selective bloom, mid-tone grain
+{ const fs=await import('node:fs'), C=await import('./config.js'), A=C.AIR, ap=fs.readFileSync('src/render/air-post.js','utf8'), hub=fs.readFileSync('src/hub.js','utf8');
+  ok(A && A.post && typeof A.post.on==='boolean' && A.ae.fast>0 && A.ae.slow>=A.ae.fast*10 && A.ae.k>0 && A.ae.k<=1 && A.ae.lo>0.5 && A.ae.lo<1 && A.ae.hi>1 && A.ae.hi<=2,
+    'AIR.ae: the lens follows the light fast ('+A.ae.fast+' s) and settles back slowly ('+A.ae.slow+' s), held to ×'+A.ae.lo+'…×'+A.ae.hi);
+  ok(A.bloom.keep>=0 && A.bloom.keep<1 && A.bloom.sat>0 && A.bloom.sat<1 && A.bloom.hot>1 && A.bloom.knee>0 && A.grain.lo>0 && A.grain.lo<=1,
+    'AIR.bloom: what shines blooms in full, plain bright surfaces keep '+A.bloom.keep+' of it; the grain lives in the mid-tones');
+  ok(/export function airPost\(on\)/.test(ap) && /nanPass\.enabled = outPass\.enabled = gradePass\.enabled = !AIRPOST\.on/.test(ap) && hub.indexOf("'./render/air-post.js'")>hub.indexOf("'./render/renderer.js'") && /time:G\.time, vig:G\.vig/.test(ap),
+    'one pass replaces the NaN guard, the bloom write-back, OutputPass and the grade (the grade\'s own uniforms shared), loaded after the renderer'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

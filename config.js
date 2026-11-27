@@ -2807,6 +2807,15 @@ export const SKYLINE = { on:true, haze:[0.24, 0.58], y:-6, stacks:10, arcs:10, k
 //   that distance for a camera high up (between keepH); farK: up high the camera's far plane reaches farK × its height
 //   (the land below it all drawn, not cut off into the backdrop); farTone = [share of the zenith blue, brightness ×] of the far haze against the sky's horizon band
 export const AERIAL = { on:true, fall:1 / 55, h0:12, keep:[0.42, 0.06], keepH:[50, 260], blue:1 / 650, warm:0.32, land:[0.84, 0.985], landK:1, ring:[60, 150], farK:2.7, farTone:[0.18, 0.84], near:480, nearUp:190, ext:1 / 9000 };
+// AIR 1–4 (render/air-post.js) THE PICTURE AS A CAMERA SEES IT. post: the frame's last passes (NaN guard, bloom's write-back, tone map + sRGB, grade) folded
+//   into ONE full-screen pass (on:false = the old chain). ae: auto exposure — the frame's mean log brightness (a 12 × 8 grid, centre-weighted) followed
+//   fast (fast s) and slow (slow s): exposure × 2^(k × (slow − fast)), held to [lo, hi] — walking into a building's shade or a smoke bank opens the
+//   lens a little, back in the sun it closes, and over slow s it settles on the battlefield's own grade again. bloom: selective — what really shines
+//   (saturated light: fire, flashes, tracers, lamps; or over hot × the threshold) blooms in full, bright plain surfaces (sunlit sand, snow, white
+//   walls, the sky) keep only keep of it; knee = the soft threshold's width. grain: film grain strongest in the mid-tones, lo × in the shadows and
+//   highlights.
+export const AIR = { post:{ on:true }, ae:{ on:true, fast:0.7, slow:40, k:0.5, lo:0.86, hi:1.4 }, bloom:{ sel:true, sat:0.4, hot:3.5, keep:0.3, knee:0.4 },
+  grain:{ shape:true, lo:0.4 } };
 // OUTSKIRTS: the land between the fence and the far ranges rolls instead of lying flat — hills that rise from the field's edge over ramp × ARENA, crest,
 //   and sink back to the plain by fade × ARENA past the edge (so where the near world is cut off at the far plane, it is flat land like the backdrop's);
 //   amp = the crests' height (m), wave = their spacing (m), dune = long wind-shaped ridges instead of round hills; seg = [round, radial] mesh resolution
