@@ -112,9 +112,9 @@ Object.assign(SCENERY.models, TOWERMODEL.models);
 for(const [k, Q] of Object.entries(TOWERMODEL.kinds)) TOWER_KINDS[k] = { ...Q, model:k, build(P, h){ return { sl:[Q.sl[0], h + Q.sl[1], Q.sl[2]] }; } };
 for(const K of Object.values(TOWER_KINDS)) if(K.model){ K.h=SCENERY.models[K.model].h*K.deck; K.dress=body=>towerModel(body, K); }   // Z375 (towers.js buildTower hands it the tower's body)
 // which kinds each land builds (weights)
-//   TOWER2 the military watchtower everywhere the war is modern, the steel lattice post by the works, in the cold and the ruins, the hardened concrete
-//   block in the desert, the city and the ruins, the stone tower with its timber gallery in the old green and stone lands (config TOWERMODEL.biome)
-export const TOWER_BIOME = TOWERMODEL.biome;   // TOWER2 the real models + the concrete block (the Z420 table of gt_* scans retired)
+//   TOWER2 the military watchtower everywhere the war is modern, the steel lattice post beside it (most by the works), the stone tower with its timber
+//   gallery in the old green and stone lands (config TOWERMODEL.biome): no procedural kind is raised any more
+export const TOWER_BIOME = TOWERMODEL.biome;   // TOWER2 the real models only (the Z420 table of gt_* scans and the concrete block retired)
 export function pickTowerKind(biome){ const W=TOWER_BIOME[biome]||{ wood:1 }; let tot=0; for(const k in W) tot+=W[k]; let r=Math.random()*tot; for(const k in W){ if((r-=W[k])<=0) return k; } return 'wood'; }
 // merged geometry per material for one kind (built once, shared by every tower of that kind)
 const _TK={};
