@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MEM_TRIM, PHONE_LOD, REALAIR, REALRUIN, REALCITY, REALPROP, REALTREE, REALTURRET, REALROCK, REALFORT } from '../../config.js';
-import { S, nearForget, nearTag, renderer } from '../hub.js';
+import { S, matNormModel, nearForget, nearTag, renderer } from '../hub.js';
 
 export const MODEL_FILES = {
   // "Bolt Action Rifle 7.62" by Mateusz Sadek — polyhaven.com, CC0. ~20k tris, 1K PBR textures (5.8 MB).
@@ -93,7 +93,7 @@ export function loadGLTF(key){
   if(_gl[key]) return _gl[key];
   if(procOnly() || typeof window === 'undefined') return (_gl[key] = Promise.resolve(null));
   return (_gl[key] = loader().loadAsync(MODEL_FILES[key]).then(gl => {
-    gl.scene.traverse(o => { if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; fixNormals(o.geometry); } }); nearTag(key, gl); warmLater(gl);   // (Z395 its sharp maps while the camera is near)
+    gl.scene.traverse(o => { if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; fixNormals(o.geometry); } }); nearTag(key, gl); warmLater(gl); matNormModel(gl.scene, key);   // (Z395 its sharp maps while the camera is near · MAT 1 measured, pulled into its kind's band)
     const T = texOf(gl.scene); memRegister(key, T.tex, T.geo, () => warmLater(gl), () => { if(_gl[key] && MEM[key] && MEM[key].tex === T.tex){ delete _gl[key]; delete _load[key]; } nearForget(key); }); return gl;
   }).catch(e => { console.warn('[models]', key, 'not loaded — keeping the procedural one:', e && e.message); return null; })); }
 export function loadModel(key){

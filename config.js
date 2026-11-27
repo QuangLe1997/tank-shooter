@@ -2252,6 +2252,30 @@ export const INTRO_CITY = { on:true, l81:{ dur:3.4, fov:36, back:0.95 }, street:
 //   average colour over its brightness, clamped tintMin..tintMax per channel), desat = saturation taken off, dust = share of ground colour at the
 //   foot of things, fading out over dustH metres above where each stands
 export const BLEND = { on:true, hue:0.25, desat:0.12, dust:0.36, dustH:1.4, tintMin:0.7, tintMax:1.45, aoH:0.9, ao:0.5 };
+// MAT 1–3 ONE WORLD (render/mat-norm.js, render/blend-in.js; fx/fire-fx.js; world/ground.js): norm = every model file measured when it loads (mean linear
+//   albedo luminance, HSV saturation, roughness, metalness over the UV area it really wears) and pulled into its kind's band (rules: key pattern → kind,
+//   first match; 'skip' = left as made: men, horses, guns, what he rides); k = share of the way to the band, gain / satK / roughK = the limits of the
+//   correction; ref = the kind's middle its spread is squeezed toward (share sq; else the band's middle); upFrame = materials a frame whose maps it may send
+//   to the GPU itself outside a fight; biome = a battlefield's extra gain per kind (rocks of the desert's own sand, the volcano's black); except = per-model overrides ({ skip:true } or its own lum / sat / rough / metal); keepStats = measurements kept for a probe
+export const MATLOOK = {
+  norm:{ on:true, k:0.8, sq:0.15, gain:[0.55, 1.9], satK:[0.65, 1.15], roughK:[0.6, 2.6], upFrame:1, keepStats:400, fallback:'prop',
+    rules:[['^(trooper|operator|soldier|horse|carbine|rifle|blade_|inf_|drv_|ride_|wild_|boss|troopgun|ride(gallop|walk)|proj|missile|art_|siege_|mortar_|loot_)', 'skip'],
+      ['^(bld_|sc:brownstone|sc:corner_store|sc:duga|sc:elevador)', 'building'], ['^(heli_|air_|mil_|car_|turret_|sc:radar|sc:tank_|sc:rail_)', 'metal'],
+      ['tree|palm|bush|grove|hedge(?!hog)', 'foliage'], ['ice_|snow|igloo|iceberg', 'ice'],
+      ['rock|stone|boulder|cliff|crag|ledge|outcrop|sea_stack|lava_|volcano|sphinx|lion|gargoyle|arch|skeleton|giza|quarry', 'stone'],
+      ['tire', 'rubber'],
+      ['fort|keep_|castle|castel|citadel|gate|wall|ruin|wonder_|temple|bastion|parapet|tower|belfry|lighthouse|fountain|bunker|pillbox|gt_|block|culvert|tunnel|dam_|jersey|concrete|teeth|hesco|sandbag', 'masonry'],
+      ['camp_hq|hq_|quonset|barracks|store|furnace|crane|scaffold|house|villa|shelter', 'building'],
+      ['truck|apc|jeep|humvee|launcher|wreck|generator|antenna|dish|cell_|relay|power_pole|pipes|drum|fuel|container|barrier|barricade|hedgehog', 'metal'],
+      ['tent|canopy|tarp|flag|para_', 'fabric']],
+    cats:{ stone:{ ref:0.12, lum:[0.10, 0.40], sat:[0, 0.32], rough:[0.6, 1], metal:0.05 }, masonry:{ ref:0.14, lum:[0.11, 0.45], sat:[0, 0.32], rough:[0.55, 1], metal:0.08 },
+      building:{ ref:0.17, lum:[0.09, 0.50], sat:[0, 0.4], rough:[0.25, 1], metal:0.4 }, metal:{ ref:0.12, lum:[0.04, 0.45], sat:[0, 0.5], rough:[0.3, 0.9], metal:0.7 },
+      foliage:{ ref:0.095, lum:[0.045, 0.16], sat:[0.1, 0.6], rough:[0.6, 1], metal:0 }, fabric:{ ref:0.12, lum:[0.06, 0.35], sat:[0, 0.45], rough:[0.7, 1], metal:0.02 },
+      ice:{ lum:[0.30, 0.80], sat:[0, 0.3], rough:[0.2, 0.9], metal:0.02, sq:0 }, rubber:{ lum:[0.02, 0.12], sat:[0, 0.3], rough:[0.6, 1], metal:0.02, sq:0 },
+      prop:{ ref:0.12, lum:[0.035, 0.50], sat:[0, 0.45], rough:[0.4, 1], metal:0.5, sq:0.15 } },
+    except:{ prop_lamp:{ skip:true }, prop_gate:{ lum:[0.02, 0.3] } },
+    biome:{ DESERT:{ stone:1.35, masonry:1.1 }, SAVANNA:{ stone:1.2 }, QUARRY:{ stone:1.25, masonry:1.1 }, VOLCANO:{ stone:0.85 } } },
+};
 // Z400 CONTACT (world/decals.js paintContact, read by the ground's shader): things stood on the floor like cut-outs — a hard line where a wall met the grass, no
 //   shade under a rock, the same clean sand right up to a pipe. Once a stage is built every solid footprint (blocks: walls, cover, rocks, camps,
 //   buildings; the scenery's pieces) is painted into a field-wide map: shade = the floor darkened tight round it (pad m out, blurred over shadeB m:
