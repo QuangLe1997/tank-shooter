@@ -8,7 +8,7 @@ import { BIOMES, BIOME_PLACE, PROFILE, S, TOD_LABEL, biomeVi, levelInfo, weather
 // where each battlefield's real place is (degrees, minutes; B/N = north/south, Đ/T = east/west)
 const COORD = { DESERT:'29°58′B 31°08′Đ', RUINS:'41°53′B 12°29′Đ', ARCTIC:'63°45′B 68°31′T', FOUNDRY:'49°15′B 6°51′Đ', CITADEL:'27°10′B 78°01′Đ',
   MEADOW:'51°53′B 4°38′Đ', CITY:'10°46′B 106°42′Đ', SAVANNA:'13°54′B 4°33′T', VOLCANO:'19°25′B 155°17′T', QUARRY:'44°05′B 10°06′Đ' };
-// "GIZA · AI CẬP" → "Giza, Ai Cập"; "CHIẾN DỊCH BÃO CÁT" → "Chiến dịch Bão Cát"
+// "KHEMARET · XỨ CÁT ĐỎ" → "Khemaret, Xứ Cát Đỏ"; "CHIẾN DỊCH BÃO CÁT" → "Chiến dịch Bão Cát"
 const words = s => String(s || '').toLocaleLowerCase('vi').replace(/(^|[\s(.-])(\S)/g, (m, a, c) => a + c.toLocaleUpperCase('vi'));
 export function placeLine(name){ const P = BIOME_PLACE[name]; return P ? P.at.split(' · ').map(words).join(', ') : ''; }
 export function opTitle(op){ return op ? words(op.title).replace(/^Chiến Dịch /, 'Chiến dịch ') : ''; }

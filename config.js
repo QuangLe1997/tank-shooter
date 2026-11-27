@@ -123,8 +123,8 @@ export const REALWILD = { h:{ deer:2.1, zebra:2.0, giraffe:5.0, elephant:3.3, re
 export const REALWONDER = { windmill:{ key:'wonder_windmill', h:30, sink:0.02, yaw:-Math.PI / 2 },   // Z410 MEADOW's three windmills as the Tripo model (h m tall to its top sail; its sails face +X → yaw)
   biomes:{ CITADEL:'wonder_taj', RUINS:'wonder_colosseum', SAVANNA:'wonder_djenne', FOUNDRY:'wonder_volklingen', DESERT:'wonder_giza', QUARRY:'wonder_quarry' },
   fit:{ wonder_taj:1.0, wonder_colosseum:1.0, wonder_djenne:1.0, wonder_volklingen:1.0, wonder_giza:1.6, wonder_quarry:1.0 }, yaw:{}, sink:0.02, sinkK:{ wonder_giza:0.12 }, clear:28,   // Z434 clear = m between the fence and the landmark's nearest edge (it stands wholly outside the field, never over a fort), sinkK = how deep a scan's own rough plinth goes under the sand
-  // Z426 the Giza pyramids and the Carrara terraces as models too; multi = a landmark of several pieces (world/wonders.js dressMulti): one model at each
-  //   [x, z, size m, 'w' width | 'h' height] in the drawn landmark's frame, scan pieces beside them (k, x, z, h) — the Inuit village's igloos and its lighthouse
+  // Z426 the desert pyramids and the marble quarry's terraces as models too; multi = a landmark of several pieces (world/wonders.js dressMulti): one model at each
+  //   [x, z, size m, 'w' width | 'h' height] in the drawn landmark's frame, scan pieces beside them (k, x, z, h) — the polar village's igloos and its lighthouse
   multi:{ ARCTIC:{ key:'wonder_igloo', at:[[0, 0, 11, 'w'], [12, 6, 8.8, 'w'], [-11, 8, 9.7, 'w'], [4, -12, 7.9, 'w'], [-6, -9, 7, 'w']], scene:[{ k:'lighthouse', x:26, z:-6, h:32 }] } } };
 // Z282 xe-ôm / xích-lô mode (game/xeom.js): driver seat [y, z] on the bike (m), where the player's soldier sits, the bike's lean in turns, livery (traffic livery index)
 // Z296 THE DRIVER (actors/driver.js): his own rigged model per ride; where his body meets the machine, in the mount's units (m ÷ XEOM.k, +z ahead, +x his left):
@@ -1467,18 +1467,18 @@ export const STREET = { wet:0.9, puddle:0.55, mirror:3.5, wheel:0.2, oil:0.6, pa
 //   procedural car body becomes; L = its length in m, carTint = how far a car's paint colour tints the model); yaw = the turn that brings the model's front to +Z; share = the chance a lot takes a Meshy building
 export const REALCITY = { pools:{ r:5.5, reach:1.5, col:0xffc888, k:0.55 }, env:0.8, share:1, asphalt:[0.62, 0.62, 0.64], pavement:[0.72, 0.72, 0.72], lawn:[0.78, 0.9, 0.62],   // street photo albedo ×
  
-  blds:{ bld_glass:{ role:'tower', env:1.3 }, bld_apart:{ role:'apartment' }, bld_hotel:{ role:'apartment' }, bld_office:{ role:'apartment' }, bld_shophouse:{ role:'row' }, bld_shoprow2:{ role:'row' }, bld_villa:{ role:'villa' }, bld_landmark:{ role:'landmark', env:1.2 }, bld_spire:{ role:'skyline', env:1.25 }, bld_palmspire:{ role:'skyline', env:1.2 },
-    bld_burj:{ role:'skyline', env:1.25 }, bld_needle:{ role:'skyline', env:1.1 }, bld_curve:{ role:'skyline', env:1.25 }, bld_nexus:{ role:'skyline', env:1.1 }, bld_rise:{ role:'skyline', env:1.1 }, bld_lm81:{ role:'skyline', env:1.2 } }, landmarkH:150, landmarkSink:0.035,   // Z268 the Tripo tower stands on a lawn plate: that sinks into the plaza (Z426 the rest of the downloaded towers: skyline)
+  blds:{ bld_glass:{ role:'tower', env:1.3 }, bld_apart:{ role:'apartment' }, bld_hotel:{ role:'apartment' }, bld_office:{ role:'apartment' }, bld_shophouse:{ role:'row' }, bld_shoprow2:{ role:'row' }, bld_villa:{ role:'villa' }, bld_spire:{ role:'skyline', env:1.25 }, bld_palmspire:{ role:'skyline', env:1.2 },
+    bld_curve:{ role:'skyline', env:1.25 }, bld_nexus:{ role:'skyline', env:1.1 }, bld_rise:{ role:'skyline', env:1.1 } }, landmarkH:150, landmarkSink:0.035,   // Z268 the city's tower sinks a little into the plaza (Z426 the rest of the downloaded towers: skyline; NAMES 1 the real-tower scans retired)
  
   // Z267 the street furniture (world/real-city.js prepProp): h = height, w = width, s = scale (the Poly Haven scans are true size), glow = the material that lights at night
   props:{ prop_lamp:{ h:4.6, glow:'glass' }, prop_gate:{ s:1 }, prop_hydrant:{ s:1.1 }, prop_bin:{ s:1 }, prop_bench:{ s:1 }, prop_cafe:{ s:1 }, prop_chair:{ s:1 }, prop_barrier:{ s:1.3 }, prop_tarpcar:{ s:1.05 },
     city_fountain:{ w:11, sink:0.12 }, city_signal:{ h:2.1 }, city_stall:{ h:2.7 } }, glowCol:0xffd9a0, signalAt:2.5,
-  // Z268 → Z420 the towers that stand with Landmark 81 on the skyline (world/wonders.js): k = the model, h = its height (m), turn = its bearing off the landmark's
-  //   (rad), out = its distance × the landmark's, sink. The CBD reads as a cluster: the glass spire to one side (where the Bitexco stood), the Palmspire
+  // Z268 → Z420 the towers that stand with the city's tower (NAMES.cityTower) on the skyline (world/wonders.js): k = the model, h = its height (m), turn = its
+  //   bearing off the landmark's (rad), out = its distance × the landmark's, sink. The CBD reads as a cluster: the glass spire to one side, the Palmspire
   //   just behind and beside the landmark, the centre of the far city
   skyline:[ { k:'bld_spire', h:124, turn:0.5, out:1.22, sink:0.03 }, { k:'bld_palmspire', h:136, turn:-0.2, out:1.42, sink:0.02 },
-    { k:'bld_nexus', h:68, turn:-0.42, out:1.12, sink:0.02 }, { k:'bld_curve', h:108, turn:0.24, out:1.58, sink:0.02 }, { k:'bld_needle', h:74, turn:-0.78, out:1.3, sink:0.01 },
-    { k:'bld_rise', h:150, turn:-1.05, out:1.72, sink:0.02 }, { k:'bld_lm81', h:118, turn:0.78, out:1.9, sink:0.02 }, { k:'bld_burj', h:172, turn:1.08, out:2.05, sink:0.03 } ],   // Z426 a far CBD: the curved tower, the Space Needle, the tower still in its cranes, the purple-lit spire and the Burj far out
+    { k:'bld_nexus', h:68, turn:-0.42, out:1.12, sink:0.02 }, { k:'bld_curve', h:108, turn:0.24, out:1.58, sink:0.02 }, { k:'bld_nexus', h:80, turn:-0.78, out:1.3, sink:0.01 },
+    { k:'bld_spire', h:140, turn:-1.05, out:1.72, sink:0.02 }, { k:'bld_palmspire', h:118, turn:0.78, out:1.9, sink:0.02 }, { k:'bld_spire', h:165, turn:1.08, out:2.05, sink:0.03 } ],   // Z426 a far CBD (NAMES 1: generic towers only — the real-skyscraper scans are retired)
   // Z268 traffic (world/traffic.js): n vehicles (scooters motoShare of them), speeds m/s, lane offsets from the road's centre line [car, scooter]
   traffic:{ wheel:[0.33, 0.26], files:['moto_scooter','moto_escooter','rider_driver'], n:110, nMobile:44, motoShare:0.72,
     // Z310 wheel = the starting tyre radius [car, scooter] m (each model's own is measured from its mesh); grips = the middle of each scooter's rubber grip
@@ -2243,8 +2243,22 @@ export const PAD_HELP = [
   ['L3 (nhấn cần trái)', 'Đổi mức thu phóng'], ['R3 (nhấn cần phải)', 'Đặt lại camera'], ['☰ Menu', 'Tạm dừng'], ['⧉ View', 'Bảng phím'],
   ['Trong menu', 'D-pad / cần trái chọn · A bấm · B quay lại'], ['M1 · M2 (nút sau)', 'Gán trong ứng dụng Flydigi Space Station, ví dụ M1 = A (bứt tốc), M2 = B (xuống / lên xe)'] ];
 // Z119 BATTLE INTRO: cinematic view distance + fog (the sweep no longer draws the whole field), shader warm-up time budget, skip guard
-// Z288 the city opens on film: Landmark 81 from its foot (tilt up), then a tracking shot down the busiest boulevard (seconds, lens fov, camera speed m/s)
-export const INTRO_CITY = { on:true, l81:{ dur:3.4, fov:36, back:0.95 }, street:{ dur:3.2, fov:48, v:9, h:1.5, off:4.2 } };
+// Z288 the city opens on film: the city's tower from its foot (tilt up), then a tracking shot down the busiest boulevard (seconds, lens fov, camera speed m/s)
+export const INTRO_CITY = { on:true, tower:{ dur:3.4, fov:36, back:0.95 }, street:{ dur:3.2, fov:48, v:9, h:1.5, off:4.2 } };
+// NAMES 1 FICTIONAL PLACES ONLY (data/text-vi.js BIOME_PLACE, world/wonders.js): a war game must not set its fights in a real country, city or monument —
+//   above all none at home. banned = every real name the game once showed, and the usual spellings of the home country's own (with and without
+//   diacritics); test.js fails when one comes back in any player-visible text (src, config, index.html, css, voice lines, store / app text) — whole
+//   words, any case. cityTower = the generic scan that stands as the harbour city's landmark; retired = scans of real buildings, kept on disk, never placed.
+export const NAMES = { cityTower:'bld_rise', retired:['bld_landmark', 'bld_lm81', 'bld_burj', 'bld_needle'],
+  banned:[ 'Việt Nam', 'Viet Nam', 'Vietnam', 'Sài Gòn', 'Sai Gon', 'Saigon', 'Hồ Chí Minh', 'Ho Chi Minh', 'TP. HCM', 'Hà Nội', 'Ha Noi', 'Hanoi', 'Huế', 'Đà Nẵng', 'Da Nang',
+    'Hải Phòng', 'Cần Thơ', 'Điện Biên', 'Khe Sanh', 'Củ Chi', 'Quảng Trị', 'Quảng Bình', 'Trường Sơn', 'Bạch Đằng', 'Hoàng Sa', 'Trường Sa',
+    'Landmark 81', 'Bitexco', 'Chùa Một Cột', 'One Pillar', 'Ngọ Môn', 'Cổ Loa', 'Sơn Đoòng', 'Phong Nha', 'Kẻ Bàng', 'Hang Én', 'Tú Làn', 'Bến Thành', 'Chợ Lớn', 'Thủ Thiêm',
+    'Bến Nghé', 'Tân Định', 'Phú Mỹ Hưng', 'Gia Định', 'Thảo Điền', 'Sơn Tây', 'Đường Lâm', 'Bát Tràng', 'Hương Sơn', 'Vạn Phúc', 'Phù Đổng', 'Ba Vì', 'Bắc Bộ',
+    'Giza', 'Cairo', 'Ai Cập', 'Egypt', 'Luxor', 'Karnak', 'Abu Simbel', 'Aswan', 'Saqqara', 'El Alamein', 'Djenné', 'Djenne', 'Timbuktu', 'Tây Phi', 'Châu Phi',
+    'Moskva', 'Moscow', 'Kremlin', 'Thánh Basil', 'Saint Basil', 'Novgorod', 'Smolensk', 'Völklingen', 'Volklingen', 'Ruhr', 'Zollverein', 'Dortmund', 'Taj Mahal', 'Agra', 'Ấn Độ',
+    'Mehrangarh', 'Jaisalmer', 'Kinderdijk', 'Zaanse Schans', 'Haarlem', 'Bourtange', 'Hà Lan', 'Vạn Lý Trường Thành', 'Great Wall of China', 'Bắc Kinh', 'Beijing',
+    'Trung Quốc', 'Colosseum', 'Colosseo', 'Roma', 'Pompeii', 'Palatino', 'Carrara', 'Tuscany', 'Kīlauea', 'Kilauea', 'Hawaii', 'Mauna Loa', 'Nunavut', 'Iqaluit', 'Inuit',
+    'Canada', 'Bethlehem', 'Pennsylvania', 'Burj', 'Khalifa', 'Space Needle', 'Mississauga' ] };
 // Z322 THE INTRO'S SKY (game/intro-clouds.js): band = the cloud deck between these shares of the descent's height (0 = landing, 1 = high orbit);
 //   puffs laid along the swoop (it flies through them) + wisps over the field; size (m), opacity of each, sideways drift (m/s); haze = the screen
 //   mist at the top of the flight; inside = the whiteout inside a puff; tintK = how far the fog colour is lifted toward white (day; a third at night)

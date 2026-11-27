@@ -47,13 +47,13 @@ function buildGrandTour(T){
   const total=cum[N]||1;
   const wAt=u=>{ const c=u*total; let lo=0, hi=N; while(hi-lo>1){ const m=(lo+hi)>>1; if(cum[m]<c) lo=m; else hi=m; } const span=cum[hi]-cum[lo]||1; return Math.min(1, (lo+(c-cum[lo])/span)/N); };
   return { pose, wAt, caps, fov, wA, dur:TOUR.dur, fog:null, capK:-1, shots:null, shotsAt:0, st:0 }; }
-// Z288 THE CITY ON FILM: before the grand tour, two short shots cut together — Landmark 81 seen from near its foot, the camera tilting up
+// Z288 THE CITY ON FILM: before the grand tour, two short shots cut together — the city's tower seen from near its foot, the camera tilting up
 //   its height on a long lens; then a low tracking shot down the longest boulevard, traffic streaming past. Each shot eases its own move;
 //   a hard cut joins them, and the last cuts to the high orbit. City only, desktop only (the tour is), and only the first time (intro.quick).
 function cityShots(){ const C=INTRO_CITY; if(BIOME.name!=='CITY' || !C || !C.on) return null; const shots=[];
-  if(WONDER.g && WONDER.x!=null){ const b=new THREE.Box3().setFromObject(WONDER.g), Hh=Math.max(20, b.max.y), wx=WONDER.x, wz=WONDER.z, L=Math.hypot(wx,wz)||1, ux=-wx/L, uz=-wz/L, d=Hh*C.l81.back;   // stand on the field side of the tower
+  if(WONDER.g && WONDER.x!=null){ const b=new THREE.Box3().setFromObject(WONDER.g), Hh=Math.max(20, b.max.y), wx=WONDER.x, wz=WONDER.z, L=Math.hypot(wx,wz)||1, ux=-wx/L, uz=-wz/L, d=Hh*C.tower.back;   // stand on the field side of the tower
     const g0=heightAt(wx+ux*d, wz+uz*d)+1.8, sx=-uz*d*0.08, sz=ux*d*0.08;
-    shots.push({ dur:C.l81.dur, fov:C.l81.fov, cap:'SÀI GÒN · LANDMARK 81', p0:new THREE.Vector3(wx+ux*d-sx, g0, wz+uz*d-sz), p1:new THREE.Vector3(wx+ux*d*0.92+sx, g0+2, wz+uz*d*0.92+sz),
+    shots.push({ dur:C.tower.dur, fov:C.tower.fov, cap:WONDER.name, p0:new THREE.Vector3(wx+ux*d-sx, g0, wz+uz*d-sz), p1:new THREE.Vector3(wx+ux*d*0.92+sx, g0+2, wz+uz*d*0.92+sz),
       l0:new THREE.Vector3(wx, Hh*0.22, wz), l1:new THREE.Vector3(wx, Hh*0.86, wz) }); }
   return shots.length ? shots : null; }
 function streetShot(){ const C=INTRO_CITY, runs=(TRAFFIC && TRAFFIC.runs)||[]; if(BIOME.name!=='CITY' || !C || !C.on || !runs.length) return null; { const r=runs.slice().sort((a,b)=>(b.blvd?1e4:0)+(b.a1-b.a0)-((a.blvd?1e4:0)+(a.a1-a.a0)))[0], S2=C.street, len=S2.v*S2.dur, mid=(r.a0+r.a1)/2;
