@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Bàn trộn trận đấu — XUNG KÍCH</title>
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Saira+Stencil+One&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/mixer.css" />
+</head>
+<!-- MIX 3 THE MIXER DESK (dev page): src/dev/mixer-desk.js — the battle spec's ten faders and channel strips, live scores, ĐÁNH THỬ into index.html -->
+<body id="mixDesk">
+<header class="mx-head">
+  <h1>BÀN TRỘN <span>TRẬN ĐẤU</span></h1>
+  <input id="mxName" class="mx-name" placeholder="Tên trận" aria-label="Tên trận" />
+  <select id="mxPreset" aria-label="Mẫu và đã lưu"></select>
+  <div class="mx-tools">
+    <button id="mxNew" class="mx-b">Mới</button>
+    <button id="mxSave" class="mx-b">Lưu</button>
+    <button id="mxDown" class="mx-b">Tải xuống</button>
+    <label class="mx-b mx-file">Tải lên<input id="mxUp" type="file" accept=".json,application/json" hidden /></label>
+    <button id="mxPin" class="mx-b">Ghim làm A</button>
+    <span id="mxAB" hidden><button id="mxSwap" class="mx-b">Đổi A↔B</button><button id="mxUnpin" class="mx-b">Bỏ A</button></span>
+    <select id="mxDev" aria-label="Thiết bị"><option value="desktop">Máy tính</option><option value="phone">Điện thoại</option></select>
+    <button id="mxGo" class="mx-b mx-go">ĐÁNH THỬ ▶</button>
+  </div>
+</header>
+<main class="mx-main">
+  <section id="mxLeft" class="mx-left" aria-label="Fader và kênh"></section>
+  <aside id="mxRight" class="mx-right" aria-label="Điểm và cảnh báo"></aside>
+</main>
+<div id="mxFlash" class="mx-flash" role="status"></div>
+<script type="module" src="src/dev/mixer-desk.js"></script>
+</body>
+</html>

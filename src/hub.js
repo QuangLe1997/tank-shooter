@@ -306,6 +306,7 @@ export * from './campaign/conquest.js';   // CONQ 1 CHINH PHẠT 10 THÀNH: ten 
 export * from './ui/conquest-map.js';   // CONQ 1 the conquest's road on the battle setup's Chiến dịch tab, a fort's card
 export * from './campaign/sectors.js';
 export * from './campaign/mixer.js';   // MIX 1 composeBattle(spec): one battle from a BattleSpec, as a mode
+export * from './dev/mixer-desk.js';   // MIX 3 the mixer desk (mixer.html; inert on the game page)
 export * from './campaign/sector-goals.js';
 export * from './campaign/sector-route.js';
 export * from './campaign/conq-story.js';   // SECTOR 6 the conquest's story fort by fort: the opening, the radio per sector, the closing, the war's ending
