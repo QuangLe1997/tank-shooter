@@ -41,7 +41,7 @@ function wrap(im){ const g = im.geometry, names = instNames(g), cap = im.instanc
   const hide = r * C.hideK < C.never ? Math.max(C.hideMin, r * C.hideK) : Infinity, lite = !MOBILE && n >= C.liteMinTris;
   const shade = !!im.castShadow && !MOBILE;   // VIEW 2 a shadow caster gains even with no light copy and never hidden: only its near instances go into the shadow pass
   if(!lite && !shade && hide === Infinity){ im.userData.noView = true; return; }   // nothing to gain
-  const dLite = lite || shade ? Math.min(hide, Math.min(C.liteMax, Math.max(C.liteMin, r * C.liteK))) : hide;
+  const dLite = lite || shade ? Math.min(hide, im.userData.viewLite || Math.min(C.liteMax, Math.max(C.liteMin, r * C.liteK))) : hide;   // (A3 a mesh with a light copy made offline says where it starts: userData.viewLite)
   const G = new THREE.Group(); G.name = 'instView'; G.position.copy(im.position); G.quaternion.copy(im.quaternion); G.scale.copy(im.scale);
   const mk = (geo, shadow) => { const v = new THREE.InstancedMesh(viewGeo(geo, names, cap), im.material, cap); v.instanceMatrix.setUsage(THREE.DynamicDrawUsage); v.count = 0; v.visible = false; v.frustumCulled = false;
     v.castShadow = shadow && im.castShadow; v.receiveShadow = im.receiveShadow; v.renderOrder = im.renderOrder; v.layers.mask = im.layers.mask; v.raycast = () => {};   // (rays still find the source, with the source's instance ids)

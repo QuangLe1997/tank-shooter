@@ -2779,6 +2779,7 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
     'no commander\'s name floats over him; on a phone a medal is a compact chip at the top right'); }
 // DIET 1 one loader for every model file: meshopt + KTX2 read compressed, the transcoder and the simplifier vendored, fallback pictures
 // DIET 1–2 the resource diet: one loader (meshopt + KTX2 read compressed, vendored transcoder and simplifier), KTX2 maps with fallback pictures in the model files
+// DIET 1–3 the resource diet: one loader (meshopt + KTX2 read compressed, vendored transcoder and simplifier), KTX2 maps with fallback pictures in the model files, far trees from the phone copies
 { const fs=await import('node:fs'), C=await import('./config.js'), D=C.ASSETDIET, rd=f=>fs.readFileSync(f,'utf8'), ad=rd('src/render/asset-diet.js'), mo=rd('src/actors/models.js'), fl=rd('src/render/far-lod.js'), rt=rd('src/world/real-trees.js'), nd=rd('src/render/near-detail.js');
   const head=f=>{ const b=fs.readFileSync(f); return JSON.parse(b.subarray(20, 20+b.readUInt32LE(12)).toString()); };
   ok(typeof D.ktx2==='boolean' && ['basis_transcoder.js','basis_transcoder.wasm','probe.ktx2'].every(f=>fs.existsSync(D.basis+f)) && fs.existsSync(D.simplifier) && D.workers>=1 && D.workers<=8 && D.probeMs>=1000 && !/cdn\.jsdelivr/.test(fl) && /ASSETDIET\.simplifier/.test(fl),
@@ -2788,7 +2789,9 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   const files=['assets/models/real/operator.glb','assets/models/real/city/bld_hotel.glb','assets/models/real/tree/oak.glb','assets/models/real/camp/base_tower.glb'], J=files.map(head);
   ok(J.every(j=>(j.extensionsUsed||[]).includes('KHR_texture_basisu') && !(j.extensionsRequired||[]).includes('KHR_texture_basisu') && j.textures.every(t=>{ const e=t.extensions&&t.extensions.KHR_texture_basisu; return e && j.images[e.source].mimeType==='image/ktx2' && /image\/(jpeg|png)/.test(j.images[t.source].mimeType); })),
     'the model files\' maps are KTX2, each with a small JPEG / PNG fallback as its plain source (the extension not required): '+files.map(f=>f.split('/').pop()).join(', '));
-  { const tool=rd('tools/asset-diet.mjs'); ok(/isUASTC:true/.test(tool) && /isNormalMap:true/.test(tool) && /KHRTextureBasisu/.test(tool) && /EncoderMethod\.QUANTIZE/.test(tool) && /VertexLayout\.SEPARATE/.test(tool), 'tools/asset-diet.mjs: ETC1S colour, ETC1S normal-map mode, UASTC for the guns in hand, lossless meshopt, attributes kept separate'); } }
+  { const tool=rd('tools/asset-diet.mjs'); ok(/isUASTC:true/.test(tool) && /isNormalMap:true/.test(tool) && /KHRTextureBasisu/.test(tool) && /EncoderMethod\.QUANTIZE/.test(tool) && /VertexLayout\.SEPARATE/.test(tool), 'tools/asset-diet.mjs: ETC1S colour, ETC1S normal-map mode, UASTC for the guns in hand, lossless meshopt, attributes kept separate'); }
+  { const rt=rd('src/world/real-trees.js'), fl=rd('src/render/far-lod.js'), iv=rd('src/render/inst-view.js'); ok(D.treeFar.at>=40 && D.treeFar.max>0 && D.treeFar.max<1 && Object.keys(C.REALTREE.h).every(k=>fs.existsSync(D.treeFar.dir+k+'.glb')) && /farSeed\(im\.geometry, fb\)/.test(rt) && /export function farSeed/.test(fl) && /userData\.viewLite/.test(iv),
+    'DIET 3 trees wear their species\' phone copy past '+D.treeFar.at+' m (a copy at most '+D.treeFar.max+' × the triangles), seeded as the far view\'s light copy'); } }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

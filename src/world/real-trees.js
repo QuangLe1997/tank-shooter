@@ -6,17 +6,28 @@
 // by reading the model's own texture: green (or snow) is foliage, brown / grey is wood — flutter on top of that, the trunk does not. Until the files
 // load, or if they fail, the procedural trees stay.
 import * as THREE from 'three';
-import { NEARDETAIL, REALTREE, TREEFALL } from '../../config.js';
-import { DICE, diceSeeded, BIOME, FLORA, MOBILE, SUN_VIEW, WTIME, blocks, crushables, loadGLTF, NEAR_DETAIL, nearFrame, nearModel, trunkOf } from '../hub.js';
+import { ASSETDIET, NEARDETAIL, REALTREE, TREEFALL } from '../../config.js';
+import { DICE, diceSeeded, BIOME, FLORA, MOBILE, SUN_VIEW, WTIME, blocks, crushables, farSeed, loadGLB, loadGLTF, NEAR_DETAIL, nearFrame, nearModel, trunkOf } from '../hub.js';
 
 const SP = {}, GEO = {}, EXTRA = new Set(), MAT = {}; let _p = null;
 const hOf = k => { const [f, i] = k.split(':'); return i == null ? REALTREE.h[k] : REALTREE.parts[f][+i]; };   // Z450 a part of a many-plant file stands at its own height
 const U = { wDir:{ value:new THREE.Vector2(REALTREE.wind.dir[0], REALTREE.wind.dir[1]).normalize() }, wAmp:{ value:REALTREE.wind.sway }, wLeaf:{ value:REALTREE.wind.leaf } };
 
 export function loadRealTrees(){ if(_p) return _p; if(typeof window === 'undefined' || /proctree/.test(location.search + location.hash)) return (_p = Promise.resolve(false));
-  return (_p = Promise.all(Object.keys(REALTREE.h).map(k => loadGLTF('tree_' + k).then(gl => [k, gl]))).then(L => {
-    for(const [k, gl] of L){ if(!gl) continue; try{ const P = REALTREE.parts[k]; if(P) P.forEach((_, i) => { SP[k + ':' + i] = prepTree(gl, k, false, i); }); else SP[k] = prepTree(gl, k); } catch(e){ console.warn('[trees]', k, e.message); } }   // (Z450 one species per part)
+  return (_p = Promise.all(Object.keys(REALTREE.h).map(k => Promise.all([loadGLTF('tree_' + k), farFile(k)]).then(([gl, fg]) => [k, gl, fg]))).then(L => {
+    for(const [k, gl, fg] of L){ if(!gl) continue; try{ const P = REALTREE.parts[k]; if(P) P.forEach((_, i) => { SP[k + ':' + i] = farOf(prepTree(gl, k, false, i), fg, k, i); }); else SP[k] = farOf(prepTree(gl, k), fg, k); } catch(e){ console.warn('[trees]', k, e.message); } }   // (Z450 one species per part)
     for(const im of FLORA.meshes) dressTrees(im); for(const im of EXTRA) dressTrees(im); EXTRA.clear(); return true; })); }
+// A3 FAR TREES: past inst-view's near ring (render/inst-view.js) a tree was drawn by a copy simplified while the game ran (render/far-lod.js) — but a
+//   canopy is thousands of leaf cards whose seams the simplifier keeps, so the copy came out nearly whole: 7–13k triangles a tree, a few hundred trees.
+//   Each species' phone copy (tree/m/<k>.glb: the same atlas, simplified offline to ~3k) is now its far body, worn by the far view from
+//   ASSETDIET.treeFar.at m with the same material, wind and leaf mask. A copy that is not lighter than ASSETDIET.treeFar.max × the tree is not used.
+const farFile = k => !MOBILE && ASSETDIET.treeFar.on ? loadGLB(ASSETDIET.treeFar.dir + k + '.glb').catch(() => null) : null;
+const trisOf = g => (g.index ? g.index.count : g.attributes.position.count) / 3;
+function farOf(S, fg, k, part){ if(!fg) return S; try{ const f = prepTree(fg, k, true, part).geo; if(trisOf(f) <= trisOf(S.geo) * ASSETDIET.treeFar.max) S.far = f; }catch(e){} return S; }
+// a tree mesh's far body: the species' far copy at the same size, sharing the mesh's own aHide (null when the species has none)
+function farBody(S, key, h, g){ if(!S.far) return null; if(!GEO['far:' + key]){ const f = S.far.clone(); f.scale(h, h, h); f.boundingBox = GEO[key].boundingBox; f.boundingSphere = GEO[key].boundingSphere; GEO['far:' + key] = f; }
+  const F = GEO['far:' + key], o = new THREE.BufferGeometry(); for(const [a, v] of Object.entries(F.attributes)) o.setAttribute(a, v); o.setIndex(F.index); o.setAttribute('aHide', g.attributes.aHide);
+  o.boundingBox = g.boundingBox; o.boundingSphere = g.boundingSphere; return o; }
 // a tree mesh planted outside the flora (the city's street trees, palms): dressed now if the species are in, else as soon as they are
 export function trackTrees(im){ if(Object.keys(SP).length) dressTrees(im); else { EXTRA.add(im); loadRealTrees(); } return im; }
 
@@ -69,6 +80,7 @@ export function dressTrees(im){ const T = im.userData.tree; if(!T || T.real) ret
   const k = map[T.vi % map.length], S = SP[k]; if(!S) return; const key = k + ':' + T.sMid.toFixed(2);
   if(!GEO[key]){ const g = S.geo.clone(), h = hOf(k) / T.sMid; g.scale(h, h, h); g.computeBoundingBox(); g.computeBoundingSphere(); GEO[key] = g; }
   im.geometry = ownGeo(GEO[key], im.instanceMatrix.count); im.material = S.mat; im.computeBoundingSphere(); T.real = k; T.h = hOf(k) / T.sMid; if(!k.includes(':')) NT.ims.add(im);   // (Z450 a bush has no whole near copy: its own mesh is the scan's)
+  const fb = farBody(S, key, hOf(k) / T.sMid, im.geometry); if(fb){ farSeed(im.geometry, fb); im.userData.viewLite = ASSETDIET.treeFar.at; }   // (A3 its far body, ready before inst-view wraps it)
   if(!S.leafy) for(const c of crushables) if(c.im === im) c.leafy = false;
   const girth = () => { for(const b of blocks) if(b.kind === 'trunk' && b.im === im){ const t = trunkOf(im.geometry, b.sy, TREEFALL.giantBand); if(t > 0) b.r = t * b.sh; } };
   if(DICE.building && diceSeeded()) Promise.resolve().then(girth); else girth(); }   // SYNC 1 in a seeded build the trunk keeps its drawn girth until the field stands (what is planted after it must not depend on whether the scan had loaded), then takes the real one   // Z404 a giant's solid trunk: the real one's girth (it was the procedural trunk's, 1.5× too thin)
