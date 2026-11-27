@@ -34,7 +34,6 @@ body:not(.touch) #topbar .val{font-size:25px!important;}
 #topbar .score .val{color:var(--m-amb)!important;} #topbar .stage .val{color:var(--m-grn)!important;text-shadow:0 0 7px rgba(140,230,110,.4)!important;} #topbar .wave .val{color:var(--m-ink)!important;text-shadow:none!important;}
 body:not(.touch) #topbar .cell + .cell::after{background:rgba(0,0,0,.55);box-shadow:1px 0 0 rgba(255,255,230,.07);}
 
-
 body:not(.touch) #contractChip{top:106px!important;}
 body:not(.touch) #bossbar{top:138px!important;padding:6px 12px 7px!important;}
 body:not(.touch) #combo{top:180px!important;}
@@ -102,7 +101,6 @@ body:not(.touch) #sqHud{padding:9px 11px!important;}
 #sqHud .sq-n,#sqHud .sq-p{border-radius:1px!important;}
 #sqHud .sq-g i{border-radius:1px!important;}
 
-
 body:not(.touch) #hud .ability .k{font-family:var(--m-mono);letter-spacing:.5px;}
 #abilities .ab-nm{font-family:'Saira Condensed',sans-serif!important;border-radius:1px;}
 #bossbar .bn{font-family:var(--m-sten)!important;font-weight:400!important;letter-spacing:4px!important;}
@@ -152,6 +150,6 @@ body.m-soldier #weaponchip .wc-am{font-size:1.35em;letter-spacing:.5px;}
   --plate:linear-gradient(180deg,#e2b443 0%,#c99a2e 55%,#a87a1c 100%);
   font-family:var(--m-sten)!important;font-weight:400!important;letter-spacing:5px!important;color:#1a1306!important;text-shadow:0 1px 0 rgba(255,236,190,.35)!important;
   border-color:rgba(40,30,10,.75)!important;box-shadow:inset 0 1px 0 rgba(255,240,200,.45),inset 0 -3px 0 rgba(60,40,8,.45),0 8px 22px rgba(0,0,0,.5)!important;}
-.btn,.btn-mini,.btn-arsenal,.btn-terrain{--plate:linear-gradient(180deg,rgba(44,48,35,.94),rgba(20,23,16,.96));}   /* one layer: theme.css sizes exactly two (sheen + plate) */
+.btn{--plate:linear-gradient(180deg,rgba(44,48,35,.94),rgba(20,23,16,.96));}   /* one layer: theme.css sizes exactly two (sheen + plate) */
 .btn.btn-primary{--plate:linear-gradient(180deg,#e2b443 0%,#c99a2e 55%,#a87a1c 100%);}   /* Z354 …but a primary button keeps its signal-yellow plate everywhere (VÀO TRẬN, XUẤT KÍCH were dark-on-dark) */
 body.touch #weaponchip .wc-nm{font-family:'Saira Condensed',sans-serif!important;font-weight:700!important;letter-spacing:1px!important;}   /* the stencil runs wide — phones keep the narrow face */

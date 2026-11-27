@@ -12,8 +12,7 @@
     #start .start-id{gap:6px;}
     #start .panel{gap:7px !important;}
     #start .btn-primary,body.touch #start .btn-primary{font-size:17px;padding:10px 40px;}
-    #start .btn-arsenal,#start .btn-terrain,body.touch #start .btn-arsenal,body.touch #start .btn-terrain{padding:9px 10px;font-size:12.5px;}
-    #start .btn-mini,body.touch #start .btn-mini{padding:7px 8px;font-size:11px;}
+
   }
   /* guide: two columns on wide screens so it fits at a glance */
   @media (min-width:900px) and (min-height:600px){ .guide{display:grid !important;grid-template-columns:1fr 1fr;max-width:920px;} }

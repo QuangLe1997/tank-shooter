@@ -31,18 +31,18 @@
   #start .panel{grid-template-columns:repeat(60,minmax(0,1fr)) !important;}   /* Z163 4 big buttons (×15) over 5 small ones (×12) */
   #start #playBtn,#start #continueBtn,#start .help{grid-column:1/-1;}
   #start #arsenalBtn,#start .terrain-pick{grid-column:span 15;}
-  #start .btn-mini{grid-column:span 12;}
+  
 }
 
 /* ---- BRIEFING (SẴN SÀNG): a chosen contract is unmistakable, then one big go button ---- */
 .brcard.on{border-color:var(--pick) !important;box-shadow:0 0 0 2px var(--pick),0 0 30px var(--pick-glow),var(--card-sh) !important;transform:translateY(-3px);}
 .brcard.on::after{content:'✓ ĐÃ CHỌN';position:absolute;top:8px;left:10px;background:var(--pick);color:#1b1206;font-size:10px;font-weight:900;letter-spacing:1.5px;padding:3px 10px;border-radius:999px;box-shadow:0 3px 10px rgba(0,0,0,.4);white-space:nowrap;}
 .br-pick span{opacity:.6;font-weight:600;letter-spacing:1px;text-transform:none;}
-.br-actions{display:flex;gap:14px;justify-content:center;align-items:stretch;margin:18px auto 4px;pointer-events:auto;flex-wrap:wrap;}
-.br-actions .btn,.dp-actions .btn{min-height:54px;min-width:190px;display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:0 26px;margin:0 !important;font-size:17px;letter-spacing:2px;}
-.br-actions .btn-primary,.dp-actions .btn-primary{min-width:250px;font-size:20px;}
+
+.dp-actions .btn{min-height:54px;min-width:190px;display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:0 26px;margin:0 !important;font-size:17px;letter-spacing:2px;}
+.dp-actions .btn-primary{min-width:250px;font-size:20px;}
 .dp-actions{display:flex;gap:14px;justify-content:center;align-items:stretch;}
-.dp-actions .btn-mini{min-width:150px;font-size:14px;}
+
 .br-hint{opacity:.7;}
 
 /* ---- PAUSE / GAME OVER: one column of equal buttons, utilities two-up ---- */
@@ -93,53 +93,10 @@
 @media (hover:hover){ .gcard:hover{transform:translateY(-4px);box-shadow:var(--card-sh-hover);} }
 .gcard.on{border-color:var(--green);box-shadow:0 0 0 2px var(--green),0 0 28px rgba(140,191,63,.35),var(--card-sh);}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 .gcard.shake{animation:gshake .35s;} @keyframes gshake{25%{transform:translateX(-6px);}75%{transform:translateX(6px);}}
 
 /* ===== Z161 WORKSHOP + CREW ===== */
 .gar-l{display:flex;gap:8px;flex-wrap:wrap;justify-self:start;}
-
-.kit-tabs{margin:2px 0 4px;}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 @media (max-width:760px){ .gar-top{grid-template-columns:1fr;justify-items:center;gap:6px;} .gar-l,.gar-wal{justify-self:center;} }
 
@@ -154,12 +111,6 @@
 .rk-lv{font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--amber);} .rk-sc{font-size:17px;font-weight:900;color:#ffd24a;text-align:right;}
 .rk-row.me{border-color:var(--green);box-shadow:0 0 0 2px var(--green),var(--card-sh);} .rk-me{margin-top:8px;} .rk-msg{color:var(--muted);text-align:center;padding:24px;font-size:13px;}
 @media (max-width:560px){ .rk-row{grid-template-columns:40px 1fr 78px;} .rk-lv{display:none;} }
-
-
-
-
-
-
 
 /* ===== Z168 controller: no mouse-hover lift while a pad / keyboard drives (a resting cursor used to fight the focus ring → flicker) ===== */
 body.pad :is(.btn,.gcard,.brcard,.upcard,.case,.ldcard,.bs-lv,.bs-map,.tc-card,.shop-tab,.seg-chip):hover:not(.padfocus),body.kbnav :is(.btn,.gcard,.brcard,.upcard,.case,.ldcard,.bs-lv,.bs-map,.tc-card,.shop-tab,.seg-chip):hover:not(.padfocus){transform:none !important;filter:none !important;}
@@ -192,12 +143,6 @@ body.touch #tipCard{top:auto !important;bottom:12px;left:50% !important;right:au
   #start #arsenalBtn,#start .terrain-pick{grid-column:span 3 !important;}
   #start #rankBtn,#start #guideBtn,#start #settingsBtn,#start #resetBtn{grid-column:span 3 !important;} #start #keysBtn{display:none !important;}
 }
-
-
-
-
-
-
 
 .case{display:flex;flex-direction:column;}
 /* garage on short screens: smaller photos, more cards per row */

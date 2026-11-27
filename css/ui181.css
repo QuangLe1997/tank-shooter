@@ -17,14 +17,10 @@
 .seg-chip.on small{color:rgba(255,226,170,.85);}
 .seg-chip.on::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--sel-2);box-shadow:0 0 8px rgba(255,217,138,.9);margin-right:2px;}
 /* ---------- settings rows ---------- */
-.set-row{min-height:58px;padding:10px 16px !important;border-radius:14px !important;background:var(--card) !important;border:1px solid var(--edge-1) !important;box-shadow:0 8px 22px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.05);}
-.set-row:hover{border-color:var(--edge-2) !important;}
-.set-l{flex:none;white-space:nowrap;font-family:var(--hud);font-size:13.5px !important;font-weight:700 !important;letter-spacing:2px !important;color:#ffe8b6 !important;text-align:left;}
-body:not(.pad) .set-padview{display:none !important;}
-.set-row .seg{flex:1;min-width:0;}
+
 @media (min-width:1280px){ #settings .settings{max-width:1180px !important;} }   /* the big controller map only when a controller is in use (it is in PHÍM TẮT too) */
 /* ---------- buttons ---------- */
-.btn-mini{min-height:40px;display:inline-flex !important;align-items:center;justify-content:center;gap:8px;font-size:12.5px !important;letter-spacing:2.2px !important;}
+
 .btn:focus-visible{outline:2px solid var(--sel-2);outline-offset:3px;}
 .btn.btn-primary{text-shadow:0 1px 0 rgba(255,240,200,.55);}
 /* ---------- titles & subtitles on every dialog ---------- */
@@ -44,8 +40,6 @@ body:not(.pad) .set-padview{display:none !important;}
 .brcard .ds{font-size:12.5px !important;line-height:1.45 !important;color:var(--txt-2) !important;letter-spacing:.2px !important;}
 .brcard .br-tag{font-size:9.5px !important;letter-spacing:1.6px;}
 
-
-
 /* ---------- field manual ---------- */
 .guide-row{border-radius:14px !important;background:var(--card) !important;border:1px solid var(--edge-1) !important;padding:14px 16px !important;}
 .guide-row .g-ic{width:42px;height:42px;flex:none;border-radius:12px;display:grid;place-items:center;background:rgba(233,182,76,.1);border:1px solid rgba(233,182,76,.28);color:var(--sel-2);}
@@ -63,63 +57,17 @@ body:not(.pad) .set-padview{display:none !important;}
 
 @keyframes tiIn{from{opacity:0;transform:translateY(16px) scale(.985);}to{opacity:1;transform:none;}}
 
-
-
-
-
-
-
-
-
-
-
 @keyframes tiFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 .tc-head{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
 .tc-n{font-family:var(--hud);font-size:10px;font-weight:700;letter-spacing:2.5px;color:var(--sel);}
-
-
-
 
 #trainInvite kbd{display:inline-block;min-width:22px;margin:0 2px;padding:2px 7px;border-radius:6px;font-family:var(--hud);font-size:11.5px;font-weight:800;letter-spacing:1px;text-align:center;color:#1b1306;
   background:linear-gradient(180deg,#fff3cf,#e9c470);box-shadow:0 2px 0 #8a6420,0 3px 6px rgba(0,0,0,.4);}
 
 .tc-bar{height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden;} .tc-bar u{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#e3a83e,#ffe6a8);transition:width .25s var(--ease);}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /* ---------- shop item detail: stat panel + description readable at a glance ---------- */
-
 
 /* =====================================================================================================================
    Z183 PHONE HUD DECLUTTER — the space above the tank is where the enemy comes from: nothing big may sit there.
@@ -150,8 +98,6 @@ body.touch #lootToast .lt-ic{width:24px !important;height:24px !important;paddin
 body.touch #lootToast .lt-ds{display:none !important;} body.touch #lootToast .lt-nm{font-size:12px !important;} body.touch #lootToast .lt-nt{font-size:10px !important;margin-top:0 !important;}
 @media (max-width:760px){ body.touch #objChip{left:calc(50% + 72px) !important;max-width:30vw !important;} }   /* narrow phones: clear of the weapon chip */
 /* Z184 camera tuning steppers: the value sits between − and + */
-.seg-chip.seg-val{min-width:64px;cursor:default;font-variant-numeric:tabular-nums;} .seg-chip.seg-val::before{display:none;}
-.set-row.set-cam .seg-note{flex:none;}
 
 /* Z189 HIT DIRECTION — a red crescent at the screen edge pointing at whoever just hit you */
 #hitDir{position:fixed;inset:0;pointer-events:none;z-index:12;}

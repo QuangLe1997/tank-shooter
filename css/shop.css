@@ -2,69 +2,18 @@
 
    /* crisp: no blur + transparent centre so the 3D item shows bright/sharp{position:absolute;top:0;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:11px;padding:calc(max(12px,env(safe-area-inset-top)) + 4px) 12px 8px;pointer-events:none;z-index:2;}
 
-
-
   .shop-tabs{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;pointer-events:auto;max-width:94vw;}
   .shop-tab{cursor:pointer;font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;padding:6px 13px;border-radius:999px;
     background:rgba(8,12,8,.5);border:1px solid rgba(255,255,255,.12);color:var(--muted);backdrop-filter:blur(3px);transition:.12s;}
   .shop-tab:hover{color:var(--ink);border-color:rgba(255,206,110,.5);}
   .shop-tab.on{background:linear-gradient(180deg,rgba(243,196,94,.92),rgba(205,124,32,.88));color:#1c1404;border-color:rgba(255,230,175,.8);box-shadow:0 4px 14px rgba(243,185,74,.35);}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
   .case{--rar:#9bd14a;position:relative;cursor:pointer;border-radius:14px;padding:11px 10px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:auto;
     background:linear-gradient(180deg,rgba(24,30,38,.94),rgba(8,11,16,.97));border:1px solid rgba(255,255,255,.1);box-shadow:0 8px 20px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06);transition:transform .12s,border-color .12s,box-shadow .12s;}
   .case.rar-t1{--rar:#9fb07a;} .case.rar-t2{--rar:#5aa9ff;} .case.rar-t3{--rar:#c08bff;} .case.rar-vip{--rar:#7fe7ff;} .case.rar-up{--rar:#9bd14a;}
   .case:hover{transform:translateY(-4px);border-color:var(--rar);box-shadow:0 16px 32px rgba(0,0,0,.6);}
 
-
-
-
-
-
-
-
   .case.owned{filter:grayscale(.5);opacity:.66;}
-
-
-
 
   body.shopopen #hud{display:none !important;}   /* keep the battle HUD from bleeding through the transparent 3D shop */
   
@@ -97,63 +46,11 @@
     #combo{top:70px;font-size:22px;}
   }
 
-
 /* ---- Z106 clearer shop: role tag,mini bars,shortfall,upgrade pips,effectiveness chips{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:6px;font-size:9.5px;font-weight:800;letter-spacing:.5px;color:var(--muted);}
-
-
-
-
-
-
-
-
-
-
-
 
 .case.owned{filter:none;opacity:.82;} .case.owned{border-color:rgba(155,224,74,.45);}
 
-
-
-
-
-
-
 .dl{font-style:normal;font-size:9px;font-weight:900;margin-left:5px;padding:1px 4px;border-radius:4px;} .dl.up{color:#9be04a;background:rgba(155,224,74,.12);} .dl.dn{color:#ff9a7a;background:rgba(255,120,90,.12);}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /* Z129 default-gun star in the arsenal */
 .ldcard .dflt{position:absolute;right:6px;top:6px;font:900 10px/1 'Saira Condensed',Rajdhani,sans-serif;letter-spacing:.5px;padding:3px 6px;border-radius:6px;color:#9aa78a;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.15);}
@@ -169,9 +66,6 @@
 .ldcard{width:150px;padding:12px 8px 10px;}
 .gunpic.gp-ld{width:100%;height:62px;margin:4px 0 6px;}
 .ldcard.locked .gunpic img{filter:grayscale(1) brightness(.7);}
-
-
-
 
 #weaponchip .gunpic.wc-ic{width:56px;height:26px;}
 .gunicon{width:50px;}

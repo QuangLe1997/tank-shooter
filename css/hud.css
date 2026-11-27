@@ -109,19 +109,11 @@ body.cam-drag, body.cam-drag *{cursor:grabbing !important;}   /* Z239 middle-but
   background:rgba(8,10,8,.72);border:1px solid rgba(155,224,74,.28);color:#d8dccc;font:11px/1.55 ui-monospace,Menlo,monospace;letter-spacing:.2px;white-space:nowrap;}
 /* Z243 shield-pylon markers: a reticle + label in view{position:fixed;inset:0;pointer-events:none;z-index:14;}
 
-
-
-
-
-
-
 @keyframes pymPulse{0%,100%{transform:rotate(45deg) scale(1);}50%{transform:rotate(45deg) scale(1.18);}}
 
 /* Z245 unit pick in CHUẨN BỊ TRẬN */
 .bs-unit{display:flex;gap:8px;margin-right:auto;}
-.bs-uchip{cursor:pointer;padding:7px 12px;border:1px solid rgba(214,166,62,.45);border-radius:6px;background:rgba(10,14,10,.6);color:#d8dccc;font:700 13px/1.1 inherit;letter-spacing:1px;text-align:center;}
-.bs-uchip small{display:block;font-size:10px;font-weight:500;opacity:.7;letter-spacing:.5px;margin-top:2px;}
-.bs-uchip.on{border-color:#d6a63e;background:rgba(214,166,62,.18);color:#ffe2a0;box-shadow:0 0 12px rgba(214,166,62,.35) inset;}
+
 /* Z350 the soldier's rank, worn over his health bar: insignia + rank on the left, a thin gold line filling toward the next rank under the bar */
 .wbar > em.rk{position:absolute;left:-2px;top:-12px;display:flex;align-items:center;gap:3px;font-style:normal;font-size:8px;font-weight:800;letter-spacing:.6px;white-space:nowrap;color:#d8dcc4;text-shadow:0 1px 2px #000,0 0 3px #000;}
 .wbar > em.rk s{text-decoration:none;color:#b8c0a0;letter-spacing:-1px;}

@@ -112,7 +112,6 @@ body.menu-in #start .panel > *:nth-child(n+7){animation-delay:.42s;}
 body.menu-in #start .start-id{animation:menuIn .5s ease both;}
 @keyframes menuIn{0%{opacity:0;transform:translateY(18px) scale(.96);}100%{opacity:1;transform:none;}}
 
-
 /* Z119 deploying veil — covers the world build and the shader warm-up so the intro sweep starts smooth */
 /* ===== NO-TANKS 8 THE DEPLOYMENT ORDER (#loadVeil, ui/load-veil.js): the battlefield's own ground, darkened, under a map grid and a slow radar sweep;
    the order sheet on the left third — what the operation is, the battlefield in stencil, where and when, the brief, and the three real steps. The

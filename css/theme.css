@@ -6,26 +6,26 @@
   :root{ --hud:'Saira Condensed','Rajdhani','Segoe UI',system-ui,-apple-system,Arial,sans-serif; --cham:10px;
     --plate:linear-gradient(180deg,rgba(40,48,32,.9),rgba(15,19,12,.94)); --edge:rgba(196,214,160,.2); --brass:#e9b64c; }
   body{font-family:var(--hud);}
-  .btn,.btn-mini,.btn-arsenal,.btn-terrain,.upcard,.brcard{
+  .btn,.upcard,.brcard{
     font-family:var(--hud)!important; letter-spacing:1.6px;
     clip-path:polygon(var(--cham) 0,100% 0,100% calc(100% - var(--cham)),calc(100% - var(--cham)) 100%,0 100%,0 var(--cham));
     background-image:linear-gradient(115deg,transparent 38%,rgba(255,255,255,.13) 50%,transparent 62%),var(--plate)!important;
     background-size:260% 100%,100% 100%!important; background-position:140% 0,0 0!important; background-repeat:no-repeat!important;
     border:1px solid var(--edge)!important; box-shadow:inset 0 1px 0 rgba(255,255,255,.07),inset 0 -2px 0 rgba(0,0,0,.35)!important;
     transition:transform .18s cubic-bezier(.2,.8,.3,1),background-position .55s ease,border-color .25s,filter .2s,color .2s!important; }
-  .btn:hover,.btn-mini:hover,.btn-arsenal:hover,.btn-terrain:hover,.upcard:hover,.brcard:hover{
+  .btn:hover,.upcard:hover,.brcard:hover{
     background-position:-40% 0,0 0!important; border-color:rgba(233,182,76,.6)!important; filter:brightness(1.12); transform:translateY(-2px); }
-  .btn:active,.btn-mini:active,.btn-arsenal:active,.btn-terrain:active,.upcard:active,.brcard:active{ transform:translateY(0) scale(.975); filter:brightness(.95); }
-  .btn:focus-visible,.btn-mini:focus-visible,.upcard:focus-visible,.brcard:focus-visible{ outline:2px solid var(--brass); outline-offset:3px; }
+  .btn:active,.upcard:active,.brcard:active{ transform:translateY(0) scale(.975); filter:brightness(.95); }
+  .btn:focus-visible,.upcard:focus-visible,.brcard:focus-visible{ outline:2px solid var(--brass); outline-offset:3px; }
   /* hero action: brass-amber, engraved text, slow ready-pulse */
   #start .panel .btn-primary,.btn-primary{
     --plate:linear-gradient(180deg,#ffd98a 0%,#eab04a 46%,#b97a22 100%);
     color:#1b1306!important; font-weight:800!important; letter-spacing:4px!important; text-shadow:0 1px 0 rgba(255,236,190,.55);
     border-color:rgba(255,226,150,.85)!important; animation:z78pulse 2.6s ease-in-out infinite; }
   #start .panel .btn-primary:hover,.btn-primary:hover{ filter:brightness(1.08) saturate(1.1); }
-  #start .panel .btn-continue,.btn-continue{ --plate:linear-gradient(180deg,rgba(150,190,80,.95),rgba(78,110,34,.95)); color:#0f1606!important; text-shadow:0 1px 0 rgba(220,255,170,.4); }
+  
   @keyframes z78pulse{0%,100%{filter:drop-shadow(0 0 0 rgba(233,182,76,0));}50%{filter:drop-shadow(0 0 14px rgba(233,182,76,.55));}}
-  .btn .ic,.btn-mini .ic,.btn-arsenal .ic,.btn-terrain .ic{ filter:drop-shadow(0 0 4px currentColor); opacity:.95; }
+  .btn .ic{ filter:drop-shadow(0 0 4px currentColor); opacity:.95; }
   /* HUD plates: dark glass, amber accent along the top edge, chamfer */
   .chip,.ability,#weaponchip{
     clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);
@@ -47,7 +47,7 @@
   .title{font-family:var(--hud)!important;letter-spacing:6px;}
   .help kbd{font-family:var(--hud);font-weight:700;border-radius:3px;background:rgba(233,182,76,.1);border-color:rgba(233,182,76,.3);}
   .upcard,.brcard{border-radius:0!important;}
-  @media (prefers-reduced-motion:reduce){ *{animation:none!important;} .btn,.btn-mini,.upcard,.brcard{transition:none!important;} }
+  @media (prefers-reduced-motion:reduce){ *{animation:none!important;} .btn,.upcard,.brcard{transition:none!important;} }
 
   /* Z83 · operation objective chip + HQ radio */
   #objChip{position:absolute;left:50%;top:36px;transform:translateX(-50%);min-width:210px;max-width:min(320px,60vw);padding:5px 12px 6px;

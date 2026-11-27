@@ -106,25 +106,11 @@
   /* ---- profile / arsenal UI ---- */
   .hello{font-size:13px;letter-spacing:2px;color:var(--green);font-weight:800;text-transform:uppercase;opacity:.95;}
   .hello b{color:var(--amber);}
-  .startrow{display:flex;gap:10px;justify-content:center;width:100%;}
-  .btn-mini{pointer-events:auto;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;letter-spacing:1.5px;
-    padding:8px 14px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--muted);text-transform:uppercase;transition:transform .12s,border-color .12s,color .12s;}
-  .btn-mini .ic{width:15px;height:15px;flex:0 0 auto;}
-  .btn-mini:hover{transform:translateY(-2px);border-color:var(--green);color:var(--ink);}
+
   #resetBtn:hover{border-color:var(--danger);color:#ff9a86;}
   /* prominent ARSENAL button (open the weapon-selection table) */
-  .btn-arsenal{pointer-events:auto;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:9px;
-    font-size:15px;font-weight:800;letter-spacing:2px;text-transform:uppercase;padding:12px 26px;border-radius:12px;
-    background:rgba(8,14,6,.6);border:1.5px solid rgba(140,191,63,.6);color:#e3eccf;
-    box-shadow:0 6px 20px rgba(0,0,0,.45);text-shadow:0 1px 6px rgba(0,0,0,.9);transition:transform .12s,border-color .12s,background .12s;}
-  .btn-arsenal .ic{width:19px;height:19px;color:var(--green);flex:0 0 auto;}
-  .btn-arsenal b{color:#ffce4a;}
-  .btn-arsenal:hover{transform:translateY(-2px);border-color:var(--green);background:rgba(20,32,10,.72);}
-
-
 
   /* wallet chips (coins + diamonds) */
-
 
   /* terrain picker on the start screen */
   .terrain-pick{margin:8px auto 4px;max-width:460px;pointer-events:auto;}
@@ -136,10 +122,7 @@
   .tp-chip.on{border-color:var(--green);background:rgba(140,191,63,.2);box-shadow:0 0 9px rgba(140,191,63,.4);}
   .tp-sw{width:13px;height:13px;border-radius:4px;border:1px solid rgba(255,255,255,.35);display:inline-block;}
   /* start-screen BATTLEFIELD summary button (opens the 3D picker) */
-  .btn-terrain{pointer-events:auto;cursor:pointer;display:inline-flex;align-items:center;gap:9px;font-size:13px;font-weight:800;letter-spacing:1px;color:var(--ink);
-    padding:9px 18px;border-radius:12px;border:1px solid var(--line);background:linear-gradient(180deg,rgba(20,28,14,.82),rgba(10,16,8,.9));transition:border-color .12s,transform .12s,box-shadow .12s;}
-  .btn-terrain:hover{border-color:rgba(140,191,63,.55);transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.4);}
-  .btn-terrain .ic{width:16px;height:16px;color:var(--green);} .btn-terrain b{color:#ffe8b6;}
+
   /* HOW TO PLAY field manual */
   .guide{max-width:660px;width:100%;margin:14px auto 0;display:flex;flex-direction:column;gap:9px;max-height:60vh;overflow-y:auto;text-align:left;pointer-events:auto;padding:2px 8px;}
   .guide-row{display:flex;gap:13px;align-items:flex-start;background:linear-gradient(180deg,rgba(20,28,14,.6),rgba(10,16,8,.6));border:1px solid var(--line);border-radius:12px;padding:11px 15px;}
@@ -151,8 +134,7 @@
   body.touch .guide{max-height:66vh;gap:7px;} body.touch .guide-row{padding:8px 12px;}
   /* SETTINGS panel */
   .settings{max-width:540px;width:100%;margin:14px auto 0;display:flex;flex-direction:column;gap:10px;pointer-events:auto;}
-  .set-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(180deg,rgba(20,28,14,.6),rgba(10,16,8,.6));border:1px solid var(--line);border-radius:12px;padding:11px 16px;}
-  .set-l{font-size:13px;font-weight:800;letter-spacing:1.5px;color:#ffe8b6;}
+
   .seg{display:inline-flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;}
   .seg-chip{cursor:pointer;font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--ink);padding:6px 12px;border-radius:9px;border:1px solid var(--line);background:rgba(10,16,8,.6);transition:border-color .12s,background .12s;white-space:nowrap;}
   .seg-chip:hover{border-color:rgba(140,191,63,.5);}
@@ -166,7 +148,6 @@
   #coach.on{opacity:1;transform:translateX(-50%) translateY(0);}
   body.touch #coach{top:64px;font-size:13px;}
 
-
   .shop-hint{font-size:11px;letter-spacing:.5px;color:var(--muted);margin:-2px 0 2px;text-align:center;}
 
 /* Z111b back-to-menu on the briefing screen (Esc does the same) */
@@ -177,7 +158,7 @@
 @keyframes padfocus{from{outline-color:#ffd96e;}to{outline-color:#fff6d2;}}   /* Z168 colour-only pulse: the old brightness filter repainted the whole card every frame */
 /* Z150 small option buttons (chips, map / hour / weather options, tabs, mini buttons, HUD gun icons): the focused one turns solid amber
    with dark bold text and grows — impossible to miss from the sofa; a chip that is ALSO the current value keeps a green inner ring */
-.seg-chip.padfocus,.bs-op.padfocus,.bs-mode.padfocus,.shop-tab.padfocus,.btn-mini.padfocus,.dp-step.padfocus,.tc-card.padfocus,.br-card.padfocus,.upcard.padfocus{
+.seg-chip.padfocus,.bs-op.padfocus,.bs-mode.padfocus,.shop-tab.padfocus,.dp-step.padfocus,.tc-card.padfocus,.upcard.padfocus{
   background:linear-gradient(180deg,#ffe28a,#f0b43c) !important;color:#1b1206 !important;border-color:#fff2c0 !important;font-weight:900 !important;text-shadow:none !important;transform:scale(1.08);z-index:3;}
 .seg-chip.padfocus small,.bs-op.padfocus small,.bs-mode.padfocus small{color:#3a2a0c !important;opacity:1 !important;}
 .seg-chip.on.padfocus,.bs-op.on.padfocus,.bs-mode.on.padfocus{box-shadow:inset 0 0 0 3px #4f8f1c,0 0 0 11px rgba(255,214,110,.30),0 0 40px 8px rgba(255,205,100,.85) !important;}
@@ -185,8 +166,7 @@
 .padfocus svg{color:inherit;}
 /* Z126 room round the scrolling lists so the ring is never cut off at their edges */
 .bs-body{padding:14px 18px 16px !important;} .ks-body{padding:14px 16px !important;}
-.seg-note{font-size:11px;color:var(--muted);padding:6px 8px;max-width:340px;line-height:1.3;}
-body.pad .seg-note{color:#9be04a;}
+
 body.touch.pad #touch, body.touch.pad #mbtns, body.touch.pad #stickL{display:none !important;}
 
 /* Z118 rebind sheet */
@@ -200,14 +180,14 @@ body.touch.pad #touch, body.touch.pad #mbtns, body.touch.pad #stickL{display:non
 .bind-chip.reset{color:#ffd27a;} @keyframes capBlink{to{opacity:.55;}}
 
 /* Z118 settings: two columns on wide screens (the controller rows made it a long scroll) */
-@media (min-width:980px){ #settings .settings{display:grid;grid-template-columns:1fr 1fr;max-width:1060px;gap:10px 14px;} #settings .set-row.set-pad{grid-column:1/-1;} }
+@media (min-width:980px){ #settings .settings{display:grid;grid-template-columns:1fr 1fr;max-width:1060px;gap:10px 14px;}  }
 /* Z118 menu hint bar — shows how to drive the menus with the pad / keyboard */
 #navHint{position:fixed;left:50%;bottom:max(8px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;display:none;padding:6px 14px;border-radius:999px;
   background:rgba(8,10,8,.78);border:1px solid rgba(255,210,122,.35);color:#ffe8b0;font:700 11px/1.2 'Saira Condensed',Rajdhani,sans-serif;letter-spacing:.6px;pointer-events:none;white-space:nowrap;}
 #navHint span{display:none;}
 body.inmenu.pad #navHint, body.inmenu.kbnav #navHint, body.shopopen.pad #navHint{display:block;}
 body.pad #navHint .nh-pad{display:inline;} body.kbnav:not(.pad) #navHint .nh-kb{display:inline;}
-body:not(.touch) .set-row.set-mobile{display:none;}   /* phone vibration: only on touch devices */
+   /* phone vibration: only on touch devices */
 
 /* Z123 pad layout wizard */
 #padWiz{gap:10px;} .pw-id{font-size:11px;color:var(--muted);max-width:92vw;text-align:center;} .pw-step{font:800 clamp(22px,5vw,40px)/1.1 'Saira Condensed',Rajdhani,sans-serif;color:#ffd27a;text-align:center;letter-spacing:1px;min-height:1.2em;}
@@ -231,7 +211,7 @@ body:not(.touch) .set-row.set-mobile{display:none;}   /* phone vibration: only o
 .pv-b.tgt,.pv-cap.tgt{animation:pvp .6s ease-in-out infinite alternate;}
 @keyframes pvp{from{filter:drop-shadow(0 0 2px #ffd27a) brightness(1.1);}to{filter:drop-shadow(0 0 13px #ffd27a) brightness(1.9);}}
 .ks-grp.padview{grid-column:1/-1;opacity:1;} .ks-grp.padview .ks-gt{display:flex;justify-content:space-between;gap:10px;} .ks-grp.padview .ks-gt i{font-style:normal;font-size:9px;opacity:.6;letter-spacing:.8px;text-align:right;}
-.set-padview{grid-column:1/-1;justify-content:center;} #setPadView{width:100%;overflow-x:auto;}
+ #setPadView{width:100%;overflow-x:auto;}
 .pw-view{width:min(92vw,700px);overflow-x:auto;}
 @media (max-height:520px){ .pad-svg{max-width:640px;min-width:560px;} .pw-view{width:min(92vw,480px);} }
 .pad-svg.bare{aspect-ratio:560/380;max-width:520px;min-width:0;} .pad-svg.bare .pv-t,.pad-svg.bare .pv-s,.pad-svg.bare .pv-ld,.pad-svg.bare .pv-dot{display:none;} .pw-view{display:flex;justify-content:center;}

@@ -1,6 +1,6 @@
 /* css/deploy.css — Z105 deployment screen (before every stage): key points, troop steppers, specialists, guns & ammo, mini-map */
 #deploy{gap:10px;justify-content:flex-start;padding-top:max(18px,env(safe-area-inset-top));overflow-y:auto;}
-#deploy .dp-head{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;justify-content:center;}
+
 #deploy .dp-total{font-size:13px;font-weight:800;letter-spacing:1px;color:var(--ink);padding:5px 12px;border-radius:999px;background:rgba(140,191,63,.14);border:1px solid rgba(140,191,63,.45);}
 #deploy .dp-total b{color:#9be04a;} #deploy .dp-total .warn{color:#ffcf5a;}
 #deploy .dp-body{display:flex;gap:14px;width:min(920px,96vw);align-items:flex-start;justify-content:center;}
