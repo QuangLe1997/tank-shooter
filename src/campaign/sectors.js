@@ -52,7 +52,7 @@ export function sectorCur(){ if(!SECT.on) return null; if(SECT.spec != null){ _s
 // the layout of the sector being built (null: no sector run — every builder keeps its own numbers)
 export function sectorLay(){ const c = sectorCur(); return c ? c.lay : null; }
 // the objective's kind for this sector: null no sector run (the operation's own) · '' none · a kind of OBJECTIVES
-export function sectorObj(){ const c = sectorCur(); return c ? (c.type === 'sabotage' || c.type === 'infiltrate' ? c.obj : '') : null; }   // (SECTOR 2 an infiltration plants its charge on one)
+export function sectorObj(){ const c = sectorCur(); return c ? (c.type === 'sabotage' || c.type === 'infiltrate' ? c.obj : c.type === 'breach' ? (SECT.forceObj || '') : '') : null; }   // (SECTOR 3 a breach with no gated fort: a bunker's door)   // (SECTOR 2 an infiltration plants its charge on one)
 // campaign/boss.js startBoss: outside the boss sector the general stays in his quarters
 export function sectorBossHold(){ const c = sectorCur(); return !!c && c.type !== 'boss'; }
 
@@ -162,6 +162,9 @@ function warm(){ const tr = SECT.tr, seq = SECT.seq; tr.ph = 'warming';
   //   in the 3-2-1 or the first wave. Shown for the one synchronous compile call (no light among them: the light count is what the programs are keyed on), hidden again.
   const hid = []; scene.traverse(o => { if(o.visible === false && !o.isLight){ let lit = false; o.traverse(q => { if(q.isLight) lit = true; }); if(!lit) hid.push(o); } });
   let P; for(const o of hid) o.visible = true; try{ P = compileReady(scene, ms); } finally { for(const o of hid) o.visible = false; } tr.hid = hid.length;
+  // SECTOR 3 a new hour, once more with the lights that are off switched on too (a flare, a muzzle's light, a searchlight that wakes): each one lit later changes the light
+  //   count every program is keyed on — the first night fight recompiled the whole field in one 0.75 s frame. The night variants are built here, under the black.
+  if(tr.hour){ const off = []; scene.traverse(o => { if(o.visible === false) off.push(o); }); for(const o of off) o.visible = true; let P2; try{ P2 = compileReady(scene, ms); } finally { for(const o of off) o.visible = false; } tr.lit = off.filter(o => o.isLight).length; P = Promise.all([P, P2]); }
   Promise.race([P, new Promise(r => setTimeout(r, ms))]).catch(() => {}).then(() => requestAnimationFrame(() => requestAnimationFrame(go))); }
 // every frame of the transit (game/loop.js, S.mode 'transit')
 export function updateSectorTransit(dt, now){ const tr = SECT.tr; if(!tr){ S.mode = 'playing'; return; } tr.t += dt;
@@ -174,7 +177,7 @@ export function updateSectorTransit(dt, now){ const tr = SECT.tr; if(!tr){ S.mod
     camera.position.lerpVectors(tr.p0, tr.p1, u); _look.lerpVectors(tr.l0, tr.l1, u); camera.lookAt(_look);
     if(tr.rideT >= tr.ride){ transitEnd(); } } }
 let _look = null;
-function transitEnd(){ const tr = SECT.tr; SECT.stats.transits.push({ i:SECT.i, retry:tr.retry, s:+tr.t.toFixed(2), buildMs:tr.ms, warmMs:tr.warm, hid:tr.hid, n:tr.n }); note('arrive', tr.ms + ' ms');
+function transitEnd(){ const tr = SECT.tr; SECT.stats.transits.push({ i:SECT.i, retry:tr.retry, s:+tr.t.toFixed(2), buildMs:tr.ms, warmMs:tr.warm, hid:tr.hid, lit:tr.lit || 0, n:tr.n }); note('arrive', tr.ms + ' ms');
   SECT.dark = tr.ph === 'dark'; SECT.tr = null; SECT.state = 'arm'; if(!SECT.dark) sectorTransitShow(null); S.mode = 'countdown';   // (beginStage sets it too: nothing runs a frame of play before its 3-2-1)
   goQuiet(true); const c = S.contract || CONTRACTS.find(x => x.id === 'steady') || CONTRACTS[0]; beginStage({ ...c, name:'' }, {}); }   // the 3-2-1 that waits for the shaders, heard (its beeps) but not shown: no number, mission line or contract name in the aim zone
 // a sector's 3-2-1 runs hidden (css/sector.css body.sectgo): the place and the goal were on the transit's card, its start goes to the top edge

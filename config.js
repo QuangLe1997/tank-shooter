@@ -3823,23 +3823,25 @@ export const CONQUEST = { on:true, carry:3, migrate:{ cap:9 }, next:4.2,
 //     warmHour (SECTOR 2): the warm-up's cap when the sector's hour differs from the last (every lit material recompiles) — then no ride: the black stays over the
 //     hidden 3-2-1 (it compiles what only shows at GO) and lifts with the fight; it ends `dark` s before min so the whole stays near min
 //   SECTOR 2 four more types (campaign/sector-goals.js; a token's third field: rescue — who is held (who), infiltrate — the target's OBJECTIVES kind):
-//     rescue — a walled cell (cell m square, wallH m, a door m doorway) d m ahead, guards posted round it (rpg of them with launchers, `ring` m out); the guards down,
+//     rescue — a pen d m ahead on clear ground (clear m): two of the field's shipping containers gap m apart, the back closed by the land's heavy piece, sandbag nests
+//       at the open end, a guard post (SECTOR 3: real pieces, wallHp each container), guards posted round it (rpg of them with launchers, `ring` m out); the guards down,
 //       within reach m of the hostage for free s frees him; he walks (walk m/s, follow m behind) — within evacR m of the sector's start he is out. Alerted enemies within
 //       fireR m of him take dps a man a second off his hp: at 0 the sector is lost · time s in all
-//     breach — the field's strongest gate × gateK (at most gateMax hp; a thicker one stays); it down, the fort's garrison and keeper fall (its capture) before time s
+//     breach — the field's strongest gate × gateK (at most gateMax hp; a thicker one stays; no gated fort: a `fallback` OBJECTIVES bunker's door instead); it down, the fort's garrison and keeper fall (its capture) before time s
 //     infiltrate — night; no waves while unseen; plant the charge plant s within plantR m of the target · a full alarm: hold holdT s, then a helicopter waits wait s at a
 //       landing zone lzD m from him — inside its lzR m ring board s · time s to plant
 //     pursuit — trucks (hp each, r m solid, gap m apart, speed m/s, lead m ahead at the start) drive a trail (else a road across the field, at least minL m) to its way out:
-//       a truck within exitR m of it loses the sector; each burnt one leaves `bail` of its crew · climax ev: a big event, 'squad' (a squad at the goal), 'patrol' (guards at the target)
+//       a truck within exitR m of it loses the sector; each burnt one leaves `bail` of its crew · SECTOR 3: the road picked with the fewest fixed solids on it (a trail, or one
+//       found round them on a grid of cell m), loose cover / rocks / wrecks / containers on it cleared · climax ev: a big event, 'squad' (a squad at the goal), 'patrol' (guards at the target)
 export const SECTOR = { on:true, retries:3,
   types:{ hold:{ vi:'GIỮ ĐẦU CẦU', hold:75, t:900, overrunT:9, first:4, again:6, climax:{ at:0.5, ev:'bombing' } },
           sabotage:{ vi:'PHÁ MỤC TIÊU', time:300, climax:{ at:0.5, ev:'crash' } },
           boss:{ vi:'HẠ TƯỚNG THÀNH', climax:null },
-          rescue:{ vi:'GIẢI CỨU', time:300, d:[70, 115], cell:7, wallH:3.2, door:2.2, ring:6, guards:5, rpg:1, reach:2.6, free:3, walk:5.5, follow:2.4, hp:100, fireR:14, dps:5, evacR:8,
+          rescue:{ vi:'GIẢI CỨU', time:300, d:[70, 115], clear:11, gap:3.2, wallHp:6000, ring:6, guards:5, rpg:1, reach:2.6, free:3, walk:5.5, follow:2.4, hp:100, fireR:14, dps:5, evacR:8,
             who:{ civ:'dân thường', pilot:'phi công', minh:'Minh', miner:'thợ mỏ', family:'vợ con Khang' }, climax:{ at:0.5, ev:'squad' } },
-          breach:{ vi:'PHÁ CỔNG', time:420, gateK:3, gateMax:4000, climax:{ at:0.5, ev:'squad' } },
+          breach:{ vi:'PHÁ CỔNG', time:420, gateK:3, gateMax:4000, fallback:'command', climax:{ at:0.5, ev:'squad' } },
           infiltrate:{ vi:'ĐỘT NHẬP', night:true, time:300, plantR:3, plant:5, holdT:45, lzD:[30, 55], lzR:6, board:3, wait:40, climax:{ at:0.5, ev:'patrol' } },
-          pursuit:{ vi:'TRUY KÍCH', trucks:3, hp:650, r:3, gap:16, speed:7.5, lead:30, minL:180, exitR:8, bail:2, climax:{ at:0.5, ev:'squad' } } },
+          pursuit:{ vi:'TRUY KÍCH', trucks:3, hp:650, r:3, gap:16, speed:7.5, lead:30, minL:180, exitR:8, bail:2, cell:4, climax:{ at:0.5, ev:'squad' } } },
   places:{ outskirts:{ vi:'NGOẠI VI', forts:0, capital:false, cover:1.25, towers:0.7 },
            village:{ vi:'LÀNG', forts:1, capital:false, cover:1.0, towers:1.0 },
            bridge:{ vi:'CẦU', forts:1, capital:false, cover:0.85, towers:1.3 },
@@ -3858,6 +3860,7 @@ export const SECTOR = { on:true, retries:3,
          SAVANNA:[{ place:'village', type:'hold' }, { place:'bridge', type:'sabotage', obj:'radar' }, { place:'hq', type:'boss' }],
          CITADEL:[{ place:'outskirts', type:'hold' }, { place:'gate', type:'sabotage', obj:'command' }, { place:'hq', type:'boss' }] },
   refill:{ hp:0.5, ammo:0.6, squad:1 },
+  mark:{ badge:1.5, y:4.6, ring:6, ghost:0.18 },   // SECTOR 3 the goals' world markers: badge m, its height m, the ring's radius at most m, its opacity inside the aim zone
   transit:{ hold:3, fade:0.7, min:10, max:20, ride:4.5, warmMs:2500, warmHour:8000, dark:3.5, rideH:46, rideBack:62, lineGap:2.6,
     lines:['SCH: Khu vực đã sạch. Lên xe, hành quân tiếp!', 'Lái xe: Đường xóc, bám chắc vào!', 'SCH: Trinh sát báo phía trước có ổ đề kháng.', 'SCH: Kiểm tra súng đạn, sắp tới nơi.'],
     retry:['SCH: Rút lui! Tập hợp lại ở điểm xuất phát.', 'SCH: Đánh lại khu này, lần này chắc tay hơn.'] },
@@ -3865,7 +3868,7 @@ export const SECTOR = { on:true, retries:3,
     rescue:'Giải cứu {who} trong lò giam, đưa ra điểm sơ tán', breach:'Phá cổng thành rồi chiếm sân trong', infiltrate:'Lẻn tới {obj} trong đêm, đặt thuốc nổ — đừng để báo động',
     pursuit:'Chặn đoàn xe địch trước khi nó thoát khỏi trận', rescueGuards:'Diệt lính canh lò giam · còn {n}', rescueReach:'Vào lò giam, tới bên {who} · {m} m', rescueFree:'Đang mở khoá cho {who}…',
     rescueGo:'Đã giải cứu {who} — đưa ra điểm sơ tán', rescueWalk:'Đưa {who} ra điểm sơ tán · {m} m · {hp}', rescueDead:'{who} đã tử nạn', breachGate:'Phá cổng thành · cổng còn {hp}%',
-    breachYard:'Dọn sân trong · còn {n} lính giữ thành', breachKeep:'Hạ kẻ giữ đồn', infilGo:'Lẻn tới mục tiêu · {m} m — đừng để bị phát hiện', infilPlant:'Đang đặt thuốc nổ · {s} giây',
+    breachYard:'Dọn sân trong · còn {n} lính giữ thành', breachDoor:'Phá cửa hầm · còn {hp}%', breachKeep:'Hạ kẻ giữ đồn', infilGo:'Lẻn tới mục tiêu · {m} m — đừng để bị phát hiện', infilPlant:'Đang đặt thuốc nổ · {s} giây',
     infilAlarm:'BÁO ĐỘNG TOÀN KHU — GIỮ VỮNG CHỜ TRỰC THĂNG', infilAlarmR:'Lộ rồi! Giữ vững, trực thăng đang tới đón.', infilHold:'Bị lộ — giữ vững chờ trực thăng',
     infilHeli:'TRỰC THĂNG ĐÃ TỚI — LÊN MÁY BAY', infilHeliR:'Trực thăng ở bãi đáp, chạy ra ngay!', infilBoard:'Chạy ra bãi đáp · {m} m', infilLeft:'TRỰC THĂNG ĐÃ RỜI ĐI',
     pursuitLeft:'Chặn đoàn xe · còn {n}/{of} xe', pursuitBurn:'XE ĐỊCH BỐC CHÁY — CÒN {n}', pursuitGone:'ĐOÀN XE ĐÃ THOÁT' } };
