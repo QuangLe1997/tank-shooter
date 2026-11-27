@@ -90,6 +90,27 @@ export const GUNFX = {
   mat:{ metal:['container','car','wreck','fueltank','tanker','drums','fueldrum','hedgehog','plates','parked','apc','tank','radar','pylon','motor','rocket'],   // what a struck block is made of
     wood:['crates','logs','tree','trunk','fence','tent','post','stacks'], sand:['sandbag','hesco'], stone:['keep','ruin','rock','fortcore','corewall','uwall','bunker','slab','landmark','teeth','mesa','karst'] },   // (else: a stone / steel / heavy block → stone, the rest → dirt)
 };
+// GUNFX 1 GUNFIRE OF BOTH SIDES, CINEMATIC BUT BELIEVABLE (fx/gunfx.js): every shooter goes through muzzleFX(cls) — a flash shaped by its class (row of the
+//   flash atlas), the light it throws (one pooled point light near the camera + a warm splash on the ground at night), smoke heavier for the MG / cannon and a
+//   hot barrel that smokes on after a burst; small-arms rounds are no longer a sphere + a sprite each: most fly unseen, every Nth is a TRACER drawn as one
+//   motion-blurred streak (speed × shutter, ≥ minPx wide on screen, brighter coming at the camera) in ONE instanced draw; ours red-orange, theirs green;
+//   a sniper's round leaves only a faint trace; an unseen round passing close by shows a faint shimmer; sparks and ricochets are streaks of the same pool
+export const SHOTFX = { on:true,
+  cls:{ rifle:{ row:0, f:[0.62, 0.34, 1], light:1.6, splash:3.2, smoke:0, heat:0.10 }, smg:{ row:2, f:[0.42, 0.28, 0.8], light:0.9, splash:2.2, smoke:0, heat:0.07 },
+    supp:{ row:2, f:[0.16, 0.13, 0.35], light:0.25, splash:0, smoke:0, heat:0.05 }, mg:{ row:1, f:[0.95, 0.56, 0.95], light:2.4, splash:4.5, smoke:0.35, heat:0.12 },
+    sniper:{ row:0, f:[1.05, 0.6, 1.1], light:2.6, splash:4.5, smoke:0.7, heat:0.3 }, shotgun:{ row:1, f:[0.85, 0.6, 0.95], light:2.2, splash:4, smoke:0.6, heat:0.25 },
+    cannon:{ row:3, f:[1.8, 1.1, 0.85], light:3.4, splash:9, smoke:1.2, heat:0.4 }, aa:{ row:1, f:[1.25, 0.62, 0.95], light:2.6, splash:5, smoke:0.7, heat:0.12 } },   // row = the flash atlas row (0 rifle star + side ports, 1 MG blossom, 2 suppressed / SMG, 3 cannon) · f = flash [length m, width m, brightness] · light = point-light intensity · splash = ground glow m · smoke = per-shot puff × · heat = barrel heat per shot
+  tracer:{ every:{ mg:4, smg:5, aa:2, def:4 }, ours:0xff6a2a, theirs:0x86ff4c, hot:3.2, toward:1.5, ignite:3, minPx:1.4, width:0.016, glow:3 },   // every Nth round of the class (rifle = REAL.tracer.every) · tints · HDR × · × brighter head-on · m before full burn · min screen px · core m · glow × the core
+  streak:{ pool:220, poolMob:90, shutter:0.032, min:0.6, max:5 },   // instanced streaks · a frame's motion blur s · length clamp m
+  trace:{ k:0.05, w:2, col:0xe8ecf0 },                          // a sniper / DMR round: a faint grey trace (× brightness, × width)
+  shimmer:{ R:5, k:0.06, w:3, col:0xdfe6ec },                     // an unseen enemy round passing within R m of the camera: a faint streak
+  rico:{ stone:0.12, metal:0.3, k:1.6, w:0.01, v:[38, 70], life:[0.1, 0.22] },   // a strike off stone / steel skips away as a bright streak this often
+  spark:{ metal:5, stone:2, mob:0.5, k:2.6, w:0.005, v:[7, 16], life:[0.12, 0.3] },   // spark streaks off a strike
+  splash:{ day:0.03, night:0.32, dusk:0.14, pool:24 },                // the ground glow under a muzzle by light (× brightness)
+  light:{ R:26, Rday:12 },                                        // a shot nearer the camera than this m lights the scene (one shared light)
+  barrel:{ n:6, th:0.35, max:1.6, decay:0.32, every:0.07, R:34 },   // hot barrels tracked · heat before it smokes · cap · heat lost /s · a wisp every s · only this near the camera
+  marks:{ hold:45, fade:12 },                                     // a bullet pock / shell scar stays hold s, then fades out over fade s
+};
 export const REAL = {
   concuss:{ reach:2.2, t:[0.9,1.9], push:7 },                   // a blast's survivors within r*reach are thrown flat and dazed t s, shoved push m/s
   tracer:{ every:3, enemy:0x6dff4a, ally:0xff5a2a },             // every Nth round a tracer: theirs burn green, ours red-orange
@@ -2478,7 +2499,7 @@ export const FIREFX = { on:true, max:2600, maxMobile:900, thin:[0.6, 0.92], tier
     shimFire:{ ramp:'flame', cells:[0, 7], layer:1, s:[1, 1], grow:1, cool:0.35, sit:0.42, spin:0.6, prio:1 } },
   // the staged effects (times in s from the burst; born [from, to] = when the particles of a stage appear; counts are a desktop's, at charge scale 1)
   heat:{ flash:0.07, ball:{ n:9, life:[0.5, 0.8], size:2.7 }, ring:{ n:16, sp:[9, 14], life:[0.9, 1.4] }, sparks:{ n:18, sp:[12, 28], life:[0.25, 0.5] }, frags:{ n:5, sp:[5, 11], up:[6, 11], life:1.3, puffs:7 },
-    dirt:{ n:6, clods:10 }, column:{ n:14, born:[0.1, 2.2], rise:[2.4, 4.2], life:[3.5, 5.5], size:4.2 }, wisps:{ n:8, born:[2.2, 10], life:[2.5, 3.6] }, embers:{ n:8, born:[0.3, 4.5] }, light:[3.2, 16, 0.4], shake:0.7 },   // the B41's shaped charge
+    dirt:{ n:6, clods:10 }, column:{ n:16, born:[0.1, 2.2], rise:[2.4, 4.2], life:[4.5, 7], size:4.2 }, wisps:{ n:8, born:[2.2, 10], life:[2.5, 3.6] }, embers:{ n:12, born:[0.3, 5] }, light:[3.2, 16, 0.4], shake:0.7 },   // the B41's shaped charge
   he:{ flash:0.06, core:{ n:3, life:[0.28, 0.4], size:1.6 }, dirt:{ n:10, up:[8, 15], life:[1.2, 1.8] }, clods:14, ring:{ n:14, sp:[8, 13], life:[0.9, 1.4] }, hang:{ n:6, born:[0.1, 0.5], life:[3, 5] }, smoke:{ n:6, born:[0.1, 1.2], life:[2.6, 4.2] },
     sparks:8, wisps:{ n:5, born:[2, 7], life:[2.4, 3.4] }, light:[2.2, 12, 0.25], shake:0.7 },   // a grenade, a mortar shell, a bomb: earth first
   fuel:{ flash:0.09, ball:{ n:12, life:[1, 1.6], size:3 }, stem:{ n:6, born:[0.08, 0.45] }, smoke:{ n:10, born:[0.45, 2.6], life:[4, 7], size:5.5 }, patches:[2, 4], embers:10, light:[4, 22, 1.3], shake:0.5 },   // fuel going up: the rolling fireball, the black mushroom

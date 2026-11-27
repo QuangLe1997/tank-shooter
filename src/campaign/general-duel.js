@@ -10,6 +10,7 @@
 import * as THREE from 'three';
 import { NEMESIS, TROOPER } from '../../config.js';
 import { S, bigExplode, blastAllies, clampFieldXZ, damagePlayer, disposeArtZone, enemies, floatText, makeArtLock, radio, ringPulse, sfx, showBanner, spawnBullet, spawnEnemy, spawnPart, storyCue, svgBadgeTex, tickArtLock, nemDress, nemFell, nemGuard, nemJoin, nemMeet, nemPlateEl, nemReset, nemTick, nemTune } from '../hub.js';
+import { muzzleFX } from '../hub.js';   // GUNFX 1 (fx/gunfx.js)
 
 const G = { on:false, seq:0, e:null, name:'', guards:[], called:false, rage:false, fanAt:0, fanT:0, nadeAt:0, ringAt:0, zones:[], finish:null, at:null, pending:0, barK:'' };
 const C = () => nemTune(TROOPER.general);   // NEMESIS 2 a general who came back fights by his rank and his lesson
@@ -58,7 +59,7 @@ function glint(e){ if(Math.random() < 0.6){ const m = muzzle(e); spawnPart(m.x, 
 function fan(e){ const F = C().fan, p = S.player, m = muzzle(e), a0 = Math.atan2(p.pos.x - m.x, p.pos.z - m.z), dmg = F.dmg * (1 + 0.15 * ((S.stage || 1) - 1));
   for(let i = 0; i < F.n; i++){ const a = a0 + (i / (F.n - 1) - 0.5) * F.arc + (Math.random() - 0.5) * 0.04;
     spawnBullet(m.x, m.z, a, { owner:'e', inf:true, dmg, speed:52, color:0xffb050, r:0.26, trailK:2, life:1.6, maxDist:C().range + 4, noArc:true, y:m.y, dropTo:1.3 }); }
-  spawnPart(m.x, m.y, m.z, Math.sin(a0) * 6, 0.4, Math.cos(a0) * 6, { tex:'flash', color:0xfff0c0, size:0.9, life:0.08, grav:0, drag:8 }); sfx('rifleShot', e.pos); sfx('rifleShot', e.pos, 0.7); }
+  muzzleFX(m.x, m.y, m.z, a0, 'shotgun', 'e'); sfx('rifleShot', e.pos); sfx('rifleShot', e.pos, 0.7); }   // GUNFX 1 his fan of rounds: one big blossom
 // the grenades: lobbed round where you stand, each a red ring that tightens until it bursts
 function nades(e){ const N = C().nade, p = S.player, m = muzzle(e), dmg = N.dmg * (1 + 0.15 * ((S.stage || 1) - 1));
   floatText('LỰU ĐẠN!', '#ff9a4a', { x:e.pos.x, y:2.8, z:e.pos.z }, 16); sfx('whoosh', e.pos);

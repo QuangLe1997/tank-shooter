@@ -2,8 +2,9 @@
 import * as THREE from 'three';
 import { AWARE, BALANCE, DEATH_POP, ENV, EQUIP, FIELDCRAFT, FOEANIM, INFANTRY, REAL, SQUAD, LOGISTICS } from '../../config.js';
 import { ambushHold, ambushScatter, bladeSever, goreK, objMod, BIOME, ENVMOD, FT, MOBILE, S, UGRID, _cv, aiIQ, animateSoldier, atCover, burst, cMod, canThrow, clampField, clearGore, combatDive, coverSpot, dazePose, dazed, decalBlood, diffDmgMul, diffScale, dropSoldierGun, endFall, enemies, enemyPool, fortExitDir, fortWallCross, heightAt, inSmoke, infPushBlocks, kitAttach, launchEnemyMissile, loadGLTF, loopDmgMul, losBlocked, makeSoldierMesh, makeSquad, nadeFlee, nadeTarget, peekMove, poseSoldier, reviveSoldierMesh, rifleFX, ringPulse, scene, sfx, smokeSpreadK, soldierReloading, spawnBullet, spawnEnemy, spawnPart, squadMove, throwNade, tracerNext, unitsNear, wantPeek, wrapAngle, asShipped, nearShape, riverWay, wadeAt, gunFlash, awareTick, PL, hatchEntry, riseStep, dirFireK, giveUpStep, markAim, markStep, nemFleeStep, gunSound } from '../hub.js';
-import { swimFoeK } from '../hub.js';   // SWIM 1 (game/swim.js)
-import { foeAct, foeLean } from '../hub.js';   // FOE 1 (actors/foe-anim.js)
+import { swimFoeK } from '../hub.js'; // SWIM 1 (game/swim.js)
+import { foeAct, foeLean } from '../hub.js'; // FOE 1 (actors/foe-anim.js)
+import { muzzleFX } from '../hub.js'; // GUNFX 1 (fx/gunfx.js)
 
 // ===== Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 // …and a tank rolling over them crushes them flat. Lives in enemies[] (def.inf) so every gun, drone, guard & blast already sees them. =====
@@ -68,9 +69,9 @@ function fireRound(e, T, d, now, dmgMul, ds){ const def=e.def, F=AWARE.fire, A=B
   let tx=T.pos.x, tz=T.pos.z; if(you){ const ft=Math.min(0.7, d/def.bspeed)*F.lead; tx+=T.vel.x*ft; tz+=T.vel.z*ft; }
   const w=(you ? (F.wide+(F.tight-F.wide)*(e.zero||0))*(F.stageK[0]+(F.stageK[1]-F.stageK[0])*ds) : T.supp ? F.wide*F.blindK : Math.max(0.05, A.spreadBase*(1-ds*A.spreadDrop)*1.25))
     *(d>def.range?F.farK:1)*(you && PL.v>AWARE.zero.runV?F.runK:1)*(ENVMOD.night?ENV.night.enemySpread:1)*smokeSpread(now)*smokeSpreadK(e.pos.x, e.pos.z, T.pos.x, T.pos.z)*(1+1.6*(e.supp||0))*(def.spreadK||1);   // Z173 suppressed men shoot wild · Z220 and through smoke
-  const a=Math.atan2(tx-_cv.x, tz-_cv.z)+(Math.random()-0.5)*w, tr=tracerNext(e.mesh)||!!def.mg;
+  const a=Math.atan2(tx-_cv.x, tz-_cv.z)+(Math.random()-0.5)*w, tr=tracerNext(e.mesh, def.mg?'mg':'rifle');   // GUNFX 1 an MG man's belt: 1 in 4 (it was every round)
   spawnBullet(_cv.x,_cv.z,a,{owner:'e', inf:true, dmg:def.dmg*dmgMul*(you?F.dmgK:1), speed:def.bspeed, color:tr?REAL.tracer.enemy:0xffd06a, r:tr?0.3:0.22, trailK:tr?2.4:1, tr:tr?1:0, life:1.6, maxDist:def.range*(you||T.supp?F.reachK:1)+3, noArc:true, y:_cv.y, dropTo:1.3}); rifleFX(_cv.x, _cv.y, _cv.z, a, false);   // Z223 green tracer every Nth round · brass + smoke
-  gunFlash(_cv.x,_cv.y,_cv.z, a, 0.6, 0.34, 0xfff0c0, 0.9);   // Z419 a shaped rifle flash along the bore
+  muzzleFX(_cv.x,_cv.y,_cv.z, a, def.mg?'mg':'rifle', 'e', 0, e.mesh.userData.muzzle);   // GUNFX 1 the flash of his gun's class, its light, the hot barrel (Z419 shaped along the bore)
   gunSound('rifleShot', e.pos, 'e'); e.shotAt=now; }   // (DIR 1 shotAt: the director counts who is firing)
 export function updateInfantry(e, dt, now, edt){
   const def=e.def, p=S.player, u=e.mesh.userData;

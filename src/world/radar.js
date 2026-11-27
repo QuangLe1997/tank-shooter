@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import { SCENERY, SUPPLYB } from '../../config.js';
 import { B3, MOBILE, _xf, aoeDamage, burst, heightAt, kit, sfx, spawnBullet, spawnPart, playerSeen, dressAAGun, towerTopple } from '../hub.js';
+import { muzzleFX } from '../hub.js';   // GUNFX 1 (fx/gunfx.js)
 
 const CY=(rt,rb,h,s,x,y,z,rx,rz)=>_xf(new THREE.CylinderGeometry(rt,rb,h,s),x,y,z,rx||0,0,rz||0);
 // what the artillery keeps of its precision and tempo once the radar is gone
@@ -73,5 +74,5 @@ export function updateAAGun(g, b, dt, now, p){ const u=g.userData, T=u.turret; i
   if(!b.burstN){ b.burstN=MOBILE?6:9; } if(now<(b.shotAt||0)) return; b.shotAt=now+0.09; b.burstN--; if(!b.burstN) b.fireAt=now+2.2+Math.random()*1.2;
   u.muzzle.getWorldPosition(_mv); const a=g.rotation.y+T.rotation.y+(Math.random()-0.5)*0.05;
   spawnBullet(_mv.x, _mv.z, a, { owner:'e', dmg:2.2, speed:85, color:0xffa040, r:0.22, life:1.2, maxDist:SUPPLYB.aa.range+4, y:_mv.y, noArc:true });   // (Z403 was 62 / 66 m)
-  spawnPart(_mv.x,_mv.y,_mv.z, Math.sin(a)*4,0,Math.cos(a)*4, { tex:'flash', color:0xfff0c0, size:1.1, life:0.04, grav:0, drag:8 }); if(Math.random()<0.4) sfx('enemyShoot', b, 0.5); }
+  muzzleFX(_mv.x,_mv.y,_mv.z, a, 'aa', 'e', 0, u.muzzle); if(Math.random()<0.4) sfx('enemyShoot', b, 0.5); }   // GUNFX 1 the twin 23 mm's blossom
 const _mv=new THREE.Vector3();

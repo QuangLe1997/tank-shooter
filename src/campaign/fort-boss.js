@@ -19,6 +19,7 @@ import * as THREE from 'three';
 import { FORT, FORTBOSS, TROOPS } from '../../config.js';
 import { fortBossAct, fortBossAnim, fortBossCorpseTick, fortBossCorpsesClear, fortBossFlash, fortBossLookId, fortBossPreload, fortBossWarm } from '../hub.js';   // BOSS 2 (actors/fort-boss-glb.js)
 import { BIOME, CO, FORTS, MATE, NET_EV, S, ammoCrate, animateSoldier, bigExplode, blastAllies, bossForStage, bossStageWon, burst, clampFieldXZ, coopEnemyById, coopHostCrate, coopHurtMate, coopSendEvent, damagePlayer, diffHpMul, disposeArtZone, enemies, floatText, fortBossGlow, fortBossLook, fortBossLookClear, fortBossLookTick, fortBossPlateOff, fortBossStrip, fortFlagsTick, fortIntactCross, fortTake, freeEnemyBar, heightAt, infPushBlocks, launchEnemyMissile, loopHpMul, losBlocked, makeArtLock, nemFell, nemMeet, nemPlateEl, poseSoldier, radio, ringPulse, scene, sfx, showBanner, soldierStagePerks, spawnBullet, spawnEnemy, spawnGift, spawnPart, storyCue, tickArtLock, wakeFort, killEnemy } from '../hub.js';
+import { muzzleFX } from '../hub.js';   // GUNFX 1 (fx/gunfx.js)
 
 const C = FORTBOSS, NOW = () => performance.now() / 1000, PL = ['helmet', 'chest', 'shL', 'shR', 'pack'];
 // the page's bosses (dev / probes read it): list = this battle's (host / solo) · guest = the host's, as this guest's page draws them (by fort index) ·
@@ -190,7 +191,7 @@ function sweepStep(B, dt, now, ox, oz){ const e = B.e, A = B.act, T = C.sweep.te
   while(A.fired < want){ A.fired++; const m = muzzle(e), aa = A.a0 + dir * ((A.fired - i * A.n) / A.n - 0.5) * A.arc + (Math.random() - 0.5) * 0.03;
     spawnBullet(m.x, m.z, aa, { owner:'e', inf:true, dmg, speed:C.sweep.speed, color:0xffb050, r:K.r || 0.2, trailK:2, life:1.4, maxDist:C.move.range + 6, noArc:true, y:m.y, dropTo:1.3 });
     if(CO.ai && MATE.on){ const am = Math.atan2(MATE.x - m.x, MATE.z - m.z), dm = Math.hypot(MATE.x - m.x, MATE.z - m.z); if(dm < C.move.range && Math.abs(wrapA(am - aa)) < 0.5 / Math.max(2, dm) && !losBlocked(m.x, m.z, MATE.x, MATE.z)) coopHurtMate(dmg, Math.sin(aa), Math.cos(aa)); }
-    if(A.fired % 3 === 0){ spawnPart(m.x, m.y, m.z, Math.sin(aa) * 6, 0.4, Math.cos(aa) * 6, { tex:'flash', color:0xfff0c0, size:0.9, life:0.06, grav:0, drag:8 }); sfx('rifleShot', e.pos, 0.8); } } }
+    muzzleFX(m.x, m.y, m.z, aa, 'mg', 'e', 0, e.mesh.userData.muzzle || null); if(A.fired % 3 === 0) sfx('rifleShot', e.pos, 0.8); } }   // GUNFX 1 every round of the sweep flashes (an MG's blossom), 1 in 4 a tracer
 // ---- CHARGE: tel s crouched behind his laser down the lane, then a straight rush; contact = a heavy blow, a wall = he staggers ----
 function startCharge(B, now, fo){ const e = B.e, a = Math.atan2(fo.x - e.pos.x, fo.z - e.pos.z); B.st = 'charge'; e.held = true;
   B.act = { a, t:0, hit:false, len:Math.min(C.charge.v * C.charge.t, fo.d + 6) }; B.next.charge = now + C.charge.cd[B.phase - 1] + C.charge.tel + C.charge.t; B.gap = now + C.charge.tel + C.charge.t + 1.5;

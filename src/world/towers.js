@@ -4,6 +4,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { BRIDGE, HUMAN_SCALE, TOWERFALL } from '../../config.js';
 import { CO, coopGuardReport, coopGuardWaits, coopHostGuardDown, coopHostGuardShot, mateProxy, AREA_K, ARENA, clearTowerFalls, towerTopple, BIOME, FT, MOBILE, NIGHT, S, TOWER, TOWER_KINDS, _R, _mergeColored, _xf, addLootBeacon, addScore, animateSoldier, blocks, buildBridge, burst, cMod, clearBridges, coverMat, detailize, diffDmgMul, diffHpMul, dropSearchlight, floatText, heightAt, homeClear, inField, inZone, loopDmgMul, loopHpMul, makeSearchlight, makeSoldierMesh, pickTowerKind, propTex, scene, sfx, spawnBullet, spawnEnemy, spawnPart, towerKindGeo, updateBeams, updateSearchSpot, updateSearchlight, playerSeen, stealthLight } from '../hub.js';
+import { muzzleFX } from '../hub.js';   // GUNFX 1 (fx/gunfx.js)
 
 export const towers=[], fallers=[];
 export let _towerGeo=null;
@@ -89,7 +90,7 @@ export function updateTowers(dt, now){
         gd.g.userData.muzzle.getWorldPosition(_tw); const ang=Math.atan2(tg.x-_tw.x, tg.z-_tw.z)+(Math.random()-0.5)*0.08;
         const dmg=(TOWER.guardDmg + S.stage*0.7)*loopDmgMul()*diffDmgMul()*cMod('enemyDmgMul');
         spawnBullet(_tw.x, _tw.z, ang, {owner:'e', inf:true, dmg, speed:72, color:0xffb04a, r:0.24, life:1.4, maxDist:TOWER.range+4, arcDist:d, noArc:true, y:_tw.y, dropTo:1.4, ignore:t.block});
-        spawnPart(_tw.x,_tw.y,_tw.z, Math.sin(ang)*5,-1,Math.cos(ang)*5, {tex:'flash', color:0xfff0c0, size:0.7, life:0.05, grav:0, drag:8}); sfx('rifleShot', {x:_tw.x, z:_tw.z}); if(CO.ai) coopHostGuardShot(t, gd, _tw.x, _tw.y, _tw.z, ang); }
+        muzzleFX(_tw.x,_tw.y,_tw.z, ang, 'rifle', 'e', 0, gd.g.userData.muzzle); sfx('rifleShot', {x:_tw.x, z:_tw.z}); if(CO.ai) coopHostGuardShot(t, gd, _tw.x, _tw.y, _tw.z, ang); }   // GUNFX 1
       animateSoldier(gd.g, 0, dt, fired); }
   }
   for(let i=fallers.length-1;i>=0;i--){ const f=fallers[i]; f.t+=dt;                                          // guards tumbling off the collapsing tower

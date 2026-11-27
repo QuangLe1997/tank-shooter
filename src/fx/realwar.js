@@ -4,7 +4,7 @@
 //   · spent brass flicks out of the ejection port and a wisp of smoke hangs at the muzzle (only near the player, cheap)
 //   · a big shell sends a skirt of dust racing out along the ground — the blast wave you can see
 import { REAL } from '../../config.js';
-import { BIOME, MOBILE, S, burst, dustRing, ejectBrass, fireFxOn, heightAt, poseSoldier, spawnPart } from '../hub.js';
+import { BIOME, MOBILE, S, burst, dustRing, ejectBrass, fireFxOn, heightAt, poseSoldier, spawnPart, tracerEvery } from '../hub.js';
 
 export const rndIn = a => a[0]+Math.random()*(a[1]-a[0]);
 
@@ -16,12 +16,12 @@ export function dazed(u, now){ return (u.dazeUntil||0)>now; }
 // the dazed pose: flat on the ground, head rolling, arms limp
 export function dazePose(g, now, dt){ poseSoldier(g, 'prone', dt); const u=g.userData; if(u.head) u.head.rotation.z=Math.sin(now*3.1+(u.seed||0))*0.35; if(u.arms) u.arms.rotation.x+=(-0.3-u.arms.rotation.x)*Math.min(1,dt*6); }
 
-// is this man's next round a tracer?
-export function tracerNext(g){ const u=g.userData; u.trN=(u.trN||0)+1; return u.trN%REAL.tracer.every===0; }
+// is this man's next round a tracer? (GUNFX 1 by his gun's class: a rifle REAL.tracer.every, an MG's belt SHOTFX.tracer.every.mg)
+export function tracerNext(g, cls){ const u=g.userData; u.trN=(u.trN||0)+1; return u.trN%tracerEvery(cls||'rifle')===0; }
 
-// brass out of the port (to the right of the line of fire) + a smoke wisp at the muzzle — only within REAL.brass.R of the player
+// brass out of the port (to the right of the line of fire — GUNFX 1 it flew out to the LEFT: (fz, −fx) is a man's left when he faces (fx, fz)) + a smoke wisp at the muzzle — only within REAL.brass.R of the player
 export function rifleFX(x, y, z, ang, heavy, noSmoke){ const p=S.player; if(!p || (p.pos.x-x)**2+(p.pos.z-z)**2 > REAL.brass.R*REAL.brass.R) return;   // (Z355 noSmoke: a suppressed gun — the brass still flies)
-  const fx=Math.sin(ang), fz=Math.cos(ang), rx=fz, rz=-fx, gy=heightAt(x,z), by=Math.max(gy+0.6, y-0.1);
+  const fx=Math.sin(ang), fz=Math.cos(ang), rx=-fz, rz=fx, gy=heightAt(x,z), by=Math.max(gy+0.6, y-0.1);
   ejectBrass(x-fx*0.5+rx*0.1, by, z-fz*0.5+rz*0.1, rx*(1.6+Math.random()*1.4)-fx*0.6, 2+Math.random()*1.5, rz*(1.6+Math.random()*1.4)-fz*0.6, heavy?'mg':'rifle');   // Z419 a real case that tumbles, bounces and lies
   if(!noSmoke && (!MOBILE || Math.random()<0.4)) spawnPart(x+fx*0.15, y+0.02, z+fz*0.15, fx*0.8, 0.35, fz*0.8, { color:0xc9c4ba, size:heavy?0.6:0.42, life:0.7+Math.random()*0.4, smoke:true, grav:0.5, drag:2.2, grow:2.2, op:heavy?0.32:0.22 }); }
 

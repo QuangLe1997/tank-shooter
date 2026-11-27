@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { REALCAMP, WORLD_FLAGS } from '../../config.js';
 import { BIOME, MOBILE, S, ZONES, loadGLTF, bakeGroup, blocks, capGeo, capMat, core, enemies, heightAt, makeFlag, makeSoldierMesh, poseSoldier, scene, sfx, spawnBullet, spawnPart, towerRoof, unwave, bannerTex, wallMat, dressCoreGun } from '../hub.js';
+import { muzzleFX } from '../hub.js'; // GUNFX 1 (fx/gunfx.js)
 
 export const CORE_DEF = { R:24, H:9.4, T:2.8, gateW:9, range:54, cd:1.5, dmg:18, turn:2.4, guns:[], mgs:[], guards:[], g:null, mg:{ range:40, cd:0.07, burst:14, rest:0.9, dmg:4, turn:4.5 } };   // Z227 a bigger, taller citadel
 function box(w,h,d){ const g=new THREE.BoxGeometry(w,h,d), uv=g.attributes.uv, p=g.attributes.position, n=g.attributes.normal;   // UVs in world metres (4 m per tile)
@@ -157,7 +158,7 @@ export function updateCoreGuns(dt, now){ const D=CORE_DEF; updateCoreMG(dt, now)
     G.fireAt=now+D.cd*(MOBILE?1.2:1)*(0.85+Math.random()*0.3); const mz=G.muz[G.k]; G.k^=1; mz.tip.getWorldPosition(_w); G.kick=1;
     const dmg=D.dmg*(1+(S.stage-1)*0.12);
     spawnBullet(_w.x, _w.z, G.aim+(Math.random()-0.5)*0.02, { owner:'p', dmg, speed:85, color:0xfff0a0, r:0.45, life:1.3, maxDist:D.range+6, noArc:true, y:_w.y, dropTo:1.2, type:'AP', fx:'blast', aoe:2.2, aoeDmg:dmg*0.55, knock:2 });
-    for(let i=0;i<5;i++) spawnPart(_w.x, _w.y, _w.z, Math.sin(G.aim)*(6+Math.random()*4), 0.5+Math.random(), Math.cos(G.aim)*(6+Math.random()*4), { tex:'flash', color:0xfff0b0, size:1.1+Math.random()*0.6, life:0.08, grav:0, drag:6 });
+    muzzleFX(_w.x, _w.y, _w.z, G.aim, 'cannon', 'a');   // GUNFX 1 a wall cannon's ball of fire, its light, its smoke
     spawnPart(_w.x, _w.y, _w.z, Math.sin(G.aim)*2, 1, Math.cos(G.aim)*2, { color:0xd8d0c0, size:1.6, life:0.7, smoke:true, grav:0.4, drag:2, op:0.45 });
     sfx('enemyShoot', { x:G.x, z:G.z }); }
 }
@@ -174,7 +175,7 @@ function updateCoreMG(dt, now){ const D=CORE_DEF, C=D.mg;
     if(!T || S.mode!=='playing' || now<G.fireAt || Math.abs(da)>0.12) continue; G.spin=1;
     if(G.burst<C.burst){ G.burst++; G.fireAt=now+C.cd; G.tip.getWorldPosition(_m); const air=!!T.def.air;
       spawnBullet(_m.x, _m.z, G.aim+(Math.random()-0.5)*0.05, { owner:'p', dmg:C.dmg*(1+(S.stage-1)*0.1), speed:95, color:0xb8ff70, r:0.2, life:0.6, maxDist:C.range+4, noArc:true, y:_m.y, dropTo:air?6:1.0, inf:true, air });
-      spawnPart(_m.x, _m.y, _m.z, 0, 0, 0, { tex:'flash', color:0xfff0a0, size:0.9, life:0.04, grav:0, drag:6 });
+      muzzleFX(_m.x, _m.y, _m.z, G.aim, 'mg', 'a');   // GUNFX 1
       if(G.burst%2===0) spawnPart(G.x+Math.cos(G.aim)*0.8, _m.y-0.3, G.z-Math.sin(G.aim)*0.8, Math.cos(G.aim)*2.5, 2, -Math.sin(G.aim)*2.5, { color:0xe0ac44, size:0.07, life:0.5, grav:-22, drag:0.5 });   // brass
       if(G.burst%4===0) sfx('mg', { x:G.x, z:G.z }); }
     else { G.burst=0; G.fireAt=now+C.rest; } } }

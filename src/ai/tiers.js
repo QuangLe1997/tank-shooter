@@ -9,7 +9,8 @@
 //     up — he stands there, then walks off the field (shoot him and he dies like any other).
 //   The tier also scales what each man knows (ai/awareness.js: reaction delay, time to make him out, how far a shout carries) and how often a squad thinks.
 import { AWARE, DIRECTOR } from '../../config.js';
-import { DIR, PL, S, _cv, addScore, animateSoldier, camera, canThrow, clampField, coverSpot, dirDiff, dirSay, dropSoldierGun, enemies, enemyPool, fieldEdgePoint, floatText, freeEnemyBar, gunFlash, heightAt, inCamView, inField, infPushBlocks, losBlocked, poseSoldier, radio, reviveSoldierMesh, sfx, spawnBullet, spawnPart, storyCue, throwNade } from '../hub.js';
+import { DIR, PL, S, _cv, addScore, animateSoldier, camera, canThrow, clampField, coverSpot, dirDiff, dirSay, dropSoldierGun, enemies, enemyPool, fieldEdgePoint, floatText, freeEnemyBar, heightAt, inCamView, inField, infPushBlocks, losBlocked, poseSoldier, radio, reviveSoldierMesh, sfx, spawnBullet, spawnPart, storyCue, throwNade } from '../hub.js';
+import { muzzleFX } from '../hub.js';   // GUNFX 1 (fx/gunfx.js)
 
 const T = DIRECTOR.tactics, R2 = a => a[0] + Math.random() * (a[1] - a[0]);
 const OFF = typeof location !== 'undefined' && /notactics/.test(location.search + location.hash);
@@ -42,7 +43,7 @@ export function markStep(e, Tg, dt, now, dmgMul){ const M = T.marksman, mz = e.m
   if(e.aimT > M.lock){ e.mkx = Tg.pos.x; e.mkz = Tg.pos.z; } if(e.aimT > 0) return false;
   const a = Math.atan2(e.mkx - _cv.x, e.mkz - _cv.z) + (Math.random() - 0.5) * M.err;
   spawnBullet(_cv.x, _cv.z, a, { owner:'e', inf:true, dmg:e.def.dmg * dmgMul, speed:e.def.bspeed, color:0xfff2c0, r:0.3, trailK:3, tr:1, life:1.4, maxDist:e.def.range * 1.5, noArc:true, y:_cv.y, dropTo:1.3 });
-  gunFlash(_cv.x, _cv.y, _cv.z, a, 0.9, 0.4, 0xfff0c0, 1.2); sfx('rifleShot', e.pos); e.shotAt = now; e.fireAt = now + e.def.fireCd * (0.8 + Math.random() * 0.4); TAC.mkShots++; return true; }
+  muzzleFX(_cv.x, _cv.y, _cv.z, a, 'sniper', 'e', 0, mz); sfx('rifleShot', e.pos); e.shotAt = now; e.fireAt = now + e.def.fireCd * (0.8 + Math.random() * 0.4); TAC.mkShots++; return true; }   // GUNFX 1 a marksman's rifle: a long flash, a puff, light near you
 
 // ---- tier 2: pin and flank (ai/squads.js squadThink, in contact: true = the plan has given every man his order) ----
 function pinEndNow(sq, now){ const m = sq.m; for(let i = 0; i < m.length; i++) m[i].pinF = false; if(sq.pin){ sq.pin = null; sq.pinAt = now + R2(T.pin.cd); sq.flank = -sq.flank; } }

@@ -11,6 +11,7 @@
 import * as THREE from 'three';
 import { SCENERY, UNDERBASE } from '../../config.js';
 import { cosmetic, ARENA, BIOME, FT, HZN, MOBILE, NIGHT, S, SKY, TUN, UNDER, addScore, dressFit, dressHeadRWS, sceneDims, scenePiece, ambient, applyAtmosphere, applyWeather, bigExplode, blocks, bullets, burst, damageEnemy, detailize, enemies, enemyPool, floatText, freeEnemyBar, getEnemyBar, heightAt, hemi, homeClear, inField, inZone, radio, recycleBullet, renderer, scene, sfx, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnSquad, sun, blPulse, holoRing, playerSeen } from '../hub.js';
+import { muzzleFX } from '../hub.js';   // GUNFX 1 (fx/gunfx.js)
 
 const R=(a,b)=>a+Math.random()*(b-a), TAU=Math.PI*2;
 const _V=new THREE.Vector3();
@@ -97,7 +98,7 @@ function runTurrets(list, dt, now){ const p=S.player, C=UNDERBASE.gate; if(!p) r
     if(Math.abs(da)>0.25 || now<T.fireAt) continue;
     if(T.shots<C.burst){ T.shots++; T.fireAt=now+C.turretCd[0]; const aa=ya+R(-0.05,0.05), gy=heightAt(T.x,T.z)+(T.base?3.6:1.95);
       spawnBullet(T.x+Math.sin(aa)*1.6, T.z+Math.cos(aa)*1.6, aa, { owner:'e', inf:true, dmg:C.turretDmg, speed:80, color:0xff7040, r:0.22, life:1.0, maxDist:C.turretR+4, noArc:true, y:gy, ignore:T.blk });
-      spawnPart(T.x+Math.sin(aa)*2.2, gy, T.z+Math.cos(aa)*2.2, 0, 0, 0, { tex:'flash', color:0xffd080, size:1.1, life:0.05, grav:0, drag:6 }); if(T.shots%3===0) sfx('mg', _V.set(T.x,0,T.z)); }
+      muzzleFX(T.x+Math.sin(aa)*2.2, gy, T.z+Math.cos(aa)*2.2, aa, 'mg', 'e'); if(T.shots%3===0) sfx('mg', _V.set(T.x,0,T.z)); }   // GUNFX 1
     else { T.shots=0; T.fireAt=now+C.turretCd[1]; } } }
 
 // =================================================================== THE BASE (below) ===================================================================
