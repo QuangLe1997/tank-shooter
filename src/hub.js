@@ -270,6 +270,9 @@ export * from './actors/general.js';
 export * from './actors/puppet.js';   // Z294 the second soldier wears the operator's moves
 export * from './actors/anim-lib.js';   // ANIM 1 the soldier's motion library: the packed Mixamo clips, loaded and handed out as three clips
 export * from './actors/anim-graph.js';   // GRAPH 1 the soldier's motion graph: the blend space, the foot lock, cuts by inertialization (ANIMGRAPH.on / ?animgraph)
+export * from './actors/foe-bake.js';   // FOE 1 the enemy's full skeleton: the trooper's 22 bones, the library retargeted onto them, the crowd's baked texture
+export * from './actors/foe-skin.js';   // FOE 1 the enemy's skeleton on the GPU: the near men's posed rows, the crowd from the baked texture
+export * from './actors/foe-anim.js';   // FOE 1 the enemy's motion graph: blend space, stances, stepping turns, layers, cover, inertialized cuts
 export * from './actors/soldier-legs.js';   // Z339 the soldier's own legs: planted feet, steps the way he goes
 export * from './actors/soldier-mount.js';   // Z342 getting on and off the horse / the rides the way a rider does
 export * from './actors/soldier-climb-pose.js';   // Z451 his body on the face: limbs on holds, the pull-over, the rifle slung

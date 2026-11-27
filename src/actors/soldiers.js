@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { GRAPHFIT, REAL, REALTROOP, TROOPLOD } from '../../config.js';
-import { coopHostDeath, SHADOW_EXT, farGeo, MOBILE, S, SOLDIER, _R, _canvasTex, burst, camera, core, enemies, fitRealMan, floatText, heightAt, loadRealTroops, paintTroops, scene, sfx, spawnBullet, spawnPart, troopSkinDone, troopSkinFree, troopSkinMesh, troopSkinWrite } from '../hub.js';
+import { coopHostDeath, FOE, foeBatch, SHADOW_EXT, farGeo, MOBILE, S, SOLDIER, _R, _canvasTex, burst, camera, core, enemies, fitRealMan, floatText, heightAt, loadRealTroops, paintTroops, scene, sfx, spawnBullet, spawnPart, troopSkinDone, troopSkinFree, troopSkinMesh, troopSkinWrite } from '../hub.js';
    // support defenders (cap raised to fit the CORE GUARDS upgrade, +1..3)
 export let soldiers=[], soldierLvl=0;
 // ---- infantryman: jointed legs (walk cycle), plate carrier + pouches, covered helmet w/ NVG mount, gloves, boots, M4-pattern carbine with optic ----
@@ -150,6 +150,7 @@ const tbKinds=K=>K.skin ? ['body','gun'] : TROOP_BATCH.kinds;   // Z344 what a k
 function tbShown(o){ while(o){ if(!o.visible) return false; if(o===scene) return true; o=o.parent; } return false; }
 // call right before the frame is drawn
 export function updateTroopBatch(now){
+  foeBatch(now);   // FOE 1 the enemy riflemen on screen within reach: their own skeleton (actors/foe-anim.js) — the batch below skips each man it drew (u.foeF)
   for(const id in _tbBk) _tbBk[id].n=0;
   { const pl=S.player && S.player.pos, f=TROOPLOD.far, sr=SHADOW_EXT.r*TROOPLOD.shadowK+TROOPLOD.shadowPad; _tbPx=pl?pl.x:camera.position.x; _tbPz=pl?pl.z:camera.position.z; _tbFar2=TROOPLOD.on?f*f:Infinity; _tbSh2=TROOPLOD.on?sr*sr:Infinity; }   // TROOP 1 past the sun's shadow box a man casts none; past `far` he wears the light body
   camera.updateMatrixWorld(); _tbFr.setFromProjectionMatrix(_tbPM.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));   // men off-screen aren't drawn
@@ -158,8 +159,9 @@ export function updateTroopBatch(now){
     let rootShown=tbShown(r); if(rootShown){ r.updateWorldMatrix(true, true); _tbSp.center.setFromMatrixPosition(r.matrixWorld); _tbSp.radius=2.2*(r.scale.x||1)+3; if(!_tbFr.intersectsSphere(_tbSp)) rootShown=false; }
     const dx=r.matrixWorld.elements[12]-_tbPx, dz=r.matrixWorld.elements[14]-_tbPz, d2=dx*dx+dz*dz, far=d2>_tbFar2;   // TROOP 1 how far he stands from the soldier
     const hit=(u.flashUntil||0)>now || u.torso.material.emissiveIntensity>0, sh=!MOBILE && u._cs!==false && d2<_tbSh2, K=SOLDIER_KIT[u.kitKey], skin=!!(K && K.skin && u.realKit);
-    if(skin && rootShown && !u.clipDraw){ const id=u.kitKey+'_body_'+(sh?1:0)+(far?'f':''), B=_tbBk[id]||(_tbBk[id]={ n:0, m:[], c:[], key:u.kitKey, kind:'body', sh, far }); B.m[B.n]=u; B.c[B.n]=hit ? _tbHit : (u.tint||_tbWhite); B.n++; }   // Z344 skinned: the man once, his joints read off his rig
-    for(const pt of u.parts){ if(skin && pt.kind!=='gun') continue; const detached=!pt.o.parent || pt.o.parent===scene || (pt.kind==='gun' && u.droppedGun);   // a rifle dropped beside the dead lies on its own
+    const foe=u.foeF===FOE.f;
+    if(skin && rootShown && !foe && !u.clipDraw){ const id=u.kitKey+'_body_'+(sh?1:0)+(far?'f':''), B=_tbBk[id]||(_tbBk[id]={ n:0, m:[], c:[], key:u.kitKey, kind:'body', sh, far }); B.m[B.n]=u; B.c[B.n]=hit ? _tbHit : (u.tint||_tbWhite); B.n++; }   // Z344 skinned: the man once, his joints read off his rig
+    for(const pt of u.parts){ if(skin && pt.kind!=='gun' || foe && !u.droppedGun) continue; const detached=!pt.o.parent || pt.o.parent===scene || (pt.kind==='gun' && u.droppedGun);   // a rifle dropped beside the dead lies on its own
       if(detached){ if(!tbShown(pt.o)) continue; pt.o.updateWorldMatrix(true, false); } else if(!rootShown || !tbShown(pt.o)) continue;
       const id=u.kitKey+'_'+pt.kind+'_'+(sh?1:0), B=_tbBk[id]||(_tbBk[id]={ n:0, m:[], c:[], key:u.kitKey, kind:pt.kind, sh });
       B.m[B.n]=pt.o.matrixWorld; B.c[B.n]=hit ? _tbHit : (u.tint||_tbWhite); B.n++; } }
@@ -196,8 +198,9 @@ function strideFit(u, dl, vl, lw, rx){ const E=GRAPHFIT.enemy, L=u.legLen||LEG0,
 export function animateSoldier(g, dist, dt, firing){
   const u=g.userData; if(!u.legs) return; dt=Math.max(dt,1e-3);
   const spd=dist/dt; u.spd=(u.spd||0)+(spd-(u.spd||0))*Math.min(1,dt*8); const run=Math.min(1, Math.max(0, (u.spd-2.4)/2.6));
-  const E=GRAPHFIT.enemy, fit=GRAPHFIT.on && E.on;
-  if(fit){ const bsy=u.body?u.body.scale.y:1; const P=u.pose; strideFit(u, dist/bsy, u.spd/bsy, P?P.lw||0:0, P?P.rx*(1-Math.min(1, P.pw*4)):0); u.ik=true; }   // GRAPH 6 (below)
+  const E=GRAPHFIT.enemy, fit=GRAPHFIT.on && E.on, sk=u.foeF===FOE.f;   // (FOE 1 sk: drawn by his own skeleton — his rig's legs are not seen: not stepped)
+  if(sk){ u.ik=false; }
+  else if(fit){ const bsy=u.body?u.body.scale.y:1; const P=u.pose; strideFit(u, dist/bsy, u.spd/bsy, P?P.lw||0:0, P?P.rx*(1-Math.min(1, P.pw*4)):0); u.ik=true; }   // GRAPH 6 (below)
   else { u.ik=false; u.walk += dist*(7.5-run*1.6); const amp=Math.min(REALTROOP.stride.amp[0]+run*REALTROOP.stride.amp[1], spd*0.15);   // Z344 a man's stride (thighs ±30° walking, ±40° running — the old ±50° split him into a lunge once his feet stayed on the ground)
     for(const l of u.legs){ const ph=u.walk + (l.sx>0?Math.PI:0); l.hip.rotation.x = Math.sin(ph)*amp; l.knee.rotation.x = Math.max(0, -Math.cos(ph))*amp*(1.1+run*0.5); } }
   u.t=(u.t||0)+dt; u.up.position.y = u.base.upY + Math.sin(u.t*2.1)*0.006;   // Z344 the torso stays on the hips (it used to bob up off them, opening the waist): the stride's rise and fall is the whole man's, from his legs (poseSoldier)
@@ -250,7 +253,7 @@ export function poseSoldier(g, stance, dt){ const u=g.userData; if(!u.body) retu
   if(u.head) u.head.rotation.x=(u.hx||0)-lean*CA.head-P.pw*CA.prone;
   u.stance=stance; const L=u.legs, w0=1-P.kw-P.pw;
   const KN=kneelOf(u);
-  for(let i=0;i<L.length;i++){ const l=L[i], c=KN[i], q=_LEG.prone[i];
+  if(u.foeF!==FOE.f) for(let i=0;i<L.length;i++){ const l=L[i], c=KN[i], q=_LEG.prone[i];
     l.hip.rotation.x = l.hip.rotation.x*w0 + c[0]*P.kw + q[0]*P.pw; l.knee.rotation.x = l.knee.rotation.x*w0 + c[1]*P.kw + q[1]*P.pw; l.hip.rotation.z = l.sx*0.14*P.pw;
     const mv=Math.min(1,(u.spd||0)/1.2), ph=(u.walk||0)+(l.sx>0?Math.PI:0);   // Z172 moving low: short crouched strides · a crawl when flat (knees drawn up in turn)
     if(P.lw>0.02 && !u.ik){ l.hip.rotation.x -= 0.32*P.lw; l.knee.rotation.x += 0.5*P.lw; }   // Z223 LOW: knees bent, hips back — the combat crouch-run (GRAPH 6: laid in the stride itself)

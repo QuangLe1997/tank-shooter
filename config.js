@@ -3339,6 +3339,39 @@ export const ANIMGRAPH = { on:typeof location !== 'undefined' && !/[?&]noanimgra
 //     clearance (walk, run; full from moveV) · low: bent low, the hips down / the feet ahead (body units)
 export const GRAPHFIT = { on:typeof location === 'undefined' || !/[?&]nofit\b/.test(location.search), reach:{ soft:0.955, max:0.995, let:0.12, heel:0.64 }, land:{ v:[3, 5.5], t:0, tau:0.025 }, release:{ half:0.05 }, hipDrop:true, contact:{ on:true, flight:[0.025, 0.012, 3], hip:[0.12, 0.06], half:0.035, max:0.1, foot:0.02 },
   crawl:{ on:true, max:0.22, leak:[0.3, 2] }, upright:[0.2, 0.5], enemy:{ on:true, g:[1.3, 2.5], duty:[0.5, 0.32], a:[0.36, 0.5], aV:0.34, reach:0.995, lift:[0.06, 0.16], moveV:0.5, low:[0.1, 0.05] } };
+// FOE 1 THE ENEMY MOVES LIKE A MAN (actors/foe-bake.js · foe-skin.js · foe-anim.js; ?nofoeanim turns it all off — the nine-joint rig draws every man as before):
+//   each enemy rifleman's body is the trooper's own 22-bone skeleton playing the Mixamo library (clips: ~50 of them, retargeted onto him once a battle),
+//   driven from what his AI is doing. near: within this many metres of the soldier, the `cap` nearest men on screen get the full graph on the CPU (blend
+//   space, stance changes, turns by stepping, layers, inertialized cuts, planted feet); the rest out to TROOPLOD.far are the CROWD — drawn from the baked
+//   texture by the GPU (two clips crossfaded over crowdFade s, nothing per bone on the CPU); past TROOPLOD.far the nine-joint rig and its far body (TROOP 1)
+//   as before. hyst: a near man's distance counts × this when ranking (he is not handed back and forth). vatW: texels a row of the baked texture.
+//   gaits (his metres a second, on his own scale): idle below `still`, the walk / run sets blended by speed, sprint over `sprint`; low: the crouch-walk set
+//   up to `lowMax` × its pace, then the run set bent forward by lowLean rad. blend: an inertialized cut's length (s) · turn: still, his legs stay put until
+//   the chest is `deg` off them, then a turn-90 clip steps them round (≤ `max`°, `rate` ×) · swing: rad/s at most — the chest and rifle after the aim, the head,
+//   the legs; `bearing` the blend space's heading; k its easing · lead: the head at most `max` rad ahead of the chest, `neck` its share · twist: the legs'
+//   lag taken back up Spine / Spine1 / Spine2 · tr: the stance clips' play rates (dive: stand → prone through the knee) · layer: an upper-body clip's fade
+//   in / out (s) · reloadRate / throwRate / throwLead: the reload clip's fastest rate, the throw's rate and how long before the grenade leaves his hand the
+//   swing starts · kick: the rifle's recoil on the arms / chest (rad) and how fast it settles · cover: hidden he sits with his back to it (`yaw` off the
+//   enemy), leans out `lean` s before his first round, back `hold` s after his last · signal: the squad's first man points the others on when the plan
+//   changes (`cd` s apart, `chance`) · foot: the hips down for the lower foot on a slope (≤ drop), a foot the clip puts down (ankle within lockH of its
+//   rest) locked where it landed until lifted or over-reached (reach, his metres), then eased back over `ease` s; the leg never IK'd straighter than `soft`.
+export const FOEANIM = { on:!(typeof location !== 'undefined' && /[?&]nofoeanim\b/.test(location.search)), near:40, cap:24, capMobile:8, hyst:0.85, crowd:true, crowdCap:192, vatW:1024,
+  groups:['loco', 'stance', 'combat', 'react', 'social'],
+  clips:{ idle:'stance-rifle-idle', aimIdle:'stance-rifle-aim-idle-stand', look:'stance-rifle-idle-look-around',
+    walk:{ f:'loco-rifle-walk-forward', fl:'loco-rifle-walk-forward-left', fr:'loco-rifle-walk-forward-right', l:'loco-rifle-walk-left', r:'loco-rifle-walk-right', b:'loco-rifle-walk-backward', bl:'loco-rifle-walk-backward-left', br:'loco-rifle-walk-backward-right' },
+    run:{ f:'loco-rifle-run-forward', fl:'loco-rifle-run-forward-left', fr:'loco-rifle-run-forward-right', l:'loco-rifle-run-left', r:'loco-rifle-run-right', b:'loco-rifle-run-backward' },
+    low:{ f:'loco-rifle-walk-crouch-forward', fl:'loco-rifle-walk-crouch-forward-left', fr:'loco-rifle-walk-crouch-forward-right', l:'loco-rifle-walk-crouch-left', r:'loco-rifle-walk-crouch-right', b:'loco-rifle-walk-crouch-backward' },
+    sprint:'loco-rifle-sprint-forward',
+    kneel:'stance-rifle-kneel-idle', kneelAim:'stance-idle-crouch-aim', kneelFire:'combat-fire-rifle-crouch', prone:'stance-prone-idle', crawl:'stance-prone-forward', proneFire:'combat-prone-fire-rifle-upper-body',
+    toKneel:'stance-rifle-aim-to-kneel', toStand:'stance-rifle-kneel-to-stand', toProne:'stance-rifle-kneel-to-prone', fromProne:'stance-rifle-prone-to-kneel',
+    turnL:'loco-rifle-turn-90-left', turnR:'loco-rifle-turn-90-right', kTurnL:'loco-rifle-crouch-turn-90-left', kTurnR:'loco-rifle-crouch-turn-90-right',
+    cover:'combat-cover-idle-crouch-against-object',
+    reload:'combat-reload-rifle-stand', kReload:'combat-reload-rifle-crouch', pReload:'combat-prone-reload',
+    toss:'combat-toss-grenade-rifle-aimed', kToss:'combat-throw-grenade-crouch', pToss:'combat-throw-grenade-prone',
+    point:'social-point-forward', onward:'social-charge-point-onward', flinch:'react-hit-react-hold-rifle', knock:'react-knocked-down-to-stomach' },
+  gaits:{ still:0.22, sprint:5.3, lowMax:1.7 }, lowLean:0.32, blend:0.24, turn:{ deg:55, max:100, rate:1.25 }, swing:{ chest:4.5, head:9, legs:6, k:10, bearing:5 }, lead:{ max:1.0, neck:0.4 }, twist:[0.35, 0.3, 0.35],
+  tr:{ toKneel:1.1, toStand:1.5, toProne:1.7, fromProne:1.6, dive:2.2, knock:1.3 }, layer:{ in:0.18, out:0.28 }, reloadRate:2.2, throwRate:1.2, throwLead:0.35,
+  kick:{ arm:0.09, chest:0.035, back:11 }, cover:{ yaw:2.4, lean:0.32, hold:0.7 }, signal:{ cd:7, chance:0.7 }, crowdFade:0.3, foot:{ on:true, drop:0.22, lockH:0.035, reach:0.32, ease:0.24, soft:0.955 } };
 // HANG 1 WHAT HE WEARS ON HIS BACK HANGS (actors/hang.js — the slung rifle and the worn blade alike): a damped pendulum in the back's plane from the upper attachment.
 //   g: gravity · k: how much of the attachment's own acceleration throws it · len: its lower part's length that swings (share) · ks: the strap's pull back to the rest diagonal
 //   (1/s²: √ks ≈ 12 rad/s, a swing settles in about half a second) · z: damping ratio · max: the most it may swing either way (rad) · accMax / lp: the acceleration's cap (m/s²) and

@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { COOP, COOP2, DRONEWAR, FIELDCRAFT, TROOPS } from '../../config.js';
 import { ambushGuestKill, coopBladeY, CW, DW, SOLDIER, armAlly, camera, damageAlly, droneFree, droneKill, droneSpawn, droneWarGuest, killSoldier, makeSoldierBar, makeSoldierMesh, setRole, sfx, stanceBarK, updateAllyDead, updateGifts, updateLootBeacons, updateObjective, updatePickups, updateTowers, ENEMY_DEFS, FT, MOBILE, NADES, NET_ESTATE, NET_EV, NET_POSE, PERF, S, addTrail, animateSoldier, bigExplode, buildUnitGrid, coopBlastAB, coopBlastColor, coopHitP, coopMU16, coopSendEvent, coopU16M, dazePose, dazed, drawRadar, enemies, enemyPool, fpvCam, freeEnemyBar, getEnemyBar, getEnemyMesh, gunFlash, gunSound, gunshipDown, heightAt, hitFlash, infantryDown, mateGunIndex, netFrameAdd, poseSoldier, scene, soldiers, updateAbilityUI, updateAirAim, updateBuffHUD, updateBullets, updateCamera, updateCavalry, updateCrosshair, updateEnemyBar, updateEquip, updateFieldcraft, updateGore, updateGunStatus, updateHeliDown, updateInfDead, updateInstr, updateLOD, updateLockWarn, updateLogistics, updateRank, updateReload, updateRockets, updateSquadHud, updateWalls, updateWorldBars, medalCreditFor, medalHostWord } from '../hub.js';
 import { fortBossGuest } from '../hub.js';   // BOSS 1 (campaign/fort-boss.js)
+import { foeAct } from '../hub.js';   // FOE 1 (actors/foe-anim.js)
 
 let _types = null; const types = () => _types || (_types = Object.keys(ENEMY_DEFS)), _v = new THREE.Vector3();
 export const PUPS = { n:0, born:0, died:0, gone:0, hits:0, fx:0, err:0, lastErr:'', nextId:COOP.ids.firstEntity, sent:0, sentE:0, over:0, allies:0, allyBorn:0, allyDied:0, drones:0, droneBorn:0 };
@@ -112,6 +113,7 @@ export function coopGuestDeath(id, flags, hx, hk, hz, p){ if(id > 0 && id < 6553
 export function coopGuestBlast(a, b, x, y, z, p){ try{ bigExplode(Math.abs(y) > 0.01 ? { x, y, z } : { x, z }, coopBlastColor(a, b), Math.min(6, p / 100)); }catch(err){ fail(err); } }
 // a grenade the host saw thrown: it flies and bursts here through the game's own grenade code (ai/fieldcraft.js) — as one that hurts nobody on this page
 export function coopGuestNade(a, b, x, y, z, p){ if(NADES.length >= COOP.puppet.nadeN) return; const x0 = coopMU16(a), z0 = coopMU16(b), T = Math.max(0.2, p / 1000);
+  { let best = null, bd = 6.25; for(const e of enemies){ if(!e.puppet || !e.def.inf) continue; const d = (e.pos.x - x0) ** 2 + (e.pos.z - z0) ** 2; if(d < bd){ bd = d; best = e; } } if(best) foeAct(best, 'throw'); }   // FOE 1 the thrower's arm swing
   _nadeGeo = _nadeGeo || new THREE.SphereGeometry(0.13, 8, 6); _nadeMat = _nadeMat || new THREE.MeshStandardMaterial({ color:0x3a4228, roughness:0.6, metalness:0.4 }); const m = new THREE.Mesh(_nadeGeo, _nadeMat); scene.add(m);
   NADES.push({ side:'e', you:false, dmg:0, m, x0, z0, y0:heightAt(x0, z0) + 1.5, x1:x, z1:z, t:0, T, peak:Math.max(0.5, y), landed:false, boomAt:T + FIELDCRAFT.nade.fuseGround, ring:null, net:true }); }
 // a new battlefield (or the room closed): no puppet outlives it

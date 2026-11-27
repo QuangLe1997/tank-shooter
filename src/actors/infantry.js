@@ -1,8 +1,9 @@
 // actors/infantry.js — Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 import * as THREE from 'three';
-import { AWARE, BALANCE, DEATH_POP, ENV, EQUIP, FIELDCRAFT, INFANTRY, REAL, SQUAD, LOGISTICS } from '../../config.js';
+import { AWARE, BALANCE, DEATH_POP, ENV, EQUIP, FIELDCRAFT, FOEANIM, INFANTRY, REAL, SQUAD, LOGISTICS } from '../../config.js';
 import { ambushHold, ambushScatter, bladeSever, goreK, objMod, BIOME, ENVMOD, FT, MOBILE, S, UGRID, _cv, aiIQ, animateSoldier, atCover, burst, cMod, canThrow, clampField, clearGore, combatDive, coverSpot, dazePose, dazed, decalBlood, diffDmgMul, diffScale, dropSoldierGun, endFall, enemies, enemyPool, fortExitDir, fortWallCross, heightAt, inSmoke, infPushBlocks, kitAttach, launchEnemyMissile, loadGLTF, loopDmgMul, losBlocked, makeSoldierMesh, makeSquad, nadeFlee, nadeTarget, peekMove, poseSoldier, reviveSoldierMesh, rifleFX, ringPulse, scene, sfx, smokeSpreadK, soldierReloading, spawnBullet, spawnEnemy, spawnPart, squadMove, throwNade, tracerNext, unitsNear, wantPeek, wrapAngle, asShipped, nearShape, riverWay, wadeAt, gunFlash, awareTick, PL, hatchEntry, riseStep, dirFireK, giveUpStep, markAim, markStep, nemFleeStep, gunSound } from '../hub.js';
 import { swimFoeK } from '../hub.js';   // SWIM 1 (game/swim.js)
+import { foeAct, foeLean } from '../hub.js';   // FOE 1 (actors/foe-anim.js)
 
 // ===== Z79 · ENEMY INFANTRY — riflemen & RPG teams on foot. They fan out, take pot-shots, kneel to fire rockets…
 // …and a tank rolling over them crushes them flat. Lives in enemies[] (def.inf) so every gun, drone, guard & blast already sees them. =====
@@ -47,7 +48,7 @@ export const _INF0={ x:0, z:0 }; const _infNb=[], _fl={ x:0, z:0 };
 // Z220 an enemy rifleman lobs a frag grenade at our men in cover or bunched together (from stage 2, sharper crews more often)
 function enemyNade(e, now){ const N=FIELDCRAFT.nade; e.nadeAt=now+0.9+Math.random()*0.6; if(S.stage<N.fromStage || aiIQ()<N.iqMin || (e.supp||0)>0.6 || !canThrow('e', now)) return;
   const t=nadeTarget(e.pos.x, e.pos.z, FT, a=>a.task==='cover' && atCover(a.pos, a.cover)); if(!t || losBlocked(e.pos.x, e.pos.z, t.pos.x, t.pos.z) && Math.random()<0.5) return;
-  if(Math.random()>0.35+aiIQ()*0.5) return; e.nadeAt=now+N.cdE[0]+Math.random()*(N.cdE[1]-N.cdE[0]); e.facing=Math.atan2(t.pos.x-e.pos.x, t.pos.z-e.pos.z); throwNade('e', e.pos.x, e.pos.z, t.pos.x, t.pos.z, now); }
+  if(Math.random()>0.35+aiIQ()*0.5) return; e.nadeAt=now+N.cdE[0]+Math.random()*(N.cdE[1]-N.cdE[0]); e.facing=Math.atan2(t.pos.x-e.pos.x, t.pos.z-e.pos.z); throwNade('e', e.pos.x, e.pos.z, t.pos.x, t.pos.z, now); foeAct(e, 'throw'); }   // (FOE 1 the arm swing)
 // Z104 who an enemy soldier fights: the player by default; riflemen switch to one of OUR soldiers when clearly closer; RPG teams only ever pick the player
 // AI 1 …the player only once this man is ALERTED and has him in sight (e.alert / e.sees, ai/awareness.js: looked up on the man's own staggered tick — no sight line
 //   is asked here). Out of sight he works on the last place he knew him (e.lk): suppressing fire for AWARE.keep.suppress s (supp), then the search (lost). One record a man, reused.
@@ -131,6 +132,7 @@ export function updateInfantry(e, dt, now, edt){
   if(e.burstLeft>0){ if(!open || !inRange) e.burstLeft=0;
     else if(now>=e.fireAt){ fireRound(e, T, d, now, dmgMul, ds); fired=true; e.fireAt = --e.burstLeft>0 ? now+FG : now+(FR[0]+Math.random()*(FR[1]-FR[0]))*rate; } }
   else if(open && inRange && now>e.fireAt && !soldierReloading(e.mesh) && !(e.sqNoFire && moved>0.01)){   // Z172 nobody fires mid-reload · Z173 nor while sprinting to the next cover
+    if(foeLean(e, now)) e.fireAt=now+FOEANIM.cover.lean; else   // FOE 1 hidden behind his cover: he leans out first, then fires
     if((e.supp||0)>0.75 && Math.random()<0.5) e.fireAt=now+0.4; else
     if(fortWallCross(e.pos.x, e.pos.z, T.pos.x, T.pos.z) || losBlocked(e.pos.x, e.pos.z, T.pos.x, T.pos.z)){ e.fireAt=now+0.6; wantPeek(e, T.pos.x, T.pos.z, now); }     // Z111b a fortress wall between: no shot (rifle or rocket) · Z220 nor a house / rock — he moves for a clear line
     else if(!al && Math.random() > Math.min(1, A.fireChanceBase + ds*A.fireChanceRamp)) e.fireAt=now+0.5;   // (the old coin toss: only a man who is not alerted, at our other men)
