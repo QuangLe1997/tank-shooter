@@ -69,33 +69,43 @@ export function updateBolts(dt){ for(const r of RIB){ if(!r.on) continue; r.life
 // where a straight-line weapon (tesla / railgun) actually connects: the first enemy close to the line of fire, else the end of its reach
 
 // ---- Z419 SHAPED MUZZLE FLASH: two crossed petal planes along the bore + a face-on star, additive, from one atlas; pooled instances, one draw call ----
-//   GUNFX 1 the atlas has a row per firing class (SHOTFX.cls[..].row): 0 rifle — tight petals, side-port jets, a 5–6 spike star · 1 MG — a fat blossom, a
-//   four-prong star in a round glow · 2 suppressed / SMG — a short dim cone, a small soft disc · 3 cannon — a ball of fire in a cone, a big eight-spike star
+//   GUNFX 1 the atlas has a row per firing class (SHOTFX.cls[..].row): 0 rifle · 1 MG / shotgun / AA · 2 suppressed / SMG · 3 cannon — and GUNFX 2 four
+//   variants of each (one picked per shot, plus a random roll and mirror): never a smooth ball or cone — a small white-hot core at the bore, 2–6 RAGGED
+//   petals (jagged outlines, fading to nothing at the tip), short side jets for the rifle / MG / cannon brake, a few sparks thrown forward; face-on a small
+//   core and thin uneven spikes (a four-prong cross for the MG), no glow disc
 const FLN = MOBILE ? GUNFX.flash.poolMob : GUNFX.flash.pool, FL = [], _fc = new THREE.Color();
-function flashRow(x, oy, st){ const R=Math.random, lin=(x0,x1,a)=>{ const g=x.createLinearGradient(x0,0,x1,0); g.addColorStop(0,'rgba(255,255,255,'+a+')'); g.addColorStop(1,'rgba(255,255,255,0)'); return g; },
-    rad=(cx,cy,r,a,m)=>{ const g=x.createRadialGradient(cx,cy,0,cx,cy,r); g.addColorStop(0,'rgba(255,255,255,'+a+')'); g.addColorStop(m,'rgba(255,255,255,'+(a*0.5)+')'); g.addColorStop(1,'rgba(255,255,255,0)'); return g; };
-  x.save(); x.beginPath(); x.rect(0,oy,256,128); x.clip(); const cy=oy+64;
-  // left: the flash seen side-on — a hot core at the bore, petals out along it
-  const nP = st===2 ? 3 : st===1 ? 8 : st===3 ? 9 : 7, Lm = st===2 ? [26,18] : st===1 ? [52,58] : st===3 ? [70,52] : [60,64], Wm = st===2 ? [3,3] : st===1 ? [11,12] : st===3 ? [14,14] : [6,9];
-  for(let i=0;i<nP;i++){ const L=Lm[0]+R()*Lm[1], off=(R()-0.5)*(st===1?26:16), w=Wm[0]+R()*Wm[1]; x.fillStyle=lin(0,L,st===2?0.45:0.85); x.beginPath(); x.moveTo(2,cy-w); x.quadraticCurveTo(L*0.45,cy+off*0.5-w*(st===1?1.3:0.9),L,cy+off); x.quadraticCurveTo(L*0.45,cy+off*0.5+w*(st===1?1.3:0.9),2,cy+w); x.closePath(); x.fill(); }
-  if(st===0) for(let i=0;i<5;i++){ const a=(R()<0.5?-1:1)*(0.45+R()*0.7), L=22+R()*26, bx=8+R()*16; x.save(); x.translate(bx,cy); x.rotate(a); x.fillStyle=lin(0,L,0.7); x.beginPath(); x.moveTo(0,-3); x.lineTo(L,0); x.lineTo(0,3); x.closePath(); x.fill(); x.restore(); }   // the side-port jets
-  if(st===1){ x.fillStyle=rad(30,cy,26,0.55,0.4); x.fillRect(0,cy-30,64,60); }   // the MG's blossom: a round ball just out of the flash hider
-  if(st===3){ x.fillStyle=rad(44,cy,44,0.6,0.45); x.fillRect(0,cy-48,96,96); }   // the cannon's fireball
-  x.fillStyle=rad(st===2?10:16,cy,st===2?16:26,st===2?0.8:1,0.5); x.fillRect(0,cy-34,60,68);
-  // right: the flash seen down the bore — a hot core and thin, sharp, uneven spikes (a four-prong cross for the MG's slotted hider, none to speak of suppressed)
-  x.translate(192,cy); const n = st===1 ? 4 : st===3 ? 8 : st===2 ? 0 : 5+(R()<0.5?1:0), a0=R()*6.283;
-  for(let i=0;i<n;i++){ const a=a0+i/n*6.283+(R()-0.5)*(st===1?0.15:0.5), L=(st===3?40:34)+R()*(st===1?20:26), w=(st===1?3.5:2.5)+R()*2.5; x.save(); x.rotate(a); x.fillStyle=lin(0,L,0.95); x.beginPath(); x.moveTo(0,-w); x.lineTo(L,0); x.lineTo(0,w); x.closePath(); x.fill(); x.restore(); }
-  const rr = st===2 ? 14 : st===1 ? 34 : st===3 ? 46 : 24; x.fillStyle=rad(0,0,rr,st===2?0.7:1,st===1?0.55:0.45); x.beginPath(); x.arc(0,0,rr,0,7); x.fill(); x.restore(); }
-function flashAtlas(){ const c=document.createElement('canvas'); c.width=256; c.height=512; const x=c.getContext('2d'); for(let r=0;r<4;r++) flashRow(x, r*128, r);
+function flashCell(x, x0, y0, st){ const R=Math.random, r=(a,b)=>a+R()*(b-a), cy=y0+64,
+    P = [ { n:[3,4], L:[48,104], W:[5,9], sp:10, jets:[2,3], jL:[12,24], jA:[0.45,0.9], sparks:5, a:0.95 }, { n:[4,5], L:[66,118], W:[7,12], sp:16, jets:[2,3], jL:[14,26], jA:[0.45,0.9], sparks:7, a:0.95 },
+      { n:[2,3], L:[26,50], W:[3,5], sp:6, jets:[0,0], jL:[0,0], jA:[0,0], sparks:2, a:0.6 }, { n:[5,6], L:[80,122], W:[11,17], sp:22, jets:[3,4], jL:[22,38], jA:[0.6,1.0], sparks:12, a:0.9 } ][st];
+  const fade=(xa,xb,a)=>{ const g=x.createLinearGradient(xa,0,xb,0); g.addColorStop(0,'rgba(255,255,255,'+a+')'); g.addColorStop(0.45,'rgba(255,255,255,'+(a*0.55)+')'); g.addColorStop(1,'rgba(255,255,255,0)'); return g; };
+  // a ragged tongue from (bx,by) along angle ang, L long, w wide at the root: both edges jittered, a sharp tip
+  const tongue=(bx,by,ang,L,w,a)=>{ x.save(); x.translate(bx,by); x.rotate(ang); x.fillStyle=fade(0,L,a); x.beginPath(); x.moveTo(0,-w*0.5); const k=6+(R()*3|0);
+    for(let i=1;i<=k;i++){ const t=i/(k+1); x.lineTo(L*t, -w*(1-t)**0.7*(0.5+R()*0.9)); } x.lineTo(L, r(-w*0.3,w*0.3));
+    for(let i=k;i>=1;i--){ const t=i/(k+1); x.lineTo(L*t, w*(1-t)**0.7*(0.5+R()*0.9)); } x.lineTo(0,w*0.5); x.closePath(); x.fill(); x.restore(); };
+  x.save(); x.beginPath(); x.rect(x0+2,y0+2,124,124); x.clip(); x.globalCompositeOperation='lighter';
+  // side-on: petals in a narrow cone, side jets out of the brake, sparks ahead, the core
+  const nP=Math.round(r(P.n[0],P.n[1]));
+  for(let i=0;i<nP;i++){ const L=r(P.L[0],P.L[1]), off=r(-P.sp,P.sp); tongue(x0+4, cy+r(-2,2), Math.atan2(off, L), L, r(P.W[0],P.W[1]), P.a); }
+  const nJ=Math.round(r(P.jets[0],P.jets[1]));
+  for(let i=0;i<nJ;i++){ const s=i%2?1:-1; tongue(x0+r(5,14), cy, s*r(P.jA[0],P.jA[1]), r(P.jL[0],P.jL[1]), r(3,5), 0.5); }   // (raked forward: jets straight up / down read as a vertical bar across the flash)
+  for(let i=0;i<P.sparks;i++){ const sx=x0+r(18,P.L[1]), sy=cy+r(-P.sp,P.sp)*(sx-x0)/P.L[1]*1.6; x.fillStyle='rgba(255,255,255,'+r(0.5,0.9)+')'; x.fillRect(sx,sy,r(1,3),1.2); }
+  let g=x.createRadialGradient(x0+6,cy,0,x0+6,cy,st===3?16:st===2?6:10); g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(0.45,'rgba(255,255,255,0.75)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.fillRect(x0,cy-20,40,40);
+  x.restore();
+  // face-on: a small hot core, thin uneven spikes (none to speak of suppressed)
+  x.save(); x.beginPath(); x.rect(x0+130,y0+2,124,124); x.clip(); x.globalCompositeOperation='lighter'; const fx=x0+192, n=st===1?4:st===3?r(7,9)|0:st===2?0:r(5,7)|0, a0=R()*6.283;
+  for(let i=0;i<n;i++){ const a=a0+i/n*6.283+r(-0.3,0.3)*(st===1?0.3:1); tongue(fx, cy, a, (st===3?44:30)+R()*(st===3?16:26), st===1?r(4,6):r(2.5,4.5), 0.95); }
+  if(st===1) for(let i=0;i<4;i++) tongue(fx, cy, a0+(i+0.5)/4*6.283, r(8,16), 3, 0.6);   // the MG's slotted hider: short fingers between the prongs
+  g=x.createRadialGradient(fx,cy,0,fx,cy,st===3?18:st===2?7:11); g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(0.5,'rgba(255,255,255,0.6)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.fillRect(fx-20,cy-20,40,40); x.restore(); }
+function flashAtlas(){ const c=document.createElement('canvas'); c.width=1024; c.height=512; const x=c.getContext('2d'); for(let r=0;r<4;r++) for(let v=0;v<4;v++) flashCell(x, v*256, r*128, r);
   const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t; }
 const _fl = (()=>{ const S2=0.75, z0=0.02, P=[0,-.5,0, 0,.5,0, 0,.5,1, 0,-.5,1,  -.5,0,0, .5,0,0, .5,0,1, -.5,0,1,  -S2,-S2,z0, S2,-S2,z0, S2,S2,z0, -S2,S2,z0],
     U=[0,0, 0,1, .5,1, .5,0,  0,0, 0,1, .5,1, .5,0,  .5,0, 1,0, 1,1, .5,1], I=[]; for(let q=0;q<3;q++){ const a=q*4; I.push(a,a+1,a+2, a,a+2,a+3); }
   const geo=new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(P,3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(U,2)); geo.setIndex(I);
   geo.setAttribute('aRow', new THREE.InstancedBufferAttribute(new Float32Array(FLN),1).setUsage(THREE.DynamicDrawUsage));
   const mat=new THREE.MeshBasicMaterial({ map:flashAtlas(), transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide, fog:false });
-  mat.onBeforeCompile=sh=>{ sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute float aRow; varying float vFace;').replace('#include <uv_vertex>','#include <uv_vertex>\n  vMapUv.y = (vMapUv.y + 3.0 - aRow) * 0.25;\n'
+  mat.onBeforeCompile=sh=>{ sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute float aRow; varying float vFace;').replace('#include <uv_vertex>','#include <uv_vertex>\n  vMapUv.y = (vMapUv.y + 3.0 - mod(aRow, 4.0)) * 0.25; vMapUv.x = (vMapUv.x + floor(aRow * 0.25 + 0.01)) * 0.25;\n'
       +'  { vec3 bw = normalize((modelMatrix * instanceMatrix * vec4(0.0, 0.0, 1.0, 0.0)).xyz), wp = (modelMatrix * instanceMatrix * vec4(position, 1.0)).xyz; float cf = abs(dot(bw, normalize(cameraPosition - wp)));\n'
-      +'    vFace = uv.x > 0.5 ? smoothstep(0.35, 0.75, cf) : 1.0 - smoothstep(0.8, 0.98, cf); }');   // GUNFX 1 a quad seen edge-on fades out: no hard line through the flash (the star side-on, the petals head-on)
+      +'    vFace = (abs(position.x) > 0.6 && abs(position.y) > 0.6) ? smoothstep(0.55, 0.88, cf) : 1.0 - smoothstep(0.8, 0.98, cf); }');   // GUNFX 1 a quad seen edge-on fades out: no hard line through the flash (the star side-on, the petals head-on) · GUNFX 2 the star told by its corners (uv.x > 0.5 missed two of them: a line was left)
     sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying float vFace;').replace('#include <map_fragment>','#include <map_fragment>\n  diffuseColor.a *= vFace;'); };   // its class's row of the atlas
   const m=new THREE.InstancedMesh(geo, mat, FLN);
   m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); m.setColorAt(0, _fc.setRGB(1,1,1)); m.instanceColor.setUsage(THREE.DynamicDrawUsage); m.count=0; m.frustumCulled=false; m.renderOrder=8; scene.add(m);
@@ -105,7 +115,7 @@ const _q=new THREE.Quaternion(), _q2=new THREE.Quaternion(), _e=new THREE.Euler(
 export function gunFlash(x, y, z, ang, len, wid, col=0xfff0d0, k=1, pit=0, row=0){ let f=null, old=null;
   for(const r of FL){ if(!r.on){ f=r; break; } if(!old || r.life<old.life) old=r; } f=f||old;
   const j=0.8+Math.random()*0.4; _e.set(-pit, ang, 0, 'YXZ'); _q.setFromEuler(_e); _q2.setFromAxisAngle(_Zax, Math.random()*6.283); _q.multiply(_q2);   // a random roll about the bore: never the same flash twice
-  f.m.compose(_p.set(x,y,z), _q, _sc.set(wid*j, wid*j, len*(0.75+Math.random()*0.5))); f.on=true; f.fr=0; f.life=f.max=GUNFX.flash.life; f.k=k*GUNFX.flash.hot; f.col=col; f.row=row; }
+  f.m.compose(_p.set(x,y,z), _q, _sc.set(wid*j*(Math.random()<0.5?-1:1), wid*j*(0.8+Math.random()*0.4), len*(0.75+Math.random()*0.5))); f.on=true; f.fr=0; f.life=f.max=GUNFX.flash.life; f.k=k*GUNFX.flash.hot; f.col=col; f.row=row+4*(Math.random()*4|0); }   // GUNFX 2 one of four variants of its row, mirrored at random
 // a gun's light is a strobe: it snaps up for the shot and dies in a few frames (an explosion keeps the slow fade in game/loop.js)
 export function gunLight(x, y, z, col, I){ muzzleLight.position.set(x,y,z); muzzleLight.color.setHex(col); if(I>=muzzleLight.intensity){ muzzleLight.intensity=I; muzzleLight.userData.fast=true; } }
 // the muzzle brake: gas and flame thrown out of the side ports (sd = ±1 sides), the smoke rolling away sideways
@@ -174,7 +184,7 @@ export function muzzleFX(x, y, z, ang, cls='rifle', side='e', pit=0, src=null, k
   if(side === 'p' || d2 < R*R){ const fall = side === 'p' ? 1 : 1-Math.sqrt(d2)/R*0.6; gunLight(x+fx*0.5, y+0.25, z+fz*0.5, 0xffc27a, C.light*k*fall*(side === 'p' ? 1 : 0.8)); }
   if(C.splash && lk > 0.02 && d2 < 3600) splashAt(x+fx*C.splash*0.25, z+fz*C.splash*0.25, C.splash*k, lk);
   if(C.smoke && d2 < 2500 && (!MOBILE || Math.random() < 0.35)){ const w=WX.wind, s=C.smoke*k;   // a puff out of the muzzle, carried off on the wind
-    spawnPart(x+fx*0.3, y+0.02, z+fz*0.3, fx*1.6*s+w.x*0.5, 0.3, fz*1.6*s+w.y*0.5, { color:0xc4c0b8, size:0.45+0.4*s, life:1.1+Math.random()*0.6, smoke:true, grav:0.35, drag:2.0, grow:1.8+s, op:0.22+0.12*s, keep:true }); }
+    spawnPart(x+fx*0.3, y+0.02, z+fz*0.3, fx*1.6*s+w.x*0.5, 0.3, fz*1.6*s+w.y*0.5, { color:0xc4c0b8, size:0.3+0.4*s, life:1.0+Math.random()*0.6, smoke:true, grav:0.35, drag:2.0, grow:1.5+s, op:0.14+0.12*s, keep:true }); }
   if(src && d2 < SHOTFX.barrel.R*SHOTFX.barrel.R) heatBarrel(src, C.heat*k); }
 
 // ---- GUNFX 1 the light a shot throws on the ground: a warm, round splash under the muzzle for 1–2 frames (night: bright; day: next to nothing); one draw call ----
@@ -203,7 +213,7 @@ function updateBarrels(dt){ if(MOBILE || !(dt>0)) return; const B=SHOTFX.barrel,
     if(q.quiet<0.18 || q.heat<B.th) continue; q.t-=dt; if(q.t>0) continue; q.t=B.every*(0.7+Math.random()*0.6);
     q.src.getWorldPosition(_hw); const h=Math.min(1, q.heat/B.max);
     spawnPart(_hw.x+(Math.random()-0.5)*0.04, _hw.y+0.03, _hw.z+(Math.random()-0.5)*0.04, w.x*0.25+(Math.random()-0.5)*0.15, 0.45+h*0.35, w.y*0.25+(Math.random()-0.5)*0.15,
-      { color:0xd4d1cb, size:0.16+h*0.14, life:1.4+h*0.9, smoke:true, grav:0.6, drag:1.2, grow:1.9, op:0.22+h*0.28, keep:true }); } }
+      { color:0xd4d1cb, size:0.06+h*0.06, life:1.2+h*0.8, smoke:true, grav:0.7, drag:1.2, grow:1.3, op:0.12+h*0.14, keep:true }); } }   // GUNFX 2 a wisp, not a column
 
 // ---- GUNFX 1 ROUNDS IN FLIGHT: most rifle / MG rounds fly unseen; every Nth is a TRACER — one motion-blurred streak (its speed × SHOTFX.streak.shutter
 //   long, at least SHOTFX.tracer.minPx wide on screen so a far one stays a hairline, not a dotted line), brightest at its head, brighter still coming straight
@@ -230,9 +240,9 @@ const _stM = new THREE.Mesh(_stG, new THREE.ShaderMaterial({ uniforms:_stU, tran
     vec3 sd = b.xyz - a.xyz; float sl = length(sd), tw = sl > 1e-4 ? max(0.0, dot(sd / sl, normalize(-b.xyz))) : 1.0;   // coming at the eye: brighter
     vC = aC.rgb * aC.w * (1.0 + uToward * tw * tw) * sqrt(max(0.12, aW.x / w)) * exp(-uFog * uFog * dist * dist * 0.55); }`,   // a far one widened to minPx dims to keep its light · the fog swallows it
   fragmentShader:`varying vec3 vC; varying float vAl, vHalf, vAc, vPx, vCore;
-  void main(){ float dx = max(abs(vAl) - vHalf, 0.0), r = length(vec2(dx, vAc)) / vPx; if(r >= 1.0) discard;
-    float f = clamp((vAl + vHalf) / (2.0 * vHalf + 1e-3), 0.0, 1.0), along = mix(1.0, 0.12 + 0.88 * pow(f, 0.7), clamp(vHalf / (3.0 * vPx), 0.0, 1.0));   // the head bright, the tail fading
-    float q = r / vCore, v = exp(-q * q * 2.2) + exp(-r * r * 3.0) * (1.0 - r) * 0.28; gl_FragColor = vec4(vC * v * along, 1.0); }` }));
+  void main(){ float dx = max(abs(vAl) - vHalf, 0.0), r;
+    float f = clamp((vAl + vHalf) / (2.0 * vHalf + 1e-3), 0.0, 1.0), lk = clamp(vHalf / (3.0 * vPx), 0.0, 1.0), along = mix(1.0, 0.04 + 0.96 * pow(f, 1.4), lk), ws = mix(1.0, 0.3 + 0.7 * f, lk);   // GUNFX 2 the head bright, the tail fading AND tapering
+    r = length(vec2(dx, vAc / ws)) / vPx; if(r >= 1.0) discard; float q = r / vCore, v = exp(-q * q * 2.2) + exp(-r * r * 3.0) * (1.0 - r) * 0.28; gl_FragColor = vec4(vC * v * along, 1.0); }` }));
 _stM.frustumCulled = false; _stM.renderOrder = 7; scene.add(_stM);
 let _sn = 0;
 function putStreak(ax, ay, az, bx, by, bz, col, I, w, core){ if(_sn >= STN) return; const i=_sn++, o=i*3, c=i*4; _fc.setHex(col);

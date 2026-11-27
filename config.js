@@ -96,19 +96,19 @@ export const GUNFX = {
 //   motion-blurred streak (speed × shutter, ≥ minPx wide on screen, brighter coming at the camera) in ONE instanced draw; ours red-orange, theirs green;
 //   a sniper's round leaves only a faint trace; an unseen round passing close by shows a faint shimmer; sparks and ricochets are streaks of the same pool
 export const SHOTFX = { on:true,
-  cls:{ rifle:{ row:0, f:[0.62, 0.34, 1], light:1.6, splash:3.2, smoke:0, heat:0.10 }, smg:{ row:2, f:[0.42, 0.28, 0.8], light:0.9, splash:2.2, smoke:0, heat:0.07 },
-    supp:{ row:2, f:[0.16, 0.13, 0.35], light:0.25, splash:0, smoke:0, heat:0.05 }, mg:{ row:1, f:[0.95, 0.56, 0.95], light:2.4, splash:4.5, smoke:0.35, heat:0.12 },
-    sniper:{ row:0, f:[1.05, 0.6, 1.1], light:2.6, splash:4.5, smoke:0.7, heat:0.3 }, shotgun:{ row:1, f:[0.85, 0.6, 0.95], light:2.2, splash:4, smoke:0.6, heat:0.25 },
-    cannon:{ row:3, f:[1.8, 1.1, 0.85], light:3.4, splash:9, smoke:1.2, heat:0.4 }, aa:{ row:1, f:[1.25, 0.62, 0.95], light:2.6, splash:5, smoke:0.7, heat:0.12 } },   // row = the flash atlas row (0 rifle star + side ports, 1 MG blossom, 2 suppressed / SMG, 3 cannon) · f = flash [length m, width m, brightness] · light = point-light intensity · splash = ground glow m · smoke = per-shot puff × · heat = barrel heat per shot
-  tracer:{ every:{ mg:4, smg:5, aa:2, def:4 }, ours:0xff6a2a, theirs:0x86ff4c, hot:3.2, toward:1.5, ignite:3, minPx:1.4, width:0.016, glow:3 },   // every Nth round of the class (rifle = REAL.tracer.every) · tints · HDR × · × brighter head-on · m before full burn · min screen px · core m · glow × the core
-  streak:{ pool:220, poolMob:90, shutter:0.032, min:0.6, max:5 },   // instanced streaks · a frame's motion blur s · length clamp m
+  cls:{ rifle:{ row:0, f:[0.46, 0.3, 1], light:1.6, splash:3.2, smoke:0, heat:0.10 }, smg:{ row:2, f:[0.34, 0.24, 0.8], light:0.9, splash:2.2, smoke:0, heat:0.07 },
+    supp:{ row:2, f:[0.14, 0.12, 0.35], light:0.25, splash:0, smoke:0, heat:0.05 }, mg:{ row:1, f:[0.9, 0.5, 0.95], light:2.4, splash:4.5, smoke:0.2, heat:0.12 },
+    sniper:{ row:0, f:[0.75, 0.45, 1.1], light:2.6, splash:4.5, smoke:0.7, heat:0.3 }, shotgun:{ row:1, f:[0.7, 0.45, 0.95], light:2.2, splash:4, smoke:0.6, heat:0.25 },
+    cannon:{ row:3, f:[1.6, 0.9, 0.85], light:3.4, splash:9, smoke:1.2, heat:0.4 }, aa:{ row:1, f:[1.0, 0.5, 0.95], light:2.6, splash:5, smoke:0.7, heat:0.12 } },   // row = the flash atlas row (0 rifle star + side ports, 1 MG blossom, 2 suppressed / SMG, 3 cannon) · f = flash [length m, width m, brightness] · light = point-light intensity · splash = ground glow m · smoke = per-shot puff × · heat = barrel heat per shot
+  tracer:{ every:{ mg:4, smg:5, aa:2, def:4 }, ours:0xff6a2a, theirs:0x86ff4c, hot:3.4, toward:1.6, ignite:3, minPx:1.3, width:0.012, glow:3.4 },   // every Nth round of the class (rifle = REAL.tracer.every) · tints · HDR × · × brighter head-on · m before full burn · min screen px · core m · glow × the core
+  streak:{ pool:220, poolMob:90, shutter:0.016, min:1.2, max:2.6 },   // instanced streaks · a short virtual shutter s · length clamp m (GUNFX 2 a dash, not a bar)
   trace:{ k:0.05, w:2, col:0xe8ecf0 },                          // a sniper / DMR round: a faint grey trace (× brightness, × width)
   shimmer:{ R:5, k:0.06, w:3, col:0xdfe6ec },                     // an unseen enemy round passing within R m of the camera: a faint streak
   rico:{ stone:0.12, metal:0.3, k:1.6, w:0.01, v:[38, 70], life:[0.1, 0.22] },   // a strike off stone / steel skips away as a bright streak this often
   spark:{ metal:5, stone:2, mob:0.5, k:2.6, w:0.005, v:[7, 16], life:[0.12, 0.3] },   // spark streaks off a strike
   splash:{ day:0.03, night:0.32, dusk:0.14, pool:24 },                // the ground glow under a muzzle by light (× brightness)
   light:{ R:26, Rday:12 },                                        // a shot nearer the camera than this m lights the scene (one shared light)
-  barrel:{ n:6, th:0.35, max:1.6, decay:0.32, every:0.07, R:34 },   // hot barrels tracked · heat before it smokes · cap · heat lost /s · a wisp every s · only this near the camera
+  barrel:{ n:6, th:0.35, max:1.6, decay:0.32, every:0.11, R:34 },   // hot barrels tracked · heat before it smokes · cap · heat lost /s · a wisp every s · only this near the camera
   marks:{ hold:45, fade:12 },                                     // a bullet pock / shell scar stays hold s, then fades out over fade s
 };
 export const REAL = {
