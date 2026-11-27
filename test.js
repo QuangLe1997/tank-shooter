@@ -2759,6 +2759,14 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
     'warm-up compiles (the go-time props, compileQuiet, the intro) bind the scene pass\'s target, so they build the variants the game draws with; nothing is downloaded during the 3-2-1');
   ok(/return compileReady\(m\)\.then\(\(\) => \{ parent\.add\(m\); return m; \}\)/.test(lr) && /relicWarm\(\)\{ return build\(true\); \}/.test(rd('src/loot/relic.js')) && C.PERF_SPLIT.shadow.on===false && /\[\?&\]split\\b/.test(ss) && /PH\.t1=0; PH\.pc=/.test(ph),
     'a loot model joins the field once its shaders have linked; the shadow split stays off unless ?split; the shader log counts from the countdown'); }
+// HUDCLEAN 1 nothing about the ride or a fort's name in the middle of the view
+{ const fs=await import('node:fs'); const C=await import('./config.js'), X=C.HUDCLEAN, rd=f=>fs.readFileSync(f,'utf8'), rc=rd('src/game/ride-call.js'), cv=rd('src/game/cavalry.js'), rw=rd('src/game/ride-wear.js'), hs=rd('src/game/horse-swim.js'), fo=rd('src/world/fortress.js'), pd=rd('src/game/player-damage.js'), xo=rd('src/game/xeom.js');
+  ok(X && X.chip.noteT>=1 && X.chip.noteT<=5 && X.chip.idleT>0 && X.chip.op.idle<X.chip.op.live && X.chip.op.touch<X.chip.op.live && X.chip.op.live<=1 && X.chip.desk.left<80 && X.chip.touch.left<80 && X.chip.desk.bottom<160 && X.chip.touch.top>40,
+    'HUDCLEAN.chip: a small chip at the screen\'s lower left (top left on a phone), faint when nothing is new, a note held a moment');
+  ok(!/left:50%/.test(rc.split('rideCallUi')[1]) && /export function rideNote\(text, col\)/.test(rc) && !/floatText/.test(rc) && !/floatText\(/.test(rw) && !/floatText\(/.test(hs) && !/floatText\('(VÍT GA|PHI NƯỚC ĐẠI|CHỜ BÁC TÀI|XE HƯ|BÁC TÀI)/.test(cv) && /rideNote\('BÁC TÀI ĐANG CHỜ'/.test(cv) && /hudOn\('talk'\)\) floatText\(XEOM\.lines/.test(xo),
+    'the ride\'s calls, ETAs, repairs and spills speak in the chip (rideNote), never as a toast over the soldier; the driver\'s chatter only with the dialogue on screen');
+  ok(X.fort.label===false && X.fort.plaque===false && X.fort.wake.size<=13 && X.fort.wake.fadeIn>=1 && X.fort.wake.hold<=5 && /if\(HUDCLEAN\.fort\.label\)\{ f\.label=nameSprite/.test(fo) && /edgeNote\(f\.name\+' · BÁO ĐỘNG'/.test(fo) && !/showBanner\(f\.name\+' BÁO ĐỘNG/.test(fo) && /export function edgeNote\(text, color\)/.test(pd),
+    'no fort name over the keep or on the gate by default; coming near, the alarm is a small line at the top edge that fades in'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
@@ -2940,7 +2948,7 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
 
 // Z176 fortress gates carry a carved name stone; flags fly on every great tower; a command post in every fort that can be shelled to ruins
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'); const fo=R('src/world/fortress.js');
-  ok(/function plaqueMat\(name, place, tier\)/.test(fo) && /plaqueMat\(f\.name, biomePlace\(BIOME\.name\), f\.tier\)/.test(fo), 'every gate has a carved, gilded name stone: the fort and the place');
+  ok(/function plaqueMat\(name, place, tier\)/.test(fo) && /if\(HUDCLEAN\.fort\.plaque\)\{ const pl=new THREE\.Mesh\(new THREE\.PlaneGeometry\(6\.2,1\.62\), plaqueMat\(f\.name, biomePlace\(BIOME\.name\), f\.tier\)\)/.test(fo), 'a gate\'s carved, gilded name stone (the fort and the place) only when HUDCLEAN.fort.plaque is on');
   ok(/FLAGS\.push\(\[px,pz,TH2\]\)/.test(fo) && /f\.towerFlags\.push\(fl\)/.test(fo) && /for\(const fl of \(f\.towerFlags\|\|\[\]\)\) fl\.material\.map=bannerTex\(\)/.test(fo), 'flags fly from the great towers and turn to our colours when the fort is taken');
   ok(/buildCore\(f, g, WM\)/.test(fo) && /kind:'fortcore'/.test(fo) && /fortCoreHit\(b, dmg\)/.test(R('src/world/cover.js')) && /function coreCrater/.test(fo) && /f\.coreDown\) return;/.test(fo), 'a command post in every fort (main and lesser) — shelled to ruins it burns, and the fort loses its reserves and its sorties'); }
 

@@ -3607,3 +3607,15 @@ export const PERF_SPLIT = {
     high:{ dpr:2, dprPhone:2, ao:true, shadow:0, shafts:true, detailK:1 } },
   // a load that never finished (the note still in localStorage[key] at the next start) → one level down; the note goes once the fight has run okS s; the notice stays sayS s
   crash:{ on:true, key:'xk.loading', okS:4, sayS:7 } };
+// HUDCLEAN 1 — nothing about the ride or a fort's name in the middle of the view (game/ride-call.js, game/cavalry.js, game/ride-wear.js, game/horse-swim.js,
+//   world/fortress.js, game/player-damage.js):
+//   chip = the ride's one status line (was a pill above the gun bar and toasts over the soldier): a small chip at the screen's lower left, above the camera
+//     buttons — an icon, 2–4 words, a hairline ETA bar while he comes. desk / touch = its corner offsets (px); noteT = how long a ride note (XE CHẾT MÁY,
+//     CHẠY CHẬM LẠI…) holds the chip, s; idleT = after so long with nothing new it sinks to op.idle (op.touch on a phone, where it is also the call button);
+//     op.live = while he is called, held up or a note shows
+//   fort.label = the fort's name floating over its keep (false: gone — the fort list, the radar and the boss bar carry it); fort.plaque = the gilded name
+//     on the gate's name stone (false: the stone stays blank); fort.wake = the alarm as you come near: a small line at the top edge (size px, hold s,
+//     fadeIn s) in place of the big banner
+export const HUDCLEAN = {
+  chip:{ desk:{ left:14, bottom:62 }, touch:{ left:12, top:156 }, noteT:2.6, idleT:3, op:{ idle:0.42, touch:0.62, live:0.86 } },
+  fort:{ label:false, plaque:false, wake:{ size:11, hold:3.2, fadeIn:1.5 } } };

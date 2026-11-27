@@ -3,8 +3,8 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { fortBossReset, fortBossWake } from '../hub.js';   // BOSS 1 (campaign/fort-boss.js)
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { CAM_ROOM, FORT, FORTBOSS, FORT_CMD, COMMAND, HOME_GAP, HUMAN_SCALE, REALFORT, FORT_GAP, BREAKUP, SCENERY, WORLD_FLAGS } from '../../config.js';
-import { cosmetic, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, HF, MOBILE, S, UNDER, ZONES, bigExplode, biomePlace, blocks, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, propTex, radio, rallyFlagTex, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, bannerTex, wallMat, loadGLTF, buildOutpost, farLOD, landTone, sceneDims, scenePiece, decalAsh, breakScar, decalScorch, hillCfg, paveYard, raiseFortHills, raiseWard , riseHere, dirSallyOk } from '../hub.js';
+import { CAM_ROOM, FORT, FORTBOSS, FORT_CMD, COMMAND, HOME_GAP, HUDCLEAN, HUMAN_SCALE, REALFORT, FORT_GAP, BREAKUP, SCENERY, WORLD_FLAGS } from '../../config.js';
+import { cosmetic, edgeNote, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, HF, MOBILE, S, UNDER, ZONES, bigExplode, biomePlace, blocks, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, propTex, radio, rallyFlagTex, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, bannerTex, wallMat, loadGLTF, buildOutpost, farLOD, landTone, sceneDims, scenePiece, decalAsh, breakScar, decalScorch, hillCfg, paveYard, raiseFortHills, raiseWard , riseHere, dirSallyOk } from '../hub.js';
 
 export const FORTS=[];
 const R2=(r)=>r[0]+Math.random()*(r[1]-r[0]), RI=(r)=>Math.round(R2(r));
@@ -146,7 +146,7 @@ export function buildForts(){ mats(); let fi=Math.floor(Math.random()*6);   // Z
       { const [gx2,gz2]=at(0, 0.3); geos.push(placed(stoneBox(FORT.gateW+0.8, 2.6, TH*1.6), gx2, H+1.1, gz2, ry)); }
       for(let k=0;k<5;k++){ const l=-FORT.gateW/2+0.6+k*(FORT.gateW-1.2)/4, [cx,cz]=at(l, 0.3+TH*0.8+0.2); geos.push(placed(stoneBox(0.9,0.95,0.5), cx, H+2.87, cz, ry)); const [kx,kz]=at(l, 0.3+TH*0.8+0.12); geos.push(placed(stoneBox(0.32,0.6,0.28), kx, H+0.05, kz, ry)); }
       { const [ex,ez]=at(0, 0.3+TH*0.8+0.1); geos.push(placed(stoneBox(6.7,2.05,0.32), ex, H+1.15, ez, ry), placed(stoneBox(7.1,0.22,0.5), ex, H+2.24, ez, ry), placed(stoneBox(7.1,0.22,0.5), ex, H+0.06, ez, ry));   // Z176 the gate's NAME STONE: a moulded frame…
-        const pl=new THREE.Mesh(new THREE.PlaneGeometry(6.2,1.62), plaqueMat(f.name, biomePlace(BIOME.name), f.tier)); const [qx,qz]=at(0, 0.3+TH*0.8+0.27); pl.position.set(qx, H+1.15, qz); pl.rotation.y=Math.atan2(onx,onz); g.add(pl); f.plaque=pl; }   // …and the carved, gilded name
+        if(HUDCLEAN.fort.plaque){ const pl=new THREE.Mesh(new THREE.PlaneGeometry(6.2,1.62), plaqueMat(f.name, biomePlace(BIOME.name), f.tier)); const [qx,qz]=at(0, 0.3+TH*0.8+0.27); pl.position.set(qx, H+1.15, qz); pl.rotation.y=Math.atan2(onx,onz); g.add(pl); f.plaque=pl; } }   // …and the carved, gilded name (HUDCLEAN 1 off: the stone stays blank, the name lives in the fort list)
       // portcullis, raised: its lower bars and teeth hang below the gallery
       for(let k=0;k<=9;k++){ const l=-FORT.gateW/2+0.35+k*(FORT.gateW-0.7)/9, [bx,bz]=at(l, 0.62); dk.push(placed(new THREE.BoxGeometry(0.1,1.5,0.1), bx, H-0.95, bz, ry));
         const t=new THREE.ConeGeometry(0.09,0.4,5); t.rotateX(Math.PI); t.translate(bx, H-1.9, bz); dk.push(t); }
@@ -212,7 +212,7 @@ export function buildForts(){ mats(); let fi=Math.floor(Math.random()*6);   // Z
         const x=f.x+Math.cos(a)*r, z=f.z+Math.sin(a)*r; if(blocks.some(b=>b.fort===f && b.kind==='cover' && Math.hypot(b.x-x,b.z-z)<5)) continue; if(f.keepR && Math.hypot(x-f.x-f.keepX, z-f.z-f.keepZ)<f.keepR+Y.keepGap) continue; if(_segDist(x, z, f.gx, f.gz, lkx, lkz)<Y.lane) continue;   // CAM 5 room round the keep, the road from the gate to it kept clear if(f.coreR && Math.hypot(x-f.x-f.coreX, z-f.z-f.coreZ)<f.coreR+Y.keepGap) continue;
         const kind=kinds[(Math.random()*kinds.length)|0], steel=kind==='hesco'||kind==='concrete', m=makeCoverMesh(kind, true); m.position.set(x, gy-0.12, z); m.rotation.y=a+Math.PI/2+(Math.random()-0.5)*0.4; scene.add(m);
         const hp=COVER_HP[kind]||70; blocks.push({ mesh:m, x, z, r:1.7, hp, maxHp:hp, steel, heavy:steel, cover:true, loot:Math.random()<0.25, kind, fortCover:f }); k++; } }   // Z193 the yard's HESCO / concrete break too
-    f.label=nameSprite(f.name, f.tier===3?'#ffb35a':'#ff8a6a'); f.label.position.set(f.keepX||0, (f.flagH||12)+(f.keepY||0)+3, f.keepZ||0); g.add(f.label);
+    if(HUDCLEAN.fort.label){ f.label=nameSprite(f.name, f.tier===3?'#ffb35a':'#ff8a6a'); f.label.position.set(f.keepX||0, (f.flagH||12)+(f.keepY||0)+3, f.keepZ||0); g.add(f.label); }   // HUDCLEAN 1 off: no name hung over the keep (the fort list, the radar and the boss bar carry it)
     buildHatches(f);
     const st0=Math.min(4,S.stage-1); f.pool={ inf:Math.round(R2(T.inf)*(MOBILE?FORT.mobileMul:1)*(1+st0*0.12)) };
     if(hillCfg()){ if(f.tier===3 && hillCfg().open) openCitadel(f); paveYard(f, f.x, f.z, f.openCitadel ? f.R+1 : (f.Rin||f.R*0.85)-0.6); }   // Z453 the citadel open in front, every yard paved
@@ -462,7 +462,7 @@ export function wakeFort(f, now){ if(f.active) return; f.active=true;
       f.escort=[]; const nE=RI(MOBILE?FORT.escortMobile:FORT.escort); for(let k=0;k<nE;k++){ const a=k/nE*Math.PI*2, r=R2(FORT.escortR), x=c.pos.x+Math.cos(a)*r, z=c.pos.z+Math.sin(a)*r;   // bodyguards ring the commander and go where he goes
         const e=spawnEnemy(k%3===2?'rpg':'rifle', x, z); if(!e) continue; e.fortOf=f; e.escortOf=c; e.escA=a; e.escR=r; e.guard={ kind:'escort', fort:f }; e.post=[x,z]; f.escort.push(e); }
       c.label=nameSprite(f.chief, '#ffd24a'); c.label.scale.set(10,1.9,1); c.label.position.set(0, 5.2/(c.mesh.scale.x||1), 0); c.label.scale.multiplyScalar(1/(c.mesh.scale.x||1)); c.mesh.add(c.label); } }
-  showBanner(f.name+' BÁO ĐỘNG — '+f.chief+' TRẤN GIỮ', '#e0603a'); }
+  edgeNote(f.name+' · BÁO ĐỘNG', '#e0603a'); }   // HUDCLEAN 1 a small line at the top edge, not the big banner over the view
 function refill(f){ const live=f.units.filter(e=>enemies.includes(e)); f.units=live; let nI=0; for(const e of live) if(e.def.inf) nI++;
   const capI=MOBILE?FORT.liveInfMobile:FORT.liveInf;
   if(nI<=capI-3 && f.pool.inf>0 && f.hatches && f.hatches.length){ const h=f.hatches[(Math.random()*f.hatches.length)|0], n=Math.min(f.pool.inf, 3+((Math.random()*3)|0)); popHatch(h); squadAt(f, h.x, h.z, n, true); f.pool.inf-=n; }   // Z170 a whole squad comes up from the basement

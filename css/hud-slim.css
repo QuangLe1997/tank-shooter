@@ -42,3 +42,4 @@ html body:not(.hs-x) #combo.warn{ background:linear-gradient(90deg,transparent,r
   border-top-color:rgba(255,186,74,.65)!important; border-bottom-color:rgba(255,186,74,.65)!important; }
 html body:not(.hs-x) #combo.long{ font-size:clamp(13px,1.2vw,16px)!important; letter-spacing:.1em!important; }
 html body.touch:not(.hs-x) #combo{ font-size:14px!important; padding:4px 30px!important; } html body.touch:not(.hs-x) #combo.long{ font-size:11.5px!important; }
+body.hud-no-banners #edgeNote{display:none!important}   /* HUDCLEAN 1 the fort alarm line at the top edge goes with the banners */

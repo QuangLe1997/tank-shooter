@@ -11,7 +11,7 @@
 //   up is spray, a crown and foam (fx/water-spray.js), its wake foam on the surface.
 import * as THREE from 'three';
 import { HORSESWIM, HSWIM2 } from '../../config.js';
-import { CV, RIVER, S, SWST, TIPS, TIP_SHOW, afxHoof, afxOn, floatText, heightAt, spawnPart, swimFxKit, tip, turnBone } from '../hub.js';
+import { CV, RIVER, S, SWST, TIPS, TIP_SHOW, afxHoof, afxOn, rideNote, heightAt, spawnPart, swimFxKit, tip, turnBone } from '../hub.js';
 
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 // mode 'dry' | 'wade' | 'swim' · d the depth under it · k 0–1 the swim eased in (legs, pitch, neck) · y its eased height (null: on the bed) · t the bob's clock
@@ -36,7 +36,7 @@ export function horseSwimStep(H, x, z, bed, v, dt, own){ const C = HORSESWIM; if
   return y; }
 function enter(){ const p = S.player; if(!p) return;
   if(!HSWST.warned){ HSWST.warned = true; if(TIPS && !TIPS.horseSwim){ TIPS.horseSwim = ['spark', 'Ngựa bơi qua sông', 'Nước sâu quá lưng ngựa thì <b>ngựa bơi</b>: chậm (~1,8 m/s), xoay chậm, <b>không phi nước đại</b>. Anh khoác súng ra sau lưng, <b>hai tay giữ cương</b> — <b>không bắn, không ném</b> được, không xuống ngựa giữa dòng. Chân ngựa chạm đáy thì nó lội lên bờ, súng lại về tay.']; TIP_SHOW.horseSwim = 1; } tip('horseSwim'); }
-  floatText('NGỰA ĐANG BƠI', '#9fd8e8', p.pos, 15); }
+  rideNote('NGỰA ĐANG BƠI', '#9fd8e8'); }
 
 // ---- the water round the player's horse: a wake astern and rings spreading while it wades deep or swims, the water breaking at its chest each stroke ----
 function water(H, W, x, z, v, dt){ const F = HORSESWIM.fx, K = swimFxKit; if(CV.mounted || SWST.mode === 'dry' && SWST.y == null) K.rings(dt); if(S.mode !== 'playing' || W.mode === 'dry') return;   // (the rings' clock: swim.js ticks it only while the man on foot is in the water)
@@ -65,7 +65,7 @@ export function horseSwimFire(){ if(!HORSESWIM.noFire || !CV.mounted || CV.trans
 // HSWIM 2 actors/gun-carry.js: the player's rider on a swimming horse (swum in to HSWIM2.reins.at) slings the rifle he cannot fire and takes the reins
 export function horseSwimReins(cv){ const C = HSWIM2.reins; if(!HSWIM2.on || !C.on || cv !== CV || !CV.mounted || CV.trans || !CV.H || CV.H.bike) return false; const W = CV.H.hsw; return !!(W && W.mode === 'swim' && W.k >= C.at); }
 export function horseSwimNoHand(){ if(!HORSESWIM.noFire || !CV.mounted || CV.trans || !horseSwimming()) return false; note('NGỰA ĐANG BƠI — KHÔNG NÉM ĐƯỢC'); return true; }
-function note(txt){ const W = CV.H && CV.H.hsw, now = performance.now() / 1000, p = S.player; if(!W || !p || now - W.noteAt < HORSESWIM.msg) return; W.noteAt = now; floatText(txt, '#9fd8e8', p.pos, 14); }
+function note(txt){ const W = CV.H && CV.H.hsw, now = performance.now() / 1000, p = S.player; if(!W || !p || now - W.noteAt < HORSESWIM.msg) return; W.noteAt = now; rideNote(txt, '#9fd8e8'); }   // (HUDCLEAN 1 in the ride's chip)
 
 // ---- actors/real-cav.js poseRealCav, before the mixer: the gait it paddles with (null: its own) — and the neck / head turned last frame put back ----
 const SWC = { hk:'', ts:1 };

@@ -1,7 +1,7 @@
 // game/cavalry.js — Z245 CAVALRY MODE: the player is a general in full plate — on his armoured war horse (walk · trot · canter · gallop surge, firing from the saddle, trampling infantry) or on foot (run, sprint, crouch, prone, crawl, auto-cover) — mount / dismount (G), whistle the horse back, hoof beats and dust, all on the tank player's interface so enemies, guns, camera and HUD work unchanged
 import * as THREE from 'three';
 import { CAV, HORSE, HUMAN_SCALE, RIDE, RIDEFEEL, XEOM, XHAIR } from '../../config.js';
-import { bladeFoot, bladeTick, ARENA, BIOME, MOBILE, S, actx, afxHoof, afxOn, pushOutRocks, aimTarget, animateHorse, animateSoldier, autoFire, barrelFixed, blocks, buildGeneral, buildHorse, burst, clampField, cloakFoot, controlScheme, core, damageEnemy, endFall, enemies, fitRealCav, floatText, getMoveDir, heightAt, master, playerRange, poseRider, poseSoldier, scene, sfx, spawnPart, startFall, stepFall, turnInput, trackOnTarget, trackTarget, turretTracks, updateRealCav, buildBikeMount, bikeWheelie, horseAir, rideBump, rideClear, rideCollide, rideLeap, rideReset, rideSpeedK, rideImpacts, callRide, rideCallStep, rideCallUi, rideCanCome, soldierFire, trooperGuns, soldierJump, footStance, footMotion, footPose, footMoveState, heldAction, solidShape, pushOutShape, mountDur, mountMove, mountOwn, aimAwake, seatTurnOff, driverBack, rideHull, ridePower, rideOver, rideRam, rideLowReset, RIDE_LOW, rideAvoid, rideAvoidReset, rideStopStep, rideStopEase, rideStopReset, rideSlopeK, climbStep, climbAfter, climbOver, climbPh, climbReset, climbUi, climbing, footY, medalHit } from '../hub.js';
+import { bladeFoot, bladeTick, ARENA, BIOME, MOBILE, S, actx, afxHoof, afxOn, pushOutRocks, aimTarget, animateHorse, animateSoldier, autoFire, barrelFixed, blocks, buildGeneral, buildHorse, burst, clampField, cloakFoot, controlScheme, core, damageEnemy, endFall, enemies, fitRealCav, floatText, getMoveDir, heightAt, master, playerRange, poseRider, poseSoldier, scene, sfx, spawnPart, startFall, stepFall, turnInput, trackOnTarget, trackTarget, turretTracks, updateRealCav, buildBikeMount, bikeWheelie, horseAir, rideBump, rideClear, rideCollide, rideLeap, rideReset, rideSpeedK, rideImpacts, callRide, rideNote, hudOn, rideCallStep, rideCallUi, rideCanCome, soldierFire, trooperGuns, soldierJump, footStance, footMotion, footPose, footMoveState, heldAction, solidShape, pushOutShape, mountDur, mountMove, mountOwn, aimAwake, seatTurnOff, driverBack, rideHull, ridePower, rideOver, rideRam, rideLowReset, RIDE_LOW, rideAvoid, rideAvoidReset, rideStopStep, rideStopEase, rideStopReset, rideSlopeK, climbStep, climbAfter, climbOver, climbPh, climbReset, climbUi, climbing, footY, medalHit } from '../hub.js';
 import { swimPlace, swimStep } from '../hub.js';   // SWIM 1 (game/swim.js)
 import { horseSwimBlock, horseSwimDef, horseSwimHoof, horseSwimStep, horseSwimTop, horseSwimTurn } from '../hub.js';   // HSWIM 1 (game/horse-swim.js)
 
@@ -17,11 +17,11 @@ export function makeCavPlayer(kind){   // Z282 kind: 'xeom' / 'bagac' / 'bantai'
   if(kind) H.root.scale.setScalar(XEOM.k); seatRider(G, H);
   if(H.drv){ H.drv.onCrash=()=>{ if(CV.mounted && !CV.trans){ CV.trans={ k:'off', t:0, crash:true }; CV.call=false; } };   // Z296 the bike goes down: the soldier jumps clear
     H.drv.onBack=()=>{ const p=S.player, pick=H.drv.pickup; H.drv.pickup=false; if(!p || CV.mounted || CV.trans || CV.dead) return;
-      if(pick){ callRide(p, true); CV.autoOn=true; floatText('BÁC TÀI CHẠY TỚI ĐÓN!', '#9be04a', p.pos, 14); return; }   // Z363 the repair done (or his break over): he rides over and the soldier climbs on
-      const L=CV.landAt; CV.landAt=null; if(L && Math.hypot(p.pos.x-L.x, p.pos.z-L.z)<XEOM.call.stayR && Math.hypot(p.pos.x-CV.hPos.x, p.pos.z-CV.hPos.z)<RIDE.crash.callR){ CV.call=true; CV.autoOn=true; CV.callAt=performance.now()/1000; floatText('DỰNG XONG — LÊN XE ĐI CON!', '#9be04a', p.pos, 14); return; }   // Z306 you stayed by it: he rides up and you climb on
-      floatText('BÁC TÀI ĐANG CHỜ — G: LÊN XE / GỌI XE', '#9be04a', p.pos, 14); }; }   // Z303 back up and waiting: no dragging him aboard, no chasing him — on foot he goes where he likes, G brings him back   // the rider sits on the horse's body (bobs and pitches with it) · on the bike's pillion / cyclo seat
+      if(pick){ callRide(p, true); CV.autoOn=true; rideNote('BÁC TÀI TỚI ĐÓN', '#9be04a'); return; }   // Z363 the repair done (or his break over): he rides over and the soldier climbs on
+      const L=CV.landAt; CV.landAt=null; if(L && Math.hypot(p.pos.x-L.x, p.pos.z-L.z)<XEOM.call.stayR && Math.hypot(p.pos.x-CV.hPos.x, p.pos.z-CV.hPos.z)<RIDE.crash.callR){ CV.call=true; CV.autoOn=true; CV.callAt=performance.now()/1000; rideNote('DỰNG XONG · TỚI ĐÓN', '#9be04a'); return; }   // Z306 you stayed by it: he rides up and you climb on
+      rideNote('BÁC TÀI ĐANG CHỜ', '#9be04a'); }; }   // Z303 back up and waiting: no dragging him aboard, no chasing him — on foot he goes where he likes, G brings him back   // the rider sits on the horse's body (bobs and pitches with it) · on the bike's pillion / cyclo seat
   if(!kind) H.onStep=hoofFall;
-  CV.real=null; CV.realP=null; fitRealCav(CV); rideCallUi(); climbUi(); if(kind) floatText(XEOM.lines[0], '#ffe9a8', new THREE.Vector3(0, 3, ARENA*0.55), 15);   // Z248 the real horse / operator / carbine dress the rigs once loaded
+  CV.real=null; CV.realP=null; fitRealCav(CV); rideCallUi(); climbUi(); if(kind && hudOn('talk')) floatText(XEOM.lines[0], '#ffe9a8', new THREE.Vector3(0, 3, ARENA*0.55), 15);   /* HUDCLEAN 1 his hello only with the dialogue on screen */   // Z248 the real horse / operator / carbine dress the rigs once loaded
   const mesh=new THREE.Group(); mesh.add(H.root); scene.add(mesh);
   const u=G.userData, p={
     mesh, turret:new THREE.Object3D(), muzzle:u.muzzle, modelId:kind||'cav', bike:kind||null, cav:CV,
@@ -47,12 +47,12 @@ function hoofFall(i, x, z, v){ if(horseSwimHoof(CV.H, x, z, v)) return;   // HSW
     n.buffer=b; const f=actx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=2200+Math.random()*900; f.Q.value=1.4; const g2=actx.createGain(); g2.gain.value=vol*0.55; n.connect(f).connect(g2).connect(master); n.start(t); }catch(e){} }
 // ---- G: get off / get on (or whistle him over if he is far) ----
 export function cavToggleMount(){ const p=S.player; if(!p || !p.cav || S.mode!=='playing' || CV.trans || p.downed || horseSwimBlock(CV.mounted ? 'off' : 'on')) return;   /* HSWIM 1 not off or on mid-stream */   /* COOP 7 (down in a co-op battle: no ride) */
-  if(CV.mounted){ if(CV.speed>CAV.horse.cruise*0.6 || (CV.H && CV.H.air && CV.H.air.y>0)){ floatText(CV.H && CV.H.bike ? 'CHẠY CHẬM LẠI ĐÃ' : 'GHÌM CƯƠNG ĐÃ', '#ffcf5a', p.pos, 14); return; }
+  if(CV.mounted){ if(CV.speed>CAV.horse.cruise*0.6 || (CV.H && CV.H.air && CV.H.air.y>0)){ rideNote(CV.H && CV.H.bike ? 'CHẠY CHẬM LẠI ĐÃ' : 'GHÌM CƯƠNG ĐÃ'); return; }
     CV.trans={ k:'off', t:0 }; sfx('click'); return; }
-  if(CV.climb){ floatText('XUỐNG ĐẤT RỒI MỚI LÊN XE / NGỰA', '#ffcf5a', p.pos, 14); return; }   // Z451 on a wall or a rock
+  if(CV.climb){ rideNote('XUỐNG ĐẤT RỒI MỚI LÊN'); return; }   // Z451 on a wall or a rock
   const d=Math.hypot(CV.hPos.x-p.pos.x, CV.hPos.z-p.pos.z), ready=rideCanCome();
   if(d<=CAV.mountR && ready){ CV.trans={ k:'on', t:0 }; sfx('click'); return; }
-  if(d<=CAV.mountR){ floatText(CV.H.broken ? 'XE HƯ — BÁC TÀI ĐANG SỬA!' : CV.H.onBreak ? 'BÁC TÀI ĐANG NGHỈ — CHỜ CHÚT!' : 'CHỜ BÁC TÀI DỰNG XE!', '#ffcf5a', p.pos, 14); return; }   // Z296 the driver is still picking the bike up
+  if(d<=CAV.mountR){ rideNote(CV.H.broken ? 'XE HƯ · ĐANG SỬA' : CV.H.onBreak ? 'BÁC TÀI ĐANG NGHỈ' : 'CHỜ BÁC DỰNG XE'); return; }   // Z296 the driver is still picking the bike up
   if(CV.call) return; whistle(); callRide(p); }   // Z306 away from it: call it — he comes now, or as soon as it is fit to (game/ride-call.js)
 function whistle(){ if(!actx || !master) return; const t=actx.currentTime; try{ const o=actx.createOscillator(), g=actx.createGain(); o.type='sine';
   o.frequency.setValueAtTime(1500, t); o.frequency.linearRampToValueAtTime(2300, t+0.18); o.frequency.linearRampToValueAtTime(1700, t+0.32); o.frequency.linearRampToValueAtTime(2500, t+0.5);
@@ -61,8 +61,8 @@ function whistle(){ if(!actx || !master) return; const t=actx.currentTime; try{ 
 export function cavDash(){ const p=S.player, now=performance.now()/1000; if(!p || !p.cav) return;
   if(CV.mounted){ if(now<CV.surgeCd || horseSwimBlock('surge')) return;   // (HSWIM 1 no gallop afloat)
     CV.surgeUntil=now+CAV.surge.dur; CV.surgeCd=now+CAV.surge.cd;
-    if(CV.H && CV.H.bike){ if(!bikeWheelie(CV.H)){ sfx('whoosh'); floatText('VÍT GA!', '#ffcf5a', p.pos, 15); } }   // Z296 on the xe ôm a wheelie, on the rest the throttle wide open
-    else { sfx('whoosh'); floatText('PHI NƯỚC ĐẠI!', '#ffcf5a', p.pos, 15); } }
+    if(CV.H && CV.H.bike){ if(!bikeWheelie(CV.H)) sfx('whoosh'); }   // Z296 on the xe ôm a wheelie, on the rest the throttle wide open
+    else sfx('whoosh'); }   // (HUDCLEAN 1 no VÍT GA / PHI NƯỚC ĐẠI over the soldier: the engine and the hooves say it)
   else soldierJump(); }   // Z336 on foot Space jumps (Shift held sprints)
 // ---- C: kneel / stand · Z: go prone / get up (on foot only) ----
 export function cavStance(kind){ if(!cavOn() || CV.mounted || CV.trans) return; CV.want = CV.want===kind ? 'stand' : kind; }

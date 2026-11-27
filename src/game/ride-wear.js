@@ -4,7 +4,7 @@
 // The bike never chases you: on foot you go where you like; G climbs back on when you are near, or calls the ride over when you are not.
 import * as THREE from 'three';
 import { XEOM } from '../../config.js';
-import { CV, DRIVER_BREAK, DRIVER_RANT, S, driverBack, driverStall, floatText, sfx, spawnPart } from '../hub.js';
+import { CV, DRIVER_BREAK, DRIVER_RANT, S, driverBack, driverStall, rideNote, sfx, spawnPart } from '../hub.js';
 
 const _p = new THREE.Vector3(), _d = new THREE.Vector3(), _q = new THREE.Quaternion();
 const W = () => XEOM.wear;
@@ -12,14 +12,14 @@ export function rideHpMax(H){ return W().hp[H && H.bike] || 140; }
 export function rideHealth(H){ return H && H.bike ? Math.max(0, H.hp ?? rideHpMax(H)) / rideHpMax(H) : 1; }
 // how fast it can still go: a coughing engine has lost its top end
 export function rideSpeedK(H){ if(H && H.onBreak) return 0; return H && H.bike && rideHealth(H) < W().limp ? W().limpK : 1; }   // (Z363 pulled over for the driver's break)
-const say = (t, c) => { const p = S.player; if(p) floatText(t, c, p.pos, 14); };
+const say = (t, c) => rideNote(t, c);   // HUDCLEAN 1 in the ride's chip at the lower left, not over the soldier
 export function rideWear(H, dmg){ if(!H || !H.bike || H.broken || !(dmg > 0)) return; if(H.hp == null) H.hp = rideHpMax(H);
   const k0 = rideHealth(H); H.hp = Math.max(0, H.hp - dmg); const k = rideHealth(H);
-  if(k0 >= W().smoke && k < W().smoke) say('XE BỐC KHÓI!', '#ffcf5a');
-  if(k0 >= W().limp && k < W().limp) say('XE HỤT HƠI — SẮP CHẾT MÁY!', '#ff9a4a');
+  if(k0 >= W().smoke && k < W().smoke) say('XE BỐC KHÓI', '#ffcf5a');
+  if(k0 >= W().limp && k < W().limp) say('XE HỤT HƠI', '#ff9a4a');
   if(k <= 0) rideBreak(H); }
 export function rideBreak(H){ if(!H || H.broken) return; H.broken = true; sfx('clang');
-  say('XE CHẾT MÁY! BÁC TÀI ĐANG SỬA', '#ff6a4a');
+  say('XE CHẾT MÁY · ĐANG SỬA', '#ff6a4a');
   const D = H.drv; if(D && D.ok && D.state === 'ride') driverStall(H);   // Z361 he takes it badly first: the kick-start, a boot to the tyre, a row with the soldier (actors/driver-rant.js) — then the repair
   if(CV.H === H){ CV.call = false; if(CV.mounted && !CV.trans) CV.trans = { k:'off', t:0 }; } }   // the soldier steps off (not thrown)
 export function rideFixed(H){ H.broken = false; H.hp = rideHpMax(H) * W().fixHp; sfx('whoosh'); say('NỔ MÁY RỒI!', '#9be04a'); }   // (Z363 then he rides over to pick the soldier up: game/cavalry.js onBack)

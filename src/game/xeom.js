@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { NEARDETAIL, RIDE, RIDEFEEL, XEOM } from '../../config.js';
-import { MOBILE, NIGHT, S, beamMat, crushables, driveDriver, floatText, heightAt, loadGLTF, makeDriver, mountModel, rideExhaust, rideSmoke, scene, sfx, spawnPart , nearShape, rideBumpAt, ridePower } from '../hub.js';
+import { MOBILE, NIGHT, S, beamMat, crushables, driveDriver, floatText, heightAt, hudOn, loadGLTF, makeDriver, mountModel, rideExhaust, rideSmoke, scene, sfx, spawnPart , nearShape, rideBumpAt, ridePower } from '../hub.js';
 
 // Z293 the war ride itself: one Tripo model, vehicle and driver together (the driver modelled in his seat, hands on the bars, feet down), turned nose to
 //   +z, set on the ground, centred and scaled to its true length; the old scooter assembled from the city's parts stays as the fallback
@@ -187,5 +187,5 @@ export function animateBike(H, dt, v, yawRate){ H.t += dt; H.v = v; const sp = M
     for(const w of H.wheels){ if(!(HS && HS.on && !w.steer)) w.spin.rotation.x = H.roll / w.R; if(w.steer){ if(H.axis) w.pivot.quaternion.setFromAxisAngle(H.axis, H.steer); else w.pivot.rotation.y = Rt ? Math.atan(wb / (Rt - w.x * XEOM.k)) : 0; } }   // Z298 the wheels roll; the front one steers
     if(H.bar) H.bar.quaternion.setFromAxisAngle(H.axis, H.steer); }
   if(H.drv) driveDriver(H, dt, v, yawRate);   // Z296 the driver rides it (lean, wheelie, weave, throttle, gears, ducking, crashing) and does the talking
-  else if(p && now > H.sayAt){ H.sayAt = now + 18 + Math.random() * 20; if(H.sayAt > 0 && Math.abs(v) > 1) floatText(XEOM.lines[(Math.random() * XEOM.lines.length) | 0], '#ffe9a8', new THREE.Vector3(p.pos.x, p.pos.y + 3, p.pos.z), 13); } }
+  else if(p && now > H.sayAt){ H.sayAt = now + 18 + Math.random() * 20; if(H.sayAt > 0 && Math.abs(v) > 1 && hudOn('talk')) floatText(XEOM.lines[(Math.random() * XEOM.lines.length) | 0], '#ffe9a8', new THREE.Vector3(p.pos.x, p.pos.y + 3, p.pos.z), 13); } }   // (HUDCLEAN 1 his chatter over the soldier only with THOẠI TRÊN MÀN on)
 

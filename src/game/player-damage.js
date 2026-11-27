@@ -1,6 +1,6 @@
 // game/player-damage.js — PLAYER DAMAGE / DEATH
 import * as THREE from 'three';
-import { BODYHIT, CAV, RIDE_ACT } from '../../config.js';
+import { BODYHIT, CAV, HUDCLEAN, RIDE_ACT } from '../../config.js';
 import { bladeGuardK, bodyHitSound, modeOver, reportRun, soldierHitFX, BEST, CV, S, clampField, heightAt, camera, cavDeathStart, cavDeathUpdate, cavRespawn, enemies, floatText, haptic, padHit, recordRun, ringPulse, saveProfile, sayVoice, sfx, show, updateHUD, rideHit, driverBack, driverDone, driverSurrender, dirDeath, nemDeathLine, nemPlayerDied, coopDie, coopGameOver, coopHurtMate, medalEnd } from '../hub.js';
 
 // ----------------------------- PLAYER DAMAGE / DEATH -----------------------------
@@ -82,3 +82,10 @@ export function showBanner(text, color){
   bannerTimer = performance.now()/1000 + 1.4;
 }
 export function __set_bannerTimer(v){ bannerTimer=v; return v; }   // Z98 cross-module write → setter (imported bindings are read-only)
+// HUDCLEAN 1 a small line at the very top edge (a fort's alarm as you come near): fades in, holds, fades out — never over the view
+let _edge=null, _edgeT=0;
+export function edgeNote(text, color){ if(typeof document==='undefined' || !document.body) return; const W=HUDCLEAN.fort.wake;
+  if(!_edge){ _edge=document.createElement('div'); _edge.id='edgeNote'; _edge.style.cssText='position:fixed;left:50%;top:max(1px,env(safe-area-inset-top));transform:translateX(-50%);z-index:30;pointer-events:none;opacity:0;white-space:nowrap;'+
+    'font:600 '+W.size+'px/1.1 "Saira Condensed",Rajdhani,system-ui,sans-serif;font-variant:small-caps;letter-spacing:.16em;text-shadow:0 1px 3px #000,0 0 6px rgba(0,0,0,.6)'; document.body.appendChild(_edge); }
+  _edge.textContent=text; _edge.style.color=color||'#e7b54a'; _edge.style.transition='none'; _edge.style.opacity='0'; void _edge.offsetWidth; _edge.style.transition='opacity '+W.fadeIn+'s ease-out'; _edge.style.opacity='0.85';
+  clearTimeout(_edgeT); _edgeT=setTimeout(()=>{ _edge.style.transition='opacity .9s'; _edge.style.opacity='0'; }, (W.fadeIn+W.hold)*1000); }
