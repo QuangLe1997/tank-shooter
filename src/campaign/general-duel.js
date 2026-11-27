@@ -32,7 +32,7 @@ function spawnGeneral(){ const c = C(), p = S.player, ax = G.at.x, az = G.at.z, 
   const star = new THREE.Sprite(new THREE.SpriteMaterial({ map:svgBadgeTex('star', '#ffd24a'), transparent:true, depthWrite:false }));
   star.name = 'eliteFX'; star.scale.set(0.5, 0.5, 1); star.position.y = 2.3; e.mesh.add(star);   // (killEnemy / the mesh pool strip 'eliteFX')
   G.e = e; nemDress(e); const t = NOW(); G.fanAt = t + 3; G.nadeAt = t + 5; G.fanT = 0; G.ringAt = 0;
-  bigExplode({ x, z }, 0xffa050, 0.5); floatText(G.name, '#ff9a4a', { x, y:3.2, z }, 22); guards(c.guards); bar(true); }
+  bigExplode({ x, z }, 0xffa050, 0.5); floatText(G.name, '#ff9a4a', { x, y:3.2, z }, 22, 'fx'); guards(c.guards); bar(true); }
 function guards(n){ const e = G.e, c = C(); for(let i = 0; i < n; i++){ const a = Math.random() * 6.283, r = (2.5 + Math.random() * 3.5) * (c.spreadK || 1);
     const [x, z] = clampFieldXZ(e.pos.x + Math.cos(a) * r, e.pos.z + Math.sin(a) * r, 4), g = spawnEnemy(i % 3 === 2 ? 'rpg' : 'rifle', x, z);
     g.genGuard = true; g.maxHp = g.hp = Math.round(g.maxHp * c.guardHpK); g.def = { ...g.def, dmg:g.def.dmg * 1.4 }; g.loot = Math.random() < 0.3; nemGuard(g); G.guards.push(g); } }
@@ -51,7 +51,7 @@ export function updateGeneralDuel(dt){ nemTick(); if(!G.on) return; const t = NO
   if(!G.called && f < c.callAt){ G.called = true; guards(c.callN); showBanner('TƯỚNG GỌI CẬN VỆ!', '#ff9a4a'); radio(G.name + ': Cận vệ đâu! Giết thằng lính đó cho ta!'); sfx('alarm'); storyCue('general_half', G.id); nemJoin(e); }
   if(!G.rage && f < c.rageAt){ G.rage = true; e.def = { ...e.def, fireCd:e.def.fireCd * c.rageFire, speed:e.def.speed * c.rageRun }; showBanner('TƯỚNG LIỀU MẠNG!', '#ff4a3a'); storyCue('general_rage', G.id) || radio(G.name + ': Ta chưa thua đâu!'); }
   if(G.fanT > 0){ G.fanT -= dt; glint(e); if(G.fanT <= 0) fan(e); }
-  else if(t > G.fanAt && d < c.range){ G.fanT = c.fan.tel; G.fanAt = t + c.fan.cd * (G.rage ? 0.7 : 1); sfx('beep', e.pos); floatText('!', '#ff4a3a', { x:e.pos.x, y:3, z:e.pos.z }, 26); }
+  else if(t > G.fanAt && d < c.range){ G.fanT = c.fan.tel; G.fanAt = t + c.fan.cd * (G.rage ? 0.7 : 1); sfx('beep', e.pos); floatText('!', '#ff4a3a', { x:e.pos.x, y:3, z:e.pos.z }, 26, 'warn'); }
   if(t > G.nadeAt && d < 26 && G.fanT <= 0){ G.nadeAt = t + c.nade.cd * (G.rage ? 0.75 : 1); nades(e); } }
 function muzzle(e){ const m = e.mesh.userData.muzzle; if(m) m.getWorldPosition(_m); else _m.set(e.pos.x, 1.4, e.pos.z); return _m; }
 function glint(e){ if(Math.random() < 0.6){ const m = muzzle(e); spawnPart(m.x, m.y, m.z, 0, 0, 0, { tex:'flash', color:0xff3a2a, size:0.6 + Math.random() * 0.4, life:0.06, grav:0, drag:0 }); } }
@@ -62,7 +62,7 @@ function fan(e){ const F = C().fan, p = S.player, m = muzzle(e), a0 = Math.atan2
   muzzleFX(m.x, m.y, m.z, a0, 'shotgun', 'e'); sfx('rifleShot', e.pos); sfx('rifleShot', e.pos, 0.7); }   // GUNFX 1 his fan of rounds: one big blossom
 // the grenades: lobbed round where you stand, each a red ring that tightens until it bursts
 function nades(e){ const N = C().nade, p = S.player, m = muzzle(e), dmg = N.dmg * (1 + 0.15 * ((S.stage || 1) - 1));
-  floatText('LỰU ĐẠN!', '#ff9a4a', { x:e.pos.x, y:2.8, z:e.pos.z }, 16); sfx('whoosh', e.pos);
+  floatText('LỰU ĐẠN!', '#ff9a4a', { x:e.pos.x, y:2.8, z:e.pos.z }, 16, 'bosswarn'); sfx('whoosh', e.pos);
   for(let i = 0; i < N.n; i++){ const a = Math.random() * 6.283, r = i === 0 ? 0.5 : 1.6 + Math.random() * N.scatter, T = N.lock + i * 0.2;
     const [x, z] = clampFieldXZ(p.pos.x + Math.cos(a) * r, p.pos.z + Math.sin(a) * r, 2);
     spawnPart(m.x, m.y, m.z, (x - m.x) / T, 0.5 * 14 * T, (z - m.z) / T, { color:0x3a4020, size:0.2, life:T, grav:-14, drag:0 });
@@ -77,7 +77,7 @@ function tickZones(dt, t){ for(let i = G.zones.length - 1; i >= 0; i--){ const s
 function fallen(fled){ G.e = null; bar(false); S.timeScale = fled ? 0.6 : 0.35; sfx(fled ? 'alarm' : 'levelup');
   if(fled) showBanner(G.name + ' TẨU THOÁT!', '#ff9a4a');
   else { showBanner('ĐÃ HẠ ' + G.name + '!', '#ffd24a', true); nemFell() || storyCue('general_down', G.id) || radio('SCH: ' + G.name + ' đã gục! Bọn cận vệ tan rã — trận này là của anh!'); }
-  for(const g of G.guards) if(enemies.includes(g)){ g.def = { ...g.def, range:0, keep:90, speed:g.def.speed * 1.3 }; g.genGuard = false; floatText(fled ? 'CHE CHO TƯỚNG!' : 'BỎ CHẠY!', '#e0e0d0', { x:g.pos.x, y:2.4, z:g.pos.z }, 13); }
+  for(const g of G.guards) if(enemies.includes(g)){ g.def = { ...g.def, range:0, keep:90, speed:g.def.speed * 1.3 }; g.genGuard = false; floatText(fled ? 'CHE CHO TƯỚNG!' : 'BỎ CHẠY!', '#e0e0d0', { x:g.pos.x, y:2.4, z:g.pos.z }, 13, 'fx'); }
   for(const z of G.zones) disposeArtZone(z.zone); G.zones.length = 0;
   const fin = G.finish, k = G.seq; G.finish = null; G.on = !!fled;
   setTimeout(() => { if(G.seq !== k) return; G.on = false; if(fin && S.mode !== 'gameover') fin(NOW()); }, fled ? NEMESIS.escape.winDelay * 1000 : 1400); }

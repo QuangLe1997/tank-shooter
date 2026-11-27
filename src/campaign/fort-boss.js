@@ -82,13 +82,13 @@ function spawn(B, now){ const f = B.f, D = B.door, def = B.def, K = def.kind, e 
   B.e = e; B.st = 'intro'; B.until = now + C.intro.hold; e.held = true; const t = now + C.intro.hold; B.next.sweep = t + 2.5; B.next.nade = t + 4; B.next.charge = t + 5;
   S.timeScale = Math.min(S.timeScale || 1, C.intro.slow); S.shake = Math.max(S.shake || 0, 0.9);
   bigExplode({ x:D.x, z:D.z }, 0xffa050, 0.6); ringPulse({ x:D.x, z:D.z }, 0xff6a3a, 4);
-  floatText(def.name, '#ff9a4a', { x:D.x, y:heightAt(D.x, D.z) + 3.6, z:D.z }, 24);
+  floatText(def.name, '#ff9a4a', { x:D.x, y:heightAt(D.x, D.z) + 3.6, z:D.z }, 24, 'fx');
   if(def.capital){ storyCue('general', def.id); } radio(def.name + ': Thằng lính đó đây rồi. Tới nộp mạng à?', 'gen_meet');
   bar(B, true); return true; }
 // the damage hook (actors/damage.js damageEnemy): the armour, the weak points, the blade's finish
 export function fortBossDmg(e, dmg){ const B = e.fortBoss; if(!B || B.st === 'dead') return dmg; if(B.st === 'intro' || B.st === 'pending') return 0;
   const hp = e.maxHp, now = NOW(); let raw = Math.min(dmg, hp * C.hitCap);
-  if(e._bladeHit > 0 && B.st === 'stagger'){ if(e.hp / hp < C.blade.finish){ e._quietKill = true; floatText('KẾT LIỄU!', '#ffd24a', { x:e.pos.x, y:heightAt(e.pos.x, e.pos.z) + 3.4, z:e.pos.z }, 26); B.finish = true; return e.hp + 1; }
+  if(e._bladeHit > 0 && B.st === 'stagger'){ if(e.hp / hp < C.blade.finish){ e._quietKill = true; floatText('KẾT LIỄU!', '#ffd24a', { x:e.pos.x, y:heightAt(e.pos.x, e.pos.z) + 3.4, z:e.pos.z }, 26, 'boss'); B.finish = true; return e.hp + 1; }
     raw = Math.min(dmg * C.blade.k, hp * C.hitCap * C.blade.k); }
   let bx, bz; if(e._blast){ bx = e._blast.x - e.pos.x; bz = e._blast.z - e.pos.z; } else { bx = -(e._hx || 0); bz = -(e._hz || 0); }
   const rel = (bx || bz) ? wrapA(Math.atan2(bx, bz) - e.facing) : 0, z = fortBossZone(rel, B.pl, Math.random(), !!(B.look && B.look.look && B.look.look.pack === 'belt')); let out;
@@ -100,15 +100,15 @@ export function fortBossDmg(e, dmg){ const B = e.fortBoss; if(!B || B.st === 'de
     if(B.pl[z] <= 0){ B.pl[z] = 0; plateGone(B, z, now, -bx, -bz); if(pack) out += hp * C.packBoom; } }
   if(out >= e.hp) e._quietKill = true;   // (he does not fly: he folds forward like a felled tree — actors/infantry.js infantryDown)
   B.dmgIn += out; if(out > 0) fortBossFlash(B.look); return out; }
-function mark(B, t, col, now){ if(now < B.hitTxtAt) return; B.hitTxtAt = now + 0.7; const e = B.e; floatText(t, col, { x:e.pos.x, y:heightAt(e.pos.x, e.pos.z) + 3.2, z:e.pos.z }, 15); }
+function mark(B, t, col, now){ if(now < B.hitTxtAt) return; B.hitTxtAt = now + 0.7; const e = B.e; floatText(t, col, { x:e.pos.x, y:heightAt(e.pos.x, e.pos.z) + 3.2, z:e.pos.z }, 15, 'fx'); }
 const PLATE_VI = { helmet:'MŨ SẮT', chest:'GIÁP NGỰC', shL:'GIÁP VAI TRÁI', shR:'GIÁP VAI PHẢI', pack:'BỘ NGUỒN LƯNG' };
 function plateGone(B, z, now, ux, uz){ fortBossAct(B.look, 'hit', now); const e = B.e, L = Math.hypot(ux || 0, uz || 0) || 1; fortBossPlateOff(B.look, z, (ux || 0) / L, (uz || 0) / L, z === 'pack'); sfx('clang', e.pos); sfx('hitHeavy', e.pos, 0.8);
-  floatText('VỠ ' + PLATE_VI[z] + '!', '#ffd24a', { x:e.pos.x, y:heightAt(e.pos.x, e.pos.z) + 3.8, z:e.pos.z }, 18);
+  floatText('VỠ ' + PLATE_VI[z] + '!', '#ffd24a', { x:e.pos.x, y:heightAt(e.pos.x, e.pos.z) + 3.8, z:e.pos.z }, 18, 'boss');
   if(z === 'pack'){ e.mesh.updateMatrixWorld(); bigExplode({ x:e.pos.x - Math.sin(e.facing) * 0.6, z:e.pos.z - Math.cos(e.facing) * 0.6 }, 0x6ad8ff, 0.9); stagger(B, now, C.stagger.pack); showBanner('BỘ NGUỒN NỔ — ' + B.def.name + ' CHOÁNG!', '#ffd24a'); }
   else { if(z === 'helmet') showBanner('MŨ SẮT VỠ — BẮN VÀO ĐẦU!', '#ffb04a'); stagger(B, now, C.stagger.plate); }
   sync(B); }
 function sync(B){ emit(C.cue.PLATE, B.fi, fortBossBits(B.pl, B.phase, B.st === 'stagger')); }
-function stagger(B, now, T){ if(B.st === 'dead') return; const was = B.st === 'stagger' ? B.until : 0; endAct(B); B.st = 'stagger'; B.until = Math.max(was, now + T); B.e.held = true; B.gap = Math.max(B.gap, now + T + 1); floatText('CHOÁNG!', '#9be0ff', { x:B.e.pos.x, y:heightAt(B.e.pos.x, B.e.pos.z) + 3, z:B.e.pos.z }, 18); }
+function stagger(B, now, T){ if(B.st === 'dead') return; const was = B.st === 'stagger' ? B.until : 0; endAct(B); B.st = 'stagger'; B.until = Math.max(was, now + T); B.e.held = true; B.gap = Math.max(B.gap, now + T + 1); floatText('CHOÁNG!', '#9be0ff', { x:B.e.pos.x, y:heightAt(B.e.pos.x, B.e.pos.z) + 3, z:B.e.pos.z }, 18, 'boss'); }
 function endAct(B){ B.act = null; laser(B, false); }
 // ---- once a frame in battle (game/loop.js) ----
 export function updateFortBoss(dt, now){ fortBossLookTick(dt); fortBossCorpseTick(dt); preload(); if(!FBOSS.list.length) return;
@@ -183,7 +183,7 @@ function muzzle(e){ const m = e.mesh.userData.muzzle; if(m){ e.mesh.updateMatrix
 function startSweep(B, now, fo){ const e = B.e, K = B.def.kind, a0 = Math.atan2(fo.x - e.pos.x, fo.z - e.pos.z), arc = C.sweep.arc * (K.arcK || 1), pass = C.sweep.pass[B.phase - 1] || 1;
   B.st = 'sweep'; e.held = true; B.act = { a0, arc, t:0, pass, n:Math.round(C.sweep.n * (K.n || 1)), fired:0, dir:Math.random() < 0.5 ? -1 : 1, mate:{ hit:0 } };
   B.next.sweep = now + C.sweep.cd[B.phase - 1] + C.sweep.tel + C.sweep.dur * pass; B.gap = now + C.sweep.tel + C.sweep.dur * pass + 1.2;
-  sfx('beep', e.pos); sfx('lockwarn'); floatText('!', '#ff4a3a', { x:e.pos.x, y:heightAt(e.pos.x, e.pos.z) + 3.4, z:e.pos.z }, 30); emit(C.cue.ATK, B.fi, 1, fo.x, fo.z); }
+  sfx('beep', e.pos); sfx('lockwarn'); floatText('!', '#ff4a3a', { x:e.pos.x, y:heightAt(e.pos.x, e.pos.z) + 3.4, z:e.pos.z }, 30, 'warn'); emit(C.cue.ATK, B.fi, 1, fo.x, fo.z); }
 function sweepStep(B, dt, now, ox, oz){ const e = B.e, A = B.act, T = C.sweep.tel, Du = C.sweep.dur; A.t += dt;
   if(A.t < T){ const u = A.t / T, a = A.a0 + A.dir * (Math.sin(u * Math.PI * 2) * 0.5) * A.arc; laser(B, true, a, C.move.range); place(e, A.a0, dt, 'stand', false, ox, oz);
     if(Math.random() < 0.6){ const m = muzzle(e); spawnPart(m.x, m.y, m.z, 0, 0, 0, { tex:'flash', color:0xff3a2a, size:0.7 + Math.random() * 0.4, life:0.06, grav:0, drag:0 }); } return; }
@@ -197,7 +197,7 @@ function sweepStep(B, dt, now, ox, oz){ const e = B.e, A = B.act, T = C.sweep.te
 // ---- CHARGE: tel s crouched behind his laser down the lane, then a straight rush; contact = a heavy blow, a wall = he staggers ----
 function startCharge(B, now, fo){ const e = B.e, a = Math.atan2(fo.x - e.pos.x, fo.z - e.pos.z); B.st = 'charge'; e.held = true;
   B.act = { a, t:0, hit:false, len:Math.min(C.charge.v * C.charge.t, fo.d + 6) }; B.next.charge = now + C.charge.cd[B.phase - 1] + C.charge.tel + C.charge.t; B.gap = now + C.charge.tel + C.charge.t + 1.5;
-  sfx('horn', e.pos); floatText('XUNG PHONG!', '#ff4a3a', { x:e.pos.x, y:heightAt(e.pos.x, e.pos.z) + 3.4, z:e.pos.z }, 20); emit(C.cue.ATK, B.fi, 3, fo.x, fo.z); }
+  sfx('horn', e.pos); floatText('XUNG PHONG!', '#ff4a3a', { x:e.pos.x, y:heightAt(e.pos.x, e.pos.z) + 3.4, z:e.pos.z }, 20, 'bosswarn'); emit(C.cue.ATK, B.fi, 3, fo.x, fo.z); }
 function chargeStep(B, dt, now, ox, oz, fo){ const e = B.e, A = B.act, T = C.charge.tel; A.t += dt;
   if(A.t < T){ laser(B, true, A.a, A.len); place(e, A.a, dt, 'low', false, ox, oz); if(Math.random() < dt * 10) burst({ x:e.pos.x, z:e.pos.z }, BIOME.ground, 1, 1, { y:heightAt(e.pos.x, e.pos.z) + 0.2, life:0.5, size:0.8, smoke:true, grav:-0.2, drag:2, up:0.5, op:0.3 }); return; }
   laser(B, false); const vx = Math.sin(A.a) * C.charge.v, vz = Math.cos(A.a) * C.charge.v, px = e.pos.x, pz = e.pos.z, nx = px + vx * dt, nz = pz + vz * dt;
@@ -211,9 +211,9 @@ function chargeStep(B, dt, now, ox, oz, fo){ const e = B.e, A = B.act, T = C.cha
   if(A.t > T + C.charge.t || Math.hypot(e.pos.x - H.x, e.pos.z - H.z) > H.r + 1){ endAct(B); B.st = 'free'; e.held = false; } }
 // ---- his second weapon: hand grenades · the launcher's volley · shoulder rockets ----
 function alt(B, now, fo){ const e = B.e, K = B.def.kind, P = B.phase - 1; B.next.nade = now + C.nade.cd[P]; B.gap = now + 1.4;
-  if(K.alt === 'rocket'){ B.st = 'rocket'; e.held = true; B.act = { t:0, n:0, fo }; sfx('beep', e.pos); floatText('TÊN LỬA!', '#ff4a3a', { x:e.pos.x, y:heightAt(e.pos.x, e.pos.z) + 3.4, z:e.pos.z }, 18); emit(C.cue.ATK, B.fi, 5, fo.x, fo.z); B.gap = now + C.rocket.tel + C.rocket.n * C.rocket.gap + 1.2; return; }
+  if(K.alt === 'rocket'){ B.st = 'rocket'; e.held = true; B.act = { t:0, n:0, fo }; sfx('beep', e.pos); floatText('TÊN LỬA!', '#ff4a3a', { x:e.pos.x, y:heightAt(e.pos.x, e.pos.z) + 3.4, z:e.pos.z }, 18, 'bosswarn'); emit(C.cue.ATK, B.fi, 5, fo.x, fo.z); B.gap = now + C.rocket.tel + C.rocket.n * C.rocket.gap + 1.2; return; }
   fortBossAct(B.look, 'throw', now); const gl = K.alt === 'gl', n = gl ? C.gl.n : C.nade.n, sc = gl ? C.gl.scatter : C.nade.scatter, m = muzzle(e), dmg = C.nade.dmg * (1 + 0.1 * ((S.stage || 1) - 1));
-  floatText(gl ? 'PHÓNG LỰU!' : 'LỰU ĐẠN!', '#ff9a4a', { x:e.pos.x, y:heightAt(e.pos.x, e.pos.z) + 3.2, z:e.pos.z }, 16); sfx(gl ? 'shoot_agl' : 'whoosh', e.pos); emit(C.cue.ATK, B.fi, 2, fo.x, fo.z);
+  floatText(gl ? 'PHÓNG LỰU!' : 'LỰU ĐẠN!', '#ff9a4a', { x:e.pos.x, y:heightAt(e.pos.x, e.pos.z) + 3.2, z:e.pos.z }, 16, 'bosswarn'); sfx(gl ? 'shoot_agl' : 'whoosh', e.pos); emit(C.cue.ATK, B.fi, 2, fo.x, fo.z);
   for(let i = 0; i < n; i++){ const a = Math.random() * 6.283, r = i === 0 ? 0.5 : 1.6 + Math.random() * sc, Tt = C.nade.lock + i * (gl ? 0.15 : 0.2), [x, z] = clampFieldXZ(fo.x + Math.cos(a) * r, fo.z + Math.sin(a) * r, 2);
     spawnPart(m.x, m.y, m.z, (x - m.x) / Tt, 0.5 * 14 * Tt, (z - m.z) / Tt, { color:0x3a4020, size:0.2, life:Tt, grav:-14, drag:0 });
     B.zones.push({ x, z, R:C.nade.R, t:Tt, T:Tt, dmg, zone:makeArtLock(x, z, C.nade.R, C.nade.R * 0.4) }); } }
@@ -230,7 +230,7 @@ function down(B, now){ const e = B.e, f = B.f, def = B.def; B.st = 'dead'; B.tDo
   bigExplode({ x:e.pos.x, z:e.pos.z }, 0xffa040, 1.1); ringPulse({ x:e.pos.x, z:e.pos.z }, 0xffd24a, 6); sfx('levelup');
   showBanner('ĐÃ HẠ ' + def.name + '!', '#ffd24a', true);
   if(!(def.capital && nemFell()) && !(def.capital && storyCue('general_down', def.id))) radio('SCH: Tướng giữ thành đã gục! Quét sạch tàn quân!', 'fort_chief');
-  for(const g of B.guards) if(enemies.includes(g)){ g.def = { ...g.def, range:0, keep:90, speed:g.def.speed * 1.3 }; g.genGuard = false; g.guard = null; g.post = null; floatText('BỎ CHẠY!', '#e0e0d0', { x:g.pos.x, y:2.4, z:g.pos.z }, 13); }
+  for(const g of B.guards) if(enemies.includes(g)){ g.def = { ...g.def, range:0, keep:90, speed:g.def.speed * 1.3 }; g.genGuard = false; g.guard = null; g.post = null; floatText('BỎ CHẠY!', '#e0e0d0', { x:g.pos.x, y:2.4, z:g.pos.z }, 13, 'fx'); }
   { const p = S.player, dx = p.pos.x - e.pos.x, dz = p.pos.z - e.pos.z, d = Math.hypot(dx, dz) || 1, [x, z] = clampFieldXZ(e.pos.x + dx / d * 3, e.pos.z + dz / d * 3, 6);   // the HQ's gift: a reward and ammunition
     const u = spawnGift({ x, z }, () => { const c = soldierStagePerks()[0]; if(c){ c.apply(S.player); showBanner('CHIẾN LỢI PHẨM: ' + c.nm, '#ffd86a'); } ammoCrate(1); }); if(u && CO.ai) coopHostCrate(u); FBOSS.crate = !!u; }
   const k = FBOSS.seq; setTimeout(() => { if(k !== FBOSS.seq || S.mode === 'gameover') return; emit(C.cue.TAKEN, B.fi, 0, f.x, f.z);
@@ -260,7 +260,7 @@ export function fortBossCue(p, a, b, x, z){ const Q = C.cue; if(p !== Q.APPEAR &
   if(!G) return true;
   if(p === Q.PLATE){ for(let i = 0; i < PL.length; i++) if((b & (1 << i)) && G.pl[PL[i]] > 0){ G.pl[PL[i]] = 0; if(G.look) fortBossPlateOff(G.look, PL[i], 0, 0, PL[i] === 'pack'); }
     const ph = (b >> 5) & 3; if(ph > G.phase){ G.phase = ph; showBanner(G.def.name + (ph === 2 ? ' GỌI CẬN VỆ!' : ' NỔI ĐIÊN!'), '#ff6a3a'); } G.st = (b & 128) ? 'stagger' : 'free'; return true; }
-  if(p === Q.ATK){ if(G.e){ G.act = { k:b, t:0, a:Math.atan2(x - G.e.pos.x, z - G.e.pos.z) }; floatText(b === 1 ? '!' : b === 3 ? 'XUNG PHONG!' : b === 5 ? 'TÊN LỬA!' : b === 2 ? 'LỰU ĐẠN!' : 'CẬN VỆ!', '#ff4a3a', { x:G.e.pos.x, y:heightAt(G.e.pos.x, G.e.pos.z) + 3.4, z:G.e.pos.z }, 20); } return true; }
+  if(p === Q.ATK){ if(G.e){ G.act = { k:b, t:0, a:Math.atan2(x - G.e.pos.x, z - G.e.pos.z) }; floatText(b === 1 ? '!' : b === 3 ? 'XUNG PHONG!' : b === 5 ? 'TÊN LỬA!' : b === 2 ? 'LỰU ĐẠN!' : 'CẬN VỆ!', '#ff4a3a', { x:G.e.pos.x, y:heightAt(G.e.pos.x, G.e.pos.z) + 3.4, z:G.e.pos.z }, 20, b === 1 ? 'warn' : 'bosswarn'); } return true; }
   if(p === Q.TAKEN){ G.dead = true; if(G.look) fortBossStrip(G.look, true); bar(G, false); fortTake(f, true); return true; }
   return true; }
 // once a frame on the guest's page (game/coop-puppets.js coopGuestPlay)

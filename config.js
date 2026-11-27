@@ -3700,6 +3700,20 @@ export const HUDCLEAN2 = {
   banner:{ bigHold:1.1, miniHold:1.6 },
   chiefLabel:false,
   medal:{ touchHoldK:0.55 } };
+// NOCENTER — no words over the aim (fx/hud-fx.js floatText, ui/nocenter.js, core/helpers.js, css/nocenter.css): in a battle no text is drawn inside the aim zone
+//   zone = the protected middle of the screen, shares of the viewport (w × h, centred)
+//   float.edgeMax = px cap on a world label left near the edges; float.lift = the label's rise (its popUp animation), × its height, counted in its box
+//   chip = a boss's state word (stagger, charge, rocket, grenade, plate broken, finish) on the boss bar instead of over him: hold s, fade s
+//   feed = an informative world label that would land in the zone goes to a small stack at the screen's edge: max lines, hold s, merge = same words within s → "×n"
+//   arrow = an attack warning whose source is off screen: a wordless chevron on the edge pointing at it; hold s, size px, inset = share of the viewport from the edge
+//   guard = every `every` s in a battle, the HUD's text cards are checked against the zone and any that would cross it is hidden until it is clear (a last net)
+export const NOCENTER = {
+  zone:{ w:0.6, h:0.55 },
+  float:{ edgeMax:14, lift:1.6 },
+  chip:{ hold:1.6, fade:0.35 },
+  feed:{ max:4, maxTouch:3, hold:2.4, merge:1.5 },
+  arrow:{ hold:1.2, size:22, inset:0.05 },
+  guard:{ every:0.25 } };
 // DIET 1–3 resource diet (render/asset-diet.js, tools/asset-diet.mjs): KTX2 maps read compressed (ktx2: off = every texture reads its fallback picture),
 //   the vendored Basis transcoder and meshopt simplifier (basis, simplifier: the shells run offline), the test file's time limit, transcoder workers
 //   A3 treeFar: past `at` m (stretched as the camera pulls back) a tree wears its species' phone copy (dir) when that has at most `max` × its triangles

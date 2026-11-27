@@ -7,7 +7,7 @@
 //   they flew at chest height above the ground under him); the round climbs to him and drops him off his platform.
 import * as THREE from 'three';
 import { AIRAIM } from '../../config.js';
-import { MOBILE, PAD, S, VIEW, camera, droneHigh, enemies, heightAt, liveGuards, playerRange, scene } from '../hub.js';
+import { MOBILE, PAD, S, VIEW, camera, droneHigh, enemies, heightAt, liveGuards, ncBattle, ncHit, playerRange, scene } from '../hub.js';
 
 export const AIR = { e:null, mx:-1, my:-1, vx:0, vy:0, vz:0, last:null, ring:null, line:null, dot:null, label:null };
 const _v = new THREE.Vector3(), _q = new THREE.Quaternion();
@@ -51,6 +51,7 @@ function reticle(e){ if(typeof document === 'undefined') return; if(!AIR.ring) b
   AIR.dot.position.set(e.pos.x, gy + 0.06, e.pos.z);
   const p = S.player; _v.copy(e.pos).project(camera); const x = (_v.x + 1) / 2 * VIEW.w, y = (1 - _v.y) / 2 * VIEW.h;
   AIR.label.style.transform = 'translate(' + Math.round(x + 28) + 'px,' + Math.round(y - 30) + 'px)';
+  const nc = ncBattle() && ncHit(x + 28, y - 30, x + 140, y - 12); if(AIR.nc !== nc){ AIR.nc = nc; AIR.label.classList.toggle('nc-off', nc); }   // NOCENTER the ring and its line stay, the readout keeps out of the aim zone
   const txt = '▲ ' + Math.round(e.pos.y - gy) + ' m · ' + Math.round(Math.hypot(e.pos.x - p.pos.x, e.pos.z - p.pos.z)) + ' m'; if(AIR.label.textContent !== txt) AIR.label.textContent = txt; }
 function build(){ const m = c => new THREE.MeshBasicMaterial({ color:c, transparent:true, opacity:0.9, depthTest:false, depthWrite:false, side:THREE.DoubleSide });
   AIR.ring = new THREE.Mesh(new THREE.RingGeometry(0.85, 1, 48), m(AIRAIM.col)); AIR.ring.renderOrder = 998;

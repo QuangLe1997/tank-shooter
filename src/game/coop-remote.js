@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { CAV, COOP, HORSE, HUMAN_SCALE, XEOM } from '../../config.js';
 import { CV, GUNS, NET_PFLAG, NET_STANCE, S, addTrail, playerRange, animateHorse, animateSoldier, buildBikeMount, buildGeneral, buildHorse, camera, cloakFoot, fitRealCav, gunFlash, gunSound, heightAt, lineClear, lineHit, poseRider, poseSoldier, scene, seatTurnOff, updateRealCav } from '../hub.js';
 import { swimOfNet } from '../hub.js';   // SWIM 1 (game/swim.js)
+import { ncHit } from '../hub.js';   // NOCENTER (ui/nocenter.js)
 import { horseSwimStep } from '../hub.js';   // HSWIM 1 (game/horse-swim.js)
 
 const RIDES = [null, 'cav', 'xeom', 'bagac', 'bantai'], wrapA = a => Math.atan2(Math.sin(a), Math.cos(a)), _v = new THREE.Vector3();
@@ -92,7 +93,7 @@ function marks(on, now){ const M = MATE, C = COOP.mate; if(typeof document === '
   if(seen){ const t = (M.down ? '✚ ' : '') + M.name + (M.down ? ' — NGÃ' + (M.revive > 0 ? ' ' + Math.round(M.revive * 100) + '%' : '') : ''), hp = Math.max(0, Math.min(1, M.hp / M.hpMax));
     if(_tag._t !== t || _tag._c !== col){ _tag._t = t; _tag._c = col; _tag.textContent = t; _tag.style.color = col; const b = document.createElement('div'); b.style.cssText = 'height:3px;margin:2px auto 0;width:46px;background:rgba(0,0,0,.55);'; const f = document.createElement('div'); f.style.cssText = 'height:100%;background:' + col + ';transform-origin:0 50%;'; b.appendChild(f); _tag.appendChild(b); _tag._f = f; }
     if(_tag._f && _tag._hp !== (hp * 20 | 0)){ _tag._hp = hp * 20 | 0; _tag._f.style.transform = 'scaleX(' + hp.toFixed(2) + ')'; }
-    _tag.style.display = 'block'; _tag.style.transform = 'translate(' + Math.round(sx) + 'px,' + Math.round(sy) + 'px) translate(-50%,-100%)'; _arrow.style.display = 'none'; }
+    _tag.style.display = 'block'; _tag.style.transform = 'translate(' + Math.round(sx) + 'px,' + Math.round(sy) + 'px) translate(-50%,-100%)'; const nc = ncHit(sx - 60, sy - 34, sx + 60, sy); if(_tag._nc !== nc){ _tag._nc = nc; _tag.classList.toggle('nc-txt', nc); }   /* NOCENTER over the aim: his bar, not his name */ _arrow.style.display = 'none'; }
   else { let dx = _v.x, dy = -_v.y; if(!front){ dx = -dx; dy = -dy; } const L = Math.hypot(dx, dy) || 1; dx /= L; dy /= L; const hw = W / 2 - C.arrowPad, hh = Hh / 2 - C.arrowPad, k = Math.min(hw / Math.max(1e-3, Math.abs(dx)), hh / Math.max(1e-3, Math.abs(dy)));
     const ax = W / 2 + dx * k, ay = Hh / 2 + dy * k, deg = Math.round(Math.atan2(dy, dx) * 57.3), t = Math.round(M.dist) + ' m';
     if(!_arrow._a){ const a = document.createElement('div'); a.textContent = '➤'; a.style.cssText = 'font-size:22px;line-height:22px;'; const d = document.createElement('div'); _arrow.append(a, d); _arrow._a = a; _arrow._d = d; }

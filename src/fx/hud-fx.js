@@ -1,6 +1,7 @@
 // fx/hud-fx.js — FX (rings, float text, screen)
 import * as THREE from 'three';
-import { VIEW, blTick, camera, heightAt, holoRing, scene, soldierHit } from '../hub.js';
+import { NOCENTER } from '../../config.js';
+import { NCZ, VIEW, blTick, camera, heightAt, holoRing, ncArrow, ncBattle, ncChip, ncFeed, ncLabelHit, scene, soldierHit } from '../hub.js';
 
 // ----------------------------- FX (rings, float text, screen) -----------------------------
 export const _v = new THREE.Vector3();
@@ -8,8 +9,18 @@ export function worldToScreen(v){
   _v.copy(v).project(camera);
   return { x:(_v.x*0.5+0.5)*VIEW.w, y:(1-(_v.y*0.5+0.5))*VIEW.h, infront:_v.z<1 };
 }
-export function floatText(text, color, worldPos, size=20){
-  const s = worldToScreen(worldPos); if(!s.infront) return;
+// NOCENTER in a battle no label is drawn inside the aim zone (ui/nocenter.js): kind 'boss' = a boss's state word → the chip on his bar; 'bosswarn' = that and,
+//   from off screen, an edge chevron; 'warn' = an attack's "!" (its sound + ground telegraph stay): the chevron when off screen, nothing over the aim; 'fx' = cosmetic,
+//   dropped in the zone; no kind: a line with words goes to the edge stack, a bare mark ("!", "✝", "+40") is dropped. Near the edges a label stays, small.
+const WARN_RX = /^⚠/;
+export function floatText(text, color, worldPos, size=20, kind){
+  const s = worldToScreen(worldPos);
+  if(ncBattle()){ const N = NOCENTER.float, w = innerWidth, h = innerHeight, boss = kind === 'boss' || kind === 'bosswarn', warn = kind === 'warn' || kind === 'bosswarn' || WARN_RX.test(text);
+    if(boss && ncChip(text, color)){ if(warn && !(s.infront && s.x >= 0 && s.x <= w && s.y >= 0 && s.y <= h)) ncArrow(s, color); return; }
+    if(!s.infront || s.x < 0 || s.x > w || s.y < 0 || s.y > h){ if(warn) ncArrow(s, color); return; }
+    size = Math.min(size, N.edgeMax);
+    if(ncLabelHit(s.x, s.y, text, size)){ if(kind === 'fx' || kind === 'warn' || !/\p{L}{2}/u.test(text)) NCZ.dropped++; else ncFeed(text, color); return; } }
+  else if(!s.infront) return;
   const el = document.createElement('div'); el.className='pop'; el.textContent=text;
   el.style.left=s.x+'px'; el.style.top=s.y+'px'; el.style.color=color; el.style.fontSize=size+'px';
   document.getElementById('popups').appendChild(el);

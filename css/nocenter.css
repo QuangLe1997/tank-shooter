@@ -1,0 +1,65 @@
+/* NOCENTER — no words over the aim (ui/nocenter.js, config NOCENTER.zone): in a battle every HUD text card sits outside the aim zone, the middle 60% × 55%.
+   Desktop 1280×720 (zone from y 162): score bar 12–73 · banner strip 78–102 · contract chip 106–130, or in a boss fight the boss bar in two rows 104–146;
+     the side-mission card, the tip card and pick-ups go to the right column under the map, the edge stack (re-routed world labels) to the bottom left.
+   Phone 844×390 (zone from y 88): banners on the top line · the boss bar in two rows 54–80 between the weapon chip and the map · the edge stack, the
+     side-mission card and pick-ups in the left column, the tip card and the core alarm in the right column under the map. Linked before
+   hud-slim.css; its two-id selectors (#x#x) win over the older layers whatever their order. */
+.nc-off{visibility:hidden!important;}
+#worldbars .wbar.nc-txt > b,#worldbars .wbar.nc-txt > em.rk{visibility:hidden!important;}
+
+/* the banner (game/player-damage.js showBanner, big or small): one compact line under the score bar */
+html body #combo#combo{top:78px!important;font-size:16px!important;line-height:1.25!important;padding:2px 30px!important;max-width:min(680px,56vw)!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
+html body #combo#combo.mini,html body #combo#combo.long{font-size:13px!important;}
+html body.touch #combo#combo{top:calc(env(safe-area-inset-top,0px) + 11px)!important;font-size:11px!important;line-height:1.15!important;padding:2px 18px!important;max-width:44vw!important;}
+html body.touch #combo#combo.mini,html body.touch #combo#combo.long{font-size:10.5px!important;}
+
+/* the boss bar: name · state · the chip on one row, the health bar under it */
+html body #bossbar#bossbar[style*="block"]{display:flex!important;flex-wrap:nowrap;align-items:center;justify-content:center;gap:10px;}
+html body:not(.touch) #bossbar#bossbar{top:104px!important;padding:3px 12px 16px!important;}
+#bossbar#bossbar .bn{margin:0!important;flex:none;white-space:nowrap;}
+#bossbar#bossbar .bst{margin:0!important;min-height:0!important;min-width:0;overflow:hidden;white-space:nowrap;}
+#bossbar#bossbar .bar{position:absolute!important;left:12px;right:12px;bottom:5px;margin:0!important;height:8px!important;}
+#ncChip{flex:none;padding:1px 7px;font:700 11px/1.3 'Saira Condensed',Rajdhani,system-ui,sans-serif;letter-spacing:.14em;background:rgba(255,70,40,.18);white-space:nowrap;text-shadow:0 1px 3px #000;opacity:0;}
+body:has(#bossbar[style*="block"]) #contractChip{display:none!important;}
+html body.touch #bossbar#bossbar{top:calc(max(8px,env(safe-area-inset-top)) + 46px)!important;left:auto!important;right:calc(max(12px,env(safe-area-inset-right)) + 116px)!important;transform:none!important;
+  width:min(380px,calc(100vw - 468px))!important;min-width:190px;padding:2px 8px 10px!important;gap:6px;}
+html body.touch #bossbar#bossbar .bn{font-size:10px!important;letter-spacing:2px!important;}
+html body.touch #bossbar#bossbar .bst{font-size:9px!important;gap:4px;}
+html body.touch #bossbar#bossbar .bar{height:5px!important;bottom:3px;left:8px;right:8px;}
+html body.touch #ncChip{font-size:9px;padding:0 5px;}
+
+/* the edge stack: world labels that would have floated over the aim */
+#ncFeed{position:fixed;left:max(14px,env(safe-area-inset-left));bottom:78px;z-index:13;pointer-events:none;display:flex;flex-direction:column;align-items:flex-start;gap:2px;max-width:18vw;}
+#ncFeed .nc-ln{max-width:100%;padding:1px 8px 1px 6px;border-left:2px solid currentColor;background:linear-gradient(90deg,rgba(8,10,6,.6),rgba(8,10,6,0));font:700 12.5px/1.3 'Saira Condensed',Rajdhani,system-ui,sans-serif;letter-spacing:.06em;white-space:normal;overflow-wrap:anywhere;text-shadow:0 1px 3px #000;animation:ncIn .18s ease-out;}
+@keyframes ncIn{from{opacity:0;transform:translateX(-6px);}to{opacity:1;transform:none;}}
+html body.touch #ncFeed{bottom:auto;top:calc(max(8px,env(safe-area-inset-top)) + 104px);left:calc(max(8px,env(safe-area-inset-left)) + 2px);max-width:calc(19vw - max(8px,env(safe-area-inset-left)) - 6px);}
+html body.touch #ncFeed .nc-ln{font-size:10.5px;padding:0 6px 0 5px;}
+/* the edge chevron toward an attacker off screen (no words) */
+.nc-arrow{position:fixed;left:0;top:0;z-index:13;pointer-events:none;opacity:0;transition:opacity .25s;clip-path:polygon(0 12%,100% 50%,0 88%,28% 50%);}
+
+/* desktop: the right column under the map (x > 81%), the radio line low enough */
+html body:not(.touch) #sideChip#sideChip{left:auto!important;right:8px!important;top:228px!important;transform:none!important;min-width:0!important;width:min(250px,18.5vw)!important;max-width:none!important;}
+html body:not(.touch) #tipCard#tipCard{top:290px!important;right:8px!important;width:min(250px,18.5vw)!important;}
+html body:not(.touch) #lootToast#lootToast{top:auto!important;bottom:92px!important;right:8px!important;min-width:0!important;max-width:min(300px,18.5vw)!important;}
+html body:not(.touch) #radio#radio{bottom:92px!important;}
+/* phone: the left column (x < 19%) and the right column under the map */
+html body.touch #sideChip#sideChip{left:calc(max(8px,env(safe-area-inset-left)) + 2px)!important;top:calc(max(8px,env(safe-area-inset-top)) + 104px)!important;transform:none!important;min-width:0!important;
+  width:calc(19vw - max(8px,env(safe-area-inset-left)) - 6px)!important;max-width:none!important;}
+html body.touch:has(#sideChip:not(.hidden)) #ncFeed{top:calc(max(8px,env(safe-area-inset-top)) + 156px);}
+html body.touch #lootToast#lootToast{top:calc(max(8px,env(safe-area-inset-top)) + 152px)!important;max-width:calc(19vw - max(10px,env(safe-area-inset-left)) - 4px)!important;}
+html body.touch #tipCard#tipCard{top:calc(max(8px,env(safe-area-inset-top)) + 160px)!important;right:max(8px,env(safe-area-inset-right))!important;width:calc(19vw - max(8px,env(safe-area-inset-right)) - 6px)!important;}
+html body.touch #corewarn#corewarn{top:calc(max(8px,env(safe-area-inset-top)) + 160px)!important;left:auto!important;right:max(8px,env(safe-area-inset-right))!important;transform:none!important;max-width:calc(19vw - max(8px,env(safe-area-inset-right)) - 6px)!important;white-space:normal!important;}
+/* medals (ui/medals-ui.js): desktop toasts narrow enough for the right column; on a phone, during a boss fight, the chip moves under the map (the bar holds its spot) */
+html body:not(.touch) #mdlToasts#mdlToasts .mdl-toast{min-width:0!important;max-width:min(300px,17.5vw)!important;}
+html body.touch:has(#bossbar[style*="block"]) #mdlToasts#mdlToasts{top:calc(max(8px,env(safe-area-inset-top)) + 160px)!important;right:max(8px,env(safe-area-inset-right))!important;}
+html body.touch #mdlToasts#mdlToasts .mdl-toast{max-width:calc(19vw - max(8px,env(safe-area-inset-right)) - 6px)!important;}
+/* the drone alarm (ui/drone-hud.js #droneWarn): desktop one compact line under the contract chip (134–156), in the right column while a boss bar is up; phone: the right column */
+html body:not(.touch) #droneWarn#droneWarn{top:134px!important;font-size:12px!important;padding:3px 12px!important;}
+html body:not(.touch):has(#bossbar[style*="block"]) #droneWarn#droneWarn,html body.touch #droneWarn#droneWarn{left:auto!important;transform:none!important;white-space:normal!important;text-align:left!important;}
+html body:not(.touch):has(#bossbar[style*="block"]) #droneWarn#droneWarn{top:228px!important;right:8px!important;max-width:min(250px,18.5vw)!important;}
+html body.touch #droneWarn#droneWarn{top:calc(max(8px,env(safe-area-inset-top)) + 160px)!important;right:max(8px,env(safe-area-inset-right))!important;max-width:calc(19vw - max(8px,env(safe-area-inset-right)) - 6px)!important;font-size:10px!important;padding:3px 7px!important;}
+.dr-mark.nc-txt b{visibility:hidden!important;}
+#coopTag.nc-txt{font-size:0!important;}
+/* spoken-line subtitles (audio/banter.js #voiceSub, inline bottom:17%): low enough that two lines stay under the zone; on a phone between the stick and the buttons */
+html body:not(.touch) #voiceSub#voiceSub{bottom:16%!important;}
+html body.touch #voiceSub#voiceSub{bottom:11%!important;max-width:min(60vw,560px)!important;}

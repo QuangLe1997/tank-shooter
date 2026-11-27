@@ -1,6 +1,6 @@
 // core/helpers.js — shared helpers: control scheme + tank input → move direction, main HUD refresh, world-space HP bars
 import * as THREE from 'three';
-import { MOBILE, PAD, PROFILE, S, STICK_R, _camUP, core, fpvFlying, heldAction, move, worldToScreen } from '../hub.js';
+import { MOBILE, PAD, PROFILE, S, STICK_R, _camUP, core, fpvFlying, heldAction, move, ncBattle, ncHit, worldToScreen } from '../hub.js';
 
 // ----------------------------- HELPERS -----------------------------
 export function getMoveDir(){
@@ -47,7 +47,7 @@ export const _hpGrad =f=> f>0.5 ? 'linear-gradient(90deg,#3fa84a,#7fe06a)' : f>0
 export const _coreGrad=f=> f>0.3 ? 'linear-gradient(90deg,#b07a2c,#ffc24e)' : 'linear-gradient(90deg,#c0392b,#ff7a52)';
 // Z107: every write is cached — the bars used to re-set left/top/width/background/text on every frame (a style recalc each frame);
 // now position moves through transform (compositor-only) and the rest is written only when it actually changes.
-export const _WB = { p:{ d:'', t:'', w:'', g:'', l:'', low:null }, c:{ d:'', t:'', w:'', g:'', low:null } };
+export const _WB = { p:{ d:'', t:'', w:'', g:'', l:'', low:null, nc:false }, c:{ d:'', t:'', w:'', g:'', low:null } };
 export function _wbSet(el, fill, C, s, f, grad, lowAt){
   if(!s){ if(C.d!=='none'){ C.d='none'; el.style.display='none'; } return; }
   if(C.d!=='block'){ C.d='block'; el.style.display='block'; el.style.left='0px'; el.style.top='0px'; }
@@ -63,6 +63,7 @@ export function updateWorldBars(){
     const f=p.hp/p.maxHp, s=worldToScreen(_wbV.set(p.pos.x, 2.7, p.pos.z));   // Z350 just over his head, the rank stripe on it
     _wbSet(_phpBar, _phpFill, _WB.p, s.infront?s:null, f, _hpGrad, 0.25);
     if(s.infront){ const l='×'+Math.max(0,p.lives); if(l!==_WB.p.l){ _WB.p.l=l; _phpLives.textContent=l; } }
+    const nc=s.infront && ncBattle() && ncHit(s.x-40, s.y-26, s.x+60, s.y+8); if(nc!==_WB.p.nc){ _WB.p.nc=nc; _phpBar.classList.toggle('nc-txt', nc); }   // NOCENTER over the aim: the bar only, no rank / lives words
   } else _wbSet(_phpBar, _phpFill, _WB.p, null);
   if(core && core.hp>0){
     const f=core.hp/core.maxHp, s=worldToScreen(_wbV.set(core.pos.x, 7.8, core.pos.z));                 // float above the monument crystal

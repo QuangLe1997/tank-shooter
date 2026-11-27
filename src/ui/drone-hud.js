@@ -5,7 +5,7 @@
 //   Built on first use; no object is made per frame (a few short strings for the DOM's transforms while a marker moves).
 import * as THREE from 'three';
 import { DRONEWAR } from '../../config.js';
-import { ARENA, BUFF_COL, BUFF_ICON, DW, MOBILE, RECON, S, VIEW, camera, enemies, heightAt, holoRing, radarCanvas, scene } from '../hub.js';
+import { ARENA, BUFF_COL, BUFF_ICON, DW, MOBILE, RECON, S, VIEW, camera, enemies, heightAt, holoRing, ncBattle, ncHit, radarCanvas, scene } from '../hub.js';
 
 const D = DRONEWAR, UP = new THREE.Vector3(0, 1, 0), _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(), _v = new THREE.Vector3();
 const H = { marks:null, ring:null, chips:false };
@@ -67,7 +67,8 @@ function foeMarks(){ const p = S.player, W = VIEW.w, Hh = VIEW.h, m = 54; let k 
     M.e.style.transform = 'translate(' + Math.round(x) + 'px,' + Math.round(y) + 'px) translate(-50%,-50%)'; if(!M.on){ M.on = true; M.e.classList.add('on'); }
     const isK = d.kind === 'kami', dist = Math.round(Math.hypot(d.x - p.pos.x, d.z - p.pos.z)), jam = d.jamT > 0;
     const txt = isK ? (jam ? 'NHIỄU ' : d.st === 'dive' ? 'LAO XUỐNG ' : 'FPV ') + dist + 'm' : jam ? 'NHIỄU' : d.fix > 0.2 ? 'BỊ SOI ' + Math.min(99, Math.round(d.fix / D.enemy.spot.hold * 100)) + '%' : 'TRINH SÁT ' + dist + 'm';
-    if(txt !== M.txt){ M.txt = txt; M.b.textContent = txt; } if(M.kami !== isK){ M.kami = isK; M.e.classList.toggle('kami', isK); }
+    if(txt !== M.txt){ M.txt = txt; M.b.textContent = txt; } const nc = !off && ncBattle() && ncHit(x - 45, y - 20, x + 45, y + 30); if(M.nc !== nc){ M.nc = nc; M.e.classList.toggle('nc-txt', nc); }   // NOCENTER over the aim: the ring, no words
+    if(M.kami !== isK){ M.kami = isK; M.e.classList.toggle('kami', isK); }
     if(isK) kami = true; else spot = d; }
   for(let i = k; i < MK.els.length; i++){ const M = MK.els[i]; if(M.on){ M.on = false; M.e.classList.remove('on'); } }
   if(MK.warn){ const Y = D.say.hint, sig = kami ? 'k' : spot ? (spot.fix > 0.2 ? 'f' : 's') : ''; if(sig !== MK.sig){ MK.sig = sig; const w = MK.warn; w.classList.toggle('on', !!sig); w.classList.toggle('spot', sig === 's');
