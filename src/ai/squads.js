@@ -1,6 +1,7 @@
 // ai/squads.js — Z173 SQUAD TACTICS: enemy foot squads get a leader, a formation and one shared plan (advance → fire-and-manoeuvre with a flank → assault, or fall back when broken), suppression pins men down, squads escort tanks (the tank fixes you, the men flank), and a coarse nav grid routes them round fortress walls. Our fireteam fights in two alternating teams with focus fire and takes squad orders.
 import { AWARE, SQUAD_AI, FIELDCRAFT, RIVERS } from '../../config.js';
 import { ARENA, FT, S, blocks, coverSpot, enemies, floatText, inField, infTarget, radio, sfx, throwSmoke, fieldDepth, wadeAt, riverWay, fallSpot, lastMan, pinEnd, pinPlan, storyCue, tierK, tierRoles } from '../hub.js';
+import { scoreNote } from '../hub.js';   // HUDCLEAN 2 (game/score.js)
 
 export const SQUADS=[];
 let _sid=0;
@@ -53,7 +54,7 @@ export function suppress(u, k){ u.supp=Math.min(1, (u.supp||0)+k); }
 function squadThink(sq, now){
   sq.m=sq.m.filter(e=>enemies.includes(e) && !e.dead); if(!sq.m.length) return false;
   if(sq.m.length===1 && lastMan(sq, now)) return false;   // DIR 2 the last man of a squad may throw down his rifle (ai/tiers.js)
-  if(!sq.m.includes(sq.leader)){ sq.leader=sq.m[0]; sq.lost=true; sq.morale-=0.25; floatText('HẠ TỐP TRƯỞNG', '#ffcf5a', { x:sq.leader.pos.x, y:2.6, z:sq.leader.pos.z }, 13); }
+  if(!sq.m.includes(sq.leader)){ sq.leader=sq.m[0]; sq.lost=true; sq.morale-=0.25; scoreNote('HẠ TỐP TRƯỞNG', '#ffcf5a');   /* HUDCLEAN 2 by the score */ }
   const L=sq.leader, n=sq.m.length; let cx=0, cz=0, sp=0; for(const e of sq.m){ cx+=e.pos.x; cz+=e.pos.z; sp+=e.supp||0; } cx/=n; cz/=n; sp/=n;
   const A=SQUAD_AI, T=infTarget(L, now), al=L.alert>=2; sq.T=T; const tx=T.pos.x, tz=T.pos.z, d=Math.hypot(tx-cx, tz-cz)||1, ux=(tx-cx)/d, uz=(tz-cz)/d, R=L.def.range||24;
   sq.morale=Math.max(0, Math.min(1, n/sq.n0 + (sq.lost?-0.15:0) - sp*0.25 + (sq.rally||0)));

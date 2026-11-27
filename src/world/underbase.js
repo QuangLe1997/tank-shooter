@@ -12,6 +12,7 @@ import * as THREE from 'three';
 import { SCENERY, UNDERBASE } from '../../config.js';
 import { cosmetic, ARENA, BIOME, FT, HZN, MOBILE, NIGHT, S, SKY, TUN, UNDER, addScore, dressFit, dressHeadRWS, sceneDims, scenePiece, ambient, applyAtmosphere, applyWeather, bigExplode, blocks, bullets, burst, damageEnemy, detailize, enemies, enemyPool, floatText, freeEnemyBar, getEnemyBar, heightAt, hemi, homeClear, inField, inZone, radio, recycleBullet, renderer, scene, sfx, showBanner, spawnBullet, spawnDebris, spawnEnemy, spawnPart, spawnSquad, sun, blPulse, holoRing, playerSeen } from '../hub.js';
 import { muzzleFX } from '../hub.js';   // GUNFX 1 (fx/gunfx.js)
+import { scoreNote } from '../hub.js';   // HUDCLEAN 2 (game/score.js)
 
 const R=(a,b)=>a+Math.random()*(b-a), TAU=Math.PI*2;
 const _V=new THREE.Vector3();
@@ -91,7 +92,7 @@ function openGate(){ const G=UNDER.gate; G.opening=true; const now=performance.n
   addScore(UNDERBASE.score.lock, { x:G.lock.x, y:3, z:G.lock.z }); G.openAt=now; }
 function turretHit(T, dmg){ if(!T.alive) return; T.hp-=dmg; burst({ x:T.x, z:T.z }, 0xffe0a0, 4, 3, { y:heightAt(T.x,T.z)+2, life:0.3, size:0.2, grav:-14, drag:1.5, up:2 });
   if(T.hp<=0){ T.alive=false; T.head.rotation.x=0.7; T.head.position.y-=0.4; T.eye.material=mats().black; bigExplode({ x:T.x, z:T.z }, 0xffae5c, 0.8); spawnDebris({ x:T.x, z:T.z }, 0.8, 0x4a4a4a);
-    const i=blocks.indexOf(T.blk); if(i>=0) blocks.splice(i,1); addScore(150, { x:T.x, y:3, z:T.z }); floatText('HẠ Ụ SÚNG', '#ffcf5a', { x:T.x, y:4, z:T.z }, 15); } }
+    const i=blocks.indexOf(T.blk); if(i>=0) blocks.splice(i,1); addScore(150, { x:T.x, y:3, z:T.z }); scoreNote('HẠ Ụ SÚNG', '#ffcf5a');   /* HUDCLEAN 2 by the score */ } }
 function runTurrets(list, dt, now){ const p=S.player, C=UNDERBASE.gate; if(!p) return;
   for(const T of list){ if(!T.alive) continue; const dx=p.pos.x-T.x, dz=p.pos.z-T.z, d=Math.hypot(dx,dz); if(d>C.turretR || !playerSeen(T.x, heightAt(T.x,T.z)+(T.base?3.6:1.95), T.z)) continue; const ya=Math.atan2(dx,dz);   // Z377 the gunner behind the slit cannot see a man lying flat further off
     const par=T.g.parent, py=(par && par.rotation) ? par.rotation.y : 0; let da=(ya-py)-T.head.rotation.y; da=Math.atan2(Math.sin(da),Math.cos(da)); T.head.rotation.y+=Math.max(-dt*2.4, Math.min(dt*2.4, da));
@@ -165,7 +166,7 @@ function wreck(o){ const U=UNDER, C=UNDERBASE; o.alive=false; if(o.bar){ freeEne
   showBanner(o.role==='power' ? 'MÁY PHÁT BỊ PHÁ — CĂN CỨ MẤT ĐIỆN!' : (R0[0]+(left?' — CÒN '+left:' — ĐÃ XOÁ SỔ')+' · viện binh địch −'+Math.round(Math.max(U.cut.inf,U.cut.veh)*100)+'%'), '#ffcf5a');
   if(o.role==='inf' && !left) radio('SCH: Kho lính ngầm đã bị xoá sổ — bọn chúng hết người chui lên từ địa đạo!');
   if(o.role==='veh' && !left) radio('SCH: Bãi xe ngầm tan tành — xe tiếp viện của địch không còn đường ra!');
-  if(U.targets.every(q=>!q.alive)){ addScore(C.score.all, { x:o.x, y:6, z:o.z }); setTimeout(()=>{ showBanner('CĂN CỨ NGẦM ĐÃ BỊ XOÁ SỔ!', '#9be04a'); radio('SCH: Căn cứ ngầm của địch đã thành đống đổ nát — rút lên mặt đất!'); }, 1500); }
+  if(U.targets.every(q=>!q.alive)){ addScore(C.score.all, { x:o.x, y:6, z:o.z }); setTimeout(()=>{ showBanner('CĂN CỨ NGẦM ĐÃ BỊ XOÁ SỔ!', '#9be04a', true); radio('SCH: Căn cứ ngầm của địch đã thành đống đổ nát — rút lên mặt đất!'); }, 1500); }
   hud(); }
 function powerDown(){ const U=UNDER; U.power=false; const M=mats(); M.lamp.emissive.setHex(0xff2a14); M.lamp.emissiveIntensity=1.6; if(U.poolM) U.poolM.color.setHex(0x7a1408); if(U.genLight) U.genLight.intensity=0;
   for(const l of U.lights) l.color.setHex(0xff3a24); radio('SCH: Căn cứ mất điện — ụ súng của chúng đã câm!'); }

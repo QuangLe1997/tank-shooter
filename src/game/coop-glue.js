@@ -180,7 +180,7 @@ export function coopBulletMate(b, wy){ const M = MATE; if(!M.on || CO.gd.on) ret
 export function coopBlastMate(x, z, R, dmg, edge){ const M = MATE; if(!CO.ai || !M.on) return; const dx = M.x - x, dz = M.z - z, d = Math.hypot(dx, dz); if(d < R) coopHurtMate(dmg * (1 - (1 - (edge == null ? 0.4 : edge)) * d / R), dx || 0.01, dz); }
 // the stage is won on the host (campaign/boss.js bossStageWon) → the guest follows: the same reward screen, the next field built from the same seed
 export function coopStageWon(final){ if(CO.host && CO.live) coopSendEvent(NET_EV.CUE, S.stage, final ? 1 : 0, 0, 0, 0, NET_CUE.WON); }
-function guestStageWon(stage, final){ showBanner('THẮNG MÀN!', '#8cbf3f'); S.awaitingUpgrade = true; S.wave = 0; S.stage = stage; updateHUD(); try{ celebrate('victory', 0, 0); }catch(e){}
+function guestStageWon(stage, final){ showBanner('THẮNG MÀN!', '#8cbf3f', true); S.awaitingUpgrade = true; S.wave = 0; S.stage = stage; updateHUD(); try{ celebrate('victory', 0, 0); }catch(e){}
   coopPuppetsClear(); setTimeout(() => { if(S.mode !== 'playing' || !CO.live) return; if(final) victory(); else openUpgrade(); }, 5400); }
 // the battle is lost on the host (game/player-damage.js gameOver) → the guest's ends too
 export function coopGameOver(){ if(CO.host && CO.live && !CO.lostSent){ CO.lostSent = true; coopSendEvent(NET_EV.CUE, CO.down.lost ? 1 : 0, 0, 0, 0, 0, NET_CUE.LOST); } }

@@ -107,6 +107,11 @@ body:has(:is(#start,#pause,#gameover,#victory,#upgrade,#modeEnd,#mdlBoard,#mdlSc
 .mdl-lk{color:var(--xk-brass) !important;font-weight:600;}
 
 /* ---------- a phone on its side ---------- */
+/* HUDCLEAN 2 on a phone a medal is a compact chip at the top right (left of the radar), brief — not a card over the right of the view */
+body.touch .mdl-toasts{top:max(46px,calc(env(safe-area-inset-top) + 46px)) !important;right:calc(max(12px,env(safe-area-inset-right)) + 112px) !important;}
+body.touch .mdl-toast{min-width:0 !important;max-width:200px;padding:3px 10px 3px 4px !important;gap:6px !important;background:rgba(15,18,11,.72);}
+body.touch .mdl-toast .mdl-disc{--d:20px !important;} body.touch .mdl-toast small,body.touch .mdl-toast .tx > span{display:none !important;}
+body.touch .mdl-toast b{font-size:12px !important;color:var(--t);letter-spacing:.04em;white-space:nowrap;}
 @media (orientation:landscape) and (max-height:500px){
   .mdl-toasts{top:54%;right:max(12px,env(safe-area-inset-right));} .mdl-toast{min-width:250px;padding:6px 14px 6px 8px;gap:10px;} .mdl-toast .mdl-disc{--d:34px;}
   .mdl-toast b{font-size:18px;} .mdl-toast small{font-size:11.5px;} .mdl-toast .tx > span{font-size:12px;}

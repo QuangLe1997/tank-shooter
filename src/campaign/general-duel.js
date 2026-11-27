@@ -76,7 +76,7 @@ function tickZones(dt, t){ for(let i = G.zones.length - 1; i >= 0; i--){ const s
 //   runs, and the stage is won all the same
 function fallen(fled){ G.e = null; bar(false); S.timeScale = fled ? 0.6 : 0.35; sfx(fled ? 'alarm' : 'levelup');
   if(fled) showBanner(G.name + ' TẨU THOÁT!', '#ff9a4a');
-  else { showBanner('ĐÃ HẠ ' + G.name + '!', '#ffd24a'); nemFell() || storyCue('general_down', G.id) || radio('SCH: ' + G.name + ' đã gục! Bọn cận vệ tan rã — trận này là của anh!'); }
+  else { showBanner('ĐÃ HẠ ' + G.name + '!', '#ffd24a', true); nemFell() || storyCue('general_down', G.id) || radio('SCH: ' + G.name + ' đã gục! Bọn cận vệ tan rã — trận này là của anh!'); }
   for(const g of G.guards) if(enemies.includes(g)){ g.def = { ...g.def, range:0, keep:90, speed:g.def.speed * 1.3 }; g.genGuard = false; floatText(fled ? 'CHE CHO TƯỚNG!' : 'BỎ CHẠY!', '#e0e0d0', { x:g.pos.x, y:2.4, z:g.pos.z }, 13); }
   for(const z of G.zones) disposeArtZone(z.zone); G.zones.length = 0;
   const fin = G.finish, k = G.seq; G.finish = null; G.on = !!fled;

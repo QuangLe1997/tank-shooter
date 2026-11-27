@@ -43,3 +43,14 @@ html body:not(.hs-x) #combo.warn{ background:linear-gradient(90deg,transparent,r
 html body:not(.hs-x) #combo.long{ font-size:clamp(13px,1.2vw,16px)!important; letter-spacing:.1em!important; }
 html body.touch:not(.hs-x) #combo{ font-size:14px!important; padding:4px 30px!important; } html body.touch:not(.hs-x) #combo.long{ font-size:11.5px!important; }
 body.hud-no-banners #edgeNote{display:none!important}   /* HUDCLEAN 1 the fort alarm line at the top edge goes with the banners */
+/* HUDCLEAN 2 the combo: a small ×N hung on the score bar's right edge, the last +score under it for a moment (game/score.js) */
+#scoreChip{position:absolute;left:100%;top:50%;transform:translateY(-50%);margin-left:8px;display:flex;flex-direction:column;align-items:flex-start;gap:2px;pointer-events:none;opacity:0;transition:opacity .35s;white-space:nowrap;font-family:'Saira Condensed',Rajdhani,system-ui,sans-serif;}
+#scoreChip.on{opacity:.92;} #scoreChip b{font-weight:700;font-size:17px;line-height:1;color:#ffcf5a;text-shadow:0 1px 3px #000;} #scoreChip b:empty{display:none;}
+#scoreChip span{font-weight:600;font-size:11px;line-height:1;letter-spacing:.06em;color:#e7b54a;text-shadow:0 1px 2px #000;}
+#scoreChip.fl span{animation:scFl .8s ease-out;} @keyframes scFl{from{text-shadow:0 0 7px currentColor,0 1px 2px #000;}to{text-shadow:0 1px 2px #000;}}
+body.touch #scoreChip{margin-left:6px;} body.touch #scoreChip b{font-size:14px;} body.touch #scoreChip span{font-size:9.5px;}
+/* HUDCLEAN 2 an everyday banner: one small line under the score bar, no plate, no pop (the big plate only for showBanner(…, true)) */
+html body:not(.hs-x) #combo.mini{top:86px!important;font-size:13px!important;letter-spacing:.12em!important;padding:2px 26px!important;max-width:min(560px,70vw)!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  font-family:'Saira Condensed',Rajdhani,system-ui,sans-serif!important;font-weight:700!important;background:linear-gradient(90deg,transparent,rgba(10,12,8,.42) 18%,rgba(10,12,8,.42) 82%,transparent)!important;text-shadow:0 1px 3px #000!important;}
+html body:not(.hs-x) #combo.mini.warn{padding:2px 26px!important;background:linear-gradient(90deg,transparent,rgba(52,32,8,.5) 18%,rgba(52,32,8,.5) 82%,transparent)!important;}
+html body.touch:not(.hs-x) #combo.mini{top:calc(env(safe-area-inset-top,0px) + 11px)!important;font-size:10.5px!important;line-height:1.1!important;padding:2px 18px!important;max-width:44vw!important;}   /* a phone: between the top-edge alarm and the objective card — the boss bar sits lower */

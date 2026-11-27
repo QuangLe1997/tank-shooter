@@ -5,6 +5,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { BRIDGE, HUMAN_SCALE, TOWERFALL } from '../../config.js';
 import { CO, coopGuardReport, coopGuardWaits, coopHostGuardDown, coopHostGuardShot, mateProxy, AREA_K, ARENA, clearTowerFalls, towerTopple, BIOME, FT, MOBILE, NIGHT, S, TOWER, TOWER_KINDS, _R, _mergeColored, _xf, addLootBeacon, addScore, animateSoldier, blocks, buildBridge, burst, cMod, clearBridges, coverMat, detailize, diffDmgMul, diffHpMul, dropSearchlight, floatText, heightAt, homeClear, inField, inZone, loopDmgMul, loopHpMul, makeSearchlight, makeSoldierMesh, pickTowerKind, propTex, scene, sfx, spawnBullet, spawnEnemy, spawnPart, towerKindGeo, updateBeams, updateSearchSpot, updateSearchlight, playerSeen, stealthLight } from '../hub.js';
 import { muzzleFX } from '../hub.js';   // GUNFX 1 (fx/gunfx.js)
+import { scoreNote } from '../hub.js';   // HUDCLEAN 2 (game/score.js)
 
 export const towers=[], fallers=[];
 export let _towerGeo=null;
@@ -121,7 +122,7 @@ export function dropGuard(t, gd, ux, uz, live){ if(!gd.alive) return; if(CO.ai) 
   fallers.push({ g:gd.g, t:0, vx:ux*(3+Math.random()*3)+(Math.random()-0.5)*3, vy:3+Math.random()*3, vz:uz*(3+Math.random()*3)+(Math.random()-0.5)*3, rx:(Math.random()<0.5?-1:1)*(2+Math.random()*3), rz:(Math.random()-0.5)*4, down:false, live:!!live, fort:t.fort||null }); }
 // Z104 one of our riflemen hits a guard up top (x,z = the shooter) — he falls off the platform
 export function shootGuard(t, gd, x, z){ if(!gd.alive || t.falling) return false; if(CO.puppet && coopGuardReport(t, gd)) return true;   /* COOP 9 the guest's round on a guard is reported: the host drops him */ const ux=(gd.wx||t.x)-x, uz=(gd.wz||t.z)-z, L=Math.hypot(ux,uz)||1;
-  dropGuard(t, gd, ux/L, uz/L); floatText('HẠ LÍNH GÁC', '#9be04a', new THREE.Vector3(t.x, 8, t.z), 15); return true; }
+  dropGuard(t, gd, ux/L, uz/L); scoreNote('HẠ LÍNH GÁC', '#9be04a');   /* HUDCLEAN 2 by the score, not over the tower */ return true; }
 // Z104 who a tower guard shoots: the tank, unless one of our foot soldiers is clearly closer
 export function towerGuardAim(x, z, y){ const p=S.player, seen=y==null || playerSeen(x, y, z), dp=Math.hypot(p.pos.x-x, p.pos.z-z), near=seen && dp<TOWER.range; let best=near?p.pos:null, bd=near?dp*0.8:Infinity;   // Z377 a soldier lying flat out of his sight is no target (null: none) · Z403 nor one beyond his reach: he keeps watching his sector until you are inside it
   for(const a of FT){ const d=Math.hypot(a.pos.x-x, a.pos.z-z); if(d<bd && d<TOWER.range){ bd=d; best=a.pos; } }

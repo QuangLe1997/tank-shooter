@@ -4,6 +4,7 @@ import { FRAME_PACE } from '../../config.js';
 import { updateWaterSpray } from '../hub.js';   // HSWIM 2 (fx/water-spray.js)
 import { updateFortBoss } from '../hub.js';   // BOSS 1 (campaign/fort-boss.js)
 import { tierDprTop } from '../hub.js';   // SPLIT 3 (render/quality.js)
+import { comboTick } from '../hub.js';   // HUDCLEAN 2 (game/score.js)
 
 // ----------------------------- MAIN LOOP -----------------------------
 const NOGOV=typeof location!=='undefined' && /[?&]nogov\b/.test(location.search);   // PERF 1 ?nogov holds the governor still (the resolution and the occlusion pass stay as they start): for measuring
@@ -86,8 +87,8 @@ export function loop(nowMs){
     if(PERF.fc%(MOBILE?3:2)===0) drawRadar();   // Z239 desktop too: every 2nd frame (a canvas repaint the eye can't tell from every frame)   // Z92 the 2D radar is a canvas repaint → every 3rd frame on phones
     updateInstr(now);                            // Z228 commander's instrument panel (desktop only)
     // combo timeout
-    if(S.combo>0 && now>S.comboUntil && now>bannerTimer){ S.combo=0; document.getElementById('combo').style.opacity='0'; }
-    if(bannerTimer>0 && now>bannerTimer && S.combo===0){ document.getElementById('combo').style.opacity='0'; __set_bannerTimer(0); }
+    if(S.combo>0 && now>S.comboUntil) S.combo=0; comboTick(now);   // HUDCLEAN 2 the combo is its own small chip by the score (game/score.js), no longer the banner
+    if(bannerTimer>0 && now>bannerTimer){ document.getElementById('combo').style.opacity='0'; __set_bannerTimer(0); }
   }
   else if(S.mode==='intro'){ S.timeNow=now; updateIntro(dt, now); updateWildlife(dt, now); cavIdle(dt); updateTraffic(dt); }   // Z288 the city's traffic moves under the opening shots
   else if(S.mode==='countdown'){ S.timeNow=now; updateCountdown(dt); updateCamera(dt, now); cavIdle(dt); }   // Z136 3 · 2 · 1: the world waits

@@ -11,7 +11,7 @@ export function startBoss(now, f){ if(duelOn() || !S.player || modeBossHold()) r
 // the stage is won: the citadel falls, the next stage opens, the pick of rewards
 export function bossStageWon(now, bdef){
   if(modeStageWon(now, bdef)) return;   // MODE 3 a mode's battle ends here: no next stage, no campaign progress, no report (campaign/mode-run.js)
-  showBanner(nemWinBanner(bdef.id) || 'ĐÃ HẠ '+bdef.name+'!', '#8cbf3f'); sfx('levelup');   // NEMESIS 1 (the stage is won all the same when its general got away)
+  showBanner(nemWinBanner(bdef.id) || 'ĐÃ HẠ '+bdef.name+'!', '#8cbf3f', true); sfx('levelup');   // NEMESIS 1 (the stage is won all the same when its general got away)
   fortBossDown();                                   // Z107 the citadel falls with its commander
   dirWin();                                         // DIR 3 the stage is won: the director's easing after two deaths is taken back
   const wasFinal = S.stage >= BOSS_DEFS.length;     // beat the last boss → victory

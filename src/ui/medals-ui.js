@@ -2,8 +2,8 @@
 //   report over an end screen (best moments, the counts, the XP bar filling to the next rank, the medals won), the Quân hàm & huân chương screen from home,
 //   the rank line on the home screen, and the lock on a gun the rank has not opened (ui/loadout.js, ui/setup-units.js). Built in code (index.html stays a
 //   shell), styled by css/medals.css in the XK-UI palette (olive, sand, brass; bronze / silver / gold only on the medals).
-import { MEDALS } from '../../config.js';
-import { GUNS, MEDAL_TIER_VI, carInsignia, carRank, carRankName, carTop, escapeHtml, gunOpen, gunRankReq, hide, medalCareer, medalDef, medalMoments, sfx, show, svgMarkup,
+import { HUDCLEAN2, MEDALS } from '../../config.js';
+import { MOBILE, GUNS, MEDAL_TIER_VI, carInsignia, carRank, carRankName, carTop, escapeHtml, gunOpen, gunRankReq, hide, medalCareer, medalDef, medalMoments, sfx, show, svgMarkup,
   tapEl, medalHush } from '../hub.js';
 
 const M = () => MEDALS, fmt = n => Math.round(n).toLocaleString('vi-VN'), TIER_CLS = ['none', 'bronze', 'silver', 'gold'];
@@ -33,7 +33,7 @@ export function medalToast(d, tier, v){ if(typeof document === 'undefined') retu
 function nextToast(){ const it = TQ.q.shift(); if(!it){ TQ.busy = false; return; } TQ.busy = true; const T = M().toast, h = toastHost(), d = it.d;
   const n = el('div', 'mdl-toast ' + TIER_CLS[it.tier], medalDiscHTML(d, it.tier) + '<span class="tx"><small>Huân chương · <em>' + capTier(it.tier) + '</em></small><b>' + escapeHtml(d.nm) + '</b><span>' + escapeHtml(d.ds) + ' · ' + fmt(it.v) + '</span></span>');
   h.appendChild(n); requestAnimationFrame(() => n.classList.add('in')); try{ sfx('powerup'); }catch(e){}
-  setTimeout(() => { n.classList.remove('in'); n.classList.add('out'); setTimeout(() => { n.remove(); setTimeout(nextToast, T.gap * 1000); }, 320); }, T.hold * 1000); }
+  setTimeout(() => { n.classList.remove('in'); n.classList.add('out'); setTimeout(() => { n.remove(); setTimeout(nextToast, T.gap * 1000); }, 320); }, T.hold * (MOBILE ? HUDCLEAN2.medal.touchHoldK : 1) * 1000); }   // (HUDCLEAN 2 brief on a phone)
 const capTier = t => { const s = MEDAL_TIER_VI[t] || ''; return s.charAt(0) + s.slice(1).toLocaleLowerCase('vi'); };
 // ---- the career's rank-up in battle: the board, the new rank, what it opens ----
 let _rk = null;

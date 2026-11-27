@@ -139,7 +139,7 @@ export function nemJoin(host){ const R = NEM; if(!N.on || !R.live || R.join || !
   showBanner(name + ' QUAY LẠI!', '#ff9a4a'); sfx('alarm'); floatText(name + nemBadge(rec), sc ? sc.star : '#ff9a4a', { x, y:heightAt(x, z) + 3.2, z }, 20);
   say('SCH', text(N.say.join, name, rec), true); say(name, his(greet, id, name, rec), false, 'join'); const ad = nemAdapt(rec); if(ad) say('SCH', text(N.say.hint[ad], name, rec)); }
 function joinFell(J){ const rec = recOf(J.id), e = J.e; if(!rec) return; const last = his('fall', J.id, J.name, rec); nemAfterFall(rec, nemHow(!!e._blast, distTo(e)), gunId()); store(); stripLater(e.mesh);
-  showBanner('ĐÃ HẠ ' + J.name + ' · HẾT NỢ!', GOLD); say(J.name, last, true); say('SCH', text(N.say.paid, J.name, rec)); }
+  showBanner('ĐÃ HẠ ' + J.name + ' · HẾT NỢ!', GOLD, true); say(J.name, last, true); say('SCH', text(N.say.paid, J.name, rec)); }
 
 // ---- the duel ends ----
 // fallen(): the stage's general is dead. true = his last words went out (a man with a history); false = the story's own line is said
@@ -152,7 +152,7 @@ const wonText = E => 'THÀNH ĐÃ HẠ · ' + E.name + ' ĐÃ THOÁT!';
 export function nemWinBanner(id){ const E = NEM.esc; return N.on && E && E.id === id && E.stage === (S.stage || 1) && E.loop === (S.loop || 0) ? wonText(E) : ''; }
 // boss.js bossStageWon, after the celebration has had its say: the banner stays his, and our commander says what the win left open
 export function nemWon(id){ const E = NEM.esc; if(!N.on || !E || E.id !== id || E.stage !== (S.stage || 1) - 1 || E.loop !== (S.loop || 0)) return;   // (the stage counter has moved on)
-  showBanner(wonText(E), GOLD); say('SCH', text(N.say.won, E.name, peek(E.id)), true); }
+  showBanner(wonText(E), GOLD, true); say('SCH', text(N.say.won, E.name, peek(E.id)), true); }
 // loot/upgrades.js openUpgrade: the epilogue of the stage just won — its first line (the general's fall) gives way to his escape
 export function nemEpilogue(el, stage){ const E = NEM.esc, s = el && el.firstElementChild; sweep(); if(!N.on || !E || E.stage !== stage || E.loop !== (S.loop || 0) || !s) return;
   const t = text(N.say.epi, E.name, peek(E.id)); if(t) s.textContent = t; }

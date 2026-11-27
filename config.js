@@ -3618,4 +3618,16 @@ export const PERF_SPLIT = {
 //     fadeIn s) in place of the big banner
 export const HUDCLEAN = {
   chip:{ desk:{ left:14, bottom:62 }, touch:{ left:12, top:156 }, noteT:2.6, idleT:3, op:{ idle:0.42, touch:0.62, live:0.86 } },
-  fort:{ label:false, plaque:false, wake:{ size:11, hold:3.2, fadeIn:1.5 } } };
+  fort:{ label:false, plaque:false, wake:{ size:10, hold:3.2, fadeIn:1.5 } } };
+// HUDCLEAN 2 — the fight's own words off the line of sight (game/score.js, game/player-damage.js, game/loop.js, world/fortress.js, ui/medals-ui.js):
+//   combo.lineT = how long the small "+240" / "HẠ TỐP TRƯỞNG" holds beside the ×N on the score bar's right, s (the LIÊN HOÀN banner and the +score pops
+//     over the enemy are gone; the multiplier is a small "×4" by the score)
+//   banner.bigHold = the big centred banner, kept only for the rare moments (a general / boss down, a fort taken, the battle won — showBanner(…, true)), s;
+//     banner.miniHold = every other banner: one small line under the score bar, no plate, no pop, s
+//   chiefLabel = a fort commander's name floating over his head (fort modes without the boss; false: gone — the boss bar and the fort list carry it)
+//   medal.touchHoldK = on a phone a medal is a compact chip at the top right, held this share of MEDALS.toast.hold
+export const HUDCLEAN2 = {
+  combo:{ lineT:1.1 },
+  banner:{ bigHold:1.1, miniHold:1.6 },
+  chiefLabel:false,
+  medal:{ touchHoldK:0.55 } };

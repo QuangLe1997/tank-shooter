@@ -226,7 +226,7 @@ function tickZones(B, dt, now){ for(let i = B.zones.length - 1; i >= 0; i--){ co
 function down(B, now){ const e = B.e, f = B.f, def = B.def; B.st = 'dead'; B.tDown = now; endAct(B); if(B.laser){ scene.remove(B.laser); B.laser.material.dispose(); B.laser = null; }
   fortBossStrip(B.look, true); bar(B, false); S.timeScale = 0.3; S.shake = Math.max(S.shake || 0, 1.2);
   bigExplode({ x:e.pos.x, z:e.pos.z }, 0xffa040, 1.1); ringPulse({ x:e.pos.x, z:e.pos.z }, 0xffd24a, 6); sfx('levelup');
-  showBanner('ĐÃ HẠ ' + def.name + '!', '#ffd24a');
+  showBanner('ĐÃ HẠ ' + def.name + '!', '#ffd24a', true);
   if(!(def.capital && nemFell()) && !(def.capital && storyCue('general_down', def.id))) radio('SCH: Tướng giữ thành đã gục! Quét sạch tàn quân!', 'fort_chief');
   for(const g of B.guards) if(enemies.includes(g)){ g.def = { ...g.def, range:0, keep:90, speed:g.def.speed * 1.3 }; g.genGuard = false; g.guard = null; g.post = null; floatText('BỎ CHẠY!', '#e0e0d0', { x:g.pos.x, y:2.4, z:g.pos.z }, 13); }
   { const p = S.player, dx = p.pos.x - e.pos.x, dz = p.pos.z - e.pos.z, d = Math.hypot(dx, dz) || 1, [x, z] = clampFieldXZ(e.pos.x + dx / d * 3, e.pos.z + dz / d * 3, 6);   // the HQ's gift: a reward and ammunition

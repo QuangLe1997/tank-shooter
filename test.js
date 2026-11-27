@@ -2767,6 +2767,16 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
     'the ride\'s calls, ETAs, repairs and spills speak in the chip (rideNote), never as a toast over the soldier; the driver\'s chatter only with the dialogue on screen');
   ok(X.fort.label===false && X.fort.plaque===false && X.fort.wake.size<=13 && X.fort.wake.fadeIn>=1 && X.fort.wake.hold<=5 && /if\(HUDCLEAN\.fort\.label\)\{ f\.label=nameSprite/.test(fo) && /edgeNote\(f\.name\+' · BÁO ĐỘNG'/.test(fo) && !/showBanner\(f\.name\+' BÁO ĐỘNG/.test(fo) && /export function edgeNote\(text, color\)/.test(pd),
     'no fort name over the keep or on the gate by default; coming near, the alarm is a small line at the top edge that fades in'); }
+// HUDCLEAN 2 the fight's own words off the line of sight
+{ const fs=await import('node:fs'); const C=await import('./config.js'), X=C.HUDCLEAN2, rd=f=>fs.readFileSync(f,'utf8'), sc=rd('src/game/score.js'), pd=rd('src/game/player-damage.js'), lp=rd('src/game/loop.js'), fo=rd('src/world/fortress.js'), mu=rd('src/ui/medals-ui.js'), css=rd('css/hud-slim.css'), mc=rd('css/medals.css');
+  ok(X && X.combo.lineT>0 && X.combo.lineT<=2 && X.banner.bigHold<=1.4 && X.banner.miniHold<=2.5 && X.chiefLabel===false && X.medal.touchHoldK>0 && X.medal.touchHoldK<1 && C.HUDCLEAN.fort.wake.size<=10 && C.FORT_CMD.board===false,
+    'HUDCLEAN2: brief banners, a short score line, no commander\'s name over his head, a phone\'s medal held shorter; the top-edge alarm clear of the score bar; no SỞ CHỈ HUY board in the world');
+  ok(!/'LIÊN HOÀN/.test(sc) && !/floatText\(/.test(sc) && /export function scoreNote\(text, col\)/.test(sc) && /export function comboTick\(now\)/.test(sc) && /comboTick\(now\)/.test(lp) && !/now>bannerTimer && S\.combo===0/.test(lp) && /#scoreChip\{position:absolute;left:100%/.test(css),
+    'the combo is a small ×N on the score bar\'s right with the last +score under it — no LIÊN HOÀN banner, no +score pop over the enemy');
+  ok(/export function showBanner\(text, color, big\)/.test(pd) && /classList\.toggle\('mini', !big\)/.test(pd) && /#combo\.mini\{top:86px!important/.test(css) && /showBanner\('ĐÃ CHIẾM '\+f\.name\+'!', '#8cbf3f', true\)/.test(fo) && /showBanner\('CHIẾN THẮNG!  TOÀN QUÂN REO HÒ', '#ffd24a', true\)/.test(rd('src/fx/celebrate.js')),
+    'everyday banners are one small line under the score bar; only a general down, a fort taken or the battle won gets the big plate');
+  ok(/if\(HUDCLEAN2\.chiefLabel\)\{ c\.label=nameSprite/.test(fo) && /HUDCLEAN2\.medal\.touchHoldK/.test(mu) && /body\.touch \.mdl-toasts\{top:max\(46px/.test(mc) && /body\.touch \.mdl-toast small,body\.touch \.mdl-toast \.tx > span\{display:none/.test(mc),
+    'no commander\'s name floats over him; on a phone a medal is a compact chip at the top right'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

@@ -71,7 +71,7 @@ modeDefine('daily', {
     if(m.strict && (DC.gunAt -= dt) <= 0){ DC.gunAt = D.strictTick; strict(); } },
   // the stage's general fell (campaign/boss.js bossStageWon gave it here): the challenge is done — his citadel falls, the men cheer, then the result
   stageWon(now, bdef){ const p = S.player; if(DC.done) return; DC.done = DC.won = true; DC.doneT = 0; S.awaitingUpgrade = true; S.wave = 0; if(p) p.invincibleUntil = now + D.hold + 3;
-    fortBossDown(); celebrate('victory', 0, 0); showBanner(fillTx(Y.wonBanner, { g:bdef.name }), '#8cbf3f'); updateHUD(); },   // (after celebrate: the challenge's own banner over the campaign's)
+    fortBossDown(); celebrate('victory', 0, 0); showBanner(fillTx(Y.wonBanner, { g:bdef.name }), '#8cbf3f', true); updateHUD(); },   // (after celebrate: the challenge's own banner over the campaign's)
   over(reason){ if(!DC.done) card(false, reason); },   // (the general is down: nothing that lands afterwards takes the day back)
   pauseTx(){ return DC.ch ? fillTx(Y.pause, { date:dailyDate(DC.day).vi, m:DC.mod.vi, p:DC.scored ? '' : Y.pauseP }) : ''; },
   brief(){ const o = desc(DC.ch, DC.mod), e = entryOf(book(), DC.day); o.state = DC.scored ? Y.ask.scored : fillTx(Y.ask.practice, { s:modeNum(e ? e.s : 0) }); return { op:fillTx(Y.briefOp, o), brief:fillTx(Y.brief, o), obj:Y.obj }; },

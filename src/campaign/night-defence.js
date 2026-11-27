@@ -96,7 +96,7 @@ function mortar(){ const M = C.mortar, c = EDGE[ND.dir], p = S.player;
 function hatch(){ const o = OPP[ND.dir], a = EDGE[o] + (Math.random() - 0.5) * 0.8, r = R2(C.hatch.r), q = clampFieldXZ(core.pos.x + Math.cos(a) * r, core.pos.z + Math.sin(a) * r, 6);
   hatchEntry(q[0], q[1], C.hatch.types.slice(), { alert:true }); ND.stats.hatch++; sfx('alarm'); modeSay(fillTx(Y.hatch, { d:Y.dirs[o] })); }
 function general(){ const def = bossForStage(S.stage), q = fieldEdgePoint(EDGE[ND.dir], C.general.inset), k = MODE.seq;
-  if(!generalStart({ x:q[0], z:q[1] }, def, () => { if(MODE.seq !== k || ND.done) return; ND.genDown = true; showBanner(fillTx(Y.generalDown, { g:def.name }), '#ffd24a'); })) return;
+  if(!generalStart({ x:q[0], z:q[1] }, def, () => { if(MODE.seq !== k || ND.done) return; ND.genDown = true; showBanner(fillTx(Y.generalDown, { g:def.name }), '#ffd24a', true); })) return;
   dirPass(WAVE.spawnQueue.length); modeSay(fillTx(Y.general, { g:def.name }), 4.5); }
 function extra(x, now){ if(x.k === 'mortar') mortar(); else if(x.k === 'drone'){ if(droneRaid(now, x.kind)) ND.stats.drones++; } else if(x.k === 'hatch') hatch(); else if(x.k === 'general') general(); }
 
@@ -136,7 +136,7 @@ function hud(){ const N = C.assaults.length, u = ND.t / C.len, H = Y.hud; let li
 function win(now){ const p = S.player; ND.done = ND.won = true; ND.doneT = 0; if(ND.open){ ND.open = false; ND.survived++; } flaresOff(); gunsBack(); WAVE.spawnQueue.length = 0; ND.ex.length = 0; duelReset();
   for(let i = 0; i < enemies.length; i++){ const e = enemies[i]; if(e.def.inf && !e.guard && !e.fortOf) e.def = { ...e.def, range:0, keep:90, speed:e.def.speed * 1.3 }; }   // (as a fallen general's guards do: campaign/general-duel.js)
   ND.dawnIn = 2;   // the hour itself changes two frames on (frame, below): the switch is a hitch — a new sky, the lights — and the banner should be on the screen before it
-  if(p) p.invincibleUntil = now + C.dawn.hold + 6; celebrate('victory', 0, 0); showBanner(Y.dawn, '#ffd86a'); modeSay(Y.dawnRadio, 0.1); ND.phase = 'wait'; hud(); }   // (after celebrate: its banner and radio line are the campaign's — the dawn's own go over them)
+  if(p) p.invincibleUntil = now + C.dawn.hold + 6; celebrate('victory', 0, 0); showBanner(Y.dawn, '#ffd86a', true); modeSay(Y.dawnRadio, 0.1); ND.phase = 'wait'; hud(); }   // (after celebrate: its banner and radio line are the campaign's — the dawn's own go over them)
 function card(won, reason){ const st = modeStats(), W = modeWhere(), E = Y.end, N = C.assaults.length, coreK = core && core.maxHp ? Math.max(0, core.hp) / core.maxHp : 0;
   const score = ndScore({ base:S.score, survived:ND.survived, core:coreK, acc:st.acc, won, general:ND.genDown, night:ND.night }, C.score), M = modeStore().nd, streak = won ? ND.night : ND.night - 1;
   const beat = streak > (M.nights | 0) || score > (M.score | 0); if(streak > (M.nights | 0)) M.nights = streak; if(score > (M.score | 0)) M.score = score; saveProfile();
