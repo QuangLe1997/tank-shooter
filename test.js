@@ -2812,7 +2812,7 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   ok(new Set(got).size === lands.length && mine.every(k => all.has(k)) && P.capital === 'revenant' && Object.values(B.looks).every(l => l.file) && pick('FOUNDRY', 1) === 'guardian' && pick('QUARRY', 1) === 'titan',
     'each of the '+lands.length+' battlefields has its own boss ('+lands.map((l, i) => l+' '+got[i]).join(', ')+'); every packed look fights somewhere (the tier-2 forts: '+Object.entries(P.second).map(([l, k]) => l+' '+k).join(', ')+')');
   const nm = Object.values(B.looks).map(l => l.name).filter(Boolean), banned = C.NAMES.banned.map(s => s.toLowerCase());
-  ok(new Set(nm).size === nm.length && nm.every(n => !banned.some(b => n.toLowerCase().includes(b))) && Object.values(B.looks).every(l => !l.gun || C.INFGUN.guns[l.gun]) && Object.values(B.looks).every(l => !l.helm || ['mask', 'cap'].includes(l.helm)) && B.anim.deathAt > 0 && B.anim.deathAt < 1.5
+  ok(new Set(nm).size === nm.length && nm.every(n => !banned.some(b => n.toLowerCase().includes(b))) && Object.values(B.looks).every(l => !l.gun || C.INFGUN.guns[l.gun]) && Object.values(B.looks).every(l => (!l.helm || ['mask', 'cap', 'none'].includes(l.helm)) && (!l.plates || ['slab', 'none'].includes(l.plates)) && (!l.pack || ['pack', 'back', 'belt'].includes(l.pack)) && Math.abs(l.foot || 0) < 0.1) && B.anim.deathAt > 0 && B.anim.deathAt < 1.5
     && mine.every(k => src.includes(B.looks[k].file.split('/').pop())),
     'each look its own invented name and line ('+nm.length+'), a weapon of the game\'s arsenal, a helmet / mask / cap; credited in SOURCES.txt'); }
 // Z141 realistic water + flora

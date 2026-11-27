@@ -62,13 +62,23 @@ export function fortBossGlow(L, dt, hot, rage){ if(!L) return; L.glowT += dt * (
   if(rage) g.emissive.setHex(0xff3010); L.M.eye.emissiveIntensity = rage ? 4 + Math.sin(L.glowT * 1.7) * 1.5 : 3; }
 // a plate shot off: it leaves the bone where it is and tumbles away from the shot (ux, uz = the way the round flew)
 export function fortBossPlateOff(L, key, ux, uz, hard){ const g = L && L.plates[key]; if(!g || !g.parent) return false; L.plates[key] = null;
+  if(g.userData.ghost) return chunks(L, g, ux, uz, hard);   // BOSS 4 a plate of his own suit (none added): chunks off his own surface there, and sparks
   g.getWorldPosition(_w); scene.attach(g); const a = Math.random() * 6.283, sp = (hard ? 6 : 3.5) + Math.random() * 2;
   DEBRIS.push({ g, vx:(ux || Math.cos(a)) * sp, vy:3.5 + Math.random() * 2.5, vz:(uz || Math.sin(a)) * sp, rx:(Math.random() - 0.5) * 12, rz:(Math.random() - 0.5) * 12, t:0, life:2.6 + Math.random() });
   for(let i = 0; i < 14; i++) spawnPart(_w.x, _w.y, _w.z, (Math.random() - 0.5) * 8, 2 + Math.random() * 5, (Math.random() - 0.5) * 8, { color:i % 3 ? 0xffd080 : 0xffffff, size:0.18 + Math.random() * 0.2, life:0.35 + Math.random() * 0.3, grav:12, drag:1 });
   return true; }
+// BOSS 4 the suit's own armour gives: a few shards in his own skin (his body's material) and the plate's steel thrown off where the zone is, sparks and smoke
+let _shard = null;
+function chunks(L, g, ux, uz, hard){ g.getWorldPosition(_w); if(g.parent) g.parent.remove(g); _shard = _shard || new THREE.TetrahedronGeometry(1, 0); const n = hard ? 7 : 5, s = (L.ws || 1) * (L.e.mesh.scale.x || 1) * 0.05;
+  for(let i = 0; i < n; i++){ const m = new THREE.Mesh(_shard, (i % 2 && L.mats && L.mats[0]) || L.M.plate); m.scale.set(s * (0.6 + Math.random()), s * (0.4 + Math.random() * 0.6), s * (0.5 + Math.random() * 0.8)); m.castShadow = true;
+    m.position.set(_w.x + (Math.random() - 0.5) * 0.3, _w.y + (Math.random() - 0.5) * 0.3, _w.z + (Math.random() - 0.5) * 0.3); scene.add(m); const a = Math.random() * 6.283, sp = 3 + Math.random() * 3;
+    DEBRIS.push({ g:m, vx:(ux || Math.cos(a)) * sp + Math.cos(a) * 1.5, vy:3 + Math.random() * 3, vz:(uz || Math.sin(a)) * sp + Math.sin(a) * 1.5, rx:(Math.random() - 0.5) * 14, rz:(Math.random() - 0.5) * 14, t:0, life:1.6 + Math.random() }); }
+  for(let i = 0; i < 18; i++) spawnPart(_w.x, _w.y, _w.z, (Math.random() - 0.5) * 9, 2 + Math.random() * 5, (Math.random() - 0.5) * 9, { color:i % 3 ? 0xffd080 : 0xffffff, size:0.2 + Math.random() * 0.22, life:0.35 + Math.random() * 0.3, grav:12, drag:1 });
+  for(let i = 0; i < 4; i++) spawnPart(_w.x, _w.y, _w.z, (Math.random() - 0.5) * 1.5, 1 + Math.random(), (Math.random() - 0.5) * 1.5, { color:0x3a3632, size:1 + Math.random(), life:1.2, smoke:true, grav:-0.4, drag:1.2, op:0.45 });
+  return true; }
 // he is down (or gone): every piece left flies off, the rifle part comes back, the rig is an ordinary man again for the pool
 export function fortBossStrip(L, fly){ if(!L || L.gone) return; L.gone = true; const u = L.e.mesh.userData; if(L.glb) fortBossGlbStrip(L, fly);
-  for(const key in L.plates) if(L.plates[key]) fortBossPlateOff(L, key, 0, 0, true);
+  for(const key in L.plates) if(L.plates[key] && !L.plates[key].userData.ghost) fortBossPlateOff(L, key, 0, 0, true);
   for(const g of L.pieces){ if(!g.parent || g.parent === scene) continue; if(fly && g !== L.gun){ scene.attach(g); DEBRIS.push({ g, vx:(Math.random() - 0.5) * 5, vy:3, vz:(Math.random() - 0.5) * 5, rx:(Math.random() - 0.5) * 9, rz:(Math.random() - 0.5) * 9, t:0, life:2.2 }); } else { g.parent.remove(g); disposeTree(g, false); } }
   if(L.gp) L.gp.o.visible = true; if(u && u.gun && L.gun && L.gun.parent) u.gun.remove(L.gun);
   L.dispose = true; }

@@ -28,9 +28,9 @@ export const FBOSS = { list:[], guest:new Map(), log:[], seq:0, barK:'', barB:nu
 const wrapA = a => Math.atan2(Math.sin(a), Math.cos(a)), _m = new THREE.Vector3();
 // ---- the pure rules (test.js checks them) ----
 // where a hit lands: rel = the bearing of where it came from, off his facing (rad); pl = his plates' health; r = a roll 0–1
-export function fortBossZone(rel, pl, r){ const a = Math.abs(rel);
-  if(a > C.back) return pl.pack > 0 ? 'pack' : 'back';
-  if(a < C.front){ if(r < C.headShare) return pl.helmet > 0 ? 'helmet' : 'head'; return pl.chest > 0 ? 'chest' : 'body'; }
+export function fortBossZone(rel, pl, r, belt){ const a = Math.abs(rel);   // (BOSS 4 belt: his weak point is a device on his hip — a share of the front hits, beltShare, strike it; his back is plain back)
+  if(a > C.back) return pl.pack > 0 && !belt ? 'pack' : 'back';
+  if(a < C.front){ if(r < C.headShare) return pl.helmet > 0 ? 'helmet' : 'head'; if(belt && r < C.headShare + C.beltShare && pl.pack > 0) return 'pack'; return pl.chest > 0 ? 'chest' : 'body'; }
   const side = rel > 0 ? 'shL' : 'shR'; return r < C.sideShare && pl[side] > 0 ? side : 'body'; }   // (+X of him is his left: the Mixamo frame)
 // his health: by tier, the stage, the difficulty, the NG+ loop, the players
 export function fortBossHp(tier, stage, diffK, loopK, players){ return Math.round((C.hp[tier - 1] || C.hp[0]) * (1 + C.stageK * Math.max(0, (stage || 1) - 1)) * (diffK || 1) * (loopK || 1) * (1 + C.coopK * Math.max(0, (players || 1) - 1))); }
@@ -89,7 +89,7 @@ export function fortBossDmg(e, dmg){ const B = e.fortBoss; if(!B || B.st === 'de
   if(e._bladeHit > 0 && B.st === 'stagger'){ if(e.hp / hp < C.blade.finish){ e._quietKill = true; floatText('KẾT LIỄU!', '#ffd24a', { x:e.pos.x, y:heightAt(e.pos.x, e.pos.z) + 3.4, z:e.pos.z }, 26); B.finish = true; return e.hp + 1; }
     raw = Math.min(dmg * C.blade.k, hp * C.hitCap * C.blade.k); }
   let bx, bz; if(e._blast){ bx = e._blast.x - e.pos.x; bz = e._blast.z - e.pos.z; } else { bx = -(e._hx || 0); bz = -(e._hz || 0); }
-  const rel = (bx || bz) ? wrapA(Math.atan2(bx, bz) - e.facing) : 0, z = fortBossZone(rel, B.pl, Math.random()); let out;
+  const rel = (bx || bz) ? wrapA(Math.atan2(bx, bz) - e.facing) : 0, z = fortBossZone(rel, B.pl, Math.random(), !!(B.look && B.look.look && B.look.look.pack === 'belt')); let out;
   if(z === 'head'){ out = raw * C.headK; mark(B, 'ĐẦU!', '#ff6a4a', now); }
   else if(z === 'body') out = raw;
   else if(z === 'back'){ out = raw * C.backK; mark(B, 'LƯNG HỞ!', '#ffb04a', now); }

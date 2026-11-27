@@ -104,7 +104,7 @@ async function pack(THREE, name, S){ const mesh = S.mesh, G = mesh.geometry, bon
   // HIS MOTIONS out of the library
   const op = operator(), lib = library(), src = {}; for(const b of [...BONES, ...['Left', 'Right'].flatMap(s => ['HandMiddle1', 'HandIndex1', 'HandPinky1'].map(k => s + k))]) if(byName[b] !== undefined) src[b] = wp[byName[b]];
   const ref = reference(op, src), refI = {}; for(const b of BONES) refI[b] = qinv(ref[b]);
-  const hipK = src.Hips.p[1] / lib.J.scale.hip, anims = []; let soleLo = Infinity, soleHi = -Infinity;
+  const hipK = src.Hips.p[1] / lib.J.scale.hip, anims = []; let soleLo = Infinity, soleHi = -Infinity, footAim = Infinity;
   for(const [game, id] of Object.entries(BOSS2_CLIPS)){ const { m, D } = lib.clip(id), fps = D.fps, F = Math.max(2, Math.round(m.dur * fps) + 1), times = [], H = [], R = BONES.map(() => []);
     for(let f = 0; f < F; f++){ const t = Math.min(m.dur, f / fps); times.push(t); const Qo = {}, Qb = {};
       BONES.forEach((b, i) => { const L = at(D.rot[i], t, true), pw = b === 'Hips' ? op.arm.q : Qo[op.parent[b]]; Qo[b] = qmul(pw, L); });
@@ -114,12 +114,13 @@ async function pack(THREE, name, S){ const mesh = S.mesh, G = mesh.geometry, bon
       // his soles this frame (forward kinematics on his own bones): how far off the ground
       const wq = {}, wpos = {}; for(const b of BONES){ const bi = byName[b], pi = parentOf(bi), pn = pi < 0 ? null : short(bones[pi]);
         const pq = pn ? wq[pn] : [0,0,0,1], pp = pn ? wpos[pn] : [0,0,0], k = BONES.indexOf(b); wq[b] = qmul(pq, R[k][f]); wpos[b] = b === 'Hips' ? H[f] : add(pp, qrot(pq, nodes[bi].translation)); }
+      if(game === 'aim') footAim = Math.min(footAim, wpos.LeftToeBase[1], wpos.RightToeBase[1], wpos.LeftFoot[1], wpos.RightFoot[1]);   // (BOSS 4 FORTBOSS.looks foot: how far his standing feet float over their bind height)
       if(!/death|throw|crouch/.test(game)){ const y = Math.min(wpos.LeftToeBase[1], wpos.RightToeBase[1], wpos.LeftFoot[1], wpos.RightFoot[1]); soleLo = Math.min(soleLo, y); soleHi = Math.max(soleHi, y); } }
     anims.push({ name:game, src:id, loop:D.loop, times, H, R }); }
   const roots = bones.map((b, i) => i).filter(i => parentOf(i) < 0);
   if(S.extras) await extras(THREE, S, { pos, nor, uv, jo, we, idx, nodes, ibm, wp, byName, hipY:src.Hips.p[1], lift });
   const nJ = nodes.length;
-  return { roots, pos, nor, uv, jo, we, idx, nodes, ibm, nb:nJ, lo, hi, hipY:+src.Hips.p[1].toFixed(3), anims, sole:[+soleLo.toFixed(3), +soleHi.toFixed(3)], tris:idx.length / 3, verts:pos.length / 3 }; }
+  return { roots, pos, nor, uv, jo, we, idx, nodes, ibm, nb:nJ, lo, hi, hipY:+src.Hips.p[1].toFixed(3), foot:+(footAim - Math.min(...['LeftToeBase', 'RightToeBase', 'LeftFoot', 'RightFoot'].map(b => wp[byName[b]].p[1]))).toFixed(3), anims, sole:[+soleLo.toFixed(3), +soleHi.toFixed(3)], tris:idx.length / 3, verts:pos.length / 3 }; }
 // ---------- BOSS 2 parts cut off before the auto-rig (wings, a tail: an OBJ in the same bind space as the FBX): simplified, each piece its own joint
 //   (wingL / wingR on Spine2, tail on Hips — the game sways them), skinned whole to it ----------
 async function extras(THREE, S, M){ const txt = fs.readFileSync(path.join(S.dir, S.extras), 'utf8'), V = [], T = [], N = [], F = [];
@@ -176,4 +177,4 @@ for(const name of (names.length ? names : Object.keys(SPEC))){ const S = SPEC[na
   M.boneNode = {}; M.nodes.forEach((n, i) => { M.boneNode[n.name.replace(/^mixamorig/, '')] = i; }); M.hipsNode = M.boneNode.Hips;
   const imgs = [jpeg(path.join(opt.tex, S.col || path.join(name, name + '.jpg')), S.px, S.q[0])]; if(S.nrm !== null) imgs.push(jpeg(path.join(opt.tex, S.nrm || path.join(name, 'work', name + '_normal.jpg')), S.npx || S.px, S.q[1]));
   const bytes = writeGlb(path.join(OUT, name + '.glb'), M, imgs, S, name);
-  console.log(JSON.stringify({ name, tris:M.tris, verts:M.verts, joints:M.nb, h:+M.hi[1].toFixed(3), w:+(M.hi[0] - M.lo[0]).toFixed(3), hipY:M.hipY, clips:M.anims.length, sole:M.sole, maps:imgs.map(b => b.length), bytes })); }
+  console.log(JSON.stringify({ name, tris:M.tris, verts:M.verts, joints:M.nb, h:+M.hi[1].toFixed(3), w:+(M.hi[0] - M.lo[0]).toFixed(3), hipY:M.hipY, foot:M.foot, clips:M.anims.length, sole:M.sole, maps:imgs.map(b => b.length), bytes })); }
