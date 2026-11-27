@@ -19,7 +19,7 @@
 #secRail .sr-g.hidden{display:none;}
 body.sectrun #sideChip{display:none!important;}   /* SECTOR 2 a sector run: the rail carries the goal (the hold sector's truck card sat on the rail) */
 body.touch #secRail .sr-g{max-width:38vw;font-size:10.5px;}
-body.touch #secRail{top:calc(env(safe-area-inset-top,0px) + 46px);font-size:10px;}
+body.touch #secRail{top:calc(env(safe-area-inset-top,0px) + 46px);font-size:10px;}   /* (SECTOR 6 overridden below: the phone's own top band) */
 body.touch #secRail .sr-s:not(.on) > span{display:none;} body.touch #secRail .sr-m > i{width:8px;margin:0 3px;}
 
 #secTransit{position:fixed;inset:0;z-index:40;pointer-events:none;visibility:hidden;}
@@ -97,3 +97,20 @@ body.touch #secTransit .sf-r kbd{display:none;}
 /* SECTOR 5 the rail owns the top centre: the contract chip steps aside while a sector run is up (it sat on the rail) */
 body.sectrun #contractChip{display:none !important;}
 #chpbar.sr-off{visibility:hidden !important;}   /* SECTOR 5 our base's core bar while it stands on the rail's strip (campaign/sectors.js railClear) */
+/* SECTOR 6 THE PHONE'S TOP BAND: the rail climbs to the free strip at the very top between the score box (left) and the camera buttons (right), above the weapon
+   block; it is compact — the steps by number, the one in hand by name, its clock, the goal line cut short — and the carried consequences and the card's chip
+   wrap onto a second, narrow row under it (smaller), clear of the weapon block, the minimap, the buttons and the boss bar (which sits on the right below). */
+html body.touch #secRail{top:calc(max(4px,env(safe-area-inset-top)) + 12px);flex-wrap:wrap;justify-content:center;row-gap:3px;max-width:min(58vw,480px);padding:2px 6px;font-size:9.5px;letter-spacing:.08em;}
+html body.touch #secRail .sr-m{flex:0 0 auto;max-width:100%;}
+html body.touch #secRail .sr-s b{width:14px;height:14px;font-size:9px;}
+html body.touch #secRail .sr-g{max-width:24vw;font-size:9.5px;margin-left:6px;padding-left:6px;}
+html body.touch #secRail .sr-t{margin-left:6px;font-size:10px;}
+html body.touch #secRail .sr-x,html body.touch #secRail .sr-c{margin-left:4px;}
+html body.touch #secRail .sr-x i{width:13px;height:13px;} html body.touch #secRail .sr-x i svg{width:9px;height:9px;}
+html body.touch #secRail .sr-c{padding:1px 5px 1px 4px;font-size:9px;} html body.touch #secRail .sr-c b{max-width:20vw;}
+html body.touch #secRail .sr-x:not(.hidden)+.sr-c,html body.touch #secRail .sr-x:not(.hidden){margin-top:0;}
+html body.touch #secRail::after{content:'';flex-basis:100%;height:0;order:1;}
+html body.touch #secRail .sr-m{order:0;} html body.touch #secRail .sr-x,html body.touch #secRail .sr-c{order:2;}
+/* SECTOR 6 the desktop boss bar (top 104px) and the rail (136px) touch: in the general's fight the rail drops its goal line and sits a little lower */
+html body:not(.touch):has(#bossbar[style*="block"]) #secRail{top:calc(env(safe-area-inset-top,0px) + 140px);padding-top:1px;padding-bottom:1px;}
+html body:not(.touch):has(#bossbar[style*="block"]) #secRail .sr-g{display:none;}
