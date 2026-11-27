@@ -3743,6 +3743,7 @@ export const ASSETDIET = { ktx2:true, basis:'assets/lib/basis/', simplifier:'ass
 //       through heavy armour · ice: a grenade at the aim point: every man within R m held hold s (a boss staggered bossHold s); cd s ·
 //     breach: the charge set at the gate (or the wall) of a fort within reach m of him: it is blown in; wall pieces within wallR m of the blast fall; cd s ·
 //     lava: shield dur s (no round gets through), each round it stops is thrown back at its shooter for ret damage (at most retMax a shield); cd s.
+//   run (SECTOR 2): the fort's battle as a chain of sectors (config SECTOR, campaign/sectors.js: place:type[:obj] tokens) — its approach missions, then the general
 //   carry: treasures taken into a battle at most · migrate: forts taken = min(cap, the old campaign's levels cleared) · next: the treasure screen's delay s
 //   after the general falls · say: the radio and the screens' words ({fort} {boss} {t} {n}).
 // ============================================================================
@@ -3751,42 +3752,42 @@ export const CONQUEST = { on:true, carry:3, migrate:{ cap:9 }, next:4.2,
   forts:[
     { biome:'DESERT', name:'Thành Cát Đỏ', boss:'CÁT ĐỘC', look:'raider', act:0, lvl:1, tod:'day', wx:'sand', prize:'thermal', rec:null,
       blurb:'Bão cát nuốt cả chân trời. Một phi công của ta rơi giữa đồi cát — phải tới trước Hắc Thiết.',
-      go:{ kind:'rescue', tx:'Cứu phi công rơi giữa bão cát trước khi địch tới' }, threat:null },
+      go:{ kind:'rescue', tx:'Cứu phi công rơi giữa bão cát trước khi địch tới' }, run:'outskirts:hold village:rescue:pilot hq:boss', threat:null },
     { biome:'SAVANNA', name:'Đồn Sư Tử', boss:'NỮ HỔ', look:'soldierF', act:0, lvl:2, tod:'noon', wx:'clear', prize:'scale', rec:'thermal',
       blurb:'Đoàn xe chở tù binh của ta đang lăn bánh qua đồng cỏ. Chặn nó lại trước khi nó vào đồn.',
-      go:{ kind:'rescue', tx:'Chặn đoàn xe chở tù binh, giải thoát họ' },
+      go:{ kind:'rescue', tx:'Chặn đoàn xe chở tù binh, giải thoát họ' }, run:'outskirts:hold outskirts:pursuit village:rescue:civ hq:boss',
       threat:{ id:'grass', vi:'Phục kích trong cỏ cao', tx:'Địch nằm trong cỏ, trồi lên sau lưng gấp ba lần.', knobs:[['REAL.surprise.w.ambush', '*', 3], ['REAL.surprise.first.*', '*', 0.45], ['REAL.surprise.every.*', '*', 0.6]] } },
     { biome:'RUINS', name:'Thành Tro', boss:'BÓNG MA HANG', look:'stalker', act:0, lvl:3, tod:'sunset', wx:'fog', prize:'ghost', rec:'scale',
       blurb:'Minh theo một hẻm "đã quét sạch" về phía bắc rồi mất tín hiệu. Dân thường còn kẹt trong toà nhà sập.',
-      go:{ kind:'rescue', tx:'Theo dấu Minh vào hẻm bắc; cứu dân kẹt trong toà nhà sập' },
+      go:{ kind:'rescue', tx:'Theo dấu Minh vào hẻm bắc; cứu dân kẹt trong toà nhà sập' }, run:'outskirts:hold village:rescue:civ bridge:sabotage:radio hq:boss',
       threat:{ id:'sniper', vi:'Bắn tỉa trên cao', tx:'Xạ thủ bắn tỉa dày gấp ba, mỗi phát đau hơn.', knobs:[['DIRECTOR.tactics.marksman.chance', '=', 0.9], ['DIRECTOR.tactics.marksman.max', '=', 3], ['DIRECTOR.tactics.marksman.dmg', '*', 1.2]] } },
     { biome:'CITY', name:'Thành Sắt', boss:'NỮ QUỶ', look:'demon', act:1, lvl:4, tod:'sunset', wx:'rain', prize:'storm', rec:'ghost',
       blurb:'Một trạm tiếp sóng giữa thành phố đang đọc vị trí của tổ cho địch. Bịt miệng nó.',
-      go:{ kind:'destroy', tx:'Phá trạm tiếp sóng đang báo vị trí của tổ' },
+      go:{ kind:'destroy', tx:'Phá trạm tiếp sóng đang báo vị trí của tổ' }, run:'outskirts:hold bridge:sabotage:radio gate:breach hq:boss',
       threat:{ id:'nest', vi:'Ụ súng sau bao cát', tx:'Tổ đại liên ở khắp nơi, núp sau bao cát và thùng hàng.', knobs:[['DIRECTOR.tactics.mg.chance', '=', 0.95], ['DIRECTOR.tactics.mg.max', '=', 4], ['DIRECTOR.tactics.mg.hpK', '*', 1.3]] } },
     { biome:'MEADOW', name:'Đồn Sương Độc', boss:'BÓNG ĐỘC', look:'cbrn', act:1, lvl:5, tod:'day', wx:'fog', prize:'mask', rec:'storm',
       blurb:'Đồng cỏ trống trải, quân địch đông như kiến. Chúng thả khí độc xuống làng ven đồi.',
-      go:{ kind:'rescue', tx:'Cứu dân làng khỏi khu thả khí độc' },
+      go:{ kind:'rescue', tx:'Cứu dân làng khỏi khu thả khí độc' }, run:'outskirts:pursuit village:rescue:civ bridge:sabotage:depot hq:boss',
       threat:{ id:'horde', vi:'Quân đông trên đồng trống', tx:'Mỗi đợt thêm ba lính, đông lên nhanh gấp rưỡi.', knobs:[['BALANCE.wave.base', '+', 3], ['BALANCE.wave.perWave', '*', 1.5]] } },
     { biome:'FOUNDRY', name:'Thành Lò Thép', boss:'VỆ BINH THÉP', look:'guardian', act:1, lvl:6, tod:'night', wx:'clear', prize:'molten', rec:'mask',
       blurb:'Tiếng huýt sáo yếu ớt trên sóng — Minh còn sống, bị giam trong lò. Đường vào ngập khói độc.',
-      go:{ kind:'rescue', tx:'Cứu Minh khỏi lò giam — anh tự đi theo khi được thả' },
+      go:{ kind:'rescue', tx:'Cứu Minh khỏi lò giam — anh tự đi theo khi được thả' }, run:'outskirts:hold bridge:pursuit village:infiltrate:depot yard:rescue:minh gate:breach hq:boss',
       threat:{ id:'gas', vi:'Khói độc và hơi nóng', tx:'Bốn đám khí độc chắn đường vào thành.', knobs:[], gas:{ n:4, R:9, dps:9, tick:0.25, from:[0.25, 0.7] } } },
     { biome:'ARCTIC', name:'Thành Băng', boss:'NỮ BĂNG CƠ', look:'cyborgF', act:1, lvl:7, tod:'day', wx:'snow', prize:'ice', rec:'molten',
       blurb:'Trạm radar trên băng dẫn đường cho trực thăng địch. Trên bộ đàm, Khang nói nhiều hơn mọi khi.',
-      go:{ kind:'destroy', tx:'Phá trạm radar dẫn đường trực thăng' },
+      go:{ kind:'destroy', tx:'Phá trạm radar dẫn đường trực thăng' }, run:'outskirts:hold bridge:sabotage:radar outskirts:pursuit hq:boss',
       threat:{ id:'armour', vi:'Lính giáp nặng', tx:'Lính địch dày máu hơn 35%.', knobs:[['BALANCE.difficulty.$d.hp', '*', 1.35]] } },
     { biome:'QUARRY', name:'Thành Đá Xám', boss:'TITAN', look:'titan', act:2, lvl:8, tod:'noon', wx:'clear', prize:'breach', rec:'ice',
       blurb:'Thợ mỏ bị bắt làm phu đào Lõi. Hai gã khổng lồ giữ mỏ: Titan và Người Sắt Xanh.',
-      go:{ kind:'rescue', tx:'Giải thoát thợ mỏ bị bắt làm phu' },
+      go:{ kind:'rescue', tx:'Giải thoát thợ mỏ bị bắt làm phu' }, run:'outskirts:hold village:rescue:miner gate:breach hq:boss',
       threat:{ id:'titan', vi:'Titan', tx:'Tướng giữ mỏ nhanh hơn và dày máu hơn — phải ghim hắn đứng yên.', knobs:[['FORTBOSS.hp.*', '*', 1.3], ['FORTBOSS.move.speed', '*', 1.25], ['FORTBOSS.charge.cd.*', '*', 0.75]] } },
     { biome:'VOLCANO', name:'Thành Dung Nham', boss:'HOẢ THẠCH', look:'magma', act:2, lvl:9, tod:'sunset', wx:'clear', prize:'lava', rec:'breach',
       blurb:'Trận địa pháo trên miệng núi lửa nã về phía Thành Luỹ Cuối. Cổng thành dày như vách đá.',
-      go:{ kind:'destroy', tx:'Phá trận địa pháo bắn về phía Thành Luỹ Cuối' },
+      go:{ kind:'destroy', tx:'Phá trận địa pháo bắn về phía Thành Luỹ Cuối' }, run:'outskirts:hold bridge:sabotage:battery gate:breach hq:boss',
       threat:{ id:'gate', vi:'Cổng không thể vượt', tx:'Cổng thành dày gấp năm lần.', knobs:[['FORT.tiers.1.gate', '*', 5], ['FORT.tiers.2.gate', '*', 5], ['FORT.tiers.3.gate', '*', 5]] } },
     { biome:'CITADEL', name:'Thành Luỹ Cuối', boss:'BẠO CHÚA', look:null, act:2, lvl:10, tod:'night', wx:'rain', prize:null, rec:'lava',
       blurb:'Theo tin giả của Khang, đánh vào cổng tây. Vợ con anh bị giam dưới hầm. Bạo Chúa chờ trên đỉnh thành.',
-      go:{ kind:'rescue', tx:'Đánh vào cổng tây; cứu vợ con Khang dưới hầm' },
+      go:{ kind:'rescue', tx:'Đánh vào cổng tây; cứu vợ con Khang dưới hầm' }, run:'outskirts:infiltrate:command gate:breach yard:rescue:family hq:boss',
       threat:{ id:'fire', vi:'Hoả lực dày nhất', tx:'Địch bắn đau hơn 25%.', knobs:[['BALANCE.difficulty.$d.dmg', '*', 1.25]] } } ],
   treasures:{
     thermal:{ name:'Kính Nhiệt Sa Long', icon:'tqThermal', kind:'passive', fx:'Thấy địch qua cát, khói, cỏ cao; đánh dấu xạ thủ ẩn', why:'Savan đầy cỏ cao và phục kích.', R:42, snipeR:95, tick:0.5, mark:2.2 },
@@ -3819,10 +3820,26 @@ export const CONQUEST = { on:true, carry:3, migrate:{ cap:9 }, next:4.2,
 //     expired: offered again after `again` s · sabotage — the sector's OBJECTIVES target down before `time` s · boss — the citadel's general (FORTBOSS) falls
 //   transit: hold s of play after the goal (the banner, he cannot be hurt) · fade s to black · then the build (measured) · the warm-up (shaders, ≤ warmMs) · the ride: a camera
 //     drop from (rideH, rideBack) m onto his spawn, at least `ride` s, the whole transit ≥ min and ≤ max s · lines: the radio under the black (one per lineGap s)
+//     warmHour (SECTOR 2): the warm-up's cap when the sector's hour differs from the last (every lit material recompiles) — then no ride: the black stays over the
+//     hidden 3-2-1 (it compiles what only shows at GO) and lifts with the fight; it ends `dark` s before min so the whole stays near min
+//   SECTOR 2 four more types (campaign/sector-goals.js; a token's third field: rescue — who is held (who), infiltrate — the target's OBJECTIVES kind):
+//     rescue — a walled cell (cell m square, wallH m, a door m doorway) d m ahead, guards posted round it (rpg of them with launchers, `ring` m out); the guards down,
+//       within reach m of the hostage for free s frees him; he walks (walk m/s, follow m behind) — within evacR m of the sector's start he is out. Alerted enemies within
+//       fireR m of him take dps a man a second off his hp: at 0 the sector is lost · time s in all
+//     breach — the field's strongest gate × gateK (at most gateMax hp; a thicker one stays); it down, the fort's garrison and keeper fall (its capture) before time s
+//     infiltrate — night; no waves while unseen; plant the charge plant s within plantR m of the target · a full alarm: hold holdT s, then a helicopter waits wait s at a
+//       landing zone lzD m from him — inside its lzR m ring board s · time s to plant
+//     pursuit — trucks (hp each, r m solid, gap m apart, speed m/s, lead m ahead at the start) drive a trail (else a road across the field, at least minL m) to its way out:
+//       a truck within exitR m of it loses the sector; each burnt one leaves `bail` of its crew · climax ev: a big event, 'squad' (a squad at the goal), 'patrol' (guards at the target)
 export const SECTOR = { on:true, retries:3,
   types:{ hold:{ vi:'GIỮ ĐẦU CẦU', hold:75, t:900, overrunT:9, first:4, again:6, climax:{ at:0.5, ev:'bombing' } },
           sabotage:{ vi:'PHÁ MỤC TIÊU', time:300, climax:{ at:0.5, ev:'crash' } },
-          boss:{ vi:'HẠ TƯỚNG THÀNH', climax:null } },
+          boss:{ vi:'HẠ TƯỚNG THÀNH', climax:null },
+          rescue:{ vi:'GIẢI CỨU', time:300, d:[70, 115], cell:7, wallH:3.2, door:2.2, ring:6, guards:5, rpg:1, reach:2.6, free:3, walk:5.5, follow:2.4, hp:100, fireR:14, dps:5, evacR:8,
+            who:{ civ:'dân thường', pilot:'phi công', minh:'Minh', miner:'thợ mỏ', family:'vợ con Khang' }, climax:{ at:0.5, ev:'squad' } },
+          breach:{ vi:'PHÁ CỔNG', time:420, gateK:3, gateMax:4000, climax:{ at:0.5, ev:'squad' } },
+          infiltrate:{ vi:'ĐỘT NHẬP', night:true, time:300, plantR:3, plant:5, holdT:45, lzD:[30, 55], lzR:6, board:3, wait:40, climax:{ at:0.5, ev:'patrol' } },
+          pursuit:{ vi:'TRUY KÍCH', trucks:3, hp:650, r:3, gap:16, speed:7.5, lead:30, minL:180, exitR:8, bail:2, climax:{ at:0.5, ev:'squad' } } },
   places:{ outskirts:{ vi:'NGOẠI VI', forts:0, capital:false, cover:1.25, towers:0.7 },
            village:{ vi:'LÀNG', forts:1, capital:false, cover:1.0, towers:1.0 },
            bridge:{ vi:'CẦU', forts:1, capital:false, cover:0.85, towers:1.3 },
@@ -3841,7 +3858,14 @@ export const SECTOR = { on:true, retries:3,
          SAVANNA:[{ place:'village', type:'hold' }, { place:'bridge', type:'sabotage', obj:'radar' }, { place:'hq', type:'boss' }],
          CITADEL:[{ place:'outskirts', type:'hold' }, { place:'gate', type:'sabotage', obj:'command' }, { place:'hq', type:'boss' }] },
   refill:{ hp:0.5, ammo:0.6, squad:1 },
-  transit:{ hold:3, fade:0.7, min:10, max:20, ride:4.5, warmMs:2500, rideH:46, rideBack:62, lineGap:2.6,
+  transit:{ hold:3, fade:0.7, min:10, max:20, ride:4.5, warmMs:2500, warmHour:8000, dark:3.5, rideH:46, rideBack:62, lineGap:2.6,
     lines:['SCH: Khu vực đã sạch. Lên xe, hành quân tiếp!', 'Lái xe: Đường xóc, bám chắc vào!', 'SCH: Trinh sát báo phía trước có ổ đề kháng.', 'SCH: Kiểm tra súng đạn, sắp tới nơi.'],
     retry:['SCH: Rút lui! Tập hợp lại ở điểm xuất phát.', 'SCH: Đánh lại khu này, lần này chắc tay hơn.'] },
-  say:{ won:'KHU VỰC {n} HOÀN THÀNH', lost:'KHU VỰC THẤT THỦ — ĐÁNH LẠI', go:'KHU {n} · {place}', hold:'Giữ chốt quanh xe {s} giây — quân ta đang tới', sabotage:'Phá {obj} trước khi hết giờ', boss:'Hạ tướng giữ thành' } };
+  say:{ won:'KHU VỰC {n} HOÀN THÀNH', lost:'KHU VỰC THẤT THỦ — ĐÁNH LẠI', go:'KHU {n} · {place}', hold:'Giữ chốt quanh xe {s} giây — quân ta đang tới', sabotage:'Phá {obj} trước khi hết giờ', boss:'Hạ tướng giữ thành',
+    rescue:'Giải cứu {who} trong lò giam, đưa ra điểm sơ tán', breach:'Phá cổng thành rồi chiếm sân trong', infiltrate:'Lẻn tới {obj} trong đêm, đặt thuốc nổ — đừng để báo động',
+    pursuit:'Chặn đoàn xe địch trước khi nó thoát khỏi trận', rescueGuards:'Diệt lính canh lò giam · còn {n}', rescueReach:'Vào lò giam, tới bên {who} · {m} m', rescueFree:'Đang mở khoá cho {who}…',
+    rescueGo:'Đã giải cứu {who} — đưa ra điểm sơ tán', rescueWalk:'Đưa {who} ra điểm sơ tán · {m} m · {hp}', rescueDead:'{who} đã tử nạn', breachGate:'Phá cổng thành · cổng còn {hp}%',
+    breachYard:'Dọn sân trong · còn {n} lính giữ thành', breachKeep:'Hạ kẻ giữ đồn', infilGo:'Lẻn tới mục tiêu · {m} m — đừng để bị phát hiện', infilPlant:'Đang đặt thuốc nổ · {s} giây',
+    infilAlarm:'BÁO ĐỘNG TOÀN KHU — GIỮ VỮNG CHỜ TRỰC THĂNG', infilAlarmR:'Lộ rồi! Giữ vững, trực thăng đang tới đón.', infilHold:'Bị lộ — giữ vững chờ trực thăng',
+    infilHeli:'TRỰC THĂNG ĐÃ TỚI — LÊN MÁY BAY', infilHeliR:'Trực thăng ở bãi đáp, chạy ra ngay!', infilBoard:'Chạy ra bãi đáp · {m} m', infilLeft:'TRỰC THĂNG ĐÃ RỜI ĐI',
+    pursuitLeft:'Chặn đoàn xe · còn {n}/{of} xe', pursuitBurn:'XE ĐỊCH BỐC CHÁY — CÒN {n}', pursuitGone:'ĐOÀN XE ĐÃ THOÁT' } };

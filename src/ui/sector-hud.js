@@ -6,13 +6,13 @@ let _rail = null, _railSig = '', _tr = null, _trLine = '';
 const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
 function railEl(){ if(_rail || typeof document === 'undefined') return _rail; const hud = document.getElementById('hud'); if(!hud) return null;
   _rail = document.createElement('div'); _rail.id = 'secRail'; _rail.className = 'hidden'; _rail.setAttribute('aria-hidden', 'true'); hud.appendChild(_rail); return _rail; }
-// list: [{ vi }] · i: the sector in hand · clock: '' or "3:40" (its goal's time left) · null list: the rail goes
-export function sectorRail(list, i, clock){ const el = railEl(); if(!el) return;
+// list: [{ vi }] · i: the sector in hand · clock: '' or "3:40" (its goal's time left) · sub: '' or the objective's line (SECTOR 2) · null list: the rail goes
+export function sectorRail(list, i, clock, sub){ const el = railEl(); if(!el) return; sub = sub || '';
   if(!list){ if(_railSig){ _railSig = ''; el.classList.add('hidden'); el.replaceChildren(); } return; }
-  const sig = i + '|' + clock + '|' + list.length; if(sig === _railSig) return; const same = _railSig && _railSig.split('|')[0] === String(i); _railSig = sig;
-  if(same){ const t = el.querySelector('.sr-t'); if(t){ t.textContent = clock || ''; t.classList.toggle('hidden', !clock); return; } }
+  const sig = i + '|' + clock + '|' + list.length + '|' + sub; if(sig === _railSig) return; const same = _railSig && _railSig.split('|')[0] === String(i) && _railSig.split('|')[2] === String(list.length); _railSig = sig;
+  if(same){ const t = el.querySelector('.sr-t'), g = el.querySelector('.sr-g'); if(t && g){ t.textContent = clock || ''; t.classList.toggle('hidden', !clock); g.textContent = sub; g.classList.toggle('hidden', !sub); return; } }
   el.innerHTML = list.map((s, k) => (k ? '<i></i>' : '') + '<span class="sr-s' + (k < i ? ' done' : k === i ? ' on' : '') + '"><b>' + (k + 1) + '</b><span>' + esc(s.vi) + '</span></span>').join('') +
-    '<em class="sr-t' + (clock ? '' : ' hidden') + '">' + esc(clock) + '</em>';
+    '<em class="sr-t' + (clock ? '' : ' hidden') + '">' + esc(clock) + '</em><u class="sr-g' + (sub ? '' : ' hidden') + '">' + esc(sub) + '</u>';
   el.classList.remove('hidden'); }
 function trEl(){ if(_tr || typeof document === 'undefined') return _tr; const d = document.createElement('div'); d.id = 'secTransit'; d.setAttribute('aria-hidden', 'true');
   d.innerHTML = '<div class="st-bar st-top"></div><div class="st-bar st-bot"></div><div class="st-black"></div><div class="st-card"><p class="st-kick"></p><h3 class="st-ttl"></h3><p class="st-goal"></p></div><p class="st-line"></p>';

@@ -14,6 +14,10 @@
 #secRail .sr-s.on{color:var(--k-acc-hi,#ffd27a);} #secRail .sr-s.on b{background:linear-gradient(180deg,var(--k-acc-hi,#ffd27a),var(--k-acc,#ffae34));border-color:transparent;color:var(--k-acc-ink,#1b1104);}
 #secRail .sr-t{margin-left:9px;font:400 11px/1 var(--k-mono,'Share Tech Mono',monospace);letter-spacing:.04em;color:var(--k-acc-hi,#ffd27a);font-style:normal;}
 #secRail .sr-t.hidden{display:none;}
+#secRail .sr-g{margin-left:9px;padding-left:9px;border-left:1px solid rgba(214,226,196,.3);font:600 11.5px/1 var(--k-ui,'Saira Condensed',sans-serif);letter-spacing:.04em;text-transform:none;text-decoration:none;color:#e6ecd8;max-width:46vw;overflow:hidden;text-overflow:ellipsis;}
+#secRail .sr-g.hidden{display:none;}
+body.sectrun #sideChip{display:none!important;}   /* SECTOR 2 a sector run: the rail carries the goal (the hold sector's truck card sat on the rail) */
+body.touch #secRail .sr-g{max-width:38vw;font-size:10.5px;}
 body.touch #secRail{top:calc(env(safe-area-inset-top,0px) + 46px);font-size:10px;}
 body.touch #secRail .sr-s:not(.on) > span{display:none;} body.touch #secRail > i{width:8px;margin:0 3px;}
 

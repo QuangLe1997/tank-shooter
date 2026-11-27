@@ -99,6 +99,7 @@ export function breakScar(x, z, r, fire){ const S0=BREAKUP.scar, gy=heightAt(x,z
 // COOP 9 with a live co-op room a block's damage is the host's to decide (game/coop-world.js coopBlockDamage: passed on / reported / applied); without one, as ever
 export function damageBlock(b, dmg){ if(CO.live) coopBlockDamage(b, dmg, damageBlock0); else damageBlock0(b, dmg); }
 function damageBlock0(b, dmg){
+  if(b.hit){ b.hit(dmg); return; }                                        // SECTOR 2 a block that answers for itself (a pursuit's truck: campaign/sector-goals.js)
   if(b.kind==='tent'){ tentHit(b); return; }                             // Z402 a tent catches fire
   if(b.kind==='fueldrum'){ fuelDrumHit(b, dmg); return; }                  // Z402 a fuel drum goes up
   if(b.kind==='building'){ buildingHit(b, dmg); return; }                 // Z216 a city building: floors come down from the top

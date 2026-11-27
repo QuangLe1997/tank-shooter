@@ -112,8 +112,8 @@ let _trk = null, _tm = null;
 function truckShape(gl){ if(_trk && _trk.gl === gl) return _trk; if(_trk) _trk.geo.dispose(); let src = null; gl.scene.updateMatrixWorld(true); gl.scene.traverse(o => { if(o.isMesh && !src) src = o; });
   const g = src.geometry.clone().applyMatrix4(src.matrixWorld); g.computeBoundingBox(); let b = g.boundingBox; g.translate(-(b.min.x + b.max.x) / 2, -b.min.y, -(b.min.z + b.max.z) / 2); if(b.max.x - b.min.x > b.max.z - b.min.z) g.rotateY(Math.PI / 2);
   g.computeBoundingBox(); b = g.boundingBox; const f = OUTPOST.size.mil_truck.w / (b.max.z - b.min.z); g.scale(f, f, f); g.computeBoundingBox(); g.computeBoundingSphere(); return (_trk = { gl, geo:g, mat:src.material }); }
-// a truck: drawn from boxes at once, the scan over it when the file is in
-function makeTruck(){ const T = _tm || (_tm = { body:new THREE.MeshStandardMaterial({ color:0x4c5838, roughness:0.85, metalness:0.2 }), tarp:new THREE.MeshStandardMaterial({ color:0x6a6a4a, roughness:0.95 }),
+// a truck: drawn from boxes at once, the scan over it when the file is in (SECTOR 2 the pursuit's convoy too: campaign/sector-goals.js)
+export function makeTruck(){ const T = _tm || (_tm = { body:new THREE.MeshStandardMaterial({ color:0x4c5838, roughness:0.85, metalness:0.2 }), tarp:new THREE.MeshStandardMaterial({ color:0x6a6a4a, roughness:0.95 }),
     dark:new THREE.MeshStandardMaterial({ color:0x1c1c18, roughness:0.8 }), box:new THREE.BoxGeometry(1, 1, 1), wheel:new THREE.CylinderGeometry(0.5, 0.5, 0.36, 12) });
   const g = new THREE.Group(), draw = new THREE.Group(), put = (geo, mat, sx, sy, sz, x, y, z, rz) => { const m = new THREE.Mesh(geo, mat); m.scale.set(sx, sy, sz); m.position.set(x, y, z); m.rotation.z = rz || 0; m.castShadow = m.receiveShadow = true; draw.add(m); };
   put(T.box, T.body, 2.3, 1.5, 2.0, 0, 1.6, 2.5); put(T.box, T.body, 2.4, 0.5, 7.2, 0, 0.95, 0); put(T.box, T.tarp, 2.4, 1.7, 4.6, 0, 2.05, -1.2);

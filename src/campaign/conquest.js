@@ -8,11 +8,14 @@
 //   campaign/surprises.js's fire mission · ice: men held, a boss staggered · breach: a fort's gate blown · lava: the shield, rounds thrown back —
 //   conqShieldHit from combat/lock-on.js), guns in his rack (GUNS entries made from CONQUEST: the ghost rifle's round passes thin cover, the molten
 //   launcher fires a salvo that ignores heavy armour — combat/soldier-fire.js, combat/siege-rocket.js, combat/flame.js).
+//   SECTOR 2 a fort's battle is a SECTOR RUN (CONQUEST.forts[i].run: its approach missions, then the general — campaign/sectors.js): begin declares it with
+//   sectorBattle(run, conqWon), so the fort is taken when its LAST sector is won and nowhere else; each new sector's field gets the fort's poison clouds again (conqSectorLive).
 //   PROFILE.conquest { cap, carry, sel } (conqStore); an old save's campaign reach becomes forts taken once (migrate). Probes read CQ.st.
 import { CONQUEST, REAL, DIRECTOR, FORT, FORTBOSS, BALANCE, INFGUN } from '../../config.js';
 import { BIOMES, FORTS, GUNS, PROFILE, RECON, S, SURP, TROOPER_SPELLS, ammoOnGive, celebrate, damageBlock, damageGate, damagePlayer, enemies, escapeHtml, fillTx, floatText, fortBossFreeze, heightAt, hide,
   knobApply, knobRefs, magCap, modeCard, modeDefine, modeKnob, modeLaunch, modeSay, modeStats, modeTime, openBattleSetup, quitToMenu, ringPulse, saveProfile, sfx, showBanner, spawnBullet,
   spawnPart, svgMarkup, tapEl, updateGunHUD, updateSpellHUD } from '../hub.js';
+import { sectorBattle } from '../hub.js';   // SECTOR 2 (campaign/sectors.js)
 
 const C = CONQUEST, Y = C.say, T = C.treasures, N = C.forts.length, NOW = () => performance.now() / 1000;
 const ROOTS = { REAL, DIRECTOR, FORT, FORTBOSS, BALANCE };
@@ -108,6 +111,8 @@ function gasTick(now, g){ const p = S.player; let inside = false;
     if(p && Math.hypot(p.pos.x - c.x, p.pos.z - c.z) < c.R) inside = true; }
   if(inside && now >= (p.invincibleUntil || 0)){ const d = g.dps * g.tick; CQ.st.gasIn += d; damagePlayer(d, now, 0, 0, 'fire'); if(now > (CQ.gasSay || 0)){ CQ.gasSay = now + 6; modeSay(Y.gas); } } }
 
+// SECTOR 2 a new sector's field (campaign/sectors.js sectorLive): the fort's poison clouds laid on it afresh
+export function conqSectorLive(){ if(!CQ.on || CQ.won) return; const th = C.forts[CQ.i].threat; if(th && th.gas) gasPlace(th.gas); }
 // ---- the battle's end ----
 // THE WIN CONDITION of a conquest battle: called once the fort is taken (today: the stage's general down in his citadel — campaign/boss.js bossStageWon →
 //   mode-run.js modeStageWon). A battle of sectors calls this when its last sector is won; nothing else decides a fort is taken.
@@ -130,7 +135,7 @@ function card(won){ const st = modeStats(), q = conqStore(), i = CQ.i, f = C.for
 modeDefine('conq', {
   begin(run){ const i = Math.max(0, Math.min(N - 1, (run.conq && run.conq.i) | 0)), f = C.forts[i];
     Object.assign(CQ, { on:true, i, won:false, cardIn:0, thAt:0, gasAt:0, fxAt:0, saveAt:-1e9, lavaUntil:0, lavaN:0, fresh:false, gasSay:0 }); CQ.gas.length = 0; for(const k in CQ.st) CQ.st[k] = 0;
-    CQ.carry = new Set(conqCarryFor(i));
+    CQ.carry = new Set(conqCarryFor(i)); if(f.run) sectorBattle(f.run.split(' '), n => conqWon(n));   // SECTOR 2 the fort as a chain of sectors: its win comes from the last one
     const th = f.threat; if(th) for(const [path, op, x] of th.knobs){ const [root, ...rest] = String(path).replace('$d', PROFILE.difficulty || 'soldier').split('.'); if(!ROOTS[root]) continue;
       for(const [o, k] of knobRefs(ROOTS[root], rest.join('.'))) modeKnob(o, k, knobApply(o[k], op, x)); } },
   ready(p){ conqArm(p); const th = C.forts[CQ.i].threat; if(th && th.gas) gasPlace(th.gas); },

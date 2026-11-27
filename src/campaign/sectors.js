@@ -14,14 +14,17 @@
 //   THE CONQUEST HOOK: sectorBattle(spec, onWon) — the one call by which a battle (CONQUEST's) declares itself a sector run and is handed its win: onWon(now, bdef)
 //   runs once, when the LAST sector is won, in place of the ordinary win; without one the win goes the usual way (the mode's stageWon, else campaign/boss.js stageWon).
 //   No text in the aim zone: the sector's start / its end go to the top edge (edgeNote), the rail sits in the top band, the transit's card in its letterbox bars.
+//   SECTOR 2 four more missions — rescue · breach · infiltrate · pursuit — live in campaign/sector-goals.js (a start, a tick, a clear each); an infiltration's sector is
+//   built at night (rebuild turns the run's hour for it). The rail carries the sector's objective line (g.sub) beside its clock; the side missions' card stays hidden.
 //   Co-op: host-only for now — a co-op room plays the ordinary battle (sectorBegin stays off).
 import { SECTOR, SIDEMISSION, CONTRACTS, OBJECTIVES } from '../../config.js';
 import { enemies, bullets, parts, renderer } from '../hub.js';
+import { sectorGoalHas, sectorGoalStart, sectorGoalTick, sectorGoalClock, sectorGoalClear, sectorClimax, conqSectorLive } from '../hub.js';   // SECTOR 2 (campaign/sector-goals.js · campaign/conquest.js)
 import { ARENA, BIOME, CV, LOGI, OBJ, S, SIDEM, SOLDIER, WAVE, ammoStart, applyBiome, beginStage, bigEventStart, blendScene, buildBlocks, buildLava, buildObjective, buildTrails, buildUnderground, camRestPose, camera,
   cavRespawn, clearField, clearSoldierWar, clearSoldiers, coopActive, compileReady, deploySoldiers, driverBack, gpuHeld, gpuRelease, modeSeed, modelEpoch, parkAtSpawn, radio, rebuildCore, scene,
   sectorRail, sectorTransitBlack, sectorTransitLine, sectorTransitShow, selectGun, gameOver, sfx, edgeNote, modeStageWon, sideMissionStart, squadList, stageWon, updateGunHUD, updateHUD, heightAt } from '../hub.js';
 
-const T = SECTOR, NOW = () => performance.now() / 1000, DEF_PLACE = { hold:'outskirts', sabotage:'bridge', boss:'hq' };
+const T = SECTOR, NOW = () => performance.now() / 1000, DEF_PLACE = { hold:'outskirts', sabotage:'bridge', boss:'hq', rescue:'village', breach:'gate', infiltrate:'village', pursuit:'outskirts' };
 // the run (dev / probes read it): list = the sectors [{ place, type, obj, vi, lay }] · i = the one in hand · state '' off | arm (built, waiting for the fight) | fight |
 //   won (the goal done, the hold before the transit) | transit | done (the battle won) · tr = the transit under way · snap = the checkpoint · stats: what happened
 export const SECT = { on:false, spec:null, list:[], i:0, state:'', t:0, tries:0, snap:null, g:null, tr:null, knobs:[], seq:0, onWon:null,
@@ -37,7 +40,7 @@ function unknob(){ for(let i = SECT.knobs.length - 1; i >= 0; i--){ const q = SE
 // one entry: 'hold' · 'bridge:sabotage' · 'bridge:sabotage:radar' · { place, type, obj } → { place, type, obj, vi, lay } (null: not a sector)
 export function sectorParse(x){ let o = x; if(typeof x === 'string'){ const a = x.trim().split(':'); o = T.types[a[0]] ? { type:a[0], obj:a[1] } : { place:a[0], type:a[1], obj:a[2] }; }
   if(!o || !T.types[o.type]) return null; const place = T.places[o.place] ? o.place : DEF_PLACE[o.type] || 'village';
-  return { place, type:o.type, obj:o.type === 'sabotage' ? (o.obj || 'radio') : '', vi:T.places[place].vi, lay:T.places[place] }; }
+  return { place, type:o.type, obj:o.type === 'sabotage' ? (o.obj || 'radio') : o.type === 'infiltrate' ? (o.obj || 'command') : o.type === 'rescue' ? (o.obj || 'civ') : '', vi:T.places[place].vi, lay:T.places[place] }; }   // (rescue: obj = who is held)
 export function sectorRun(spec, land){ if(spec === true || spec === 1 || spec === '1' || spec === 'true') spec = T.runs[land] || T.runs._;
   if(typeof spec === 'string') spec = spec.split(','); if(!Array.isArray(spec)) return []; return spec.map(sectorParse).filter(Boolean); }
 function devSpec(){ if(typeof location === 'undefined') return null; const m = /[?&]sectors=([^&#]*)/.exec(location.search); return m ? decodeURIComponent(m[1]) : null; }
@@ -49,7 +52,7 @@ export function sectorCur(){ if(!SECT.on) return null; if(SECT.spec != null){ _s
 // the layout of the sector being built (null: no sector run — every builder keeps its own numbers)
 export function sectorLay(){ const c = sectorCur(); return c ? c.lay : null; }
 // the objective's kind for this sector: null no sector run (the operation's own) · '' none · a kind of OBJECTIVES
-export function sectorObj(){ const c = sectorCur(); return c ? (c.type === 'sabotage' ? c.obj : '') : null; }
+export function sectorObj(){ const c = sectorCur(); return c ? (c.type === 'sabotage' || c.type === 'infiltrate' ? c.obj : '') : null; }   // (SECTOR 2 an infiltration plants its charge on one)
 // campaign/boss.js startBoss: outside the boss sector the general stays in his quarters
 export function sectorBossHold(){ const c = sectorCur(); return !!c && c.type !== 'boss'; }
 
@@ -58,7 +61,8 @@ export function sectorBossHold(){ const c = sectorCur(); return !!c && c.type !=
 let _decl = null, _starting = false;
 export function sectorBegin(run){ sectorEnd(); _starting = true; const d = _decl; _decl = null; if(!T.on || !run || coopActive()) return;
   const spec = d ? d.spec : run.sectors != null ? run.sectors : devSpec(); if(spec == null || spec === false) return; openRun(spec, d && d.onWon); }
-function openRun(spec, onWon){ Object.assign(SECT, { on:true, spec, list:[], i:0, state:'arm', t:0, tries:0, snap:null, g:null, tr:null, onWon:onWon || null }); SECT.seq++;
+const runTag = on => { if(typeof document !== 'undefined' && document.body) document.body.classList.toggle('sectrun', !!on); };   // (css/sector.css: the side missions' card hidden — the rail carries the goal)
+function openRun(spec, onWon){ runTag(true); Object.assign(SECT, { on:true, spec, list:[], i:0, state:'arm', t:0, tries:0, snap:null, g:null, tr:null, dark:false, onWon:onWon || null }); SECT.seq++;
   SECT.stats = { won:0, lost:0, restarts:0, transits:[], climax:0 }; SECT.log.length = 0; note('begin', String(spec)); }
 // THE CONQUEST HOOK: this battle is a sector run (spec: true = the land's sample run · 'hold,sabotage,boss' · [{ place, type, obj }]) and its win is onWon(now, bdef),
 //   called once when the last sector is won (the battle's win condition, nowhere else). Call it before launchGame or from the mode's begin (game/flow.js startGame runs
@@ -67,7 +71,7 @@ export function sectorBattle(spec, onWon){ const d = spec == null || spec === fa
   if(_starting && T.on && !coopActive()){ if(d) openRun(d.spec, d.onWon); else sectorEnd(); return true; }   // the battle is being set up: it applies at once
   _decl = d; return false; }   // else the next battle's
 // nothing of a run is left: its knobs, its rail, its overlay (a new battle · quitting to the menu)
-export function sectorEnd(){ unknob(); SECT.on = false; SECT.spec = null; SECT.state = ''; SECT.tr = null; SECT.g = null; SECT.onWon = null; SECT.seq++; _starting = false; goQuiet(false); sectorRail(null); sectorTransitShow(null); }
+export function sectorEnd(){ unknob(); SECT.on = false; SECT.spec = null; SECT.state = ''; SECT.tr = null; SECT.g = null; SECT.onWon = null; SECT.seq++; _starting = false; goQuiet(false); sectorGoalClear(); runTag(false); sectorRail(null); sectorTransitShow(null); }
 
 // ---- the checkpoint ----
 function snapTake(){ const p = S.player; if(!p) return null;
@@ -85,13 +89,18 @@ function refill(){ const p = S.player, F = T.refill; if(!p) return;
 
 // ---- the goals ----
 // the fight of the sector in hand goes live (the first frame of play after its 3-2-1): the checkpoint, the goal set up
-function sectorLive(now){ const c = sectorCur(); _starting = false; goQuiet(false); SECT.state = 'fight'; SECT.t = 0; unknob(); SECT.snap = snapTake();
+function sectorLive(now){ const c = sectorCur(); _starting = false; { const q = SECT.seq; setTimeout(() => { if(SECT.seq === q) goQuiet(false); }, 1300); }   // SECTOR 2 the 3-2-1's "XUẤT KÍCH!" (shown 0.9 s after GO) stays unseen too
+  if(SECT.dark){ SECT.dark = false; const q = SECT.seq; sectorTransitBlack(false, T.transit.fade); setTimeout(() => { if(SECT.seq === q && SECT.state === 'fight') sectorTransitShow(null); }, T.transit.fade * 1000); }   // SECTOR 2 the black held through a new hour's 3-2-1
+  SECT.state = 'fight'; SECT.t = 0; unknob(); SECT.snap = snapTake();
   const Y = T.types[c.type], g = SECT.g = { type:c.type, Y, start:0, again:0, lost0:0, clock:0, climax:false, k:0 };
   if(c.type === 'hold'){ knob(SIDEMISSION, 'perStage', 0); knob(SIDEMISSION.truck, 'hold', Y.hold); knob(SIDEMISSION.truck, 't', Y.t); knob(SIDEMISSION.truck, 'overrunT', Y.overrunT); g.again = Y.first; }   // only his truck: no other side mission offered
   else if(c.type === 'sabotage') g.clock = Y.time;
+  if(c.type !== 'hold') knob(SIDEMISSION, 'perStage', 0);   // SECTOR 2 the sector's own mission is the only one
+  if(sectorGoalHas(c.type)) sectorGoalStart(c.type, c, g, now);   // SECTOR 2 (campaign/sector-goals.js)
+  conqSectorLive();   // SECTOR 2 a conquest's fort: what it lays on each field (its poison clouds)
   edgeNote(fill(T.say.go, { n:SECT.i + 1, place:c.vi }), '#ffd27a'); radio('SCH: ' + goalTx(c)); note('live', c.type); rail(); }
-function goalTx(c){ const Y = T.types[c.type]; return fill(T.say[c.type], { s:Y.hold, obj:c.obj ? String((OBJECTIVES[c.obj] || {}).vi || c.obj).toLocaleLowerCase('vi') : '' }); }   // (the target's own name: the transit tells it before the field is built)
-function climax(now){ const g = SECT.g; if(g.climax || !g.Y.climax) return; g.climax = true; if(bigEventStart(g.Y.climax.ev, now, true)) SECT.stats.climax++; note('climax', g.Y.climax.ev); }
+function goalTx(c){ const Y = T.types[c.type]; return fill(T.say[c.type], { s:Y.hold, who:c.type === 'rescue' ? (Y.who[c.obj] || Y.who.civ) : '', obj:c.obj && c.type !== 'rescue' ? String((OBJECTIVES[c.obj] || {}).vi || c.obj).toLocaleLowerCase('vi') : '' }); }   // (the target's own name: the transit tells it before the field is built)
+function climax(now){ const g = SECT.g; if(g.climax || !g.Y.climax) return; g.climax = true; const ev = g.Y.climax.ev; if(sectorClimax(ev, g) || bigEventStart(ev, now, true)) SECT.stats.climax++; note('climax', ev); }   // SECTOR 2 a squad at the goal, a patrol at the target — else a big event
 // every frame of play (game/loop.js, after the waves)
 export function updateSectors(dt, now){ _starting = false; if(!SECT.on || !S.player) return;   // (a frame of play: the battle is set up, a late sectorBattle waits for the next)
   if(SECT.state === 'arm'){ sectorLive(now); return; }
@@ -99,9 +108,11 @@ export function updateSectors(dt, now){ _starting = false; if(!SECT.on || !S.pla
   if(SECT.state !== 'fight') return; SECT.t += dt; const g = SECT.g;
   if(g.type === 'hold'){ const M = SIDEM.cur;
     if(!g.start || !M || M.kind !== 'truck'){ if(g.start && !M) g.start = 0; if((g.again -= dt) <= 0){ g.lost0 = SIDEM.stats.lost; if(sideMissionStart('truck', now)){ g.start = 1; note('truck'); } else g.again = 1; if(!g.start) return; } else { g.k = 0; rail(); return; } }
-    const M2 = SIDEM.cur; if(!M2) return; g.k = M2.prog || 0;
+    const M2 = SIDEM.cur; if(!M2) return; g.k = M2.prog || 0; g.sub = M2.sub || '';
     if(M2.state === 'won') return goalDone(now, null);
     if(M2.state === 'lost'){ if(SIDEM.stats.lost > g.lost0) return sectorFail('XE TIẾP TẾ BỊ ĐỐT'); g.start = 0; g.again = g.Y.again; note('again'); }   // expired / aborted (a life lost): offered again
+    if(g.Y.climax && g.k >= g.Y.climax.at) climax(now); rail(); return; }
+  if(sectorGoalHas(g.type)){ const r = sectorGoalTick(g, dt, now); if(r === 'won') return goalDone(now, null); if(r) return sectorFail(r);   // SECTOR 2
     if(g.Y.climax && g.k >= g.Y.climax.at) climax(now); rail(); return; }
   if(g.type === 'sabotage'){ if(OBJ && !OBJ.alive) return goalDone(now, null); g.clock -= dt; g.k = OBJ ? 1 - OBJ.b.hp / OBJ.b.maxHp : 0;
     if(g.Y.climax && (g.k >= g.Y.climax.at || g.clock <= g.Y.time * (1 - g.Y.climax.at))) climax(now);
@@ -128,8 +139,8 @@ function transitStart(retry, why){ const c0 = sectorCur(); if(!retry){ SECT.i++;
 // what the field holds (the probes compare one clear with the next): enemies, rounds, live particles, the scene's top level, the GPU's geometries and maps
 const count = () => ({ foes:enemies.length, rounds:bullets.length, parts:parts.length, top:scene.children.length, geo:renderer.info.memory.geometries, tex:renderer.info.memory.textures });
 function rebuild(){ const tr = SECT.tr, t0 = performance.now(), held = gpuHeld(); modelEpoch();
-  const n0 = count(); clearField(); const n1 = count(); const p = S.player; clearSoldierWar(); if(CV.dead || !CV.mounted) cavRespawn(p); driverBack(CV.H); p.mesh.visible = true; p.overUntil = 0; p.burns = [];
-  parkAtSpawn(); applyBiome(S.stage); buildBlocks(); modeSeed(16); buildObjective(); modeSeed(17); buildLava(); modeSeed(18); buildUnderground(); modeSeed(19); buildTrails(); modeSeed(20);
+  const n0 = count(); sectorGoalClear(); clearField(); const n1 = count(); const p = S.player; clearSoldierWar(); if(CV.dead || !CV.mounted) cavRespawn(p); driverBack(CV.H); p.mesh.visible = true; p.overUntil = 0; p.burns = [];
+  parkAtSpawn(); { const R = S.run, t0 = R && R.tod, h0 = S.tod, c = sectorCur(); if(R && c && T.types[c.type].night) R.tod = 'night'; applyBiome(S.stage); if(R) R.tod = t0; tr.hour = S.tod !== h0; }   /* SECTOR 2 an infiltration's field at night (the run's own hour for the next) */ buildBlocks(); modeSeed(16); buildObjective(); modeSeed(17); buildLava(); modeSeed(18); buildUnderground(); modeSeed(19); buildTrails(); modeSeed(20);
   rebuildCore(S.stage); gpuRelease(held); clearSoldiers(); deploySoldiers(SOLDIER.base);
   if(tr.retry) snapPut(SECT.snap); else refill(); p.invincibleUntil = 0; updateGunHUD(); updateHUD();
   S.awaitingUpgrade = false; S.wave = 0; WAVE.active = false; WAVE.betweenUntil = NOW() + 0.6; WAVE.spawnQueue.length = 0; WAVE.event = null; WAVE.eventBanner = null; WAVE.treasure = false; WAVE.eliteForce = 0; WAVE.assault = false;
@@ -141,27 +152,36 @@ function rebuild(){ const tr = SECT.tr, t0 = performance.now(), held = gpuHeld()
   camera.position.copy(tr.p0); camera.lookAt(tr.l0); }
 const ease = u => u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
 function warm(){ const tr = SECT.tr, seq = SECT.seq; tr.ph = 'warming';
-  const go = () => { if(SECT.seq !== seq || !SECT.tr) return; tr.warm = Math.round((performance.now() - tr.w0)); tr.ph = 'ride'; sectorTransitBlack(false, T.transit.fade);
+  const go = () => { if(SECT.seq !== seq || !SECT.tr) return; tr.warm = Math.round((performance.now() - tr.w0));
+    if(tr.hour){ tr.ph = 'dark'; return; }   // SECTOR 2 a new hour: the 3-2-1 compiles what only shows at GO (the props in hand, the troops) — it runs under the black too (sectorLive lifts it)
+    tr.ph = 'ride'; sectorTransitBlack(false, T.transit.fade);
     tr.ride = Math.max(T.transit.ride, Math.min(T.transit.max - tr.t, T.transit.min - tr.t)); tr.rideT = 0; };
   tr.w0 = performance.now(); try{ blendScene(scene); }catch(e){}
-  Promise.race([compileReady(scene, T.transit.warmMs), new Promise(r => setTimeout(r, T.transit.warmMs))]).catch(() => {}).then(() => requestAnimationFrame(() => requestAnimationFrame(go))); }
+  const ms = tr.hour ? T.transit.warmHour : T.transit.warmMs;   // SECTOR 2 a new hour (an infiltration's night) recompiles every lit material: wait for all of it under the black
+  // SECTOR 2 … the hidden too: the pools' men, the props that appear at GO — three compiles only what is shown, and after a new hour each of those cost a 0.7–0.9 s frame
+  //   in the 3-2-1 or the first wave. Shown for the one synchronous compile call (no light among them: the light count is what the programs are keyed on), hidden again.
+  const hid = []; scene.traverse(o => { if(o.visible === false && !o.isLight){ let lit = false; o.traverse(q => { if(q.isLight) lit = true; }); if(!lit) hid.push(o); } });
+  let P; for(const o of hid) o.visible = true; try{ P = compileReady(scene, ms); } finally { for(const o of hid) o.visible = false; } tr.hid = hid.length;
+  Promise.race([P, new Promise(r => setTimeout(r, ms))]).catch(() => {}).then(() => requestAnimationFrame(() => requestAnimationFrame(go))); }
 // every frame of the transit (game/loop.js, S.mode 'transit')
 export function updateSectorTransit(dt, now){ const tr = SECT.tr; if(!tr){ S.mode = 'playing'; return; } tr.t += dt;
   const L = tr.retry ? T.transit.retry : T.transit.lines; if((tr.lineT += dt) >= T.transit.lineGap && tr.lineI < L.length){ tr.lineT = 0; sectorTransitLine(L[tr.lineI++]); }
   if(tr.ph === 'fade'){ if(tr.t >= T.transit.fade + 0.05) tr.ph = 'build'; return; }
   if(tr.ph === 'build'){ rebuild(); warm(); return; }
   if(tr.ph === 'warming'){ if(tr.p0){ camera.position.copy(tr.p0); camera.lookAt(tr.l0); } return; }
+  if(tr.ph === 'dark'){ if(tr.t >= T.transit.min - T.transit.dark){ camera.position.copy(tr.p1); camera.lookAt(tr.l1); transitEnd(); } return; }   // SECTOR 2 (no ride: the field shows at GO)
   if(tr.ph === 'ride'){ tr.rideT += Math.min(dt, 1 / 30); const u = ease(Math.min(1, tr.rideT / tr.ride));
     camera.position.lerpVectors(tr.p0, tr.p1, u); _look.lerpVectors(tr.l0, tr.l1, u); camera.lookAt(_look);
     if(tr.rideT >= tr.ride){ transitEnd(); } } }
 let _look = null;
-function transitEnd(){ const tr = SECT.tr; SECT.stats.transits.push({ i:SECT.i, retry:tr.retry, s:+tr.t.toFixed(2), buildMs:tr.ms, warmMs:tr.warm, n:tr.n }); note('arrive', tr.ms + ' ms');
-  SECT.tr = null; SECT.state = 'arm'; sectorTransitShow(null); S.mode = 'countdown';   // (beginStage sets it too: nothing runs a frame of play before its 3-2-1)
+function transitEnd(){ const tr = SECT.tr; SECT.stats.transits.push({ i:SECT.i, retry:tr.retry, s:+tr.t.toFixed(2), buildMs:tr.ms, warmMs:tr.warm, hid:tr.hid, n:tr.n }); note('arrive', tr.ms + ' ms');
+  SECT.dark = tr.ph === 'dark'; SECT.tr = null; SECT.state = 'arm'; if(!SECT.dark) sectorTransitShow(null); S.mode = 'countdown';   // (beginStage sets it too: nothing runs a frame of play before its 3-2-1)
   goQuiet(true); const c = S.contract || CONTRACTS.find(x => x.id === 'steady') || CONTRACTS[0]; beginStage({ ...c, name:'' }, {}); }   // the 3-2-1 that waits for the shaders, heard (its beeps) but not shown: no number, mission line or contract name in the aim zone
 // a sector's 3-2-1 runs hidden (css/sector.css body.sectgo): the place and the goal were on the transit's card, its start goes to the top edge
 function goQuiet(on){ if(typeof document !== 'undefined' && document.body) document.body.classList.toggle('sectgo', !!on); }
 // THE RAIL: the sectors, the one in hand lit; `upto` = how many are done (a sector just won is ticked before the transit)
-function rail(upto){ if(!SECT.on) return; const i = upto != null ? upto : SECT.i, g = SECT.g; const ck = SECT.state === 'fight' && g && g.type === 'sabotage' ? clock(g.clock) : SECT.state === 'fight' && g && g.type === 'hold' && g.start ? Math.round(g.k * 100) + '%' : '';
-  sectorRail(SECT.list, i, ck); }
+function rail(upto){ if(!SECT.on) return; const i = upto != null ? upto : SECT.i, g = SECT.g, F = SECT.state === 'fight' && g;
+  const ck = F && g.type === 'sabotage' ? clock(g.clock) : F && g.type === 'hold' && g.start ? Math.round(g.k * 100) + '%' : F && sectorGoalHas(g.type) ? sectorGoalClock(g) : '';
+  sectorRail(SECT.list, i, ck, F ? g.sub || '' : ''); }   // SECTOR 2 the objective's line beside the clock
 // dev / probes: the run in a line
 export function sectorState(){ const c = sectorCur(); return { on:SECT.on, i:SECT.i, n:SECT.list.length, state:SECT.state, type:c && c.type, place:c && c.place, tries:SECT.tries, k:SECT.g ? +SECT.g.k.toFixed(2) : 0, clock:SECT.g ? +(SECT.g.clock || 0).toFixed(1) : 0, mode:S.mode }; }

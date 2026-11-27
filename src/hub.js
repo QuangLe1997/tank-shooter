@@ -302,7 +302,8 @@ export * from './campaign/night-defence.js';   // MODE 1 THỦ ĐÊM: hold the b
 export * from './campaign/daily.js';   // MODE 2 THỬ THÁCH HÔM NAY: one battle a day for everyone — the date's seed, a modifier, a result to copy
 export * from './campaign/conquest.js';   // CONQ 1 CHINH PHẠT 10 THÀNH: ten forts in order, a treasure each, the treasures' effects, the fort's battle as a mode
 export * from './ui/conquest-map.js';   // CONQ 1 the conquest's road on the battle setup's Chiến dịch tab, a fort's card
-export * from './campaign/sectors.js';   // SECTOR 1 a long battle as a chain of sectors: layout + mission + climax each, the transit between, a checkpoint per sector
+export * from './campaign/sectors.js';
+export * from './campaign/sector-goals.js';   // SECTOR 2 the rescue, breach, infiltration and pursuit sectors: each a start, a tick, a clear   // SECTOR 1 a long battle as a chain of sectors: layout + mission + climax each, the transit between, a checkpoint per sector
 export * from './ui/sector-hud.js';   // SECTOR 1 the sector rail at the top of the HUD, the transit's letterbox, black and radio
 export * from './game/loop.js';
 export * from './game/viewport.js';
