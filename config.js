@@ -3636,6 +3636,8 @@ export const HUDCLEAN2 = {
 //   A3 treeFar: past `at` m (stretched as the camera pulls back) a tree wears its species' phone copy (dir) when that has at most `max` × its triangles
 //   DIET 4 drop: a KTX2 map's CPU copy is dropped once it is on the GPU (and the parsed files' buffers once built; refilled from the file when needed), pxHold: s the fallback pictures are kept
 //   DIET 9 pxFrom: the files whose colour maps' small pictures are read in the page (trees' leaf masks; any rigged body: its shirt colour) — no other file decodes them
+//   DIET 10 late: a stage's 3-2-1 waits ≤ waitMs ms for the model files still loading; a model file that finishes loading mid-fight anyway is compiled + linked (≤ linkMs) and its maps uploaded (upMs a frame, ≤ maxMs) before its owner gets it;
+//     MAT 1's colour read-backs wait matWait s into a fight, then one batch of ≤ matBatch materials every matEvery s
 //   DIET 6 offThread: render/far-lod.js welds and simplifies in a worker (one big geometry held a frame 690 ms)
-export const ASSETDIET = { ktx2:true, basis:'assets/lib/basis/', simplifier:'assets/lib/meshopt/meshopt_simplifier.module.js', workers:4, probeMs:8000, offThread:true, pxFrom:['/tree/'], drop:!(typeof location !== 'undefined' && /[?&]nodrop\b/.test(location.search)), pxHold:20,
+export const ASSETDIET = { ktx2:true, basis:'assets/lib/basis/', simplifier:'assets/lib/meshopt/meshopt_simplifier.module.js', workers:4, probeMs:8000, offThread:true, pxFrom:['/tree/'], late:{ on:!(typeof location !== 'undefined' && /[?&]nolate\b/.test(location.search)), waitMs:4000, linkMs:900, upMs:4, maxMs:2500, matWait:6, matEvery:0.5, matBatch:16 }, drop:!(typeof location !== 'undefined' && /[?&]nodrop\b/.test(location.search)), pxHold:20,
   treeFar:{ on:!(typeof location !== 'undefined' && /[?&]notreefar\b/.test(location.search)), dir:'assets/models/real/tree/m/', at:80, max:0.6 } };

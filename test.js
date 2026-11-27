@@ -2801,7 +2801,10 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   { const br=rd('src/ui/briefing.js'); ok(/try\{ blendScene\(scene\); \}catch\(e\)\{\} \}\s+\/\/ DIET 8/.test(br) && br.indexOf('blendScene(scene)') < br.indexOf("S.mode='countdown'") && /--cpuprofile/.test(rd('tools/ts.mjs')) && /--noperf/.test(rd('tools/ts.mjs')),
     'DIET 8 the field is graded (its blendIn3 variants) before the 3-2-1 compiles its shaders, never in the fight; ts.mjs can profile the fight\'s first seconds and run without ?perf'); }
   { const bi=rd('src/render/blend-in.js'), ad=rd('src/render/asset-diet.js'); ok(/export function blendScene\(root, noNew\)/.test(bi) && /return blendScene\(scene, S\.mode === 'playing' \|\| S\.mode === 'dying'\)/.test(bi) && Array.isArray(D.pxFrom) && /pxFrom\.some/.test(ad),
-    'DIET 9 a grading that lands after GO only moves colours (no new shader variant mid-fight); only trees and rigged bodies decode their small fallback pictures'); } }
+    'DIET 9 a grading that lands after GO only moves colours (no new shader variant mid-fight); only trees and rigged bodies decode their small fallback pictures'); }
+  { const ad=rd('src/render/asset-diet.js'), mn=rd('src/render/mat-norm.js'), L=D.late; ok(L && typeof L.on==='boolean' && L.waitMs>=1000 && L.waitMs<=10000 && /dietIdle\(ASSETDIET\.late\.waitMs\)/.test(rd('src/ui/briefing.js')) && L.linkMs>=200 && L.linkMs<=3000 && L.upMs>0 && L.upMs<=8 && L.maxMs>=L.linkMs && L.matWait>=3 && L.matEvery>0 && L.matBatch>=1 && L.matBatch<=64
+    && /function lateWarm\(gl\)/.test(ad) && /compileReady\(gl\.scene, L\.linkMs\)/.test(ad) && /renderer\.initTexture\(t\)/.test(ad) && /L\.matWait \* 1000/.test(mn) && /ASSETDIET\.late\.matBatch/.test(mn),
+    'DIET 10 a model that loads mid-fight is compiled, linked (≤ '+L.linkMs+' ms) and uploaded ('+L.upMs+' ms a frame) before its owner gets it; MAT 1 reads back nothing in a fight\'s first '+L.matWait+' s, then ≤ '+L.matBatch+' materials every '+L.matEvery+' s'); } }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

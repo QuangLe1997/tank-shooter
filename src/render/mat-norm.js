@@ -9,7 +9,7 @@
 //   grade: brightness × gain, saturation × sat, roughness × rough, metalness × metal. MATLOOK.norm.except: per-model overrides (skip, or its own band).
 //   During a fight a newly loaded model is measured only once its maps are on the GPU anyway (PERF 4: no upload hitch); MATSW.norm / ?nomatnorm: off.
 import * as THREE from 'three';
-import { MATLOOK } from '../../config.js';
+import { ASSETDIET, MATLOOK } from '../../config.js';
 import { S, renderer, tileSet } from '../hub.js';
 
 const N = MATLOOK.norm, TS = 16, AT = 8, RW = TS * AT;   // a tile per material, an 8×8 atlas of tiles per read-back
@@ -96,8 +96,11 @@ function apply(it, meas){ const m = it.m, key = it.key, cat = it.cat; const c = 
 let _reading = false;
 const useCache = (it, C) => { if(C.c){ it.m.userData.mn = C.c; setU(it.m); } };
 // once a frame while anything waits: a batch of up to 64 — in a fight only those whose maps are on the GPU already, else up to `up` a frame that send theirs
+let _fT0 = 0, _fLast = 0;   // DIET 10 a fight's start, its last read-back
 function flush(){ if(!Q.length){ _qOn = false; return; } if(_reading){ requestAnimationFrame(flush); return; } const busy = fight(), B = []; let up = 0;
-  for(let i = 0; i < Q.length && B.length < AT * AT; ){ const it = Q[i], m = it.m, C = CACHE.get(it.ck); if(C){ Q.splice(i, 1); useCache(it, C); continue; }
+  if(busy){ const now = performance.now(), L = ASSETDIET.late; if(!_fT0) _fT0 = now; if(now - _fT0 < L.matWait * 1000 || now - _fLast < L.matEvery * 1000){ _qOn = true; requestAnimationFrame(flush); return; } _fLast = now; } else _fT0 = 0;   // DIET 10 no read-back in a fight's first matWait s, then at most one every matEvery s (each one waits on the GPU)
+  const cap = busy ? Math.min(AT * AT, ASSETDIET.late.matBatch) : AT * AT;
+  for(let i = 0; i < Q.length && B.length < cap; ){ const it = Q[i], m = it.m, C = CACHE.get(it.ck); if(C){ Q.splice(i, 1); useCache(it, C); continue; }
     if(!(texReady(m.map) && texReady(m.roughnessMap))){ if(busy || up >= N.upFrame){ i++; continue; } up++; } Q.splice(i, 1); B.push(it); }
   if(B.length){ _reading = true; let P; try{ P = measureBatch(B); }catch(e){ console.warn('[matnorm]', e && e.message); P = Promise.resolve(B.map(() => null)); }
     P.then(res => { B.forEach((it, i) => { const C = CACHE.get(it.ck); if(C){ useCache(it, C); return; } if(res[i]){ apply(it, res[i]); CACHE.set(it.ck, { c:it.m.userData.mn || null }); } }); })

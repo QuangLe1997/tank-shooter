@@ -1,7 +1,7 @@
 // ui/briefing.js — STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin; XK-UI its back button: to the battle setup (a fresh launch from it) or home (asks mid-run)
-import { CONTRACTS, DMG_TYPE, LOOT_REAL, OBJECTIVES, OBJ_REWARD } from '../../config.js';
+import { ASSETDIET, CONTRACTS, DMG_TYPE, LOOT_REAL, OBJECTIVES, OBJ_REWARD } from '../../config.js';
 import { setLootIcon, bladeChip, modeBrief, bigEventsReset, sideMissionsReset, directorReset, opTitle, placeLine, capVi, askConfirm, quitToMenu, openBattleSetup, BS, BIOME, GUNS, PROFILE, S, WAVE, biomeVi, bossForStage, camera, coachFirstRun, conditionsText, escapeHtml, floatText, gunPicEl, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, renderer, resetEnvEvents, resetSurprises, saveProfile, sayVoice, scene, setFocus, setIcon, sfx, show, spawnRelic, storyBrief, storyReset, tapEl, voiceStage, spellNow, briefTeam, nemBrief, droneWarReset, ammoHud, coopActive, coopGate } from '../hub.js';
-import { blendScene, compileFor, fightWarm } from '../hub.js';   // SPLIT 2 (render/fight-warm.js) · DIET 8 (render/blend-in.js)
+import { blendScene, compileFor, dietBusy, dietIdle, fightWarm } from '../hub.js';   // SPLIT 2 (render/fight-warm.js) · DIET 8 (render/blend-in.js)
 
 // ----- STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin -----
 export let _brCtx = null;   // what chooseContract should do on confirm: {first?} (stage1) or {stage,biomeName,accentHex} (stage 2+)
@@ -49,8 +49,9 @@ export function chooseContract(c, quick){
 }
 // Z136 COUNTDOWN: after XUẤT KÍCH the world stays frozen for 3 · 2 · 1 (camera already on the battlefield, nobody moves or shoots), then the fight goes live
 let _go=null, _cdN=0;
-const _graded = new Set();
+const _graded = new Set(); let _goWait = 0;   // DIET 10 0 · 1 waiting for the model files still loading · 2 done waiting
 export function beginStage(c, ctx){
+  if(_goWait === 1) return; if(_goWait === 0 && dietBusy()){ _goWait = 1; dietIdle(ASSETDIET.late.waitMs).then(() => { _goWait = 2; beginStage(c, ctx); }); return; } _goWait = 0;   // DIET 10 the 3-2-1 starts once the field's model files are in (≤ late.waitMs): what lands after GO is compiled and uploaded in the fight
   if(!_graded.has(S.runId + ':' + S.stage)){ _graded.add(S.runId + ':' + S.stage); try{ blendScene(scene); }catch(e){} }   // DIET 8 the field's materials take their grading variant (blendIn3) BEFORE the 3-2-1 compiles them: a load fast enough to reach GO before the floor's photo (blendWhenReady) had them recompiled in the fight's first second — 33 programs, one 0.45–0.6 s frame; the later grading only moves uniforms
   S.mode='countdown'; S.cd=3.05; _go={ c, ctx }; _cdN=0; S.firing=false; prewarmStage(); fightWarm(); voiceStage();   // Z168 the troops / riders / roof gun just deployed: compile them during the 3-2-1
   { const sub=document.getElementById('cdSub'), op=opFor(S.stage); if(sub){ const ct=conditionsText(); sub.innerHTML='<div>'+escapeHtml(op&&op.title ? opTitle(op)+' — màn '+S.stage : 'Màn '+S.stage)+'</div>'+(ct?'<div class="cdc">'+escapeHtml(ct)+'</div>':''); sub.classList.add('on'); } }   // Z138 the mission line rides under the numbers (NO-TANKS 8: the intro already named the place)

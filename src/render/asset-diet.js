@@ -9,7 +9,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { ASSETDIET } from '../../config.js';
-import { renderer } from '../hub.js';
+import { S, blendIn, compileReady, renderer } from '../hub.js';
 
 let _k2 = null, _ok = null, _l1 = null, _l0 = null;
 export const DIET_STATE = { ktx2:null, files:0, px:0, dropped:0, refill:0, refillMB:0, slim:0 };
@@ -22,7 +22,11 @@ export function ktx2Ok(){ if(_ok) return _ok;
     .then(ok => (DIET_STATE.ktx2 = ok))); }
 // a GLTF loader: the KTX2 one once proven, else the one that reads the fallback pictures (both read meshopt)
 export const gltfLoader = () => ktx2Ok().then(ok => ok ? (_l1 || (_l1 = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).setKTX2Loader(_k2))) : (_l0 || (_l0 = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder))));
-export function loadGLB(url){ return gltfLoader().then(L => L.loadAsync(url)).then(gl => { DIET_STATE.files++; return ASSETDIET.pxFrom.some(s => url.includes(s)) || (gl.parser && (gl.parser.json.skins || []).length) ? withPx(gl) : gl; }).then(gl => { keepLean(gl, url); return gl; }); }
+export function loadGLB(url){ INFL.n++; return gltfLoader().then(L => L.loadAsync(url)).then(gl => { DIET_STATE.files++; return ASSETDIET.pxFrom.some(s => url.includes(s)) || (gl.parser && (gl.parser.json.skins || []).length) ? withPx(gl) : gl; }).then(gl => { keepLean(gl, url); return lateWarm(gl); }).finally(() => { if(--INFL.n <= 0){ INFL.n = 0; const W = INFL.w.splice(0); for(const f of W) f(); } }); }
+// DIET 10 the model files still on their way: a stage's countdown waits for them (ui/briefing.js beginStage, at most late.waitMs) so SPLIT's 3-2-1 compiles and uploads them
+const INFL = { n:0, w:[] };
+export const dietBusy = () => INFL.n > 0;
+export const dietIdle = ms => INFL.n <= 0 ? Promise.resolve(true) : new Promise(res => { const t = setTimeout(() => res(false), ms); INFL.w.push(() => { clearTimeout(t); res(true); }); });
 // each compressed colour map gets its fallback picture (decoded off the main thread, never sent to the GPU) as userData.px
 function withPx(gl){ const P = gl.parser, J = P && P.json; if(!J || !(J.extensionsUsed || []).includes('KHR_texture_basisu')) return gl; const jobs = [];
   gl.scene.traverse(o => { if(!o.isMesh) return; for(const m of [].concat(o.material)){ const t = m && m.map; if(!t || !t.isCompressedTexture || t.userData.px !== undefined) continue;
@@ -64,3 +68,20 @@ export function dietCheck(scene){ const seen = new Set(); let empty = 0, held = 
     if(t.source.diet && !t.source.dataReady && !FILLED.has(renderer.properties.get(t).__webglTexture)){ empty++; if(L.length < 6) L.push(t.source.diet.url.split('/').slice(-2).join('/') + ':' + k); }
     if(t.mipmaps) for(const q of t.mipmaps) if(q.data) held += q.data.byteLength; } } });
   return { worn:seen.size, empty, heldMB:Math.round(held / 1048576), sample:L }; }
+// DIET 10 A MODEL THAT ARRIVES MID-FIGHT IS READY BEFORE ANYONE DRAWS IT: a file that finishes loading during a fight (a missile at its first launch, a
+//   near scan on approach, a loot chute, a prop) had its shaders built, linked and its maps uploaded by the first frame that drew it — 100–900 ms of link
+//   waits in a city battle's first seconds. Now its loader holds it back until (a) its programs are built and linked off the scene — as a plain mesh and as
+//   an instanced one: no — as itself and with the field's grading (blendIn, on a copy of the material: the same program its owner will ask for) — through SPLIT's
+//   compileReady (the scene pass's target, the field's lights), at most late.linkMs; (b) its maps are on the GPU, renderer.initTexture spread at late.upMs a
+//   frame, at most late.maxMs. Its owner then adds it as before; nothing is drawn half-made. Outside a fight nothing changes.
+const fight = () => S.mode === 'playing' || S.mode === 'dying';
+function lateWarm(gl){ const L = ASSETDIET.late; if(!L.on || typeof window === 'undefined' || !fight() || !gl || !gl.scene) return gl; DIET_STATE.late = (DIET_STATE.late || 0) + 1;
+  const G = new THREE.Group(), tex = [], seen = new Set(), extra = []; gl.scene.updateMatrixWorld(true);
+  gl.scene.traverse(o => { if(!o.isMesh) return; const mats = [].concat(o.material).filter(Boolean);
+    for(const m of mats) for(const k of KTXK){ const t = m[k]; if(t && t.isTexture && !seen.has(t) && !renderer.properties.get(t).__webglTexture){ seen.add(t); tex.push(t); } }
+    if(o.isSkinnedMesh) return; for(const m of mats){ const c = m.clone(); if(blendIn(c)) extra.push(c); }
+    for(const m of extra) G.add(new THREE.Mesh(o.geometry, m)); });   // (its own variant: gl.scene itself; an instanced owner built at load time is compiled by the 3-2-1)
+  return Promise.all([compileReady(gl.scene, L.linkMs), compileReady(G, L.linkMs)]).catch(() => {})
+    .then(() => new Promise(res => { const t0 = performance.now(), step = () => { const s = performance.now(); while(tex.length && performance.now() - s < L.upMs){ const t = tex.shift(); try{ renderer.initTexture(t); }catch(e){} }
+      if(tex.length && performance.now() - t0 < L.maxMs) requestAnimationFrame(step); else res(); }; requestAnimationFrame(step); }))
+    .then(() => { for(const c of extra) c.dispose(); G.clear(); return gl; }); }
