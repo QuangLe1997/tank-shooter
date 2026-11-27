@@ -2734,6 +2734,12 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   ok(/shotLook\(B0, o\);/.test(lo) && /muzzleFX\(_cv\.x,_cv\.y,_cv\.z, a, def\.mg\?'mg':'rifle', 'e', 0, e\.mesh\.userData\.muzzle\)/.test(inf) && /muzzleFX\(_v\.x, _v\.y, _v\.z, a0, cls === 'blade' \? 'smg' : cls, 'p'/.test(sf) && /% tracerEvery\(cls\) === 0/.test(sf) && /rx=-fz, rz=fx/.test(rw) && /tracerEvery\(cls\|\|'rifle'\)/.test(rw),
     'every shooter goes through it (the enemy rifleman / MG, the soldier\'s own guns), tracers by class, a case flies out to the shooter\'s RIGHT (it went left)');
   ok(/attribute float aBorn;/.test(wm) && /diffuseColor\.a \*= vMk;/.test(wm) && !/new THREE\.Quaternion\(\)\.setFromAxisAngle/.test(wm), 'wall marks fade with age; no new Quaternion per strike'); }
+// SPLIT 1 (A1) the sun's shadow in two parts: the still casters drawn once and kept, the movers drawn on top every frame
+{ const fs=await import('node:fs'), C=await import('./config.js'), sh=C.PERF_SPLIT.shadow, ss=fs.readFileSync('src/render/shadow-split.js','utf8'), rr=fs.readFileSync('src/render/renderer.js','utf8');
+  ok(sh.on===true && sh.step>0 && sh.pad>=0 && sh.pad<=sh.step && sh.settle>=5 && sh.settleMax>=sh.settle && sh.minGap>0 && sh.promoteGap>=sh.minGap && sh.editWin>0 && sh.rescan>=1,
+    'the still part: box re-centred '+sh.step+' m off (+'+sh.pad+' m wider), a caster still '+sh.settle+' frames joins it, drawn again ≥ '+sh.minGap+' s after something in it changed');
+  ok(/shadowLOD\(renderer\);[^\n]*\nshadowSplit\(renderer\);/.test(rr) && /blitFramebuffer\(/.test(ss) && /COLOR_BUFFER_BIT \| gl\.DEPTH_BUFFER_BIT/.test(ss) && /nosplit/.test(ss) && /if\(sc !== scene \|\| !lights\.length/.test(ss) && /new Float64Array\(16\)/.test(ss),
+    'installed right after the shadow LOD; colour + depth put back with one blit; ?nosplit switches it off; post passes and other scenes go through untouched; world matrices compared at full precision'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

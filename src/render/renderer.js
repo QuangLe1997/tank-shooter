@@ -10,7 +10,7 @@ import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { GROUNDED, LIGHT, LOOK, SHAFTS } from '../../config.js';
-import { ARENA, BIOME, MOBILE, MSAA, NATIVE, S, SHADOW_MAP, arena, beamMat, makeShaftPass, releaseModels, shadowLOD } from '../hub.js';
+import { ARENA, BIOME, MOBILE, MSAA, NATIVE, S, SHADOW_MAP, arena, beamMat, makeShaftPass, releaseModels, shadowLOD, shadowSplit } from '../hub.js';
    // Z83: a standing COMMAND BUNKER also buffs enemy damage
 
 // ----------------------------- THREE SETUP -----------------------------
@@ -138,6 +138,7 @@ if(!MOBILE){ sun.castShadow=true; sun.shadow.mapSize.set(SHADOW_MAP,SHADOW_MAP);
   const sc=sun.shadow.camera; sc.left=-SHADOW_R; sc.right=SHADOW_R; sc.top=SHADOW_R; sc.bottom=-SHADOW_R; sc.near=5; sc.far=180;
   sun.shadow.bias=GROUNDED.shadow.bias; sun.shadow.normalBias=GROUNDED.shadow.normalBias; sun.shadow.radius=2; }   // LIGHT 1 (was 0.25 m: the feet's shadow started ~0.6 m off the boots at a low sun)
 shadowLOD(renderer);   // Z412 the shadow pass draws light copies of the heavy casters
+shadowSplit(renderer);   // SPLIT 1 (render/shadow-split.js) what stands still is drawn into the sun's map once, only the movers every frame
 export const shaftPass = !MOBILE && SHAFTS.on ? makeShaftPass(composer, { cfg:SHAFTS, sun, camera:()=>renderPass.camera, depth:()=>renderPass.rt.depthTexture, biome:()=>BIOME.name, night:()=>NIGHT.k }) : null;   // Z276 light shafts: right after the scene, in linear HDR
 if(shaftPass) composer.insertPass(shaftPass, 1);
 export const hemi = new THREE.HemisphereLight(BIOME.sky, 0x14110a, 0.62); scene.add(hemi);

@@ -3594,3 +3594,8 @@ export const BODYFULL = {
   twist:{ upper:{ keep:0.25, max:1.4 } },
   ride:true,
   tube:{ pouch:[0.0, -0.05, 0.22], palm:true } };
+// SPLIT 1 RUNTIME PERFORMANCE (plan A1): the sun's shadow in a still part drawn once + the movers every frame
+export const PERF_SPLIT = {
+  // A1 render/shadow-split.js: re-centre the box `step` m off (and `pad` m wider) · a caster still for `settle` frames joins the still part (doubled, up to settleMax, each time it moves again)
+  //   · the still part is drawn again ≥ minGap s after something in it changed, ≥ promoteGap s for newly still ones · edited twice inside editWin s = it moves · casters re-listed every `rescan` frames
+  shadow:{ on:true, step:3, pad:1.5, settle:20, settleMax:600, minGap:0.2, promoteGap:1.5, editWin:2, rescan:30 } };
