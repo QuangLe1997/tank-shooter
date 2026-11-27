@@ -53,7 +53,7 @@ tools/
 test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 ```
 
-### 2.1 Danh mục module (313 module theo thứ tự hub · 33.434 dòng)
+### 2.1 Danh mục module (315 module theo thứ tự hub · 33.664 dòng)
 
 <!-- MODULES:BEGIN (npm run modmap) -->
 | # | Module | Dòng | Nội dung |
@@ -88,17 +88,17 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 23 | `src/render/clouds.js` | 33 | Z145 CLOUD LIGHT: big cloud shadows drift across the whole battlefield (forts, tanks, fields go dim and brig… |
 | 24 | `src/render/aerial.js` | 76 | Z427 AIR AND DISTANCE: the haze every fogged material draws through is rebuilt (the stock fog chunk replaced… |
 | 25 | `src/render/shafts.js` | 47 | Z276 SUNLIGHT IN THE AIR: light shafts on every battlefield. A full-screen pass right after the scene is dra… |
-| 26 | `src/render/renderer.js` | 194 | THREE SETUP |
+| 26 | `src/render/renderer.js` | 195 | THREE SETUP |
 | 27 | `src/render/air-post.js` | 126 | AIR 1 ONE CINEMATIC PASS: the frame's tail (NaN guard, bloom's additive write-back, tone map + sRGB, the gra… |
 | 28 | `src/render/air-aa.js` | 22 | AIR 4 LESS SHIMMER: what sparkled while the camera moves. Specular anti-aliasing in every lit physical mater… |
 | 30 | `src/render/surface.js` | 103 | Z145 REAL SURFACES: what makes a built wall read as stone instead of painted plastic. |
 | 32 | `src/render/lod.js` | 54 | Z107 RENDER BUDGET: trims draw calls where the eye can't tell — soldier shadows only near the tank, tower / … |
 | 33 | `src/render/asset-diet.js` | 88 | DIET 1 ONE LOADER FOR EVERY MODEL FILE: meshopt geometry always (EXT_meshopt_compression), and KTX2 maps (KH… |
-| 34 | `src/render/far-lod.js` | 109 | Z328 FAR LOD: a big static model (a fort's towers and gatehouse, our HQ) swaps to a simplified copy of itsel… |
+| 34 | `src/render/far-lod.js` | 111 | Z328 FAR LOD: a big static model (a fort's towers and gatehouse, our HQ) swaps to a simplified copy of itsel… |
 | 35 | `src/render/shadow-split.js` | 86 | SPLIT 1 (A1) THE SUN'S SHADOW IN TWO PARTS: what stands still (ground, walls, houses, rocks, trees, the fiel… |
 | 36 | `src/render/quality.js` | 44 | SPLIT 3 (A9) THREE QUALITY LEVELS + A FALL-BACK AFTER A CRASHED LOAD. Thấp / Vừa / Cao are the same battlefi… |
 | 37 | `src/render/fight-warm.js` | 51 | SPLIT 2 (A6) NOTHING COMPILED OR UPLOADED IN THE FIGHT'S FIRST FRAMES, AND THE LOAD NEVER WAITS FOR IT. Two … |
-| 38 | `src/render/inst-view.js` | 94 | VIEW 1 AN INSTANCED MESH SPREAD OVER THE WHOLE FIELD DRAWS ONLY WHAT IS NEAR. One InstancedMesh of 2000 ston… |
+| 38 | `src/render/inst-view.js` | 97 | VIEW 1 AN INSTANCED MESH SPREAD OVER THE WHOLE FIELD DRAWS ONLY WHAT IS NEAR. One InstancedMesh of 2000 ston… |
 | 39 | `src/render/near-detail.js` | 124 | Z395 NEAR DETAIL: every model the game ships was packed small (1K maps), so up close a palm's fronds fray wh… |
 | 40 | `src/render/cover-batch.js` | 51 | Z338 COVER IN A FEW DRAWS: every piece of cover (sandbags, crates, drums, concrete, HESCO, jersey, pipes, te… |
 | 41 | `src/render/see-through.js` | 44 | CAM 3 SEE-THROUGH: what stands between the follow camera and the soldier — a fort's wall, tower or keep, its… |
@@ -132,7 +132,7 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 51 | `src/world/river.js` | 194 | Z405 RIVERS: a river and its side stream across the battlefields that have one (config RIVERS) — the bed car… |
 | 52 | `src/world/decals.js` | 95 | GROUND SCARS: tread marks (fade over time) + scorch/craters/impact dirt (permanent per stage) painted into a… |
 | 53 | `src/world/props.js` | 257 | BATTLEFIELD PROPS (procedural, merged geometry, cached) |
-| 54 | `src/world/real-props.js` | 62 | Z252 REAL COVER: the Meshy-generated low-poly cover pieces (sandbags, concrete block, container, crates, dru… |
+| 54 | `src/world/real-props.js` | 65 | Z252 REAL COVER: the Meshy-generated low-poly cover pieces (sandbags, concrete block, container, crates, dru… |
 | 55 | `src/world/perimeter.js` | 85 | perimeter: concrete jersey barriers (instanced) topped with concertina razor wire on steel pickets |
 | 56 | `src/world/decor.js` | 66 | TERRAIN DECOR (ambient scatter: rocks · grass · ice · slag · rubble) |
 | 57 | `src/world/magma.js` | 85 | Z258 REAL MAGMA + A REAL VOLCANO. One shader for molten rock: a skin of dark basalt crust broken into plates… |
@@ -142,7 +142,7 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 61 | `src/world/backdrop.js` | 121 | Z427 THE FAR RANGES: the land and the mountains kilometres away, at their true distance and height. They are… |
 | 62 | `src/world/forest.js` | 44 | Z440 WOODS PAST THE FENCE: the land round the field wears real woods of the scanned tree species, not a scat… |
 | 63 | `src/world/biome.js` | 32 | Z103 split from world/physics.js: apply a battlefield biome (ground maps, terrain, sky, perimeter, |
-| 64 | `src/world/cover.js` | 239 | TERRAIN BLOCKS (cover) |
+| 64 | `src/world/cover.js` | 241 | TERRAIN BLOCKS (cover) |
 | 65 | `src/world/rubble.js` | 44 | Z193 WHAT A BROKEN OBSTACLE LEAVES BEHIND: a low heap of its own material where it stood (torn sacks and spi… |
 | 66 | `src/world/supply.js` | 338 | Z194 ENEMY SUPPLY BASES: a FUEL STATION (tank farm behind a bund wall, pump house, dispensers, tanker trucks… |
 | 67 | `src/world/camp-life.js` | 53 | Z196 A LIVED-IN BARRACKS: the troop camp is where the enemy feeds, clothes and treats its men — the mess ten… |
@@ -160,12 +160,12 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 109 | `src/world/wonders.js` | 133 | Z144 WORLD LANDMARKS: every battlefield has one landmark of its land's architecture on the high ground just … |
 | 123 | `src/world/tunnels.js` | 132 | Z225 ĐỊA ĐẠO: the enemy has dug a tunnel network under the battlefield (from stage 2 and every custom battle). |
 | 124 | `src/world/underbase.js` | 239 | Z226 THE UNDERGROUND BASE: under every battlefield the enemy keeps a buried base — its barracks, its vehicle… |
-| 136 | `src/world/towers.js` | 135 | WATCHTOWERS: wood towers with guards who fire plunging rounds + night searchlights; shoot them down to colla… |
+| 136 | `src/world/towers.js` | 136 | WATCHTOWERS: wood towers with guards who fire plunging rounds + night searchlights; shoot them down to colla… |
 | 137 | `src/world/tower-fall.js` | 158 | Z452 A TOWER COMES DOWN FOR REAL: a watchtower, a guard post or the radar mast shot down topples about the s… |
 | 138 | `src/world/tower-kinds.js` | 125 | Z175 WATCHTOWER TYPES: seven real guard-tower builds in timber, steel and concrete — each land raises the ki… |
 | 139 | `src/world/camps.js` | 157 | Z90 · ENEMY TROOP CAMPS — a Quonset barracks, canvas tents, sandbag ring, flag & cookfire; squads keep pouri… |
 | 140 | `src/world/zones.js` | 38 | Z104 BATTLEFIELD PLAN: reserves ground for the rally point, POW stockades and depots before cover is scattered |
-| 141 | `src/world/fortress.js` | 681 | Z107 FORTRESSES (đại bản doanh): 3–4 named strongholds a stage — crenellated walls with riflemen on top, cor… |
+| 141 | `src/world/fortress.js` | 682 | Z107 FORTRESSES (đại bản doanh): 3–4 named strongholds a stage — crenellated walls with riflemen on top, cor… |
 | 142 | `src/world/fort-hill.js` | 182 | Z453 CASTLES ON CRAGS (config FORTHILL, the limestone quarry first; Z455 the whole land: crags joined by rid… |
 | 143 | `src/world/hill-trees.js` | 35 | Z455 TREES ON THE CRAGS (FORTHILL.trees): on the limestone hills dead trees cling at the lip of a drop — fou… |
 | 144 | `src/world/hill-climb.js` | 40 | Z456 THE WAY UP (FORTHILL…spur.path): the capital's crag is sheer all round but for a narrow tongue toward i… |
@@ -295,9 +295,9 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 120 | `src/campaign/entries.js` | 52 | AI 2 NOBODY POPS INTO EXISTENCE. Every enemy soldier raised during a battle comes onto the field by a way th… |
 | 121 | `src/campaign/side-missions.js` | 216 | EVENT 1 SIDE MISSIONS IN THE MIDDLE OF A FIGHT (config.js SIDEMISSION): when the director has room for more,… |
 | 122 | `src/campaign/big-events.js` | 198 | EVENT 2 BIG BATTLEFIELD EVENTS (config.js BIGEVENT): now and then the battle itself does something big — dra… |
-| 127 | `src/campaign/operations.js` | 123 | Z83 · CAMPAIGN OPERATIONS — named operation per stage: briefing, radio chatter, scripted waves and a high-va… |
+| 127 | `src/campaign/operations.js` | 124 | Z83 · CAMPAIGN OPERATIONS — named operation per stage: briefing, radio chatter, scripted waves and a high-va… |
 | 150 | `src/campaign/waves.js` | 109 | WAVES: difficulty / NG+ loop multipliers, wave queue per stage, random wave events, edge spawn points |
-| 151 | `src/campaign/boss.js` | 36 | THE STAGE'S GENERAL (no-tanks: Z96 the super-heavy, its weak points, armour arcs, phases, shield pylons, min… |
+| 151 | `src/campaign/boss.js` | 41 | THE STAGE'S GENERAL (no-tanks: Z96 the super-heavy, its weak points, armour arcs, phases, shield pylons, min… |
 | 193 | `src/campaign/soldier-war.js` | 24 | Z309 A SOLDIER'S WAR: the waves are men — riflemen and RPG teams, squads, troop helicopters dropping more me… |
 | 200 | `src/campaign/general-duel.js` | 84 | Z353 THE GENERAL ON FOOT (no-tanks: the stage's boss fight): the general waits in his citadel and takes the … |
 | 201 | `src/campaign/fort-boss.js` | 276 | BOSS 1 A BOSS IN EVERY FORT (FORTBOSS; his look: actors/fort-boss-look.js). Every fort holds ONE boss, a mod… |
@@ -308,6 +308,7 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 298 | `src/campaign/night-defence.js` | 186 | MODE 1 NIGHT DEFENCE ("THỦ ĐÊM", config NIGHTDEF; the run kit: campaign/mode-run.js; its arithmetic: data/mo… |
 | 299 | `src/campaign/daily.js` | 80 | MODE 2 THE DAILY CHALLENGE ("THỬ THÁCH HÔM NAY", config DAILY; the run kit: campaign/mode-run.js; the genera… |
 | 300 | `src/campaign/conquest.js` | 163 | CONQ 1 CHINH PHẠT 10 THÀNH (config CONQUEST; the road on the battle setup: ui/conquest-map.js). The campaign… |
+| 302 | `src/campaign/sectors.js` | 168 | SECTOR 1 A LONG BATTLE IS A CHAIN OF SECTORS (config.js SECTOR · the rail and the transit's overlay: ui/sect… |
 | | **loot/** — Vật phẩm, rơi đồ, nâng cấp roguelite | | |
 | 197 | `src/loot/soldier-arms.js` | 37 | Z352 ARMS OFF THE FIELD (soldier mode only): what a dead enemy carried is his to take. A rifleman sometimes … |
 | 198 | `src/loot/gift-crate.js` | 90 | Z369 / Z370 THE RANK'S SUPPLY BUNDLE (soldier mode): what the HQ drops when he climbs a rank — a real airdro… |
@@ -349,7 +350,8 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 262 | `src/ui/alarm.js` | 34 | CORE-UNDER-ATTACK ALARM. Z133 early warning: the moment the core takes damage a banner shows its HP and dist… |
 | 266 | `src/ui/drone-hud.js` | 77 | DRONE 1 WHAT THE DRONE WAR SHOWS HIM: the red diamond over every marked enemy (one instanced mesh drawn over… |
 | 301 | `src/ui/conquest-map.js` | 41 | CONQ 1 THE CONQUEST'S ROAD on the battle setup's "Chiến dịch" tab (config CONQUEST; the battles: campaign/co… |
-| 305 | `src/ui/coop-lobby.js` | 48 | COOP 4 THE CO-OP LOBBY'S SCREEN (shown instead of the home screen when the address has ?room=CODE) and the t… |
+| 303 | `src/ui/sector-hud.js` | 30 | SECTOR 1 what a sector run shows (css/sector.css): THE RAIL — one small line at the top of the HUD, "1 NGOẠI… |
+| 307 | `src/ui/coop-lobby.js` | 48 | COOP 4 THE CO-OP LOBBY'S SCREEN (shown instead of the home screen when the address has ?room=CODE) and the t… |
 | | **game/** — Luồng game, vòng lặp, khởi động | | |
 | 175 | `src/game/xeom.js` | 192 | Z282 XE ÔM MODE (Z332 the xích lô is gone): the cavalry mode (game/cavalry.js) with a Vietnamese ride instea… |
 | 176 | `src/game/ride-wear.js` | 41 | Z303 THE RIDE WEARS OUT: the xe ôm / ba gác / bán tải has its own health. Hits taken while riding (a share o… |
@@ -369,24 +371,24 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 194 | `src/game/medals.js` | 83 | MEDAL 2 THE BATTLE'S LEDGER: who killed what and how (his round, his blade, his grenade, his charge — or his… |
 | 195 | `src/game/soldier-rank.js` | 97 | Z350 THE SOLDIER'S CAREER (soldier mode only): every man he or his squad drops is experience, and experience… |
 | 213 | `src/game/score.js` | 24 | SCORE / COMBO |
-| 214 | `src/game/player-damage.js` | 96 | PLAYER DAMAGE / DEATH |
-| 235 | `src/game/flow.js` | 128 | GAME FLOW: start / pause / quit-to-menu, loadout guns for the run, menu ↔ HUD state, show/hide panels |
+| 214 | `src/game/player-damage.js` | 98 | PLAYER DAMAGE / DEATH |
+| 235 | `src/game/flow.js` | 136 | GAME FLOW: start / pause / quit-to-menu, loadout guns for the run, menu ↔ HUD state, show/hide panels |
 | 253 | `src/game/update.js` | 159 | the camera that follows the soldier, the enemy vehicles' rigs, Vietnamese label helpers (no-tanks: the tank'… |
 | 254 | `src/game/intro-clouds.js` | 49 | Z322 THE INTRO'S SKY: high over the field the air is hazy and a thin deck of soft clouds drifts between the … |
 | 255 | `src/game/intro.js` | 172 | INTRO CINEMATIC (deploy showcase) |
 | 295 | `src/game/cavalry.js` | 229 | Z245 CAVALRY MODE: the player is a general in full plate — on his armoured war horse (walk · trot · canter ·… |
-| 302 | `src/game/loop.js` | 155 | MAIN LOOP: per-frame update + render orchestration, frame pacing, ability cooldown dials |
-| 303 | `src/game/viewport.js` | 30 | Z103 split from game/loop.js: canvas/render-target sizing, the soft-keyboard guard, landscape gate, |
-| 304 | `src/game/boot-gate.js` | 69 | Z103 split from game/loop.js: the branded splash, real boot progress, sliced shader warm-up, |
-| 306 | `src/game/coop-remote.js` | 113 | COOP 5 THE OTHER PLAYER'S SOLDIER on this page: the same rig the local soldier wears (buildGeneral + his hor… |
-| 307 | `src/game/coop-puppets.js` | 137 | COOP 6 ONE BATTLE: the host is the authority for the enemy. HOST: every enemy unit into the snapshot (coopHo… |
-| 308 | `src/game/coop-world.js` | 139 | COOP 9 ONE SHARED BATTLE: what stands, what lies on the ground and the Core's health are the HOST's, on both… |
-| 309 | `src/game/coop-team.js` | 97 | COOP 9 WHAT TWO PLAYERS DO TOGETHER (numbers: config COOP2; rules: net/rules.js). |
-| 310 | `src/game/coop-glue.js` | 229 | COOP 4–7 THE GAME'S SIDE OF TWO-PLAYER CO-OP (the net layer is src/net/*; the screen ui/coop-lobby.js; the o… |
-| 311 | `src/game/startup.js` | 25 | Z103 COMPOSITION ROOT. Last system module in hub.js: everything is defined, so this is where the |
+| 304 | `src/game/loop.js` | 158 | MAIN LOOP: per-frame update + render orchestration, frame pacing, ability cooldown dials |
+| 305 | `src/game/viewport.js` | 30 | Z103 split from game/loop.js: canvas/render-target sizing, the soft-keyboard guard, landscape gate, |
+| 306 | `src/game/boot-gate.js` | 69 | Z103 split from game/loop.js: the branded splash, real boot progress, sliced shader warm-up, |
+| 308 | `src/game/coop-remote.js` | 113 | COOP 5 THE OTHER PLAYER'S SOLDIER on this page: the same rig the local soldier wears (buildGeneral + his hor… |
+| 309 | `src/game/coop-puppets.js` | 137 | COOP 6 ONE BATTLE: the host is the authority for the enemy. HOST: every enemy unit into the snapshot (coopHo… |
+| 310 | `src/game/coop-world.js` | 139 | COOP 9 ONE SHARED BATTLE: what stands, what lies on the ground and the Core's health are the HOST's, on both… |
+| 311 | `src/game/coop-team.js` | 97 | COOP 9 WHAT TWO PLAYERS DO TOGETHER (numbers: config COOP2; rules: net/rules.js). |
+| 312 | `src/game/coop-glue.js` | 229 | COOP 4–7 THE GAME'S SIDE OF TWO-PLAYER CO-OP (the net layer is src/net/*; the screen ui/coop-lobby.js; the o… |
+| 313 | `src/game/startup.js` | 25 | Z103 COMPOSITION ROOT. Last system module in hub.js: everything is defined, so this is where the |
 | | **dev/** — Móc kiểm thử / gỡ lỗi (không ảnh hưởng gameplay) | | |
-| 312 | `src/dev/hooks.js` | 58 | Z103 split from game/loop.js: window._* inspection/driving hooks used by Playwright smoke tests and the |
-| 313 | `src/dev/pose-studio.js` | 129 | Z349 THE POSE STUDIO: calibrate and judge how a soldier holds each of his weapons — for every new soldier mo… |
+| 314 | `src/dev/hooks.js` | 58 | Z103 split from game/loop.js: window._* inspection/driving hooks used by Playwright smoke tests and the |
+| 315 | `src/dev/pose-studio.js` | 129 | Z349 THE POSE STUDIO: calibrate and judge how a soldier holds each of his weapons — for every new soldier mo… |
 <!-- MODULES:END -->
 
 ---

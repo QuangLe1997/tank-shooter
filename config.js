@@ -3807,7 +3807,6 @@ export const CONQUEST = { on:true, carry:3, migrate:{ cap:9 }, next:4.2,
     wonKick:'Đã chiếm {fort}', wonBig:'Chiếm thành', lostKick:'{fort} vẫn đứng', lost:'Rút lui', lostWhy:'Tổ phải rút khỏi {fort}. Tướng {boss} vẫn giữ thành.', retry:'Đánh lại', toMap:'Bản đồ chinh phạt',
     prizeTag:'Báu vật mới', nextLine:'Thành kế tiếp: {fort} — {t}', replay:'Chiếm lại thành. Báu vật {t} đã có trong kho.', end:'Thành Luỹ Cuối đã đổ. Lõi được giữ, chiến tranh dừng ở đây.',
     stats:['Hạ địch', 'Chính xác', 'Thời gian', 'Thành đã chiếm'], noAim:'Không có thành nào trong tầm', placed:'ĐẶT THUỐC NỔ!', frozen:'ĐÓNG BĂNG ×{n}', storm:'PHÁO MẮT BÃO — CHÚ Ý!' } };
-=======
 // SECTOR 1 A LONG BATTLE IS A CHAIN OF SECTORS (campaign/sectors.js · its HUD: ui/sector-hud.js). A run that carries `sectors` (launchGame({…, sectors:[…]}) or true for the land's
 //   sample run; dev: ?sectors=1 or ?sectors=hold,sabotage,boss) is fought one sector at a time on the same land: each sector a new layout of the field (`places`: how many forts,
 //   whether the citadel stands, cover / towers ×, the objective) + a mission (`types`) + its climax (a forced big event once the goal is `at` done). Only one sector exists at a
