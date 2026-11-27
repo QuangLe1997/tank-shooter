@@ -48,7 +48,7 @@ function keepLean(gl, url){ const P = gl.parser, J = P && P.json; if(!J) return;
     if(e){ t.source.diet = { url, img:e.source, busy:false }; t.onUpdate = onUp; } if(t.userData.px) setTimeout(() => { const b = t.userData.px; t.userData.px = null; if(b && b.close) b.close(); }, ASSETDIET.pxHold * 1000); } } });
   if(!ASSETDIET.drop) return; try{ P.cache.removeAll(); }catch(e){} P.sourceCache = {}; P.textureCache = {}; const B = P.extensions && P.extensions.KHR_binary_glTF; if(B){ B.body = null; B.content = null; } DIET_STATE.slim++; }
 const needs = t => t.isCompressedTexture && t.source.diet && !t.source.dataReady && !FILLED.has(renderer.properties.get(t).__webglTexture);
-function fileOf(url){ let f = FILES.get(url); if(!f){ f = fetch(url).then(r => r.arrayBuffer()).then(b => { const jl = new DataView(b).getUint32(12, true); return { J:JSON.parse(new TextDecoder().decode(new Uint8Array(b, 20, jl))), bin:b.slice(28 + jl) }; });
+function fileOf(url){ let f = FILES.get(url); if(!f){ f = fetch(url).then(r => r.arrayBuffer()).then(b => { const jl = new DataView(b).getUint32(12, true); return new Blob([new Uint8Array(b, 20, jl)]).text().then(t => ({ J:JSON.parse(t), bin:b.slice(28 + jl) })); });
   FILES.set(url, f); setTimeout(() => FILES.delete(url), 4000); } return f; }   // (the maps of one file asked for together share one fetch)
 function refill(t){ const D = t.source.diet; if(D.busy || !_k2) return; D.busy = true;
   fileOf(D.url).then(({ J, bin }) => { const v = J.bufferViews[J.images[D.img].bufferView]; return new Promise((ok, no) => _k2.parse(bin.slice(v.byteOffset || 0, (v.byteOffset || 0) + v.byteLength), ok, no)); })

@@ -21,15 +21,37 @@ export function farSeed(geo, lo){ if(geo && lo) SEED.set(geo, lo); }
 // the light copy of a geometry (cached per geometry: every tower of a fort shares one)
 export function farGeo(geo, keep){ if(SEED.has(geo)) return Promise.resolve(SEED.get(geo)); const K = keep || FARLOD.keep, C = LO.get(geo) || {}; if(!LO.has(geo)) LO.set(geo, C); if(C[K]) return C[K];   // Z412 keep: the share of triangles kept (one copy per share)
   const p = simplifier().then(S => S && job(() => { const g = geo.index ? geo : mergeVertices(geo, 1e-4), P = g.attributes.position;
-    if(!g.index || !P || P.isInterleavedBufferAttribute) return null; const idx = Uint32Array.from(g.index.array), pos = Float32Array.from(P.array);
-    const target = Math.max(192, Math.floor(idx.length * K / 3) * 3), [out] = S.simplify(idx, pos, 3, target, FARLOD.err, []);
-    if(!out || out.length >= idx.length * 0.8) return null;   // it would barely be lighter
-    const lo = new THREE.BufferGeometry(); for(const [k, a] of Object.entries(g.attributes)) lo.setAttribute(k, a); lo.setIndex(new THREE.BufferAttribute(out, 1));
-    if(g.attributes.mi && geo.groups && geo.groups.length){ const M = g.attributes.mi, n = out.length / 3, ord = [...Array(n).keys()].sort((a, b) => M.getX(out[a * 3]) - M.getX(out[b * 3])), o2 = new Uint32Array(out.length);   // Z435 a model of several materials keeps a group per material
-      ord.forEach((t, i) => { o2[i * 3] = out[t * 3]; o2[i * 3 + 1] = out[t * 3 + 1]; o2[i * 3 + 2] = out[t * 3 + 2]; }); lo.setIndex(new THREE.BufferAttribute(o2, 1));
-      let s0 = 0; for(let i = 1; i <= n; i++) if(i === n || M.getX(o2[i * 3]) !== M.getX(o2[s0 * 3])){ lo.addGroup(s0 * 3, (i - s0) * 3, M.getX(o2[s0 * 3])); s0 = i; } }
-    if(!geo.boundingSphere) geo.computeBoundingSphere(); lo.boundingSphere = geo.boundingSphere.clone(); if(geo.boundingBox) lo.boundingBox = geo.boundingBox.clone(); lo.userData.farOf = geo.uuid; return lo; })).catch(() => null);
+    if(!g.index || !P || P.isInterleavedBufferAttribute) return null; return { g, mi:!!(g.attributes.mi && geo.groups && geo.groups.length) }; })
+    .then(r => r && offThread({ idx:new Uint32Array(r.g.index.array), pos:new Float32Array(r.g.attributes.position.array), keep:K, min:192, err:FARLOD.err, flags:[], mi:r.mi ? new Float32Array(r.g.attributes.mi.array) : null })
+      .then(w => w && w.err === 'worker' ? job(() => farInline(S, r.g, K, r.mi)) : w && !w.err && w.out.length < w.n * 0.8 ? { out:w.out, groups:w.groups } : null)   // (it would barely be lighter: none)
+      .then(w => { if(!w) return null; const g = r.g, lo = new THREE.BufferGeometry(); for(const [k, a] of Object.entries(g.attributes)) lo.setAttribute(k, a); lo.setIndex(new THREE.BufferAttribute(w.out, 1));
+        if(w.groups) for(const [a, b, c] of w.groups) lo.addGroup(a, b, c);   // Z435 a model of several materials keeps a group per material
+        if(!geo.boundingSphere) geo.computeBoundingSphere(); lo.boundingSphere = geo.boundingSphere.clone(); if(geo.boundingBox) lo.boundingBox = geo.boundingBox.clone(); lo.userData.farOf = geo.uuid; return lo; }))).catch(() => null);
   C[K] = p; return p; }
+// (the same on this thread, where no worker can run: the simplified index and its groups per material)
+function farInline(S, g, K, mi){ const idx = Uint32Array.from(g.index.array), pos = Float32Array.from(g.attributes.position.array), target = Math.max(192, Math.floor(idx.length * K / 3) * 3), [out] = S.simplify(idx, pos, 3, target, FARLOD.err, []);
+  if(!out || out.length >= idx.length * 0.8) return null; return mi ? byMat(out, g.attributes.mi.array) : { out, groups:null }; }
+function byMat(out, M){ const n = out.length / 3, ord = [...Array(n).keys()].sort((a, b) => M[out[a * 3]] - M[out[b * 3]]), o2 = new Uint32Array(out.length), groups = [];
+  ord.forEach((t, i) => { o2[i * 3] = out[t * 3]; o2[i * 3 + 1] = out[t * 3 + 1]; o2[i * 3 + 2] = out[t * 3 + 2]; });
+  let s0 = 0; for(let i = 1; i <= n; i++) if(i === n || M[o2[i * 3]] !== M[o2[s0 * 3]]){ groups.push([s0 * 3, (i - s0) * 3, M[o2[s0 * 3]]]); s0 = i; } return { out:o2, groups }; }
+// DIET 6 THE WELD AND THE SIMPLIFY OFF THE MAIN THREAD: PERF 3's queue slices the work by job, but one job is one geometry — a scanned fort wall or a
+//   big rock family took 690 ms in a single frame 1.5 s into a desert battle (its attributes no longer interleaved since DIET 2, so its far copy is made
+//   at all now). A module worker (the vendored simplifier) welds and simplifies; this thread only copies the arrays in and builds the geometry from
+//   what comes back. A page where the worker cannot start (or dies) does it here as before.
+const WSRC = url => `import { MeshoptSimplifier as S } from ${JSON.stringify(url)};
+${byMat.toString()}
+const weld = (pos, idx, tol) => { const m = 1 / tol, H = new Map(), n = pos.length / 3, rem = new Uint32Array(n), P = []; let k = 0;
+  for(let i = 0; i < n; i++){ const h = Math.round(pos[i * 3] * m) + ',' + Math.round(pos[i * 3 + 1] * m) + ',' + Math.round(pos[i * 3 + 2] * m); let j = H.get(h); if(j === undefined){ j = k++; H.set(h, j); P.push(pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]); } rem[i] = j; }
+  const I = new Uint32Array(idx ? idx.length : n); for(let i = 0; i < I.length; i++) I[i] = rem[idx ? idx[i] : i]; return { pos:new Float32Array(P), idx:I }; };
+onmessage = async ({ data:d }) => { try{ await S.ready; let pos = d.pos, idx = d.idx; if(d.weld){ const w = weld(pos, idx, d.weld); pos = w.pos; idx = w.idx; }
+  const [out] = S.simplify(idx, pos, 3, Math.max(d.min, Math.floor(idx.length * d.keep / 3) * 3), d.err, d.flags); const r = d.mi && out ? byMat(out, d.mi) : { out, groups:null };
+  postMessage({ id:d.id, out:r.out, groups:r.groups, n:idx.length, pos:d.weld ? pos : null }, d.weld ? [r.out.buffer, pos.buffer] : [r.out.buffer]); }catch(e){ postMessage({ id:d.id, err:String(e && e.message || e) }); } };`;
+let _wk = null, _wid = 0; const WCB = new Map();
+function wk(){ if(_wk !== null) return _wk; if(!ASSETDIET.offThread || typeof window === 'undefined' || !window.Worker){ _wk = false; return _wk; }
+  try{ const w = new window.Worker(URL.createObjectURL(new Blob([WSRC(new URL(ASSETDIET.simplifier, document.baseURI).href)], { type:'text/javascript' })), { type:'module' });
+    w.onmessage = e => { const f = WCB.get(e.data.id); if(f){ WCB.delete(e.data.id); f(e.data); } };
+    w.onerror = () => { _wk = false; for(const f of WCB.values()) f({ err:'worker' }); WCB.clear(); }; _wk = w; }catch(e){ _wk = false; } return _wk; }
+const offThread = d => new Promise(res => { const w = wk(); if(!w) return res({ err:'worker' }); d.id = ++_wid; WCB.set(d.id, res); w.postMessage(d, [d.pos.buffer, d.idx.buffer].concat(d.mi ? [d.mi.buffer] : [])); });
 // Z412 A RING ROUND THE HORIZON, CULLED BY ARC: an instanced mesh laid all round the field (frustumCulled off, its one bounding sphere is the whole
 //   ring) was drawn whole every frame — the arc behind the camera too. Split by bearing into n meshes, each with its own bounds, the camera skips
 //   the arcs it does not face. keep (optional): swap in a simplified copy at that share of the triangles once it is ready (they stand 50–300 m off).
@@ -56,15 +78,22 @@ export function farLOD(m, far){ if(!FARLOD.on || !m || !m.isMesh || m.isInstance
 //   pass the caster wears it, then its own geometry again. Skinned / custom-depth / cut-out (alpha-tested) casters keep their own.
 const SH = new WeakMap(), SH_BY = new WeakMap();   // geometry → its shadow copy · scene → { casters, passes } (each scene its own list: the radar / showroom renders draw other scenes)
 function shadowGeo(geo){ if(SH.has(geo)) return SH.get(geo); SH.set(geo, null);
-  simplifier().then(S => S && job(() => { const A = geo.attributes.position, p = new THREE.BufferGeometry();
+  simplifier().then(S => S && job(() => { const A = geo.attributes.position, f = new Float32Array(A.count * 3); for(let i = 0; i < A.count; i++){ f[i * 3] = A.getX(i); f[i * 3 + 1] = A.getY(i); f[i * 3 + 2] = A.getZ(i); }   // (plain floats, a meshopt-packed glTF's interleaved / quantized positions too)
+    return { f, I:geo.index ? new Uint32Array(geo.index.array) : null }; })
+    .then(r => r && offThread({ pos:r.f, idx:r.I || new Uint32Array(r.f.length / 3).map((_, i) => i), weld:1e-3, keep:SHADOWLOD.keep, min:96, err:SHADOWLOD.err, flags:['LockBorder'] }))
+    .then(w => { if(w && w.err === 'worker') return job(() => shadowInline(S, geo)); if(!w || w.err || w.out.length >= w.n * 0.7) return; const lo = new THREE.BufferGeometry(); lo.setAttribute('position', new THREE.BufferAttribute(w.pos, 3)); lo.setIndex(new THREE.BufferAttribute(w.out, 1));
+      if(geo.groups.length) lo.addGroup(0, w.out.length, 0);   // a multi-material caster: one group (the depth pass draws every material the same)
+      if(!geo.boundingSphere) geo.computeBoundingSphere(); lo.boundingSphere = geo.boundingSphere.clone(); SH.set(geo, lo); })).catch(() => {});
+  return null; }
+// (the same on this thread, where no worker can run)
+function shadowInline(S, geo){ const A = geo.attributes.position, p = new THREE.BufferGeometry();
     if(A.isInterleavedBufferAttribute){ const f = new Float32Array(A.count * 3); for(let i = 0; i < A.count; i++){ f[i * 3] = A.getX(i); f[i * 3 + 1] = A.getY(i); f[i * 3 + 2] = A.getZ(i); } p.setAttribute('position', new THREE.BufferAttribute(f, 3)); }   // (a meshopt-packed glTF: positions interleaved, quantized)
     else p.setAttribute('position', A); if(geo.index) p.setIndex(geo.index);
     const g = mergeVertices(p, 1e-3), P = g.attributes.position; if(!g.index) return; const idx = Uint32Array.from(g.index.array);
     const [out] = S.simplify(idx, Float32Array.from(P.array), 3, Math.max(96, Math.floor(idx.length * SHADOWLOD.keep / 3) * 3), SHADOWLOD.err, ['LockBorder']);
     if(!out || out.length >= idx.length * 0.7) return; const lo = new THREE.BufferGeometry(); lo.setAttribute('position', P); lo.setIndex(new THREE.BufferAttribute(out, 1));
     if(geo.groups.length) lo.addGroup(0, out.length, 0);   // a multi-material caster: one group (the depth pass draws every material the same)
-    if(!geo.boundingSphere) geo.computeBoundingSphere(); lo.boundingSphere = geo.boundingSphere.clone(); SH.set(geo, lo); })).catch(() => {});
-  return null; }
+    if(!geo.boundingSphere) geo.computeBoundingSphere(); lo.boundingSphere = geo.boundingSphere.clone(); SH.set(geo, lo); }
 const tris = g => (g.index ? g.index.count : g.attributes.position.count) / 3;
 const cutout = m => m.alphaTest > 0 || m.transparent || m.alphaMap || !m.visible;
 function shadowable(o){ const m = o.material; if(!m || (Array.isArray(m) ? !m.length || m.some(cutout) : cutout(m)) || o.isSkinnedMesh || o.customDepthMaterial || o.morphTargetInfluences) return false;

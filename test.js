@@ -2795,7 +2795,9 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   { const ad=rd('src/render/asset-diet.js'); ok(typeof D.drop==='boolean' && D.pxHold>0 && D.pxHold<=120 && /m\.data = null; t\.source\.dataReady = false/.test(ad) && /function refill\(t\)/.test(ad) && /P\.cache\.removeAll\(\)/.test(ad) && /renderer\.initTexture = t =>/.test(ad) && /export function dietCheck/.test(ad),
     'DIET 4 a KTX2 map\'s CPU copy is dropped once it is on the GPU, the parsed file let go once built, the fallback pictures after '+D.pxHold+' s; an empty map is refilled from its file before it is drawn'); }
   { const nd=rd('src/render/near-detail.js'); ok(/if\(hi && e\.twin\.source !== e\.hi\)\{ e\.twin\.dispose\(\); e\.twin\.source = e\.hi; e\.twin\.needsUpdate = true; \}/.test(nd) && /e\.hi = null; setTimeout\(\(\) => h\.data && h\.data\.close/.test(nd),
-    'DIET 5 the sharp picture is closed after each hand-back, so a KTX2 map\'s twin wears the freshly fetched one on every swap-in (never a closed, 0-px picture: black trees)'); } }
+    'DIET 5 the sharp picture is closed after each hand-back, so a KTX2 map\'s twin wears the freshly fetched one on every swap-in (never a closed, 0-px picture: black trees)'); }
+  { const fl=rd('src/render/far-lod.js'); ok(D.offThread===true && /new window\.Worker\(URL\.createObjectURL/.test(fl) && /const weld = /.test(fl) && /job\(\(\) => farInline\(S, r\.g, K, r\.mi\)\)/.test(fl) && /job\(\(\) => shadowInline\(S, geo\)\)/.test(fl) && !/TextDecoder/.test(rd('src/render/asset-diet.js')),
+    'DIET 6 the far and shadow copies are welded and simplified in a worker (the vendored simplifier), on this thread only where no worker runs'); } }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
