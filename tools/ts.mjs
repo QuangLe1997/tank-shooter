@@ -12,6 +12,7 @@
 //   --glslow      DIET 7 out.glslow: every WebGL call over 30 ms [s from the fight's start, ms, call, the stack that made it] (a sync wait on the GPU process)
 //   --jsflags 'f' DIET 7 V8 flags for the page (e.g. '--trace-gc'; their output: DEBUG=pw:browser* on the runner)
 //   --cpuprofile s DIET 7 sample the main thread for the fight's first s seconds: out.cpu = { top: self time by function, busy: every 50 ms slice over 35 ms busy and what filled it }
+//   --noperf      DIET 8 without ?perf (the game's own HUD timers off; frame times still come from its probe)
 //   --gc          DIET 4 window.gc() for a probe (collect before reading the JS heap)
 //   --novsync     frames as fast as the GPU allows (to compare frame times; with vsync every frame over 16.7 ms falls to 33).
 //   Out: { ok, biome, load, frame:{ p50, p95, max, n }, calls, tris, errors:[…], eval, shot } — exit code 0 only when the page logged no error.
@@ -85,15 +86,15 @@ try{
   if(has('--glslow')) await p.addInitScript(() => {   // DIET 7 every WebGL call that holds the main thread over 30 ms (a sync round-trip to a busy GPU process), with who made it
     const P = WebGL2RenderingContext.prototype, L = window.__glSlow = []; for(const n of Object.getOwnPropertyNames(P)){ const d = Object.getOwnPropertyDescriptor(P, n); if(!d || typeof d.value !== 'function' || n === 'constructor') continue; const o = d.value;
       P[n] = function(...a){ const t = performance.now(); try{ return o.apply(this, a); } finally{ const ms = performance.now() - t; if(ms > 30 && L.length < 30) L.push([Math.round(t), Math.round(ms), n, (new Error().stack || '').split('\n').slice(2, 7).map(s => s.trim().replace(/^at /, '').replace(/https?:\/\/[^/]+\//, '').replace(/^.*\/npm\//, '')).join(' < ')]); } }; } });
-  const q = ['perf', 'nogov', 'test=' + biome, 'level=' + opt('--level', '3'), 'tod=' + opt('--tod', 'noon'), 'wx=' + opt('--wx', 'clear')];
+  const q = [...(has('--noperf') ? [] : ['perf']), 'nogov', 'test=' + biome, 'level=' + opt('--level', '3'), 'tod=' + opt('--tod', 'noon'), 'wx=' + opt('--wx', 'clear')];
   if(has('--novsync')) q.push('nopace'); if(opt('--seed')) q.push('seed=' + opt('--seed')); if(opt('--at')) q.push('at=' + opt('--at')); if(opt('--query')) q.push(opt('--query'));
   const t0 = Date.now(); await p.goto('http://127.0.0.1:' + port + '/?' + q.join('&')); await p.waitForFunction(() => window.__ready, null, { timeout:150000 });
   out.load = +((Date.now() - t0) / 1000).toFixed(1);
   // frame times over the watched seconds: the game's own probe (?perf — render/perfhud.js PH.frm, the time between two frames it drew), sampled as it goes
   await p.evaluate(async () => { const H = window.__H = await import('/src/hub.js'), PH = H.PH, F = window.__tsF = []; let seen = PH.frm.i;
     window.__tsI = setInterval(() => { const r = PH.frm, n = r.a.length; while(seen !== r.i){ F.push(r.a[seen]); seen = (seen + 1) % n; } }, 200); });
-  let cdpP = null; if(opt('--cpucdpPile')){ cdpP = await ctx.newCDPSession(p); await cdpP.send('Profiler.enable'); await cdpP.send('Profiler.setSamplingInterval', { interval:200 }); await cdpP.send('Profiler.start'); }
-  if(cdpP){ const w = Math.min(secs, +opt('--cpucdpPile')) * 1000; await p.waitForTimeout(w); const { profile:P } = await cdpP.send('Profiler.stop'); await p.waitForTimeout(Math.max(0, secs * 1000 - w));   // DIET 7 where the main thread's time went in the fight's first seconds
+  let cdpP = null; if(opt('--cpuprofile')){ cdpP = await ctx.newCDPSession(p); await cdpP.send('Profiler.enable'); await cdpP.send('Profiler.setSamplingInterval', { interval:200 }); await cdpP.send('Profiler.start'); }
+  if(cdpP){ const w = Math.min(secs, +opt('--cpuprofile')) * 1000; await p.waitForTimeout(w); const { profile:P } = await cdpP.send('Profiler.stop'); await p.waitForTimeout(Math.max(0, secs * 1000 - w));   // DIET 7 where the main thread's time went in the fight's first seconds
     const self = new Map(), byId = new Map(P.nodes.map(n => [n.id, n])); P.samples.forEach((id, i) => self.set(id, (self.get(id) || 0) + (P.timeDeltas[i] || 0)));
     const agg = {}; for(const [id, us] of self){ const c = byId.get(id).callFrame, k = (c.functionName || '(anon)') + ' ' + (c.url || '').replace(/^.*\/(src|assets)\//, '$1/').replace(/^.*\/npm\//, '') + ':' + (c.lineNumber + 1); agg[k] = (agg[k] || 0) + us; }
     // the longest gaps between samples' time order are not visible here; the worst 600 ms is found by summing self time in 50 ms buckets
