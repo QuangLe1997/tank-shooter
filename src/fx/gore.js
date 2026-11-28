@@ -2,32 +2,35 @@
 //   chunks with physics (thrown along the shot, spin, bounce, trail blood, splat where they land). Replaces the blocky dark squares the
 //   low-resolution ground-decal canvas gave for blood.
 import * as THREE from 'three';
-import { GORE } from '../../config.js';
+import { GORE, VISLOOK } from '../../config.js';
 import { BIOME, MOBILE, S, goreK, heightAt, scene, spawnPart } from '../hub.js';
 
 // ---------- ground splats ----------
 function splatTex(){ const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d');
-  for(let i=0;i<9;i++){ const a=Math.random()*6.283, d=i?Math.random()*24:0, cx=64+Math.cos(a)*d, cy=64+Math.sin(a)*d, r=i?9+Math.random()*15:28;
-    const g=x.createRadialGradient(cx,cy,0,cx,cy,r); g.addColorStop(0,'rgba(255,255,255,0.95)'); g.addColorStop(0.72,'rgba(255,255,255,0.8)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.beginPath(); x.arc(cx,cy,r,0,7); x.fill(); }
-  for(let i=0;i<16;i++){ const a=Math.random()*6.283, d=32+Math.random()*26, r=1.2+Math.random()*3.4; x.fillStyle='rgba(255,255,255,0.85)'; x.beginPath(); x.arc(64+Math.cos(a)*d, 64+Math.sin(a)*d, r, 0, 7); x.fill(); }   // droplets flung round the pool
+  for(let i=0;i<14;i++){ const a=Math.random()*6.283, d=i?Math.random()*20:0, cx=64+Math.cos(a)*d, cy=64+Math.sin(a)*d*0.8, r=i?8+Math.random()*13:24;   // VIS 8 one soaked, lobed pool, soft at its edge
+    const g=x.createRadialGradient(cx,cy,0,cx,cy,r); g.addColorStop(0,'rgba(255,255,255,0.7)'); g.addColorStop(0.55,'rgba(255,255,255,0.45)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.beginPath(); x.arc(cx,cy,r,0,7); x.fill(); }
+  for(let i=0;i<5;i++){ const a=Math.random()*6.283, d=30+Math.random()*16, r=0.8+Math.random()*1.6; x.fillStyle='rgba(255,255,255,0.5)'; x.beginPath(); x.arc(64+Math.cos(a)*d, 64+Math.sin(a)*d, r, 0, 7); x.fill(); }   // a few drops (was a ring of 16 petals)
   return new THREE.CanvasTexture(c); }
-const NS = MOBILE ? GORE.splats[1] : GORE.splats[0];
+const NS = MOBILE ? GORE.splats[1] : GORE.splats[0], BL = VISLOOK.blood;
 const SPL = (()=>{ const base=new THREE.PlaneGeometry(1,1); base.rotateX(-Math.PI/2); const g=new THREE.InstancedBufferGeometry(); g.index=base.index; g.setAttribute('position', base.attributes.position); g.setAttribute('uv', base.attributes.uv);
-  const iPos=new THREE.InstancedBufferAttribute(new Float32Array(NS*3),3).setUsage(THREE.DynamicDrawUsage), iSRA=new THREE.InstancedBufferAttribute(new Float32Array(NS*3),3).setUsage(THREE.DynamicDrawUsage);
+  const iPos=new THREE.InstancedBufferAttribute(new Float32Array(NS*3),3).setUsage(THREE.DynamicDrawUsage), iSRA=new THREE.InstancedBufferAttribute(new Float32Array(NS*4),4).setUsage(THREE.DynamicDrawUsage);   // (VIS 8 w: how far it has soaked in)
   g.setAttribute('iPos',iPos); g.setAttribute('iSRA',iSRA); g.instanceCount=0;
-  const mat=new THREE.ShaderMaterial({ uniforms:{ map:{ value:splatTex() }, col:{ value:new THREE.Color(GORE.color) } }, transparent:true, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-6, polygonOffsetUnits:-12,
-    vertexShader:'attribute vec3 iPos; attribute vec3 iSRA; varying vec2 vUv; varying float vA;\n'+
-      'void main(){ float c=cos(iSRA.y), s=sin(iSRA.y); vec3 p=vec3((c*position.x-s*position.z)*iSRA.x, 0.0, (s*position.x+c*position.z)*iSRA.x); vUv=uv; vA=iSRA.z; gl_Position=projectionMatrix*viewMatrix*vec4(iPos+p,1.0); }',
-    fragmentShader:'uniform sampler2D map; uniform vec3 col; varying vec2 vUv; varying float vA; void main(){ float a=texture2D(map,vUv).a*vA; if(a<0.01) discard; gl_FragColor=vec4(col, a); }' });
+  // VIS 8 a stain multiplied into the ground (it takes the scene's own light: dark by night, never a glowing red petal), wet red-brown turning to a dried
+  //   brown as it soaks in over VISLOOK.blood.soak s
+  const mat=new THREE.ShaderMaterial({ uniforms:{ map:{ value:splatTex() }, col:{ value:new THREE.Vector3(...BL.col) }, dry:{ value:new THREE.Vector3(...BL.dry) } }, transparent:true, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-6, polygonOffsetUnits:-12,
+    blending:THREE.MultiplyBlending, premultipliedAlpha:true,
+    vertexShader:'attribute vec3 iPos; attribute vec4 iSRA; varying vec2 vUv; varying float vA; varying float vW;\n'+
+      'void main(){ float c=cos(iSRA.y), s=sin(iSRA.y); vec3 p=vec3((c*position.x-s*position.z)*iSRA.x, 0.0, (s*position.x+c*position.z)*iSRA.x); vUv=uv; vA=iSRA.z; vW=iSRA.w; gl_Position=projectionMatrix*viewMatrix*vec4(iPos+p,1.0); }',
+    fragmentShader:'uniform sampler2D map; uniform vec3 col, dry; varying vec2 vUv; varying float vA; varying float vW; void main(){ float a=texture2D(map,vUv).a*vA; if(a<0.01) discard; gl_FragColor=vec4(mix(vec3(1.0), mix(col, dry, vW), a), 1.0); }' });
   const mesh=new THREE.Mesh(g, mat); mesh.frustumCulled=false; mesh.renderOrder=-1; scene.add(mesh);
   return { g, iPos, iSRA, items:[], dirty:false, at:0 }; })();
 // a pool of blood at (x,z), radius r metres — grows in over a moment, fades out at the end of its life
 export function bloodSplat(x, z, r){ if(!isFinite(x) || !isFinite(z)) return; const gk=goreK(); if(gk<1){ if(Math.random()>gk*1.5) return; r*=gk*1.6; }   // (BLADE 10 the gore setting off: fewer, smaller pools)
   const L=SPL.items; if(L.length>=NS) L.shift();
   L.push({ x, y:heightAt(x,z)+0.05, z, s:Math.max(0.2, r*2), rot:Math.random()*6.283, t:0 }); SPL.dirty=true; }
-function flushSplats(){ const L=SPL.items, P=SPL.iPos.array, A=SPL.iSRA.array, T=GORE.splatLife, F=GORE.fade;
+function flushSplats(){ const L=SPL.items, P=SPL.iPos.array, A=SPL.iSRA.array, T=BL.life, F=BL.fade;
   for(let i=0;i<L.length;i++){ const q=L[i], grow=Math.min(1, 0.45+q.t*1.6), a=q.t>T-F ? Math.max(0,(T-q.t)/F) : 1;
-    P[i*3]=q.x; P[i*3+1]=q.y; P[i*3+2]=q.z; A[i*3]=q.s*grow; A[i*3+1]=q.rot; A[i*3+2]=a*GORE.alpha; }
+    P[i*3]=q.x; P[i*3+1]=q.y; P[i*3+2]=q.z; A[i*4]=q.s*grow; A[i*4+1]=q.rot; A[i*4+2]=a*GORE.alpha; A[i*4+3]=Math.min(1, q.t/BL.soak); }
   SPL.g.instanceCount=L.length; SPL.iPos.needsUpdate=true; SPL.iSRA.needsUpdate=true; SPL.dirty=false; }
 
 // ---------- body chunks ----------
@@ -58,7 +61,7 @@ export function updateGore(dt, now){
     c.m.position.set(c.x, c.y, c.z);
     if(c.t>GORE.chunkLife){ c.m.position.y-= (c.t-GORE.chunkLife)*0.5; if(c.t>GORE.chunkLife+0.6){ c.m.visible=false; CH.splice(i,1); CPOOL.push(c); } } }
   // splats: age + refresh the buffers a few times a second (or at once when one was added)
-  const L=SPL.items; if(L.length){ for(const q of L) q.t+=dt; while(L.length && L[0].t>GORE.splatLife){ L.shift(); SPL.dirty=true; }
+  const L=SPL.items; if(L.length){ for(const q of L) q.t+=dt; while(L.length && L[0].t>BL.life){ L.shift(); SPL.dirty=true; }
     if(SPL.dirty || now>SPL.at){ SPL.at=now+0.12; flushSplats(); } }
   else if(SPL.g.instanceCount){ SPL.g.instanceCount=0; } }
 export function clearGore(){ for(const c of CH){ c.m.visible=false; CPOOL.push(c); } CH.length=0; SPL.items.length=0; SPL.g.instanceCount=0; }

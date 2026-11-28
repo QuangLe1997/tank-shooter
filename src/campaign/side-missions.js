@@ -9,7 +9,8 @@
 //   the stage won, a restart, the menu). A life lost ends the mission in hand. One slow tick (SIDEMISSION.tick) does the thinking; a frame only moves what moves.
 import * as THREE from 'three';
 import { ENTRY, OUTPOST, SIDEMISSION, STORY, TROOPS } from '../../config.js';
-import { BIGEV, AMMO, ARENA, POWERUPS, S, UNDER, addScore, animateSoldier, aoeDamage, bigExplode, blocks, buildTransport, burst, callStrike, chute, dirOfferOk, dropPowerup, edgeEntry, enemies, entrySeen, fieldEdgePoint, fireball, floatText, gainXp, hatchEntry, heightAt, holoRing, inCamView, inField, loadGLTF, makeSoldierMesh, radio, ringPulse, scene, sfx, showBanner, soldierKneel, spawnAlly, spawnPart, spawnSquad, squadTypes, storyCue, svgBadgeTex, medalEvent } from '../hub.js';
+import { BIGEV, AMMO, ARENA, POWERUPS, S, UNDER, addScore, animateSoldier, aoeDamage, bigExplode, blocks, buildTransport, burst, callStrike, chute, dirOfferOk, dropPowerup, edgeEntry, enemies, entrySeen, fieldEdgePoint, fireball, floatText, gainXp, hatchEntry, heightAt, inCamView, inField, loadGLTF, makeSoldierMesh, radio, ringPulse, scene, sfx, showBanner, soldierKneel, spawnAlly, spawnPart, spawnSquad, squadTypes, storyCue, svgBadgeTex, medalEvent } from '../hub.js';
+import { zoneMark } from '../hub.js';   // VIS 8 (world/zone-mark.js)
 
 const C = SIDEMISSION, R2 = a => a[0] + Math.random() * (a[1] - a[0]), _pt = { x:0, y:0, z:0 }, _v = new THREE.Vector3();
 const OFF = typeof location !== 'undefined' && /noevents/.test(location.search + location.hash);
@@ -26,9 +27,9 @@ function say(key, must){ if(storyCue(key, null, must)) return; const L = STORY.l
 
 // ---- the marker on the field (one ring, one badge, made once) and the card on the HUD ----
 let _mk = null, _el = null, _sig = '';
-function marker(){ if(_mk) return _mk; const ring = holoRing(C.ring, { kind:'ally', depthTest:true }), badge = new THREE.Sprite(new THREE.SpriteMaterial({ map:svgBadgeTex('team', '#7fd0ff'), transparent:true, depthWrite:false }));
-  badge.scale.set(2.6, 2.6, 1); ring.visible = badge.visible = false; scene.add(ring); scene.add(badge); return (_mk = { ring, badge }); }
-function markAt(M, now){ const k = marker(), gy = heightAt(M.x, M.z); k.ring.visible = k.badge.visible = true; k.ring.position.set(M.x, gy + 0.12, M.z); k.ring.scale.setScalar(M.r / C.ring);
+function marker(){ if(_mk) return _mk; const zm = zoneMark(), ring = zm.g, badge = new THREE.Sprite(new THREE.SpriteMaterial({ map:svgBadgeTex('team', '#7fd0ff'), transparent:true, depthWrite:false }));
+  badge.scale.set(2.6, 2.6, 1); ring.visible = badge.visible = false; scene.add(badge); return (_mk = { ring, zm, badge }); }   // (VIS 8 the ring is painted on the ground: world/zone-mark.js)
+function markAt(M, now){ const k = marker(), gy = heightAt(M.x, M.z); k.badge.visible = true; k.zm.set(M.x, M.z, M.r); if(S.player) k.zm.tick(S.player.pos.x, S.player.pos.z);
   k.badge.position.set(M.x, gy + C.badgeY + Math.sin(now * 2.2) * 0.2, M.z); }
 function markOff(){ if(_mk) _mk.ring.visible = _mk.badge.visible = false; }
 function card(M){ if(!_el){ const el = typeof document !== 'undefined' && document.getElementById('sideChip'); if(!el) return; _el = { el, name:el.querySelector('.sc-name'), t:el.querySelector('.sc-t'), bar:el.querySelector('.sc-bar i'), fx:el.querySelector('.sc-fx') }; }

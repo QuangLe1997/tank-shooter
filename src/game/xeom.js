@@ -5,8 +5,8 @@
 // and being thrown off all work as they do on horseback.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { NEARDETAIL, RIDE, RIDEFEEL, XEOM } from '../../config.js';
-import { MOBILE, NIGHT, S, beamMat, crushables, driveDriver, floatText, heightAt, hudOn, loadGLTF, makeDriver, mountModel, rideExhaust, rideSmoke, scene, sfx, spawnPart , nearShape, rideBumpAt, ridePower } from '../hub.js';
+import { NEARDETAIL, RIDE, RIDEFEEL, XEOM, VISLOOK } from '../../config.js';
+import { MOBILE, NIGHT, S, beamMat, crushables, driveDriver, floatText, heightAt, hudOn, loadGLTF, makeDriver, mountModel, rideExhaust, rideSmoke, scene, sfx, spawnPart , nearShape, rideBumpAt, ridePower, solidHit } from '../hub.js';
 
 // Z293 the war ride itself: one Tripo model, vehicle and driver together (the driver modelled in his seat, hands on the bars, feet down), turned nose to
 //   +z, set on the ground, centred and scaled to its true length; the old scooter assembled from the city's parts stays as the fallback
@@ -88,8 +88,12 @@ function buildLamps(H, kind){ const L = XEOM[kind].lamps, U = XEOM.lamp; if(!L |
 function lampUpdate(H, dt){ const Lp = H.lamps, U = XEOM.lamp; if(!Lp) return; const e = 1 - Math.exp(-dt * U.ease), night = NIGHT.k || 0, ok = !H.drv || H.drv.state === 'ride' || H.drv.state === 'mount';
   Lp.hk += ((ok ? U.day + (U.night - U.day) * night : 0.15) - Lp.hk) * e; if(Lp.head) Lp.head.material.color.setRGB(Lp.hk, Lp.hk * 0.93, Lp.hk * 0.8);
   const brake = H.sus && H.sus.acc < -U.brakeAcc && Math.abs(H.v) > 0.3; Lp.tk += ((brake ? U.brake : U.run * (1 + night)) - Lp.tk) * e; for(const m of Lp.tail) m.material.color.setRGB(Lp.tk, Lp.tk * 0.025, Lp.tk * 0.012);   // (a deep red: too bright a red tone-maps to pink)
-  if(Lp.cone) Lp.cone.visible = NIGHT.on && ok;
+  if(Lp.cone){ Lp.cone.visible = NIGHT.on && ok; if(Lp.cone.visible) coneCut(Lp.cone); }
   if(Lp.beam){ if(Lp.beam.visible !== NIGHT.on) Lp.beam.visible = NIGHT.on; Lp.beam.intensity = ok ? U.beam.i * night : 0; } }   // (shown only on night stages, like the floodlights: switching a light on or off recompiles every shader, so it never happens mid-fight)
+// VIS 7 the headlamp's cone ends at the first solid in its way (a container, a wall) instead of shining on through it — checked every VISLOOK.beam.cut s
+const _cv = new THREE.Vector3(), _cd = new THREE.Vector3();
+function coneCut(c){ const now = performance.now() / 1000; if(now - (c.userData.cutAt || 0) < VISLOOK.beam.cut) return; c.userData.cutAt = now; const L = XEOM.lamp.beam.len;
+  c.getWorldPosition(_cv); _cd.set(0, -1, 0).transformDirection(c.matrixWorld); c.material.uniforms.uCut.value = solidHit(_cv.x, _cv.y, _cv.z, _cv.x + _cd.x * L, _cv.y + _cd.y * L, _cv.z + _cd.z * L); }
 // Z302 TYRE TRACKS: each tyre leaves its line in the ground — thin dark strips laid on the real terrain every few centimetres of travel, darkening the
 //   ground by multiplying it (so they read on sand and on tarmac alike) and fading out over TRAIL.life seconds; a ring of instances, nothing allocated
 const TRAIL = { n:MOBILE ? 500 : 1400, i:0, mesh:null, born:null, dk:null, life:24, dark:0.66, step:0.16, fadeAt:0 }, _tm = new THREE.Matrix4(), _tq = new THREE.Quaternion(), _ts = new THREE.Vector3(), _tc = new THREE.Color(), _ty = new THREE.Vector3(0, 1, 0);

@@ -3,8 +3,8 @@
 //   the enemy sends a strike team to stop you — that's the challenge. Woken, the battle freezes and you pick ONE of three big powers
 //   that last until the end of the stage: +1 life, ×2 damage, hard acceleration, ×2 range, ×2 magazine, super reload, steel armour.
 import * as THREE from 'three';
-import { LOOT_REAL } from '../../config.js';
-import { lootModelInto, lootPreload, ARENA, FORTS, GUNS, MOBILE, S, burst, floatText, heightAt, hide, iconEl, inField, magCap, radio, ringPulse, scene, sfx, show, showBanner, spawnEnemy, spawnPart, updateGunHUD, updateHUD, blPulse, holoArc, holoRing } from '../hub.js';
+import { LOOT_REAL, VISLOOK } from '../../config.js';
+import { beamMat, lootModelInto, lootPreload, ARENA, FORTS, GUNS, MOBILE, S, burst, floatText, heightAt, hide, iconEl, inField, magCap, radio, ringPulse, scene, sfx, show, showBanner, spawnEnemy, spawnPart, updateGunHUD, updateHUD, blPulse, holoArc, holoRing } from '../hub.js';
 
 export const RELIC = { g:null, x:0, z:0, prog:0, alerted:false, live:false, undo:[], hold:5, r:6, t:0, parts:null };
 export const BOONS = [
@@ -24,7 +24,6 @@ function mats(){ if(_M) return _M;
        gold:new THREE.MeshStandardMaterial({ color:0xd4a640, roughness:0.32, metalness:0.95, emissive:0x6a4410, emissiveIntensity:0.6 }),
        crystal:new THREE.MeshStandardMaterial({ color:0xfff0c0, roughness:0.08, metalness:0.2, emissive:0xffb43c, emissiveIntensity:2.6, transparent:true, opacity:0.92 }),
        rune:new THREE.MeshBasicMaterial({ color:0xffd27a, transparent:true, opacity:0.85, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide }),
-       beam:new THREE.MeshBasicMaterial({ map:grad([[0,'rgba(255,214,120,0.9)'],[0.25,'rgba(255,190,90,0.35)'],[1,'rgba(255,170,80,0)']]), transparent:true, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide, fog:false }),
        ring:new THREE.MeshBasicMaterial({ color:0xffd27a, transparent:true, opacity:0.75, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide }),
        fill:new THREE.MeshBasicMaterial({ color:0xffb43c, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide }) };
   return _M; }
@@ -36,7 +35,7 @@ function build(bare){ const M=mats(), g=new THREE.Group();
   const cr=new THREE.Group(), oct=new THREE.Mesh(new THREE.OctahedronGeometry(0.85,0), M.crystal); oct.scale.set(1,1.55,1); cr.add(oct); cr.position.y=3.0; g.add(cr);
   const r1=new THREE.Mesh(new THREE.TorusGeometry(1.35,0.035,6,40), M.rune), r2=new THREE.Mesh(new THREE.TorusGeometry(1.7,0.03,6,40), M.rune);
   r1.position.y=r2.position.y=3.0; g.add(r1, r2);
-  const beam=new THREE.Mesh(new THREE.CylinderGeometry(0.75,0.75,46,16,1,true), M.beam); beam.position.y=23; beam.renderOrder=6; g.add(beam);
+  const beam=new THREE.Mesh(new THREE.CylinderGeometry(0.55,2.4,46,20,1,true).rotateX(Math.PI), beamMat(0xffc878, 1.6, -1e4, true)); beam.position.y=23; beam.renderOrder=6; g.add(beam);   // VIS 7 a shaft of light rising off the stone (soft rim, dust, thinning upward and into the haze), not a solid bar
   const ring=holoRing(RELIC.r-0.1, { kind:'ally', col:'loot', ticks:64, tickLen:0.4, spin:0.02, gain:2.2 }); ring.position.y=0.08; g.add(ring);   // Z318 battle-light gold; its lit arc fills as the relic wakes
   const fill=new THREE.Mesh(new THREE.CircleGeometry(RELIC.r-0.22, 64), M.fill); fill.rotation.x=-Math.PI/2; fill.position.y=0.06; g.add(fill);
   g.userData={ cr, crM:M.crystal, cy:3.0, glow:0, r1, r2, beam, ring, fill }; g.userData.real=bare ? null : realRelic(g, [base, step, trim, ...g.children.filter(o=>o.geometry && o.geometry.type==='ConeGeometry')], oct); return g; }   // (SPLIT 2 real: when its models are in)
@@ -71,7 +70,7 @@ function challenge(){ const n=2+Math.min(3, Math.floor((S.stage||1)/2)), types=[
   showBanner('THÁNH TÍCH ĐANG THỨC GIẤC — ĐỊCH KÉO TỚI PHÁ!', '#ffd27a'); radio('SCH: Địch phát hiện ta ở thánh tích — giữ vị trí, đừng rời vòng sáng!'); sfx('alarm'); }
 export function updateRelic(dt, now){ if(!RELIC.live || !RELIC.g) return; const p=S.player, ud=RELIC.g.userData; RELIC.t+=dt; const t=RELIC.t;
   ud.cr.rotation.y+=dt*1.2; ud.cr.position.y=ud.cy+Math.sin(t*1.8)*0.18; ud.r1.rotation.set(Math.PI/2+Math.sin(t*0.9)*0.5, t*0.8, 0); ud.r2.rotation.set(Math.PI/2+Math.cos(t*0.7)*0.6, -t*0.6, 0);
-  ud.ring.material.opacity=blPulse(t, 'idle', 0.6); ud.beam.material.opacity=0.65+0.25*Math.sin(t*2.2)+RELIC.prog*0.4; ud.crystalK=1;
+  ud.ring.material.opacity=blPulse(t, 'idle', 0.6); ud.beam.material.uniforms.uOp.value=(0.65+0.25*Math.sin(t*2.2)+RELIC.prog*0.4)*1.6*VISLOOK.beam.gain; ud.crystalK=1;
   ud.crM.emissiveIntensity = ud.glow ? ud.glow*(1+RELIC.prog*LOOT_REAL.relic.wake)+Math.sin(t*4)*0.08 : 2.2+RELIC.prog*3+Math.sin(t*4)*0.4;   // (LOOT 1 the real stone glows softer, brighter as it wakes)
   if(Math.random() < (MOBILE?0.25:0.5)){ const a=Math.random()*6.283, r=0.5+Math.random()*1.4; spawnPart(RELIC.x+Math.cos(a)*r, RELIC.g.position.y+1.2+Math.random()*2.5, RELIC.z+Math.sin(a)*r, 0, 1.2+Math.random(), 0, { color:Math.random()<0.5?0xffe2a0:0xffb43c, size:0.22, life:1.2, grav:0.6, drag:1 }); }   // motes rising round the crystal
   if(!p || S.mode!=='playing') return;

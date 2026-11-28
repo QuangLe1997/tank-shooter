@@ -8,7 +8,7 @@
 //   The body and the plates fade together in the camera's see-through (render/see-through.js seeMat). Which look a fort gets: FORTBOSS.pick.
 import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
-import { BOSSGRIP, FORTBOSS, INFGUN } from '../../config.js';
+import { BOSSGRIP, FORTBOSS, INFGUN, VISLOOK } from '../../config.js';
 import { BIOME, MODEL_FILES, S, fbBolt, fbGeos, fbMats, fbMesh, heightAt, loadGLTF, renderer, scene, seeMat } from '../hub.js';
 
 const C = FORTBOSS, GL = {}, CORPSES = [], _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _d = new THREE.Vector3();
@@ -43,7 +43,7 @@ export function fortBossGlb(e, def){ const id = fortBossLookId(def), look = C.lo
   m.scale.multiplyScalar(k); m.updateMatrixWorld(true); u.clipDraw = true;   // (the rig is no longer drawn: the model is the man)
   const gp = u.parts && u.parts.find(p => p.kind === 'gun'); if(gp) gp.o.visible = false;
   const root = skClone(gl.scene), wrap = new THREE.Group(); wrap.add(root); root.position.y = -(look.foot || 0); wrap.scale.setScalar(H / look.h / m.scale.x); m.add(wrap);   // (BOSS 4 his soles on the ground: the float his standing clips carry, measured per model)
-  const mats = []; root.traverse(o => { if(o.isMesh){ o.material = o.material.clone(); if(look.emit && o.material.map){ o.material.emissiveMap = o.material.map; o.material.emissive.setRGB(1, 1, 1); o.material.emissiveIntensity = look.emit; }   /* (BOSS 3 emit: his own colours glow — the magma brute's lava) */ o.castShadow = true; o.receiveShadow = true; o.frustumCulled = false; mats.push(o.material); seeMat(o.material); } });   // (fades with his plates in the see-through)
+  const mats = []; root.traverse(o => { if(o.isMesh){ o.material = o.material.clone(); if(look.emit && o.material.map){ o.material.emissiveMap = o.material.map; o.material.emissive.setRGB(1, 1, 1); o.material.emissiveIntensity = look.emit; } else if(o.material.map && o.material.emissive){ o.material.emissiveMap = o.material.map; o.material.emissive.setRGB(0, 0, 0); }   /* (VIS 9 his own texture carries the hit flash) */   /* (BOSS 3 emit: his own colours glow — the magma brute's lava) */ o.castShadow = true; o.receiveShadow = true; o.frustumCulled = false; mats.push(o.material); seeMat(o.material); } });   // (fades with his plates in the see-through)
   for(const q of Object.values(M)) if(q && q.isMaterial) seeMat(q);
   const B = {}; root.traverse(o => { if(o.isBone) B[o.name.replace('mixamorig', '')] = o; }); wrap.updateMatrixWorld(true);
   const L = { e, k, M, glb:true, id, look, ws:H / look.h, wrap, gk:look.gun || C.gun, root, mats, B, pieces:[], plates:{}, gun:null, gp, glowT:0, mixer:new THREE.AnimationMixer(root), acts:{}, cur:null, once:null, flashT:0, muz0:u.muzzle.position.clone() };
@@ -79,7 +79,7 @@ export function fortBossAnim(L, dt, st, v, firing, now){ if(!L || !L.glb || L.de
 // a one-off: the throw, a plate's blow
 export function fortBossAct(L, name, now){ if(!L || !L.glb || L.dead || !L.acts[name]) return; play(L, name, 0.12, now + L.acts[name].getClip().duration * 0.92); }
 function step(L, dt){ L.mixer.update(dt); sway(L, dt); for(const [b, q] of L.ikRest) b.quaternion.copy(q); L.root.updateMatrixWorld(true); hold(L, dt);
-  if(L.flashT > 0){ L.flashT -= dt; const k = Math.max(0, L.flashT / 0.12); const e0 = L.look.emit ? 1 : 0; for(const m of L.mats){ m.emissive.setRGB(e0 + 0.5 * k, e0 + 0.12 * k, e0 + 0.08 * k); } } }
+  if(L.flashT > 0){ L.flashT -= dt; const k = Math.max(0, L.flashT / VISLOOK.boss.t) * VISLOOK.boss.k; const e0 = L.look.emit ? 1 : 0; for(const m of L.mats){ m.emissive.setRGB(e0 + k, e0 + k * 0.9, e0 + k * 0.78); } } }   // VIS 9 a brief warm-white lift of his own texture (it was a flat salmon-pink body)
 // the wings beat slowly standing, hard on the run; the tail sways (rest × a turn: the wings about his front–back axis, the tail about the upright)
 const _q = new THREE.Quaternion(), _ax = new THREE.Vector3();
 function sway(L, dt){ const W = L.look.sway, S2 = L.sway; if(!W || !S2) return; const run = L.cur && (L.cur === L.acts.run) ? 1 : 0, hz = W.hz[0] + (W.hz[1] - W.hz[0]) * run, amp = W.wing[0] + (W.wing[1] - W.wing[0]) * run;
@@ -123,7 +123,7 @@ function ik2(up, lo, end, t, pole){ up.getWorldPosition(_s); lo.getWorldPosition
   lo.getWorldPosition(_e); end.getWorldPosition(_w); turn(lo, _v1.subVectors(_w, _e).normalize(), _v2.copy(_s).addScaledVector(_u, d).sub(_e).normalize()); }
 // a bone turned in the world by the turn that takes from → to (its local rotation: parent⁻¹ · turn · parent · own)
 function turn(bone, from, to){ _q1.setFromUnitVectors(from, to); bone.parent.getWorldQuaternion(_pw); _q2.copy(_pw).invert().multiply(_q1).multiply(_pw); bone.quaternion.premultiply(_q2); bone.updateMatrixWorld(true); }
-export function fortBossFlash(L){ if(L && L.glb) L.flashT = 0.12; }
+export function fortBossFlash(L){ if(L && L.glb) L.flashT = VISLOOK.boss.t; }
 // he is down (or the battle is gone): the plates fly (fort-boss-look.js), the model leaves the rig and falls — or, reset, is simply taken away
 export function fortBossGlbStrip(L, fly){ const u = L.e.mesh.userData; u.clipDraw = false; if(L.muzR){ u.muzzle = L.muzR; L.muzR = null; } if(u.muzzle && L.muz0) u.muzzle.position.copy(L.muz0);
   if(fly && L.wrap.parent){ L.dead = true; scene.attach(L.wrap); const a = L.acts[Math.random() < 0.5 ? 'deathB' : 'deathF']; if(a){ if(L.cur) L.cur.stop(); a.reset(); a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true; a.play(); a.time = C.anim.deathAt || 0; }   /* (BOSS 3 the fall begins at once: the clip's first beat of standing skipped) */ CORPSES.push({ L, t:0 }); }

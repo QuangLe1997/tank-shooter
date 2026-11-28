@@ -5,21 +5,24 @@
 //   · glare on the lamp glass that flares when the beam swings toward the camera
 //   · ONE real SpotLight that rides the searchlight nearest the tank, so the beam actually lights you up as it passes
 import * as THREE from 'three';
+import { VISLOOK } from '../../config.js';
 import { MOBILE, NIGHT, S, camera, detailTex, fortBeamBlocked, heightAt, scene } from '../hub.js';
 
 export const BEAM_U = { uT:{ value:0 }, uK:{ value:0 } };
-// s = 0 at the lamp → 1 at the far end (CylinderGeometry with the narrow end on top: uv.y = 1 at the lamp)
-export function beamMat(col, str, floor){ const m=new THREE.ShaderMaterial({ transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide, fog:false,
-    uniforms:{ uT:BEAM_U.uT, uK:BEAM_U.uK, uOp:{ value:str }, uCol:{ value:new THREE.Color(col) }, uFloor:{ value:floor??-1e4 }, uDust:{ value:detailTex() } },
+// s = 0 at the lamp → 1 at the far end (CylinderGeometry with the narrow end on top: uv.y = 1 at the lamp) · VIS 7 day: lit by day too (its own strength, not the night's)
+export function beamMat(col, str, floor, day){ const m=new THREE.ShaderMaterial({ transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide, fog:false,
+    uniforms:{ uT:BEAM_U.uT, uK:day ? { value:1 } : BEAM_U.uK, uOp:{ value:str * VISLOOK.beam.gain }, uCol:{ value:new THREE.Color(col) }, uFloor:{ value:floor??-1e4 }, uDust:{ value:detailTex() }, uCut:{ value:1 },
+      uLook:{ value:new THREE.Vector4(VISLOOK.beam.rim, VISLOOK.beam.fall, VISLOOK.beam.hot, VISLOOK.beam.dust) }, uHaze:{ value:VISLOOK.beam.haze } },   // VIS 7 a shaft of light in the air, not a bar
     vertexShader:`varying vec3 vN; varying vec3 vV; varying float vS; varying vec3 vW;
       void main(){ vS=1.0-uv.y; vec4 w=modelMatrix*vec4(position,1.0); vW=w.xyz; vec4 mv=viewMatrix*w; vV=-mv.xyz; vN=normalize(normalMatrix*normal); gl_Position=projectionMatrix*mv; }`,
-    fragmentShader:`uniform float uT,uK,uOp,uFloor; uniform vec3 uCol; uniform sampler2D uDust; varying vec3 vN; varying vec3 vV; varying float vS; varying vec3 vW;
+    fragmentShader:`uniform float uT,uK,uOp,uFloor,uCut,uHaze; uniform vec4 uLook; uniform vec3 uCol; uniform sampler2D uDust; varying vec3 vN; varying vec3 vV; varying float vS; varying vec3 vW;
       void main(){ float edge=abs(dot(normalize(vN),normalize(vV)));
-        float a=pow(edge,2.2);
-        a*=pow(1.0-vS,1.7)*(0.35+2.4*exp(-vS*9.0));
+        float a=pow(edge,uLook.x);
+        a*=pow(1.0-vS,uLook.y)*(0.3+uLook.z*exp(-vS*7.0));
         float d=texture2D(uDust, vW.xz*0.06+vec2(uT*0.021,uT*0.013)+vW.y*0.03).g*0.6+texture2D(uDust, vW.xz*0.19-vec2(uT*0.04,uT*0.017)).r*0.4;
-        a*=0.45+0.9*d;
+        a*=max(0.0, 1.0+uLook.w*(d-0.55)*1.6);
         a*=smoothstep(uFloor-0.1, uFloor+1.6, vW.y);
+        a*=exp(-length(vV)*uHaze)*(1.0-smoothstep(uCut-0.08, uCut, vS));   // VIS 7 dimmed by the air between it and the eye; ended at the first solid (uCut)
         gl_FragColor=vec4(uCol*a*uOp*uK, 1.0); }` });
   return m; }
 
