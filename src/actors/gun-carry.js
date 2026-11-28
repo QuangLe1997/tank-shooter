@@ -29,6 +29,7 @@
 //   climbArms calls carryBack. Nothing allocates per frame. GUNCARRY.on false / ?oldcarry: none of it runs.
 import * as THREE from 'three';
 import { GUNCARRY, GUNFEEL, GUNHOLD, INFGUN, LOGISTICS, REALCAV, SLING } from '../../config.js';
+import { FEELFX } from '../../config.js';   // FEEL 3
 import { backGap, hangState, hangStep, bladeHeld, CV, FIT, LEGKIT, MATE, QUIET, S, climbW, fpvFlying, graphOwned, graphState, headLevel } from '../hub.js';
 import { swimSlung } from '../hub.js';   // SWIM 1 (game/swim.js)
 import { HSWIM2 } from '../../config.js';
@@ -68,8 +69,8 @@ function flatQ(up, a, oq){ _x.copy(_cu).multiplyScalar(Math.cos(a) * up).addScal
 // A SLOT ON HIS BACK → the gun's place (op, oq) in the world. sig = the diagonal (+1 its upper end at his right shoulder blade, −1 the mirror; between,
 //   it is sliding across); depth m behind the spine; ang = its rock; pw = lying down (in along the spine). What is pinned is the gun's UPPER END (the
 //   butt; a kind in slot.up — the B41 — hangs the other way up, its warhead there): no weapon stands over the shoulder, a long one hangs lower
-function slot(k, len, sig, depth, ang, pw, op, oq){ const K = GUNCARRY.slot, up = upOf(k), a0 = clamp(Math.acos(Math.min(1, K.drop / len)), K.tilt, K.tiltMax), a = (a0 + (K.prone[0] - a0) * pw) * sig + ang;
-  flatQ(up, a, oq); pt(op, sig * (K.at[0] + (K.prone[1] - K.at[0]) * pw), K.at[1] + K.prone[4] * pw, depth + K.prone[2] * pw).addScaledVector(_x, -up * len / 2); }
+function slot(k, len, sig, depth, ang, pw, op, oq){ const K = GUNCARRY.slot, up = upOf(k), FC = FEELFX.carry, lng = FEELFX.on && len > FC.long, a0 = lng ? FC.tilt : clamp(Math.acos(Math.min(1, K.drop / len)), K.tilt, K.tiltMax), a = (a0 + (K.prone[0] - a0) * pw) * sig + ang;   // FEEL 3 a long tube (the B41) slung well across his back, not stood up
+  flatQ(up, a, oq); pt(op, sig * (K.at[0] + (K.prone[1] - K.at[0]) * pw), K.at[1] + K.prone[4] * pw - (lng ? FC.lift * (1 - pw) : 0), depth + K.prone[2] * pw).addScaledVector(_x, -up * len / 2); }
 // THE WAY ROUND HIS SHOULDER: t = 0 where the hold has it (hp, hq) … 1 in the slot (sp, sq) → (op, oq). The grip's station goes through two points of
 //   the back's frame on a spline — out at his side (via[0]: the gun stood on its muzzle there, its top ahead), then behind the shoulder (via[1]: turned
 //   flat to his back, still upright) — sd = +1 round his right, −1 his left

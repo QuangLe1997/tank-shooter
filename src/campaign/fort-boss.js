@@ -18,6 +18,7 @@
 import * as THREE from 'three';
 import { FORT, FORTBOSS, TROOPS } from '../../config.js';
 import { tyrantStep } from '../hub.js';   // SECTOR 6
+import { feelBossReveal } from '../hub.js';   // FEEL 4
 import { fortBossAct, fortBossAnim, fortBossCorpseTick, fortBossCorpsesClear, fortBossFlash, fortBossLookId, fortBossPreload, fortBossWarm } from '../hub.js';   // BOSS 2 (actors/fort-boss-glb.js)
 import { BIOME, CO, FORTS, MATE, NET_EV, S, ammoCrate, animateSoldier, bigExplode, blastAllies, bossForStage, bossStageWon, burst, clampFieldXZ, coopEnemyById, coopHostCrate, coopHurtMate, coopSendEvent, damagePlayer, diffHpMul, disposeArtZone, enemies, floatText, fortBossGlow, fortBossLook, fortBossLookClear, fortBossLookTick, fortBossPlateOff, fortBossStrip, fortFlagsTick, fortIntactCross, fortTake, freeEnemyBar, heightAt, infPushBlocks, launchEnemyMissile, loopHpMul, losBlocked, makeArtLock, nemFell, nemMeet, nemPlateEl, poseSoldier, radio, ringPulse, scene, sfx, showBanner, soldierStagePerks, spawnBullet, spawnEnemy, spawnGift, spawnPart, storyCue, tickArtLock, wakeFort, killEnemy } from '../hub.js';
 import { muzzleFX } from '../hub.js';   // GUNFX 1 (fx/gunfx.js)
@@ -80,7 +81,7 @@ function spawn(B, now){ const f = B.f, D = B.door, def = B.def, K = def.kind, e 
   B.look = fortBossLook(e, def); e.rK = B.look.k; e.facing = Math.atan2(D.ux, D.uz); e.mesh.rotation.y = e.facing;
   for(const k of PL){ B.pl[k] = B.plMax[k] = hp * C.plates[k]; }
   e.guard = { kind:'fort', x:f.x, z:f.z, r:f.R, fort:f }; e.post = [D.x + D.ux * 6, D.z + D.uz * 6];
-  B.e = e; B.st = 'intro'; B.until = now + C.intro.hold; e.held = true; const t = now + C.intro.hold; B.next.sweep = t + 2.5; B.next.nade = t + 4; B.next.charge = t + 5;
+  B.e = e; B.st = 'intro'; B.until = now + C.intro.hold; feelBossReveal(B);   /* FEEL 4 a cut on him as he strides out (fx/feel-fx.js) */ e.held = true; const t = now + C.intro.hold; B.next.sweep = t + 2.5; B.next.nade = t + 4; B.next.charge = t + 5;
   S.timeScale = Math.min(S.timeScale || 1, C.intro.slow); S.shake = Math.max(S.shake || 0, 0.9);
   bigExplode({ x:D.x, z:D.z }, 0xffa050, 0.6); ringPulse({ x:D.x, z:D.z }, 0xff6a3a, 4);
   floatText(def.name, '#ff9a4a', { x:D.x, y:heightAt(D.x, D.z) + 3.6, z:D.z }, 24, 'fx');

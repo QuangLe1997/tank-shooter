@@ -4,7 +4,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { fortBossReset, fortBossWake } from '../hub.js';   // BOSS 1 (campaign/fort-boss.js)
 import { sectorLay } from '../hub.js';   // SECTOR 1
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { CAM_ROOM, FORT, FORTBOSS, FORT_CMD, COMMAND, HOME_GAP, HUDCLEAN, HUDCLEAN2, HUMAN_SCALE, REALFORT, FORT_GAP, BREAKUP, SCENERY, WORLD_FLAGS } from '../../config.js';
+import { CAM_ROOM, FEELFX, FORT, FORTBOSS, FORT_CMD, COMMAND, HOME_GAP, HUDCLEAN, HUDCLEAN2, HUMAN_SCALE, REALFORT, FORT_GAP, BREAKUP, SCENERY, WORLD_FLAGS } from '../../config.js';
 import { cosmetic, edgeNote, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, HF, MOBILE, S, UNDER, ZONES, bigExplode, biomePlace, blocks, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, propTex, radio, rallyFlagTex, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, bannerTex, wallMat, loadGLTF, buildOutpost, farLOD, landTone, sceneDims, scenePiece, decalAsh, breakScar, decalScorch, hillCfg, paveYard, raiseFortHills, raiseWard , riseHere, dirSallyOk } from '../hub.js';
 import { scoreNote } from '../hub.js';   // HUDCLEAN 2 (game/score.js)
 
@@ -536,6 +536,7 @@ export function updateForts(dt, now){ const p=S.player; if(!p) return; if(((now*
     if(f.tier===3 && !f.duel && !FORTBOSS.on && Math.hypot(p.pos.x-f.x, p.pos.z-f.z) < (f.Rin||f.R)+2){ f.duel=true; startBoss(now, f); }   // (no-tanks) walking in through the open gate brings the general out too
     const d=Math.hypot(p.pos.x-f.x, p.pos.z-f.z);
     if(!f.active && d<FORT.wakeR+f.R) wakeFort(f, now);
+    if(f.active && f.tier===3 && FORTBOSS.on && FEELFX.on && !f.boss && d<f.R+FEELFX.boss.nearR){ f.feelAt=f.feelAt||now; if(now-f.feelAt>FEELFX.boss.within) fortBossWake(f, now); }   // FEEL 4 the general does not wait for the last of his men: he comes out within s of you reaching his walls
     if(f.active){ if(((now*4)|0)!==f._rt){ f._rt=(now*4)|0; if(!f.leaderless) refill(f); else f.units=f.units.filter(e=>enemies.includes(e)); escortFollow(f); }
       for(const e of f.units){ const H=e.home||e.hold; if(!H || e.def.inf) continue; const dx=e.pos.x-H.x, dz=e.pos.z-H.z, q=Math.hypot(dx,dz); if(q>H.r){ e.pos.x=H.x+dx/q*H.r; e.pos.z=H.z+dz/q*H.r; e.vel.multiplyScalar(0.2); } }   // tanks stay behind the walls until the gate falls
       updatePosture(f, now); if(f.posture==='sally' && !f.leaderless) sortie(f, now);

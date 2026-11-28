@@ -1,7 +1,7 @@
 // game/cavalry.js — Z245 CAVALRY MODE: the player is a general in full plate — on his armoured war horse (walk · trot · canter · gallop surge, firing from the saddle, trampling infantry) or on foot (run, sprint, crouch, prone, crawl, auto-cover) — mount / dismount (G), whistle the horse back, hoof beats and dust, all on the tank player's interface so enemies, guns, camera and HUD work unchanged
 import * as THREE from 'three';
-import { CAV, HORSE, HORSERIDE, HUMAN_SCALE, RIDE, RIDEFEEL, XEOM, XHAIR } from '../../config.js';
-import { bladeFoot, bladeTick, ARENA, BIOME, MOBILE, S, actx, afxHoof, afxOn, pushOutRocks, aimTarget, animateHorse, animateSoldier, autoFire, barrelFixed, blocks, buildGeneral, buildHorse, burst, clampField, cloakFoot, controlScheme, core, damageEnemy, endFall, enemies, fitRealCav, floatText, getMoveDir, heightAt, master, playerRange, poseRider, poseSoldier, scene, sfx, spawnPart, startFall, stepFall, turnInput, trackOnTarget, trackTarget, turretTracks, updateRealCav, buildBikeMount, bikeWheelie, horseAir, rideBump, rideClear, rideCollide, rideLeap, rideReset, rideSpeedK, rideImpacts, callRide, rideNote, hudOn, rideCallStep, rideCallUi, rideCanCome, soldierFire, trooperGuns, soldierJump, footStance, footMotion, footPose, footMoveState, heldAction, solidShape, pushOutShape, mountDur, mountMove, mountOwn, aimAwake, seatTurnOff, driverBack, rideHull, ridePower, rideOver, rideRam, rideLowReset, RIDE_LOW, rideAvoid, rideAvoidReset, rideStopStep, rideStopEase, rideStopReset, rideSlopeK, climbStep, climbAfter, climbOver, climbPh, climbReset, climbUi, climbing, footY, medalHit } from '../hub.js';
+import { CAV, FEELFX, HORSE, HORSERIDE, HUMAN_SCALE, RIDE, RIDEFEEL, XEOM, XHAIR } from '../../config.js';
+import { feelRideCall, bladeFoot, bladeTick, ARENA, BIOME, MOBILE, S, actx, afxHoof, afxOn, pushOutRocks, aimTarget, animateHorse, animateSoldier, autoFire, barrelFixed, blocks, buildGeneral, buildHorse, burst, clampField, cloakFoot, controlScheme, core, damageEnemy, endFall, enemies, fitRealCav, floatText, getMoveDir, heightAt, master, playerRange, poseRider, poseSoldier, scene, sfx, spawnPart, startFall, stepFall, turnInput, trackOnTarget, trackTarget, turretTracks, updateRealCav, buildBikeMount, bikeWheelie, horseAir, rideBump, rideClear, rideCollide, rideLeap, rideReset, rideSpeedK, rideImpacts, callRide, rideNote, hudOn, rideCallStep, rideCallUi, rideCanCome, soldierFire, trooperGuns, soldierJump, footStance, footMotion, footPose, footMoveState, heldAction, solidShape, pushOutShape, mountDur, mountMove, mountOwn, aimAwake, seatTurnOff, driverBack, rideHull, ridePower, rideOver, rideRam, rideLowReset, RIDE_LOW, rideAvoid, rideAvoidReset, rideStopStep, rideStopEase, rideStopReset, rideSlopeK, climbStep, climbAfter, climbOver, climbPh, climbReset, climbUi, climbing, footY, medalHit } from '../hub.js';
 import { swimPlace, swimStep } from '../hub.js';   // SWIM 1 (game/swim.js)
 import { horseSwimBlock, horseSwimDef, horseSwimHoof, horseSwimStep, horseSwimTop, horseSwimTurn } from '../hub.js';   // HSWIM 1 (game/horse-swim.js)
 
@@ -53,7 +53,7 @@ export function cavToggleMount(){ const p=S.player; if(!p || !p.cav || S.mode!==
   const d=Math.hypot(CV.hPos.x-p.pos.x, CV.hPos.z-p.pos.z), ready=rideCanCome();
   if(d<=CAV.mountR && ready){ CV.trans={ k:'on', t:0 }; sfx('click'); return; }
   if(d<=CAV.mountR){ rideNote(CV.H.broken ? 'XE HƯ · ĐANG SỬA' : CV.H.onBreak ? 'BÁC TÀI ĐANG NGHỈ' : 'CHỜ BÁC DỰNG XE'); return; }   // Z296 the driver is still picking the bike up
-  if(CV.call) return; whistle(); callRide(p); }   // Z306 away from it: call it — he comes now, or as soon as it is fit to (game/ride-call.js)
+  if(FEELFX.on) feelRideCall(); if(CV.call) return; whistle(); callRide(p); }   // FEEL 3 a chip by him counts it in, and he gets on when it is there (fx/feel-fx.js)   // Z306 away from it: call it — he comes now, or as soon as it is fit to (game/ride-call.js)
 function whistle(){ if(!actx || !master) return; const t=actx.currentTime; try{ const o=actx.createOscillator(), g=actx.createGain(); o.type='sine';
   o.frequency.setValueAtTime(1500, t); o.frequency.linearRampToValueAtTime(2300, t+0.18); o.frequency.linearRampToValueAtTime(1700, t+0.32); o.frequency.linearRampToValueAtTime(2500, t+0.5);
   g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.09, t+0.04); g.gain.setValueAtTime(0.09, t+0.45); g.gain.exponentialRampToValueAtTime(0.0001, t+0.6); o.connect(g).connect(master); o.start(t); o.stop(t+0.62); }catch(e){} }
@@ -93,7 +93,8 @@ export function updateCavalry(dt, now){
     const own1=HORSERIDE.on && !H.bike, SF=RIDEFEEL.stop, hs=rideStopStep(H, p, dt, own1 ? ask : want, CV.speed, !turnCtl && inp>0.1 && !own ? wrapA(Math.atan2(dir.x, dir.z)-CV.facing) : 0), ST=H.stop;   // (no about-turn while it is on its own line round something)
     if(ST.on && ST.about) want=Math.min(want, SF.aboutV);
     const tr=(Hc.turnLow+(Hc.turnHigh-Hc.turnLow)*Math.min(1, Math.abs(CV.speed)/Hc.gallop))*(ST.about ? 1+((H.bike ? SF.bike : SF.horse).pivot-1)*Math.min(1, ST.k*2) : 1)*horseSwimTurn(H), dY=turn*tr*dt; CV.facing=wrapA(CV.facing+dY); CV.yawRate=CV.yawRate+(dY/Math.max(dt,1e-3)-CV.yawRate)*Math.min(1, dt*8);
-    const acc = want>CV.speed ? (surge?Hc.surgeAccel:Hc.accel) : (hs || (own1 && want<ask-0.5 ? Math.max(Hc.decel, HORSERIDE.capDecel) : Hc.decel)); CV.speed += Math.max(-acc*dt, Math.min(acc*dt, want-CV.speed));   // (HORSE 1 checked by its own cap: in stride)
+    const acc = want>CV.speed ? (surge?Hc.surgeAccel:Hc.accel) : (hs || (own1 && want<ask-0.5 ? Math.max(Hc.decel, HORSERIDE.capDecel) : Hc.decel)); const FR=FEELFX.ride; CV.pushT = want>0.5 ? (CV.pushT||0)+dt : 0; const acc2 = FEELFX.on && H.bike && want>CV.speed && CV.pushT<FR.launch ? Math.max(acc, FR.accel) : acc;   // FEEL 3 the xe ôm moves off at once: its engine is already running
+    CV.speed += Math.max(-acc2*dt, Math.min(acc2*dt, want-CV.speed));   // (HORSE 1 checked by its own cap: in stride)
     p.facing=CV.facing; p.vel.set(Math.sin(CV.facing)*CV.speed, 0, Math.cos(CV.facing)*CV.speed); p.throttle=0;
     p.radius=CAV.radius.mounted; p.defK=CAV.defK.mounted*horseSwimDef(H); p.camK=CAV.camK.mounted;
   } else if(climbStep(p, dt, now)){ CV.moveT=0; p.radius=CAV.radius.foot; p.defK=CAV.defK.stand; p.camK=CAV.camK.foot; horseAlone(p, dt); }   // Z451 on the face of a rock / a wall: the climb moves him (game/soldier-climb.js)
@@ -129,7 +130,7 @@ export function updateCavalry(dt, now){
   if(p.hitT>0){ p.hitT-=dt; }
   if(now < p.respawnBlinkUntil) p.mesh.visible=Math.floor((p.respawnBlinkUntil-now)/0.25)%2===0; else if(!p.mesh.visible) p.mesh.visible=true;
   p.kbx=p.kbz=0;
-  updateRealCav(CV, dt, { twist: wrapA(p.aimSmoothed-(CV.mounted?CV.facing:p.facing)), footV: Math.hypot(p.vel.x, p.vel.z), stance: CV.stance, trans: CV.trans ? { k:CV.trans.k, e:Math.min(1, CV.trans.t/CAV.mountT) } : false, hit: p.hitT>0, ride: CV.mounted && CV.H.inert ? CV.H.inert : null, move: CV.mounted ? null : footMoveState(), climb: CV.mounted ? null : climbPh() });   // Z299 what the sprung body feels, for him to sway with   // Z295 which way and how far through getting on / off
+  updateRealCav(CV, dt, { twist: wrapA(p.aimSmoothed-(CV.mounted?CV.facing:p.facing)), footV: footReal(p, dt), stance: CV.stance, trans: CV.trans ? { k:CV.trans.k, e:Math.min(1, CV.trans.t/CAV.mountT) } : false, hit: p.hitT>0, ride: CV.mounted && CV.H.inert ? CV.H.inert : null, move: CV.mounted ? null : footMoveState(), climb: CV.mounted ? null : climbPh() });   // Z299 what the sprung body feels, for him to sway with   // Z295 which way and how far through getting on / off
   bladeTick(p, dt, now);   // BLADE 2 the blade's presses, moves and cuts (actors/blade.js)
   // fire: hold LMB (desktop) · the trigger / auto-fire on phones, exactly like the tank
   const range=playerRange();
@@ -226,3 +227,9 @@ export function cavDeathUpdate(dt, now){ const D=CV.dead, p=S.player, H=CV.H, G=
 export function cavRespawn(p){ const H=CV.H, G=CV.G; if(!H || !G) return; climbReset(); CV.trans=null; CV.call=false; CV.autoOn=false; CV.landAt=null; CV.speed=0; CV.stance=CV.want='stand'; CV.dead=null; if(G.userData.fall) endFall(G); G.rotation.set(0,0,0);
   if(!CV.mounted){ G.parent && G.parent.remove(G); seatRider(G, H); H.root.parent && H.root.parent.remove(H.root); p.mesh.add(H.root); H.root.position.set(0,0,0); H.root.rotation.set(0,0,0); CV.mounted=true; }
   CV.facing=-Math.PI; H.wantGraze=false; rideReset(H); rideStopReset(H); }
+// FEEL 3 the speed he REALLY makes over the ground (smoothed), capped by the push: run into a wall and his clip stands instead of running on the spot
+const _fr = { x:0, z:0, v:0, has:false };
+function footReal(p, dt){ const v = Math.hypot(p.vel.x, p.vel.z), F = FEELFX.foot; if(!FEELFX.on || !(dt > 0)) return v;
+  if(!_fr.has || CV.mounted || CV.trans){ _fr.x = p.pos.x; _fr.z = p.pos.z; _fr.v = v; _fr.has = !CV.mounted && !CV.trans; return v; }
+  const m = Math.hypot(p.pos.x - _fr.x, p.pos.z - _fr.z) / dt; _fr.x = p.pos.x; _fr.z = p.pos.z; if(m > 40){ _fr.v = v; return v; }   // (moved, not walked: a respawn, a teleport)
+  _fr.v += (m - _fr.v) * Math.min(1, dt * F.realK); return Math.min(v, _fr.v + F.slack); }
