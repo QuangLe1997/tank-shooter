@@ -2459,6 +2459,7 @@ export const BOT = { think:20, sightK:1.5, eye:1.45, losEvery:0.25, losPerTick:2
 //   fair.rear.k (BAL 19): a man behind him stays that much wider — in every mode (world/fortress.js: no wave out of a gate behind him either).
 //   beats (BAL 20, campaign/sectors.js): every sector but a hold or the general's gets beats at the sector's seconds `at` — n squads from in front of him / his sides,
 //     BAL.hold.d m off — when the director's pressure is under lowP (a fight already on is left alone).
+//   infil (BAL 21, campaign/sector-goals.js, director.js infilHold): in an infiltration the waves wait waveT s after the alarm and the enemy's rounds are × spreadK wide (night: they search more than they aim).
 //   hold (BAL 14, campaign/sectors.js): the stuck truck's hold has three beats — at the shares `at` of the hold, n squads come from in front of him / his sides, d m off.
 export const BAL = { fair:{ on:true, every:0.1, r:95, fireT:1.2, maxN:6, size:30, margin:26, color:'#ff3b2b', spreadK:3.2, onT:0.5, warnT:2,
     rear:{ on:!(typeof location !== 'undefined' && /[?&]norear\b/.test(location.search)), ang:2.09, r:60, grace:1.6, graceK:8, k:4, beepGap:3 } },
@@ -2469,6 +2470,7 @@ export const BAL = { fair:{ on:true, every:0.1, r:95, fireT:1.2, maxN:6, size:30
   boss:{ revealT:12, arenaR:16 },
   rescue:{ near:45, minT:50, backOut:0.3, innerK:0.2 },
   beats:{ on:true, at:[30, 60, 95], n:[1, 1, 2], lowP:0.2 },
+  infil:{ waveT:10, spreadK:2.2 },
   hold:{ on:true, at:[0.12, 0.45, 0.78], n:[1, 2, 2], d:[40, 55], say:['SCH: Chúng đã thấy xe — tốp đầu đang tới!', 'SCH: Chúng dồn lên hai hướng — giữ vòng tròn!', 'SCH: Đợt cuối, đông nhất — cầm cự, xe sắp ra!'] } };
 
 // Z107 FLATTER BATTLEFIELD — mostly level ground so the tank drives freely: only a handful of big rolling hills, very few old craters,
@@ -3956,7 +3958,7 @@ export const SECTOR = { on:true, retries:3,
           rescue:{ vi:'GIẢI CỨU', time:300, d:[70, 115], clear:11, gap:3.2, wallHp:6000, ring:6, guards:5, rpg:1, reach:2.6, free:3, walk:5.5, follow:2.4, hp:100, fireR:14, dps:5, evacR:8,
             who:{ civ:'dân thường', pilot:'phi công', minh:'Minh', miner:'thợ mỏ', family:'vợ con Khang' }, climax:{ at:0.5, ev:'squad' } },
           breach:{ vi:'PHÁ CỔNG', time:420, gateK:3, gateMax:4000, fallback:'command', climax:{ at:0.5, ev:'squad' } },
-          infiltrate:{ vi:'ĐỘT NHẬP', night:true, time:300, plantR:3, plant:5, holdT:45, lzD:[30, 55], lzR:6, board:3, wait:40, climax:{ at:0.5, ev:'patrol' } },
+          infiltrate:{ vi:'ĐỘT NHẬP', night:true, time:300, plantR:3, plant:5, holdT:45, lzD:[30, 55], lzR:9, board:2, wait:60, climax:{ at:0.5, ev:'patrol' } },
           pursuit:{ vi:'TRUY KÍCH', trucks:3, hp:520, r:3, gap:16, speed:5.2, lead:30, minL:180, exitR:8, bail:2, cell:4, climax:{ at:0.5, ev:'squad' } } },
   places:{ outskirts:{ vi:'NGOẠI VI', forts:0, capital:false, cover:1.25, towers:0.7 },
            village:{ vi:'LÀNG', forts:1, capital:false, cover:1.0, towers:1.0 },

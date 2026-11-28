@@ -45,6 +45,7 @@ export function dirWin(){ if(PROFILE.dirEase){ PROFILE.dirEase = null; saveProfi
 //   a newcomer's first battle) and BAL.start.t s otherwise, nothing is escalated, the waves' queue and the surprises wait, and an enemy round is wide (ui/threat-edge.js) ·
 //   BAL 11 AN INFILTRATION IS AN INFILTRATION: while he is unseen in it (sector-goals.js ph 'sneak') the director sends nothing, no wave comes in, no surprise is played
 export const SAFE = { until:0 };
+export function infilHold(){ const g = SGOAL.g; return !!(SECT.on && g && g.type === 'infiltrate'); }   // BAL 21 the whole infiltration (at night, unseen or holding out for the helicopter): they search more than they aim
 export function sneaking(){ const g = SGOAL.g; return !!(SECT.on && g && g.type === 'infiltrate' && g.ph === 'sneak'); }
 // a stage begins (ui/briefing.js): everything forgotten but the deaths on it
 export function directorReset(now){ const st = DIR.stats; for(const k in st) st[k] = 0; DIR.log.length = 0; DIR.contact.length = 0; tacticsReset();

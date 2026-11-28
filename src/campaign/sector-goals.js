@@ -101,7 +101,7 @@ function breachTick(g, dt, now){ const K = g.Y, f = g.f; g.clock -= dt;
 // ---- INFILTRATE ----
 function infilStart(g, c, now){ const K = g.Y; g.al0 = QUIET.alarmN; g.ph = 'sneak'; g.clock = K.time; g.plant = 0; g.d0 = OBJ ? Math.hypot(OBJ.b.x - S.player.pos.x, OBJ.b.z - S.player.pos.z) : 1;
   WAVE.betweenUntil = 1e12; WAVE.active = false; WAVE.spawnQueue.length = 0; g.home = { x:S.player.pos.x, z:S.player.pos.z }; }   // no waves while he is unseen
-function alarmed(g, now){ const K = g.Y, p = S.player; g.ph = 'hold'; g.clock = K.holdT; WAVE.betweenUntil = now + 2; sectorSquad(p.pos.x, p.pos.z); sfx('alarm');
+function alarmed(g, now){ const K = g.Y, p = S.player; g.ph = 'hold'; g.clock = K.holdT; WAVE.betweenUntil = now + BAL.infil.waveT; g.alarmAt = now; sectorSquad(p.pos.x, p.pos.z); sfx('alarm');   // BAL 21 (one squad; the waves a little later)
   edgeNote(SAY.infilAlarm, '#ff7a5a'); radio('SCH: ' + SAY.infilAlarmR); }
 function infilTick(g, dt, now){ const K = g.Y, p = S.player; g.clock -= dt;
   if(g.ph === 'sneak'){ if(QUIET.alarmN > g.al0){ alarmed(g, now); return null; } if(g.clock <= 0) return 'HẾT GIỜ'; if(!OBJ) return 'won';

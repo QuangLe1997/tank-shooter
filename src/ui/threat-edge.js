@@ -3,7 +3,7 @@
 //   a round from someone the player could not know of mostly misses (actors/infantry.js fireRound reads offScreenK). Read every `every` s, never per frame; nothing allocated in the loop.
 import * as THREE from 'three';
 import { BAL } from '../../config.js';
-import { S, SAFE, VIEW, camera, enemies, heightAt, inField, sfx } from '../hub.js';
+import { S, SAFE, VIEW, camera, enemies, heightAt, inField, infilHold, sfx } from '../hub.js';
 
 const F = BAL.fair, _v = new THREE.Vector3(), _p = new THREE.Vector3(), EL = [], NEAR = [];
 let wrap = null, at = 0, shown = 0;
@@ -39,7 +39,7 @@ export function sideOf(x, z){ const p = S.player; if(!p || !rearArc(x, z)) retur
 // a bearing (atan2(x, z)) somewhere he can see coming: the camera's heading ± the front and the sides
 export function frontYaw(spread){ return viewYaw() + (Math.random() - 0.5) * 2 * Math.min(F.rear.ang - 0.15, spread == null ? F.rear.ang - 0.15 : spread); }
 // how wide a man's round goes for being off the screen and unannounced, or behind him (1: as usual)
-export function offScreenK(e, now){ if(!F.on) return 1; let k = now < SAFE.until ? BAL.start.spreadK : 1;   // (BAL 10 the calm first stretch)
+export function offScreenK(e, now){ if(!F.on) return 1; let k = now < SAFE.until ? BAL.start.spreadK : infilHold() ? BAL.infil.spreadK : 1;   // (BAL 10 the calm first stretch · BAL 21 an infiltration seen: they search more than they aim)
   if(F.rear.on && rearArc(e.pos.x, e.pos.z, F.r)){ if(!e._rearAt){ e._rearAt = now; if(now - _beepAt > F.rear.beepGap){ _beepAt = now; sfx('beep'); } } k = Math.max(k, now - e._rearAt < F.rear.grace ? F.rear.graceK : F.rear.k); } else e._rearAt = 0;
   if(now - (e._onAt || -9) < F.onT || e._edgeAt && now - e._edgeAt >= F.warnT) return k; return Math.max(k, F.spreadK); }
 let _beepAt = -9;
