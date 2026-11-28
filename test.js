@@ -3182,6 +3182,10 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
 { const fs=await import('node:fs'), { PERF_BUDGET:PB }=await import('./config.js'), sc=fs.readFileSync('src/campaign/sectors.js','utf8'), lp=fs.readFileSync('src/game/loop.js','utf8');
   ok(typeof PB.transit.noDrawWarm==='boolean' && /export function sectorSkipDraw\(\)/.test(sc) && /tr\.ph === 'warming' \|\| tr\.ph === 'build'/.test(sc) && /if\(sectorSkipDraw\(\)\)\{ perfRenderBegin\(\); perfFrameEnd\(rawMs\); \}/.test(lp),
     'PERF 7: the loop skips the draw while the transit builds and links the new field (the prime frames draw it before the black lifts)'); }
+// PERF 9 the transit's black also waits for the new field's model files (none parsed and swapped in during the ride)
+{ const fs=await import('node:fs'), { PERF_BUDGET:PB }=await import('./config.js'), sc=fs.readFileSync('src/campaign/sectors.js','utf8');
+  ok(typeof PB.transit.waitModels==='boolean' && /if\(PERF_BUDGET\.transit\.waitModels\) P = Promise\.all\(\[P, dietIdle\(ms\)\]\);/.test(sc) && /Promise\.race\(\[P, new Promise\(r => setTimeout\(r, ms\)\)\]\)/.test(sc),
+    'PERF 9: the warm-up waits for the compile and the model files together, still bounded by warmMs / warmHour'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

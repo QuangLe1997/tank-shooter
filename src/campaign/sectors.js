@@ -20,6 +20,7 @@
 import * as THREE from 'three';
 import { SECTOR, SIDEMISSION, CONTRACTS, OBJECTIVES, SECROUTE, CONQSTORY } from '../../config.js';
 import { PERF_BUDGET } from '../../config.js';   // PERF 5 the transit's prime frames
+import { dietIdle } from '../hub.js';   // PERF 9 (render/asset-diet.js)
 import { sectorStoryCard } from '../hub.js';   // SECTOR 6
 import { knobTurn, knobBack } from '../hub.js';   // MIX 1
 import { FORTS, startBoss } from '../hub.js';   // SECTOR 4
@@ -183,6 +184,7 @@ function warm(){ const tr = SECT.tr, seq = SECT.seq; tr.ph = 'warming';
   // SECTOR 3 a new hour, once more with the lights that are off switched on too (a flare, a muzzle's light, a searchlight that wakes): each one lit later changes the light
   //   count every program is keyed on — the first night fight recompiled the whole field in one 0.75 s frame. The night variants are built here, under the black.
   if(tr.hour){ const off = []; scene.traverse(o => { if(o.visible === false) off.push(o); }); for(const o of off) o.visible = true; let P2; try{ P2 = compileReady(scene, ms); } finally { for(const o of off) o.visible = false; } tr.lit = off.filter(o => o.isLight).length; P = Promise.all([P, P2]); }
+  if(PERF_BUDGET.transit.waitModels) P = Promise.all([P, dietIdle(ms)]);   // PERF 9 and the new field's model files in (they were parsed and swapped in during the ride: 100–170 ms frames)
   Promise.race([P, new Promise(r => setTimeout(r, ms))]).catch(() => {}).then(() => requestAnimationFrame(() => requestAnimationFrame(go))); }
 // every frame of the transit (game/loop.js, S.mode 'transit')
 export function updateSectorTransit(dt, now){ const tr = SECT.tr; if(!tr){ S.mode = 'playing'; return; } tr.t += dt;

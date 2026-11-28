@@ -2481,11 +2481,12 @@ export const TROOPLOD = { on:!(typeof location !== 'undefined' && /[?&]notrooplo
 //   cover (render/cover-batch.js) — a piece of cover past far m, out of the sun's shadow box, wears a copy of keep of its triangles. on:false (?noperfcover) = as before.
 //   transit (campaign/sectors.js) — compiled and still black, the camera visits `prime` points of the ride (one frame each) before the black lifts (0 = as before);
 //     noDrawWarm: nothing is drawn while the new field is built and its programs link (under the black: a draw then waited for every program).
+//     waitModels: the black also waits (within the same warmMs / warmHour) for the new field's model files, so none is parsed and swapped in during the ride.
 export const PERF_BUDGET = { frame:{ desktop:{ tris:2.5e6, calls:350, maxMs:50, startMs:33, loadS:8 }, phone:{ tris:0.9e6, calls:220, maxMs:50, startMs:40, loadS:10 } },
   fx:{ desktop:{ particles:3000, fire:2600, lights:4, screens:2 }, phone:{ particles:1500, fire:900, lights:2, screens:1 } },
   view:{ on:!(typeof location !== 'undefined' && /[?&]noperfview\b/.test(location.search)), far2K:2.4, far2Min:110, far2Max:240, keep2:0.08, keepCut2:0.3, err2:0.06, cone:35, coneV:25, pad:2, turnStep:12, moveStep:6, fogK:1, phoneLite:true },
   cover:{ on:!(typeof location !== 'undefined' && /[?&]noperfcover\b/.test(location.search)), far:55, keep:0.25 },
-  transit:{ prime:6, noDrawWarm:true } };
+  transit:{ prime:6, noDrawWarm:true, waitModels:true } };
 // Z395 NEAR DETAIL (render/near-detail.js): the originals' sharp maps (assets/models/real/hd, tools/hd-maps.mjs) put on a model while the camera is within
 //   its reach — radius × rK m from its surface, at least min, at most at (each instance of an instanced mesh counts) — handed back past reach × out for hold s,
 //   or when maxKeys closer models hold theirs (GPU memory) · every: how often the nearest is measured (s) · maxInst: instances measured per mesh ·
