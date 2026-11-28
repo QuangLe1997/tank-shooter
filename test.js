@@ -3218,6 +3218,12 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   ok(Q.hold.at.length===3 && Q.hold.at.every((a, i)=>a>0 && a<1 && (!i || a>Q.hold.at[i-1])) && Q.hold.n.length===3 && Q.hold.say.length===3 && /function beatSquads\(n, d\)/.test(sc) && Q.boss.revealT>0 && Q.boss.revealT<=20 && /SECT\.t >= BAL\.boss\.revealT/.test(sc) && /fortBossWake\(f, now\)/.test(sc)
     && Q.boss.arenaR>=8 && /function arenaOf\(f\)/.test(sc) && /return f\.arena \|\|/.test(R('src/campaign/fort-boss.js')) && /if\(f\.arena\)/.test(R('src/campaign/fort-boss.js')) && /export function sectorMark\(/.test(R('src/campaign/sector-goals.js')),
     'BAL 14 / 15 / 17: a hold in three beats from in front of him; the general out within ' + Q.boss.revealT + ' s of his sector, through his gate into an open courtyard, marked'); }
+// BAL 16 nothing behind him (the rest: the rope, the paradrop, a raised man, a sally) · the bot into the cell by its open end, unstuck by progress
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { BAL:Q, CONQUEST:CQ }=await import('./config.js'), sc=R('src/campaign/sectors.js'), dr=R('src/campaign/director.js'), sp=R('src/campaign/surprises.js');
+  const bot=R('src/dev/bot.js'), { BOT:BT }=await import('./config.js');
+  ok(/if\(!rearArc\(x, z\) && !blocksNear/.test(R('src/actors/helis.js')) && /if\(!rearArc\(q\[0\], q\[1\]\)/.test(R('src/actors/paradrop.js')) && /const q = sideOf\(e\.pos\.x, e\.pos\.z\); if\(q\)/.test(R('src/campaign/entries.js')) && /if\(rearArc\(f\.gx\?\?f\.x, f\.gz\?\?f\.z\)\)\{ f\.sallyAt=now\+2; return; \}/.test(R('src/world/fortress.js')),
+    'BAL 16: no rope, no paradrop, no raised man, no fort sally behind him');
+  ok(/door:W\(0, C\.hl \+ 2\.5\)/.test(R('src/campaign/sector-goals.js')) && /SGOAL\.cell && SGOAL\.cell\.door/.test(bot) && BT.stuck.prog>0 && BT.steer.near>=4 && /B\.detour/.test(bot) && /f\.gateShut && f\.gate/.test(bot), 'BAL 16: the bot goes into a cell by its open end, feels long walls, takes a detour when it makes no progress'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

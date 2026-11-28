@@ -58,7 +58,7 @@ const obs = new MutationObserver(L => { for(const m of L) for(const n of m.added
     const k = (best.def.mk ? 'marksman' : best.def.mg ? 'mg' : best.def.rpg ? 'rpg' : best.def.air ? 'air' : best.def.inf ? 'rifle' : 'vehicle') + (bd < 30 ? '<30' : bd < 60 ? '<60' : '60+') + (uw ? '' : '·warned'); M.offBy[k] = (M.offBy[k] || 0) + 1; } } });
 obs.observe(document.body, { childList:true, subtree:true });
 const frame = n => { if(window.__frame) window.__frame(String(Math.round(gt() - g0)).padStart(4, '0') + '-' + n).catch(() => {}); };   // (BAL 2 tools/ts.mjs --frames)
-const WT = H.BAL && H.BAL.fair ? H.BAL.fair.warnT : 0.8; let lullRun = 0, lullMax = 0, lastFrame = -99, forkSeen = false, bossKit = false; const fb = new Map();
+const WT = H.BAL && H.BAL.fair ? H.BAL.fair.warnT : 0.8; let amb = 0, wEv = null, sCnt = H.SURP ? H.SURP.count : 0, dmg45 = 0, lullRun = 0, lullMax = 0, lastFrame = -99, forkSeen = false, bossKit = false; const fb = new Map();
 const seenE = new Set(H.enemies); H.botStart({ skill:SKILL }); frame('start');
 let hp = p0.hp, lv = p0.lives, wAct = false, wU = null, sSt = '', sU = null, tU = null, bU = null, end = 'cap', prevP = new Set(H.pickups), still = 0, lastCurve = -9;
 while(true){ await wait(250); const t = gt() - g0, p = S.player; if(!p) break; M.modes[S.mode] = (M.modes[S.mode] || 0) + 0.25;
@@ -66,7 +66,8 @@ while(true){ await wait(250); const t = gt() - g0, p = S.player; if(!p) break; M
   if(t >= CAP){ end = 'cap'; break; } if(wall() * 1000 >= WALL){ end = 'wall'; break; }
   if(['briefing', 'deploy', 'start'].includes(S.mode)){ if((still += 0.25) > 4){ still = 0; unhide(); try{ H.launchStage(false); }catch(e){} M.kicks++; } } else still = 0;
   if(p.lives < lv){ M.deaths += lv - p.lives; frame('death'); if(hpQ.length && hpQ[0] >= 0.7 * p.maxHp) M.unwarned++; hpQ.length = 0; }
-  else if(p.hp < hp && S.mode === 'playing') M.dmg += hp - p.hp;
+  else if(p.hp < hp && S.mode === 'playing'){ M.dmg += hp - p.hp; if(t < 45) dmg45 += hp - p.hp; }
+  { const ev = H.WAVE.event; if(ev === 'ambush' && wEv !== 'ambush') amb++; wEv = ev; if(H.SURP && H.SURP.count !== sCnt){ sCnt = H.SURP.count; if(H.SURP.last === 'ambush') amb++; } }   // BAL 12 ambushes (a wave's scripted one, a surprise)
   if(S.mode === 'dying' && lv === p.lives && hp > 0 && p.hp <= 0 && hpQ.length && hpQ[0] >= 0.7 * p.maxHp){ /* counted when the life goes */ }
   hp = p.hp; lv = p.lives; hpQ.push(p.hp); if(hpQ.length > 16) hpQ.shift();
   if(S.mode === 'playing'){ const P = H.DIR.P || 0; M.n++; M.pSum += P; M.pPeak = Math.max(M.pPeak, P); if(P < 0.15) M.lull++; if(t - lastCurve >= 5){ lastCurve = t; let nd = 999; for(const e of H.enemies) if(e.hp > 0 && !e.fortOf && !e.guard) nd = Math.min(nd, Math.hypot(e.pos.x - p.pos.x, e.pos.z - p.pos.z));
@@ -75,6 +76,7 @@ while(true){ await wait(250); const t = gt() - g0, p = S.player; if(!p) break; M
   if(t - lastFrame >= 20){ lastFrame = t; frame('t'); } const fk = H.sectorForkShown(); if(fk && !forkSeen) frame('fork'); forkSeen = fk;
   if(BOSSKIT && !bossKit && H.SECT.on && H.SECT.state === 'fight' && (H.sectorCur() || {}).type === 'boss'){ const f = H.mainFort(); if(f && t > 2){ bossKit = true; try{ H.fortBossDebugClear(f); }catch(e){} M.bossKit = +t.toFixed(1); } }   // --boss: the citadel's force cleared by the harness (setup, not the bot) so the general's fight itself is timed
   for(const Q of H.FBOSS.list){ if(!Q.e) continue; let u = fb.get(Q); if(!u && Q.st !== 'pending' && Q.st !== 'intro'){ u = { k:'fboss', name:Q.def && Q.def.name, tier:Q.f && Q.f.tier, t0:+t.toFixed(1) }; fb.set(Q, u); M.units.push(u); frame('boss'); }
+    if(u && u.hit == null && Q.e._mkBy === 1) u.hit = +t.toFixed(1);   // BAL 17 his first hit on the boss
     if(u && !u.done && (Q.st === 'dead' || !(Q.e.hp > 0))){ u.t1 = +t.toFixed(1); u.done = true; frame('bossdown'); } }
   for(const e of H.enemies){ if(seenE.has(e)) continue; seenE.add(e); if(!e.def || e.fortOf || e.guard) continue; M.spawn.n++; const dx = e.pos.x - p.pos.x, dz = e.pos.z - p.pos.z, d = Math.hypot(dx, dz);
     if(d < 60){ M.spawn.near++; H.camera.getWorldDirection(_v); const r = Math.atan2(dx, dz) - Math.atan2(_v.x, _v.z), ab = Math.abs(Math.atan2(Math.sin(r), Math.cos(r))); if(ab > 2.09){ M.spawn.rearNear++; const k = e.spawnHow || '?'; M.spawn.how[k] = (M.spawn.how[k] || 0) + 1; } } }   // BAL 3 entries within 60 m in the rear 120°
@@ -92,7 +94,7 @@ const ev = { surp:H.SURP ? H.SURP.count | 0 : 0, big:H.BIGEV ? H.BIGEV.count | 0
 const g = H.SECT.stats || {}, bot = H.botState(), k = H.MDL && H.MDL.on ? mine() - m0 : bot.kills, kAll = (S.kills | 0) - k0;   // his own kills: the medal ledger's (game/medals.js), else the bot's
 return { id:SPEC.id || '', skill:SKILL, end, won:end === 'won', gameMin:+(t / 60).toFixed(2), wallMin:+(wall() / 60).toFixed(2), deaths:M.deaths, livesLeft:p0.lives, lives0:lv0, maxHp:p0.maxHp,
   retries:g.restarts | 0, sectorsWon:g.won | 0, sectorsLost:g.lost | 0, dpm:+(M.dmg / min).toFixed(1), kpm:+(k / min).toFixed(2), kills:k, kpmAll:+(kAll / min).toFixed(2), acc:+st.acc.toFixed(2), shots:st.shots,
-  pMean:M.n ? +(M.pSum / M.n).toFixed(3) : 0, pPeak:+M.pPeak.toFixed(3), lullShare:M.n ? +(M.lull / M.n).toFixed(3) : 0, events:ev, loot:M.loot, hits:M.hits, offHits:M.off, offUnw:M.offUnw, offBy:M.offBy, bear:M.bear, spawn:M.spawn, unkHits:M.unk, unwarned:M.unwarned, lullMax:+lullMax.toFixed(1), bossKit:M.bossKit || null,
+  pMean:M.n ? +(M.pSum / M.n).toFixed(3) : 0, pPeak:+M.pPeak.toFixed(3), lullShare:M.n ? +(M.lull / M.n).toFixed(3) : 0, events:ev, loot:M.loot, hits:M.hits, offHits:M.off, offUnw:M.offUnw, offBy:M.offBy, bear:M.bear, spawn:M.spawn, unkHits:M.unk, unwarned:M.unwarned, lullMax:+lullMax.toFixed(1), bossKit:M.bossKit || null, ambushes:amb, dmg45:Math.round(dmg45), sectLog:(H.SECT.log || []).filter(q => /fail|retry|over|why|climax|beat|general|won/.test(q.k)).slice(-24).map(q => q.k + ':' + q.i + ':' + q.why), score:S.score | 0, killShare:kAll ? +(k / kAll).toFixed(2) : null,
   units:M.units, curve:M.curve, modes:M.modes, kicks:M.kicks, bot, mixLog:H.MIX.log.length > log0 ? H.MIX.log[H.MIX.log.length - 1].meas : null };`;
 
 // ---- run ----
@@ -112,9 +114,9 @@ function play(s, k){ const id = runId(s, k), pf = path.join(OUT, id + '.probe.js
 //   hits from a shooter off the screen (all · unwarned), the minutes of each kind of sector won, a boss's time from his coming out to his fall
 function targets(ALL){ console.log('targets — run · end · min · lull share · P mean · longest lull s · deaths (per 20 min) · retries · off-screen hits % (unwarned %) · sectors won: type min · boss down min');
   for(const r of ALL.sort((a, b) => a.id < b.id ? -1 : 1)){ const m = r.meas, h = Math.max(1, m.hits), sec = {}, bo = [];
-    for(const u of m.units){ if(u.k === 'sector' && u.won) (sec[u.ty] || (sec[u.ty] = [])).push(((u.t1 - u.t0) / 60).toFixed(1)); if(u.k === 'fboss' || u.k === 'boss') bo.push((u.done ? '' : '>') + ((u.t1 - u.t0) / 60).toFixed(1)); }
+    for(const u of m.units){ if(u.k === 'sector' && u.won) (sec[u.ty] || (sec[u.ty] = [])).push(((u.t1 - u.t0) / 60).toFixed(1)); if(u.k === 'fboss' || u.k === 'boss'){ const sc0 = [...m.units].reverse().find(q => q.k === 'sector' && q.ty === 'boss' && q.t0 <= u.t0); bo.push((u.done ? '' : '>') + ((u.t1 - u.t0) / 60).toFixed(1) + (u.hit != null && sc0 ? ' (1st hit ' + Math.round(u.hit - sc0.t0) + ' s in)' : '')); } }
     console.log('  ' + [r.id, m.end, m.gameMin, m.lullShare, m.pMean, m.lullMax ?? '-', m.deaths + ' (' + (m.deaths / Math.max(0.5, m.gameMin) * 20).toFixed(1) + ')', m.retries, Math.round(100 * m.offHits / h) + '% (' + (m.offUnw != null ? Math.round(100 * m.offUnw / h) + '%' : '-') + ')',
-      Object.entries(sec).map(([k, v]) => k + ' ' + v.join('/')).join(' ') || '-', bo.join(' ') || '-', m.bear ? 'hits F/S/R ' + ['front', 'side', 'rear'].map(k => Math.round(100 * m.bear[k] / h) + '%').join('/') : '', m.spawn ? 'rear spawns <60 m ' + m.spawn.rearNear + '/' + m.spawn.near + ' ' + JSON.stringify(m.spawn.how) : ''].join(' · ') + (r.errors.length ? ' · ERR ' + r.errors[0].slice(0, 50) : '')); } }
+      Object.entries(sec).map(([k, v]) => k + ' ' + v.join('/')).join(' ') || '-', bo.join(' ') || '-', m.bear ? 'hits F/S/R ' + ['front', 'side', 'rear'].map(k => Math.round(100 * m.bear[k] / h) + '%').join('/') : '', m.spawn ? 'rear spawns <60 m ' + m.spawn.rearNear + '/' + m.spawn.near + ' ' + JSON.stringify(m.spawn.how) : '', m.ambushes != null ? 'ambushes ' + m.ambushes + ' · dmg 0–45 s ' + m.dmg45 + ' · kill share ' + m.killShare + ' · score ' + m.score : ''].join(' · ') + (r.errors.length ? ' · ERR ' + r.errors[0].slice(0, 50) : '')); } }
 // the same spec at each skill: how the bot's level shows (every result, an errored one too — the skill table only)
 function skills(ALL){ const by = {}; for(const r of ALL){ const k = (r.spec.id || '') + ' · ' + r.spec.world.land; (by[k] || (by[k] = [])).push(r); }
   for(const k in by){ const L = by[k]; if(new Set(L.map(r => r.skill)).size < 2) continue; console.log('skills — ' + k + ':');

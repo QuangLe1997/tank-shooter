@@ -38,7 +38,7 @@ function scr(x, y, z){ _v.set(x, y, z).project(camera); if(!(_v.z < 1) || _v.z <
 const chestY = e => Math.max(e.pos.y || 0, heightAt(e.pos.x, e.pos.z)) + 1.1;
 // BAL 1 a few feelers ahead along the way he wants to go: a wall, a tower, a tank of the foundry in it — he turns to the nearest clear way (left or right, wider and wider)
 const _bn = [];
-function clearWay(p, a){ const P = BOT.steer; for(const d of P.probe){ const x = p.pos.x + Math.sin(a) * d, z = p.pos.z + Math.cos(a) * d; for(const bl of blocksNear(x, z, 2.5, _bn)) if(!bl.ours && inBlock(bl, x, z, P.pad)) return false; } return true; }
+function clearWay(p, a){ const P = BOT.steer; for(const d of P.probe){ const x = p.pos.x + Math.sin(a) * d, z = p.pos.z + Math.cos(a) * d; for(const bl of blocksNear(x, z, P.near, _bn)) if(!bl.ours && inBlock(bl, x, z, P.pad)) return false; } return true; }   // (near: a container's centre is metres from its end)
 function steer(p, wx, wz){ const L = Math.hypot(wx, wz); if(L < 1e-3 || CV.mounted) return; const a0 = Math.atan2(wx, wz); if(clearWay(p, a0)) return;
   for(const f of BOT.steer.fan) for(const s of B.side > 0 ? [1, -1] : [-1, 1]){ const a = a0 + f * s; if(clearWay(p, a)){ B.wx = Math.sin(a) * L; B.wz = Math.cos(a) * L; B.stats.steer = (B.stats.steer || 0) + 1; return; } } }
 // the keys that push him toward world direction (wx, wz): the screen-relative scheme (core/helpers.js getMoveDir turns the keys by the camera's yaw)
@@ -84,13 +84,15 @@ function goalOf(now, p, R){ if(now < B.goalAt) return B.goal; B.goalAt = now + 0
   const M = SIDEM.cur; if(M && M.state === 'go' && M.kind === 'truck') return setG('ring', M.x, M.z, M.K.r * BOT.ringIn);
   if(ty === 'sabotage' && OBJ && OBJ.alive) return setG('shoot', OBJ.x, OBJ.z, R * 0.6, OBJ.b);
   if(ty && ty !== 'hold' && ty !== 'sabotage' && ty !== 'boss'){ const g = SGOAL.g || {}, m0 = mk(0), m1 = mk(1), rr = m => m.ring.scale.x * 6;
-    if(ty === 'rescue'){ if(g.ph === 'held' && m0) return setG('go', m0.ring.position.x, m0.ring.position.z, 1.6); if(m1) return setG('ring', m1.ring.position.x, m1.ring.position.z, rr(m1) * 0.5); }
+    if(ty === 'rescue'){ const D = SGOAL.cell && SGOAL.cell.door, hx = m0 ? m0.ring.position.x : 0, hz = m0 ? m0.ring.position.z : 0;   // BAL 1 into the cell by its open end (a straight line ends at a container)
+      if(g.ph === 'held' && m0 && D && Math.hypot(p.pos.x - hx, p.pos.z - hz) > 3 && Math.hypot(p.pos.x - D[0], p.pos.z - D[1]) > 2 && lineStop(p.pos.x, heightAt(p.pos.x, p.pos.z) + 1, p.pos.z, hx, heightAt(hx, hz) + 1, hz, _s)) return setG('go', D[0], D[1], 1.5);
+      if(g.ph === 'held' && m0) return setG('go', m0.ring.position.x, m0.ring.position.z, 1.6); if(m1) return setG('ring', m1.ring.position.x, m1.ring.position.z, rr(m1) * 0.5); }
     else if(ty === 'breach'){ if(m0) return setG('shoot', m0.ring.position.x, m0.ring.position.z, R * 0.55, null); if(m1) return setG('ring', m1.ring.position.x, m1.ring.position.z, rr(m1) * 0.6); }
     else if(ty === 'infiltrate'){ if(m0) return setG('go', m0.ring.position.x, m0.ring.position.z, 4.5); if(m1) return setG('ring', m1.ring.position.x, m1.ring.position.z, rr(m1) * 0.5); }
     else if(ty === 'pursuit' && m0) return setG('shoot', m0.ring.position.x, m0.ring.position.z, R * 0.5, null); }
   const fortGoal = ty === 'boss' || !SECT.on && S.wave >= WAVE.perStage && !WAVE.active && FORTS.length;
   if(fortGoal){ const f = mainFort(); if(f && !f.captured){ const gx = f.gx != null ? f.gx : f.x, gz = f.gz != null ? f.gz : f.z, atGate = Math.hypot(p.pos.x - gx, p.pos.z - gz) < 10 || B.goal.k === 'fort' && B.goal.o === f;
-    if(!f.breached && f.gate && f.gate.hp > 0) return setG('shoot', gx, gz, R * 0.55, f.gate);   // BAL 1 the citadel's gate shut: shoot it in (world/fortress.js breachFort)
+    if(!f.breached && f.gateShut && f.gate && f.gate.hp > 0) return setG('shoot', gx, gz, R * 0.55, f.gate);   // BAL 1 the citadel's gate shut: shoot it in (world/fortress.js breachFort)
     return atGate ? setG('fort', f.x, f.z, 6, f) : setG('go', gx, gz, 8); } }
   if(M && M.state === 'go') return setG('ring', M.x, M.z, Math.max(2, (M.K && M.K.r || 6) * BOT.ringIn));   // a side mission on offer: its ring
   if(B.thr.on) return setG('front', B.thr.x, B.thr.z, R * B.K.keep);
@@ -182,7 +184,12 @@ function think(now, dt){ const p = S.player, st = B.stats;
     if(B.loot && !(ring && !inRing)){ mode = 'loot'; mx = B.loot.x - p.pos.x; mz = B.loot.z - p.pos.z; if(Math.hypot(mx, mz) < 2.2){ st.loot++; B.loot = null; } }
     else if(dry(p) && (LOGI.base || LOGI.drops.length)){ mode = 'ammo'; const a = LOGI.drops.length ? LOGI.drops[0] : LOGI.base; mx = a.x - p.pos.x; mz = a.z - p.pos.z; sprint = true; }
     else if(dG > g.r || g.k === 'shoot' && B.shotBlocked && dG > 4){ const w = viaGate(p, g); mx = (w ? w.x : g.x) - p.pos.x; mz = (w ? w.z : g.z) - p.pos.z; sprint = dG > 30 && g.k !== 'front'; if(w) mode = 'gate'; } }
+  if(B.detour && now < B.detour.until){ mx = B.detour.x - p.pos.x; mz = B.detour.z - p.pos.z; mode = 'detour'; } else B.detour = null;
   if(B.unstuck > now){ mx = -B.sz * B.side; mz = B.sx * B.side; mode = 'unstuck'; }
+  // BAL 1 no progress toward the goal for BOT.stuck.prog s while pushing for it (a wall that is not a block, a ridge, a slide along a container): a longer side-step; the third time a detour
+  if(mode === 'goal' || mode === 'ring' || mode === 'gate'){ if(!B.pg || now - B.pg.t > 30){ B.pg = { t:now, d:dG, n:0 }; } else if(now - B.pg.t >= BOT.stuck.prog){ if(B.pg.d - dG < 1 && dG > g.r + 1){ B.pg.n++; B.stats.stuck++;
+        if(B.pg.n >= 3){ const a = Math.atan2(g.x - p.pos.x, g.z - p.pos.z) + (Math.random() < 0.5 ? 1 : -1) * (1 + Math.random() * 0.8), r = 15 + Math.random() * 10, q = clampFieldXZ(p.pos.x + Math.sin(a) * r, p.pos.z + Math.cos(a) * r, 4); B.detour = { x:q[0], z:q[1], until:now + 5 }; B.pg.n = 0; B.stats.detours = (B.stats.detours || 0) + 1; }
+        else { const L = Math.hypot(mx, mz) || 1; B.sx = mx / L; B.sz = mz / L; B.side = -B.side || 1; B.unstuck = now + BOT.stuck.side * 2; } } B.pg.t = now; B.pg.d = dG; } }
   // the ride: on for a long way with nobody in sight, off for a fight, a ring, a cover
   const chase = SECT.on && (sectorCur() || {}).type === 'pursuit' && g.k === 'shoot';   // BAL 1 a convoy: after it on the ride, shooting from the saddle
   if(!CV.trans && now >= B.rideAt && now >= B.rideOff){ const far = Math.hypot(mx, mz) > 0 && (chase ? dG > BOT.ride.chase : dG > (g.k === 'shoot' ? BOT.ride.near * 1.3 : BOT.ride.far) && !B.tgt && !B.retreat && mode === 'goal'), near = !chase && (B.tgt || dG < BOT.ride.near || mode === 'ring' || mode === 'cover' || mode === 'tocover' || mode === 'loot');

@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { INFANTRY, PARA, TROOPS } from '../../config.js';
 import { ARENA, BIOME, FT, MOBILE, S, WAVE, _canvasTex, _mergeColored, blocks, clampFieldXZ, decal, enemies, floatText, heightAt, heliCamoTex, insigniaMat, makeCoverMesh, makeSoldierMesh, numMat, radio, scene, sfx, spawnAlly, spawnEnemy, spawnPart, tip, realAir, blPulse, holoRing } from '../hub.js';
-import { frontYaw } from '../hub.js';   // BAL 3 (ui/threat-edge.js: never from behind him)
+import { frontYaw, rearArc } from '../hub.js';   // BAL 3 (ui/threat-edge.js: never from behind him)
 
 export const HELOS=[], PARAS=[];
 let _nextAt=0, _heloMats=null;
@@ -48,7 +48,7 @@ export function chute(cargo){ if(!_canopy){ const geo=new THREE.SphereGeometry(2
 // Z107 our drop zone: beside the tank, a little ahead of it
 function ourZone(){ const p=S.player, f=p.facing||0, d=R([9,15]); return clampFieldXZ(p.pos.x+Math.sin(f)*d+(Math.random()-0.5)*6, p.pos.z+Math.cos(f)*d+(Math.random()-0.5)*6, 8); }
 function dropZone(){ const p=S.player; let cx=p.pos.x, cz=p.pos.z; if(FT.length && Math.random()<0.4){ const a=FT[(Math.random()*FT.length)|0]; cx=a.pos.x; cz=a.pos.z; }
-  const ya=frontYaw(), d=R([16,30]); return clampFieldXZ(cx+Math.sin(ya)*d, cz+Math.cos(ya)*d, 8); }   // BAL 3 in front of him or to a side, never behind
+  for(let k=0;k<8;k++){ const ya=frontYaw(), d=R([16,30]), q=clampFieldXZ((k<4?cx:p.pos.x)+Math.sin(ya)*d, (k<4?cz:p.pos.z)+Math.cos(ya)*d, 8); if(!rearArc(q[0], q[1]) || k===7) return q; } }   // BAL 3 in front of him or to a side, never behind (round one of his men first, else round him)
 export function launchParadrop(now, opt){ const fr=!!(opt&&opt.friendly), [dx,dz]=fr ? (opt.at ? clampFieldXZ(opt.at[0]+(Math.random()-0.5)*8, opt.at[1]+(Math.random()-0.5)*8, 8) : ourZone()) : dropZone(), a=fr ? Math.PI+(Math.random()-0.5)*0.8 : Math.random()*Math.PI-Math.PI;   // Z107 ours start close (it must arrive while the fight is on)   // inbound from the enemy side, straight over the zone
   const st=Math.min(4,S.stage-1), nH=fr ? 1 : (MOBILE?PARA.helosMobile:PARA.helos)[st], T=MOBILE?PARA.troopsMobile:PARA.troops, cx=Math.cos(a), cz=-Math.sin(a);   // Z199 a whole formation
   for(let k=0;k<nH;k++){ const lat=(k-(nH-1)/2)*PARA.spread, back=k*PARA.trail, sx=dx+cx*lat-Math.sin(a)*(ARENA*(fr?0.75:1.15)+back), sz=dz+cz*lat-Math.cos(a)*(ARENA*(fr?0.75:1.15)+back);

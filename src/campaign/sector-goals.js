@@ -61,7 +61,7 @@ function pen(x, z, face, K){ const out = [], c = Math.cos(face), s = Math.sin(fa
   const B = box(back); put(back, 0, -C.hl + B.hw * 0.6, Math.PI / 2, { r:Math.max(B.hw, B.hl) * 0.9, obb:{ f:face + Math.PI / 2, hw:B.hw, hl:Math.max(B.hl, gap / 2 + 0.3) } });   // the back closed
   for(const sd of [-1, 1]) put(bag, sd * (gap / 2 + C.hw * 2 + 1.4), C.hl + 1.2, sd * 0.5, { hp:220, maxHp:220, steel:false, heavy:false });   // the guards' sandbag nests at the open end
   const [tx, tz] = W((Math.random() < 0.5 ? -1 : 1) * (gap / 2 + C.hw * 2 + 6), -C.hl - 3); if(inField(tx, tz, 4)) buildTower(tx, tz);   // the guard post over it
-  UGRID.blkAt = 0; return { blocks:out, inner:W(0, -C.hl * 0.35), depth:C.hl }; }
+  UGRID.blkAt = 0; return { blocks:out, inner:W(0, -C.hl * 0.35), depth:C.hl, door:W(0, C.hl + 2.5) }; }   // (BAL 1 door: just outside the open end — the bot's way in)
 function rescueStart(g, c, now){ const K = g.Y, p = S.player, [x, z] = spot(K.d[0], K.d[1], K.clear), face = Math.atan2(p.pos.x - x, p.pos.z - z);
   SGOAL.cell = pen(x, z, face, K); const [ix, iz] = SGOAL.cell.inner, m = makeSoldierMesh(); m.scale.setScalar(TROOPS.look.scale); m.userData.gun.visible = false; m.position.set(ix, heightAt(ix, iz), iz); m.rotation.y = face; soldierKneel(m, true); scene.add(m);
   SGOAL.man = m; g.x = x; g.z = z; g.zone = { x, z, r:SGOAL.cell.depth + K.ring }; spawnGuards(g.zone, K.guards, K.rpg); g.home = { x:p.pos.x, z:p.pos.z };

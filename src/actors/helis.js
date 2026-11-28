@@ -11,7 +11,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { HELI, ROSTER, TROOPS } from '../../config.js';
 import { BIOME, HELI_DOWN, MOBILE, S, _canvasTex, _mergeColored, blocksNear, bullets, cMod, clampField, clampFieldXZ, decal, decalScorch, deformCrater, diffDmgMul, diffScale, dirtGeyser, enemies, enemyGroundStrike, floatText, heightAt, insigniaMat, loopDmgMul, makeSoldierMesh, numMat, radio, scene, sfx, spawnBullet, spawnEnemy, spawnPart, updateGunship, wrapAngle, realAir, playerSeen } from '../hub.js';
 import { muzzleFX } from '../hub.js';   // GUNFX 1 (fx/gunfx.js)
-import { offScreenK } from '../hub.js';   // BAL 3 (ui/threat-edge.js)
+import { offScreenK, rearArc, frontYaw } from '../hub.js';   // BAL 3 (ui/threat-edge.js)
 
 const _r=(a,b)=>a+Math.random()*(b-a), _ra=a=>_r(a[0],a[1]);
 function _tx(geo,x,y,z,rx,ry,rz,sx,sy,sz){ geo.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x,y,z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx||0,ry||0,rz||0)), new THREE.Vector3(sx||1,sy||1,sz||1))); return geo; }
@@ -167,8 +167,8 @@ function updateBombs(dt, now){ const B=HELI.bomb;
 
 // ---------- the transport: fly in, STOP, ladder down, the squad climbs down, ladder up, go again ----------
 export const CLIMBERS=[]; const _climbPool=[], _bn=[];
-function pickDrop(e){ const T=HELI.troop, p=S.player, base=Math.atan2(e.pos.x-p.pos.x, e.pos.z-p.pos.z);
-  for(let k=0;k<8;k++){ const a=base+(Math.random()-0.5)*1.6, d=_ra(T.standoff), [x,z]=clampFieldXZ(p.pos.x+Math.sin(a)*d, p.pos.z+Math.cos(a)*d, 12); if(!blocksNear(x, z, 4, _bn).length || k===7) return [x,z]; } }
+function pickDrop(e){ const T=HELI.troop, p=S.player; let base=Math.atan2(e.pos.x-p.pos.x, e.pos.z-p.pos.z); if(rearArc(p.pos.x+Math.sin(base)*30, p.pos.z+Math.cos(base)*30)) base=frontYaw(1.3);   // BAL 3 never a rope behind him
+  for(let k=0;k<10;k++){ const a=k<6 ? base+(Math.random()-0.5)*1.6 : frontYaw(1.3), d=_ra(T.standoff), [x,z]=clampFieldXZ(p.pos.x+Math.sin(a)*d, p.pos.z+Math.cos(a)*d, 12); if(!rearArc(x, z) && !blocksNear(x, z, 4, _bn).length || k===9) return [x,z]; } }
 function hoverAlt(e){ const s=e.mesh.scale.x; return (1.15+HELI.troop.ladder)*s-0.25; }   // the ladder's foot just touches the ground
 function troopRun(e, dt, now, edt){ const T=HELI.troop, h=e.hs, p=S.player, ud=e.mesh.userData;
   if(h.st==='pick'){ [h.sx, h.sz]=pickDrop(e); h.st='in'; }

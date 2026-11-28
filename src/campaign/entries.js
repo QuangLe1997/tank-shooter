@@ -37,7 +37,7 @@ export function riseHere(e, wait){ const now = performance.now() / 1000 + (wait 
   e.mesh.position.set(e.pos.x, heightAt(e.pos.x, e.pos.z) - E.depth * Math.max(1, e.mesh.scale.y), e.pos.z); return e; }
 // spawnEnemy's net: a soldier raised during a battle whose caller named no way in comes up out of a hatch (the garrisons placed while a field is built, and
 //   the underground base's own men, are simply at their posts)
-export function entryCheck(e, how){ e.spawnHow = how || 'post'; if(how || !e.def.inf || S.mode !== 'playing' || DICE.building || UNDER.on || UNDER.x0 != null && e.pos.x > UNDER.x0) return; entryRise(e); }
+export function entryCheck(e, how){ e.spawnHow = how || 'post'; if(how || !e.def.inf || S.mode !== 'playing' || DICE.building || UNDER.on || UNDER.x0 != null && e.pos.x > UNDER.x0) return; { const q = sideOf(e.pos.x, e.pos.z); if(q){ e.pos.x = q[0]; e.pos.z = q[1]; } }   /* BAL 3 a man raised behind him comes up at his side */ entryRise(e); }
 // one step of the climb out (actors/infantry.js, before anything else he does): true while he is still coming up — below ground at first, hands up on the rim,
 //   no move of his own, no shot; he can be hit
 export function riseStep(e, dt, now){ const r = e.rise, E = ENTRY, k = (now - r.t0) / r.dur, u = e.mesh.userData;

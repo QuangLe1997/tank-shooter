@@ -7,6 +7,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { CAM_ROOM, FEELFX, FORT, FORTBOSS, FORT_CMD, COMMAND, HOME_GAP, HUDCLEAN, HUDCLEAN2, HUMAN_SCALE, REALFORT, FORT_GAP, BREAKUP, SCENERY, WORLD_FLAGS } from '../../config.js';
 import { cosmetic, edgeNote, ARENA, BIOME, BIOME_PLACE, COVER_HP, FT, HF, MOBILE, S, UNDER, ZONES, bigExplode, biomePlace, blocks, buildTower, burst, camera, campFlagTex, capGeo, capMat, celebrate, coverMat, damageBlock, detailize, diffHpMul, dropGuard, dropPowerup, enemies, fieldR, flameFX, flashMat, floatText, fortStyle, freeEnemyBar, getEnemyBar, haptic, heightAt, homeClear, inField, loopHpMul, makeCoverMesh, makeFlag, makeSoldierMesh, makeSquad, propTex, radio, rallyFlagTex, ringPulse, saveProfile, scene, sfx, showBanner, spawnDebris, spawnEnemy, spawnPart, spawnSquad, startBoss, towerRoof, towers, unwave, bannerTex, wallMat, loadGLTF, buildOutpost, farLOD, landTone, sceneDims, scenePiece, decalAsh, breakScar, decalScorch, hillCfg, paveYard, raiseFortHills, raiseWard , riseHere, dirSallyOk } from '../hub.js';
 import { scoreNote } from '../hub.js';   // HUDCLEAN 2 (game/score.js)
+import { rearArc } from '../hub.js';   // BAL 3 (ui/threat-edge.js)
 
 export const FORTS=[];
 const R2=(r)=>r[0]+Math.random()*(r[1]-r[0]), RI=(r)=>Math.round(R2(r));
@@ -479,7 +480,8 @@ function escortFollow(f){ if(!f.escort) return; const c=f.cmd, alive=c && enemie
   for(let i=f.escort.length-1;i>=0;i--){ const e=f.escort[i]; if(!enemies.includes(e)){ f.escort.splice(i,1); continue; }
     if(!alive){ e.guard=null; e.post=null; continue; } e.escA+=0.06; e.post=[c.pos.x+Math.cos(e.escA)*e.escR, c.pos.z+Math.sin(e.escA)*e.escR]; } }
 // sallies: a squad marches out of the gate onto the field
-function sally(f, now){ if(!dirSallyOk(now)){ f.sallyAt=now+2; return; }   // DIR 1 the director holds a fortress's sallies through a peak and its lull (campaign/director.js)
+function sally(f, now){ if(!dirSallyOk(now)){ f.sallyAt=now+2; return; }
+  if(rearArc(f.gx??f.x, f.gz??f.z)){ f.sallyAt=now+2; return; }   // BAL 3 nor out of a gate behind him   // DIR 1 the director holds a fortress's sallies through a peak and its lull (campaign/director.js)
   f.sallyAt=now+R2(FORT.sally)*(f.tier===3?0.8:1);
   const p=S.player; if(!p || f.posture==='hold' || f.coreDown) return;                     // Z111b a fortress that holds keeps its gate shut · Z176 no command post, no sorties
   let n=0; for(const e of enemies) if(!e.guard) n++; if(n > (MOBILE?16:26)) return;   // the field is already crowded
