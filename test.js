@@ -3204,6 +3204,9 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   { const runs=CQ.forts.map(f=>f.run.split(' ')), first=runs.map(r=>r[0]);
     ok(runs.every(r=>r[r.length-1]==='hq:boss') && new Set(first).size>=5 && first.filter(t=>t==='outskirts:hold').length===0 && runs.every(r=>{ const g=r.indexOf('gate:breach'), y=r.findIndex(t=>/^yard:/.test(t)); return g<0 || y<0 || g<y; }) && /c\.place !== prev\.place/.test(R('src/campaign/sector-route.js')),
       'BAL 8: every fort opens with its own story\'s mission (none with the stuck truck), the gate before the yard, the general last; a dealt sector never shares its neighbour\'s place'); } }
+// BAL 9 the player is the hero (C1-019)
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { BAL:Q, CONQUEST:CQ }=await import('./config.js'), sc=R('src/campaign/sectors.js'), dr=R('src/campaign/director.js'), sp=R('src/campaign/surprises.js');
+  ok(Q.mates.dmgK>0.1 && Q.mates.dmgK<0.8 && (R('src/actors/fireteam.js').match(/BAL\.mates\.dmgK/g)||[]).length>=3, 'BAL 9: his squad pins and he finishes — their rounds hit for a share of what they did'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
