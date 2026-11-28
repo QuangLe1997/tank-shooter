@@ -35,7 +35,7 @@ function build(bare){ const M=mats(), g=new THREE.Group();
   const cr=new THREE.Group(), oct=new THREE.Mesh(new THREE.OctahedronGeometry(0.85,0), M.crystal); oct.scale.set(1,1.55,1); cr.add(oct); cr.position.y=3.0; g.add(cr);
   const r1=new THREE.Mesh(new THREE.TorusGeometry(1.35,0.035,6,40), M.rune), r2=new THREE.Mesh(new THREE.TorusGeometry(1.7,0.03,6,40), M.rune);
   r1.position.y=r2.position.y=3.0; g.add(r1, r2);
-  const beam=new THREE.Mesh(new THREE.CylinderGeometry(0.55,2.4,46,20,1,true).rotateX(Math.PI), beamMat(0xffc878, 1.6, -1e4, true)); beam.position.y=23; beam.renderOrder=6; g.add(beam);   // VIS 7 a shaft of light rising off the stone (soft rim, dust, thinning upward and into the haze), not a solid bar
+  const beam=new THREE.Mesh(new THREE.CylinderGeometry(0.32,1.7,46,20,1,true).rotateX(Math.PI), beamMat(0xffc878, 0.7, -1e4, true)); beam.position.y=23; beam.renderOrder=6; g.add(beam);   // VIS 7 a shaft of light rising off the stone (soft rim, dust, thinning upward and into the haze), not a solid bar
   const ring=holoRing(RELIC.r-0.1, { kind:'ally', col:'loot', ticks:64, tickLen:0.4, spin:0.02, gain:2.2 }); ring.position.y=0.08; g.add(ring);   // Z318 battle-light gold; its lit arc fills as the relic wakes
   const fill=new THREE.Mesh(new THREE.CircleGeometry(RELIC.r-0.22, 64), M.fill); fill.rotation.x=-Math.PI/2; fill.position.y=0.06; g.add(fill);
   g.userData={ cr, crM:M.crystal, cy:3.0, glow:0, r1, r2, beam, ring, fill }; g.userData.real=bare ? null : realRelic(g, [base, step, trim, ...g.children.filter(o=>o.geometry && o.geometry.type==='ConeGeometry')], oct); return g; }   // (SPLIT 2 real: when its models are in)
@@ -73,7 +73,7 @@ function beaconK(p){ const B = HUDUX.beacon, g = RELIC.g; if(g.userData.beam.sca
   const d = Math.hypot(p.pos.x - g.position.x, p.pos.z - g.position.z); return B.k * Math.min(1, Math.max(B.nearK, (d - B.near[0]) / (B.near[1] - B.near[0]))); }
 export function updateRelic(dt, now){ if(!RELIC.live || !RELIC.g) return; const p=S.player, ud=RELIC.g.userData; RELIC.t+=dt; const t=RELIC.t;
   ud.cr.rotation.y+=dt*1.2; ud.cr.position.y=ud.cy+Math.sin(t*1.8)*0.18; ud.r1.rotation.set(Math.PI/2+Math.sin(t*0.9)*0.5, t*0.8, 0); ud.r2.rotation.set(Math.PI/2+Math.cos(t*0.7)*0.6, -t*0.6, 0);
-  ud.ring.material.opacity=blPulse(t, 'idle', 0.6); ud.beam.material.uniforms.uOp.value=(0.65+0.25*Math.sin(t*2.2)+RELIC.prog*0.4)*1.6*VISLOOK.beam.gain*beaconK(p); ud.crystalK=1;
+  ud.ring.material.opacity=blPulse(t, 'idle', 0.6); ud.beam.material.uniforms.uOp.value=(0.65+0.25*Math.sin(t*2.2)+RELIC.prog*0.4)*0.7*VISLOOK.beam.gain*(S.tod==='night' ? 0.6 : 1)*beaconK(p); /* (VIS 10 thinner, dimmer at night · HUDUX fades as he walks up) */ ud.crystalK=1;
   ud.crM.emissiveIntensity = ud.glow ? ud.glow*(1+RELIC.prog*LOOT_REAL.relic.wake)+Math.sin(t*4)*0.08 : 2.2+RELIC.prog*3+Math.sin(t*4)*0.4;   // (LOOT 1 the real stone glows softer, brighter as it wakes)
   if(Math.random() < (MOBILE?0.25:0.5)){ const a=Math.random()*6.283, r=0.5+Math.random()*1.4; spawnPart(RELIC.x+Math.cos(a)*r, RELIC.g.position.y+1.2+Math.random()*2.5, RELIC.z+Math.sin(a)*r, 0, 1.2+Math.random(), 0, { color:Math.random()<0.5?0xffe2a0:0xffb43c, size:0.22, life:1.2, grav:0.6, drag:1 }); }   // motes rising round the crystal
   if(!p || S.mode!=='playing') return;

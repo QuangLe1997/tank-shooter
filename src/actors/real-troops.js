@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { clone as skClone } from 'three/addons/utils/SkeletonUtils.js';
 import { REALTROOP } from '../../config.js';
-import { MODEL_FILES, SOLDIER_KIT, TROOP_BATCH, loadGLTF, poseClip } from '../hub.js';
+import { MODEL_FILES, SOLDIER_KIT, TROOP_BATCH, foeNightTint, loadGLTF, poseClip } from '../hub.js';
 
 // the batched rig's joints at rest (body frame, before the 0.84 body scale) — the same numbers as makeSoldierMesh
 const J = { up:[0, 0.74, 0], head:[0, 1.34, 0], arm:[0, 1.22, 0.02], lh:[-0.2, 1.07, 0.22], gun:[0.04, 1.16, 0.18], hipR:[0.12, 0.74, 0], hipL:[-0.12, 0.74, 0], kneeR:[0.12, 0.36, 0], kneeL:[-0.12, 0.36, 0] };
@@ -26,6 +26,7 @@ export function loadRealTroops(){
     for(const [key, map] of [['f', B.map], ['e', eTex]]){
       const mat = new THREE.MeshStandardMaterial({ map, normalMap:B.nrm, roughness:REALTROOP.rough, metalness:0 }); mat.color.setRGB(...REALTROOP.team[key]);   // Z254 each side its own cast
       swapKit({ real:true, key, mat, mats:{ gun:B.gunMat }, geo:B.geo, muz:B.muz, anchor:B.anchor, bodyK:B.bodyK, joints:B.joints, legs:B.legs, skin:B.skin, aimTrim:B.aimTrim }); }
+    foeNightTint();   // VIS 10 a night battle's enemy kit dimmed (world/atmosphere.js)
     return true; })); }
 
 // pose → bake → mirror into the rig's handedness → scale so the hips sit on the rig's hips → cut per joint (each piece in its joint's frame)

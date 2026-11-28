@@ -62,16 +62,16 @@ export function updateWeather(dt){
 const RAIN_VS = `attribute vec3 aP; attribute float aK; uniform vec3 uDir; uniform float uLen, uW; varying vec2 vUv; varying float vFd, vK;
   void main(){ vec3 h = (modelMatrix * vec4(aP, 1.0)).xyz, p = h - uDir * uLen * (0.75 + 0.5 * aK) * position.y; vec3 sd = cross(uDir, cameraPosition - p); float sl = length(sd);
     p += (sl > 1e-4 ? sd / sl : vec3(1.0, 0.0, 0.0)) * (position.x - 0.5) * uW; vUv = position.xy; vK = aK; vec4 mv = viewMatrix * vec4(p, 1.0); vFd = -mv.z; gl_Position = projectionMatrix * mv; }`;
-const RAIN_FS = `uniform vec3 uCol; uniform float uOp, uFogD; varying vec2 vUv; varying float vFd, vK;
+const RAIN_FS = `uniform vec3 uCol; uniform float uOp, uFogD; uniform vec2 uNear; varying vec2 vUv; varying float vFd, vK;
   void main(){ float x = 1.0 - abs(vUv.x * 2.0 - 1.0), a = x * x * (0.3 + 0.7 * (1.0 - vUv.y)) * (1.0 - smoothstep(0.7, 1.0, vUv.y));
-    a *= uOp * (0.5 + 0.5 * vK) * exp(-pow(vFd * uFogD, 2.0)) * smoothstep(0.8, 2.5, vFd); if(a < 0.003) discard; gl_FragColor = vec4(uCol, a); }`;
+    a *= uOp * (0.5 + 0.5 * vK) * exp(-pow(vFd * uFogD, 2.0)) * smoothstep(uNear.x, uNear.y, vFd); if(a < 0.003) discard; gl_FragColor = vec4(uCol, a); }`;
 function rainMesh(P, n){ const g=new THREE.InstancedBufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array([0,0,0, 1,0,0, 0,1,0, 1,1,0]), 3)); g.setIndex([0,1,2, 2,1,3]);
   const K=new Float32Array(n); for(let i=0;i<n;i++) K[i]=Math.random(); WX.attr=new THREE.InstancedBufferAttribute(P, 3).setUsage(THREE.DynamicDrawUsage); g.setAttribute('aP', WX.attr); g.setAttribute('aK', new THREE.InstancedBufferAttribute(K, 1)); g.instanceCount=n;
   const R=VISLOOK.rain, m=new THREE.ShaderMaterial({ vertexShader:RAIN_VS, fragmentShader:RAIN_FS, transparent:true, depthWrite:false, side:THREE.DoubleSide,
-    uniforms:{ uDir:{ value:new THREE.Vector3(0, -1, 0) }, uLen:{ value:R.len }, uW:{ value:R.w }, uCol:{ value:new THREE.Color(0xc8d4e0) }, uOp:{ value:R.op[S.tod==='night' ? 1 : 0] }, uFogD:{ value:0.004 } } });
+    uniforms:{ uDir:{ value:new THREE.Vector3(0, -1, 0) }, uLen:{ value:R.len }, uW:{ value:R.w }, uCol:{ value:new THREE.Color(0xc8d4e0) }, uOp:{ value:R.op[S.tod==='night' ? 1 : 0] }, uFogD:{ value:0.004 }, uNear:{ value:new THREE.Vector2(...VISLOOK.r2.rainNear) } } });   // (VIS 10 no long bars right at the lens)
   return new THREE.Mesh(g, m); }
 const _rc=new THREE.Color(1,1,1);
-function rainLook(gk){ const u=WX.obj.material.uniforms; u.uDir.value.set(WX.wind.x*gk, -30, WX.wind.y*gk).normalize(); if(scene.fog){ u.uFogD.value=scene.fog.density; u.uCol.value.copy(scene.fog.color).lerp(_rc, 0.5); } }
+function rainLook(gk){ const u=WX.obj.material.uniforms; u.uDir.value.set(WX.wind.x*gk, -30, WX.wind.y*gk).normalize(); if(scene.fog){ u.uFogD.value=scene.fog.density; u.uCol.value.copy(scene.fog.color).lerp(_rc, VISLOOK.rain.tint[S.tod==='night' ? 1 : 0]); } }   // (VIS 10 a night's rain is the night air's colour, a little lighter — not glowing white)
 // Z224 a bolt you can see: a jagged white-blue stroke from the cloud base to the ground somewhere out in the storm; thunder a beat later
 const _a=new THREE.Vector3(), _b=new THREE.Vector3();
 function skyBolt(){ const p=S.player; if(!p || S.mode!=='playing') return; const B=WXFX.bolt, ang=Math.random()*6.283, r=B.r[0]+Math.random()*(B.r[1]-B.r[0]);

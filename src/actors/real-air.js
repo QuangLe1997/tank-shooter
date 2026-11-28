@@ -5,7 +5,7 @@
 // cabin), the gunship's chin cannon, bombs, nav lights, the UAV's gatling and ring. A paratrooper's canopy is the model's canopy (its own
 // hanging soldier cut away below): the game's soldier hangs under it. Airframes built before the files arrive are dressed when they do.
 import * as THREE from 'three';
-import { REALAIR } from '../../config.js';
+import { REALAIR, VISLOOK } from '../../config.js';
 import { loadGLTF } from '../hub.js';
 
 const M = {}, WAIT = []; let _p = null;
@@ -37,6 +37,7 @@ function prep(gl, k){ const S = REALAIR.models[k]; let src = null; gl.scene.upda
     g = subset(g, keep); }
   g.computeBoundingBox(); b = g.boundingBox; g.translate(-(b.min.x + b.max.x) / 2, -(b.min.y + b.max.y) / 2, -(b.min.z + b.max.z) / 2); g.computeBoundingBox(); g.computeBoundingSphere();
   const mat = src.material.clone(); mat.envMapIntensity = S.env ?? 1; mat.side = S.double ? THREE.DoubleSide : THREE.FrontSide;
+  { const C = VISLOOK.r2.cloth[k]; if(C){ mat.metalness = C[0]; mat.roughness = C[1]; } }   // VIS 10 a canopy is cloth, not polished metal (a flat cream disc at night)
   return { geo:g, mat, size:g.boundingBox.getSize(new THREE.Vector3()) }; }
 
 // dress a procedural airframe group (or a parachute) as model k: now if it is in, else as soon as it is

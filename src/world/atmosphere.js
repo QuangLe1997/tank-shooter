@@ -1,7 +1,7 @@
 // world/atmosphere.js — Z97 VISIBLE SKY: a real gradient dome (zenith → horizon haze that melts into the fog), sun glow by day, moon + stars by night
 import * as THREE from 'three';
-import { ART_TONE, GROUNDED, LIGHT, BLIGHT, LOOK, VISLOOK } from '../../config.js';
-import { ATMOS, CLOUD, MOBILE, S, SHADOW_EXT, SHADOW_MAP, SUN_DIR, TOD_ORDER, WX, ambient, applySkyPhoto, cloudTex, gradePass, hemi, renderer, scene, setNightLights, skyEnvTexture, sun, bloom, camera, heightAt } from '../hub.js';
+import { ART_TONE, GROUNDED, LIGHT, BLIGHT, LOOK, VISLOOK, REALTROOP } from '../../config.js';
+import { ATMOS, CLOUD, MOBILE, S, SHADOW_EXT, SHADOW_MAP, SUN_DIR, TOD_ORDER, WX, ambient, applySkyPhoto, cloudTex, gradePass, hemi, renderer, scene, setNightLights, skyEnvTexture, sun, bloom, camera, heightAt, SOLDIER_KIT, MACRO, PATCH_COL } from '../hub.js';
 
 export function todFor(stage){ return TOD_ORDER[(Math.max(1,stage)-1)%TOD_ORDER.length]; }
 export function todAtmos(A, tod){
@@ -122,7 +122,8 @@ export function applyAtmosphere(b){
   renderer.toneMappingExposure = A.exp||1.08;
   hemi.intensity = A.night ? 0.85 : 0.72; scene.environmentIntensity = A.night ? 0.5 : 0.6;
   if(A.night){ hemi.color.setHex(0x44567e); ambient.color.setHex(0x7a8ab4); ambient.intensity=0.36; }   // moonlight fill — shadows stay blue-grey, never black
-  if(NS){ hemi.color.setHex(NS.hemi[0]); hemi.groundColor.setHex(NS.hemi[1]); ambient.color.setHex(NS.amb[0]); ambient.intensity=NS.amb[1]; }   // VIS 5 the light from below: lava, furnaces, torches
+  if(NS){ hemi.color.setHex(NS.hemi[0]); hemi.groundColor.setHex(NS.hemi[1]); ambient.color.setHex(NS.amb[0]); ambient.intensity=NS.amb[1]; }
+  { const pc=PATCH_COL[b.name]||PATCH_COL.DESERT; MACRO.pamt.value=pc[1]*(NS && NS.patch!=null ? NS.patch : 1); }   // VIS 10 fewer bare pale patches by moonlight (from the field's own amount, so a second call never compounds)   // VIS 5 the light from below: lava, furnaces, torches
   u.vig.value = A.night ? 0.22 : 0.28;                                                                 // softer vignette (less eye strain)
   setSky(A);                                                                                           // Z97 visible sky dome matches the light
   SKY.visible=!A.cave;
@@ -139,7 +140,7 @@ export function applyAtmosphere(b){
   if(GROUNDED.on && GROUNDED.fill.on && !A.cave) groundedFill(A);   // LIGHT 1 the shade lit by a pale sky and the ground's warm bounce
   artTone(b.name, A); lookTone(b.name, A);
   if(NS){ const g=gradePass.uniforms; g.shTint.value.set(...NS.sh); g.hiTint.value.set(...NS.hi); if(NS.cloud){ const u=SKY.material.uniforms; u.cLit.value.setHex(NS.cloud[0]); u.cDark.value.setHex(NS.cloud[1]); } }   // VIS 5 its split-tone and its clouds over the film's
-  setNightLights(!!A.night);
+  setNightLights(!!A.night); foeNightTint();
   { const B=BLIGHT.bloom[A.night||A.cave ? 'night' : S.tod==='sunset' ? 'dusk' : 'day']; bloom.strength=B[0]; bloom.radius=B[1]; bloom.threshold=B[2]; }   // Z318 the battle lights bloom more in the dark
   try{ WX.base=null; }catch(e){}   // Z144 weather re-reads this fresh atmosphere as its base (at boot the weather module is not loaded yet)
 }
@@ -150,6 +151,11 @@ export function transitHaze(on){ const f=scene.fog; if(!f) return; const T=VISLO
   if(!on){ if(TH.on){ TH.on=false; if(f.density===TH.set) f.density=TH.d0; } return; }
   if(!TH.on || f.density!==TH.set){ TH.on=true; TH.d0=f.density; }
   const y=camera.position.y-heightAt(camera.position.x, camera.position.z), k=Math.max(T.min, 1-Math.max(0, y-T.y0)/T.span); f.density=TH.set=TH.d0*k; }
+// VIS 10 the enemy's kit at night: its warm team tint leaned toward grey and dimmed (VISLOOK.r2 foeGrey / foeNight) — it read as self-lit against a dark field;
+//   by day the tint as cast (also called when the real troops load: actors/real-troops.js)
+const _ft=new THREE.Color();
+export function foeNightTint(){ let K=null; try{ K=SOLDIER_KIT.e; }catch(e){ return; }   /* (at boot the soldiers' module is not evaluated yet) */ if(!K || !K.real || !K.mat || !K.mat.color) return; const c=K.mat.color.setRGB(...REALTROOP.team.e);
+  if(S.tod==='night'){ const g=(c.r+c.g+c.b)/3; c.lerp(_ft.setRGB(g, g, g), VISLOOK.r2.foeGrey).multiplyScalar(VISLOOK.r2.foeNight); } }
 // VIS 5 the night's signature for this battlefield (config VISLOOK.night), or null (by day, underground, or a land with the plain moonlit night)
 export const nightSig = (name, A) => (A && A.night && !A.cave && VISLOOK.night[name]) || null;
 // LIGHT 1 SKY FILL AND GROUND BOUNCE: a clear sky lights the shade pale blue, not cobalt (its zenith colour greyed toward the horizon's), and the

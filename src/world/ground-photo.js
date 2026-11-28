@@ -1,7 +1,7 @@
 // world/ground-photo.js — Z250 PHOTO GROUND: the battlefield floor wears photo-scanned CC0 materials (Poly Haven, see config GROUND_PHOTO): a base set (colour + normal + roughness at its real-world size) over the whole field, a second set showing through on steep faces, crater bowls and bare patches, and the base blended with itself at another scale under the macro noise so no tile repeats. Loaded per battlefield on entering it; until then — or if a file fails, or `?procground` is in the URL — the procedural ground stays.
 import * as THREE from 'three';
-import { GROUND_PHOTO, LOOK } from '../../config.js';
-import { APPLE, ARENA, MACRO, MOBILE, PHOTO_U, WX, groundMat } from '../hub.js';
+import { GROUND_PHOTO, LOOK, VISLOOK } from '../../config.js';
+import { APPLE, ARENA, MACRO, MOBILE, PHOTO_U, S, WX, groundMat } from '../hub.js';
 
 const _tex = {}, _set = {};
 let _sizes = null, _want = null, _ns0 = null;
@@ -30,6 +30,7 @@ function groundPhoto(b){
     groundMat.roughnessMap = A.arm; groundMat.roughness = 1; groundMat.color.setRGB(...((LOOK.tone[b.name] || {}).tint || GROUND_PHOTO.tint[b.name] || GROUND_PHOTO.tint._)); groundMat.needsUpdate = true;
     groundMat.userData.tint.copy(groundMat.color);   // LOOK 1 kept: the weather darkens the floor from it (a passing storm used to leave it white)
     if(WX && WX.def && WX.def.wet) groundMat.color.multiplyScalar(0.82);
+    { const ng=S.tod==='night' && VISLOOK.night[b.name]; if(ng && ng.gnd) groundMat.color.multiplyScalar(ng.gnd); }   // VIS 10 the night's floor here too: the photo floor arrives after the weather and wiped it (the citadel's pale gravel read as snow)
     MACRO.pamt.value *= G('patchK');
     PHOTO_U.altMap.value = B.diff; PHOTO_U.altScale.value = 1 / ((Z[pair[1]] || 2) * G('altRep')); PHOTO_U.dual.value = G('dual'); PHOTO_U.altOn.value = 1;
     return true; }).catch(e => { console.warn('[ground] photo set not loaded — keeping the procedural ground:', e && e.message); return false; }); }
