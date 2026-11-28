@@ -3078,6 +3078,12 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   ok(/this\.sourceCache\[i\] !== undefined/.test(ad) && /this\.sourceCache\[i\] = p/.test(ad) && /colorSpaceConversion:'none'/.test(ad) && /t\.userData\.mimeType = d\.mimeType/.test(ad),
     'GLTF 1: the same source cache, colour handling and userData as three\'s own loadImageSource');
   ok(/\[\?&\]gltftrace\\b/.test(tr) && /^if\(ON\)\{/m.test(tr) && /^export \* from '\.\/dev\/gltf-trace\.js';/m.test(hub), 'GLTF 1: the blob ledger is in the hub and patches nothing unless ?gltftrace'); }
+// BAL 1 the bot sees as a player does (fog, night), steers round what is in its way, goes round by a fort's gate, shoots a shut citadel gate, hunts a fort's boss, chases a convoy on its ride
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { BOT:BT }=await import('./config.js'), bot=R('src/dev/bot.js');
+  ok(BT.sight.night>15 && BT.sight.night<BT.sight.flash && BT.sight.fogK>0.5 && BT.sight.flashT>0 && /function sightOf\(e, now, R\)/.test(bot) && /scene\.fog/.test(bot) && /S\.tod === 'night'/.test(bot), 'BAL 1: the bot makes out men only as far as the fog and the night let it (a muzzle flash farther)');
+  ok(BT.steer.probe.length>=2 && BT.steer.fan.every(a=>a>0 && a<Math.PI) && /function steer\(p, wx, wz\)/.test(bot) && /function viaGate\(p, g\)/.test(bot) && /f\.gate\.hp > 0\) return setG\('shoot'/.test(bot) && /FBOSS\.list/.test(bot) && BT.ride.chase>0 && BT.ride.surge>0,
+    'BAL 1: feelers ahead and a turn to the clear side, round by a fort\'s gate, a shut citadel gate shot in, the fort\'s boss hunted, a convoy chased on the ride');
+  ok(BT.skill.novice.err>BT.skill.average.err && BT.skill.average.err>BT.skill.good.err && BT.skill.novice.med<BT.skill.average.med && BT.skill.average.med<BT.skill.good.med && BT.skill.novice.cover<BT.skill.good.cover, 'BAL 1: the levels further apart (aim, bandaging, cover)'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

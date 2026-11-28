@@ -7,8 +7,8 @@
 //   how far it keeps off, how keen it is on cover, grenades, skills and loot. B.stats is what it did — the harness reads it (botState()).
 import * as THREE from 'three';
 import { BOT } from '../../config.js';
-import { CV, FORTS, GUNS, LOGI, OBJ, S, SECT, SGOAL, SIDEM, VIEW, WAVE, ammoReserve, camera, clampFieldXZ, core, coverSpot, duelMan, enemies, heightAt, keysFor, lineStop, magCap,
-  mainFort, pickups, playerRange, renderer, sectorCur, sectorForkShown, sectorStoryShown, spellList, spellNow, spellReady } from '../hub.js';
+import { CV, FBOSS, FORTS, GUNS, blocksNear, inBlock, LOGI, OBJ, S, SECT, SGOAL, SIDEM, VIEW, WAVE, ammoReserve, camera, clampFieldXZ, core, coverSpot, duelMan, enemies, heightAt, keysFor, lineStop, magCap,
+  mainFort, pickups, playerRange, renderer, scene, sectorCur, sectorForkShown, sectorStoryShown, spellList, spellNow, spellReady } from '../hub.js';
 
 const B = { on:false, skill:'average', K:null, iv:0, t:0, keys:new Set(), mx:-1, my:-1, down:false, aim:new THREE.Vector3(), aimSet:false, tgt:null, react:0, err:0, firstShot:0,
   burstEnd:0, pauseEnd:0, goal:{ k:'', x:0, z:0, r:0, o:null, y:0 }, goalAt:0, thr:{ x:0, z:0, on:false }, cover:null, coverAt:0, coverWant:false, peekUntil:0, hideUntil:0,
@@ -36,6 +36,11 @@ function letGo(){ for(const k of [...B.keys]) key(k, false); trigger(false, 0); 
 function scr(x, y, z){ _v.set(x, y, z).project(camera); if(!(_v.z < 1) || _v.z < -1) return null; const sx = (_v.x * 0.5 + 0.5) * VIEW.w, sy = (1 - (_v.y * 0.5 + 0.5)) * VIEW.h;
   if(sx < 8 || sx > VIEW.w - 8 || sy < 8 || sy > VIEW.h - 8) return null; _scr.x = sx; _scr.y = sy; return _scr; }
 const chestY = e => Math.max(e.pos.y || 0, heightAt(e.pos.x, e.pos.z)) + 1.1;
+// BAL 1 a few feelers ahead along the way he wants to go: a wall, a tower, a tank of the foundry in it — he turns to the nearest clear way (left or right, wider and wider)
+const _bn = [];
+function clearWay(p, a){ const P = BOT.steer; for(const d of P.probe){ const x = p.pos.x + Math.sin(a) * d, z = p.pos.z + Math.cos(a) * d; for(const bl of blocksNear(x, z, 2.5, _bn)) if(!bl.ours && inBlock(bl, x, z, P.pad)) return false; } return true; }
+function steer(p, wx, wz){ const L = Math.hypot(wx, wz); if(L < 1e-3 || CV.mounted) return; const a0 = Math.atan2(wx, wz); if(clearWay(p, a0)) return;
+  for(const f of BOT.steer.fan) for(const s of B.side > 0 ? [1, -1] : [-1, 1]){ const a = a0 + f * s; if(clearWay(p, a)){ B.wx = Math.sin(a) * L; B.wz = Math.cos(a) * L; B.stats.steer = (B.stats.steer || 0) + 1; return; } } }
 // the keys that push him toward world direction (wx, wz): the screen-relative scheme (core/helpers.js getMoveDir turns the keys by the camera's yaw)
 function push(wx, wz, sprint){ const L = Math.hypot(wx, wz); let u = false, d = false, l = false, r = false;
   if(L > 1e-3){ const c = Math.cos(S.camYaw || 0), s = Math.sin(S.camYaw || 0), kx = (wx * c - wz * s) / L, kz = (wx * s + wz * c) / L; r = kx > 0.38; l = kx < -0.38; d = kz > 0.38; u = kz < -0.38; }
@@ -44,15 +49,20 @@ function push(wx, wz, sprint){ const L = Math.hypot(wx, wz); let u = false, d = 
 // ---- the eyes ----
 function clearLine(e, now, p){ let c = LOS.get(e); if(c && now - c.t < BOT.losEvery) return c.ok; if(B.losN <= 0) return c ? c.ok : false; B.losN--;
   const ok = !lineStop(p.pos.x, heightAt(p.pos.x, p.pos.z) + BOT.eye, p.pos.z, e.pos.x, chestY(e), e.pos.z, _s); if(c){ c.t = now; c.ok = ok; } else LOS.set(e, { t:now, ok }); return ok; }
-function see(now, p, R){ VIS.length = 0; B.losN = BOT.losPerTick; let tx = 0, tz = 0, tw = 0, n = 0; const S2 = (R * BOT.sightK) ** 2, F2 = BOT.front.r * BOT.front.r;
+// BAL 1 how far a man can be made out, as for a player at the screen: the fog's own reach (the distance it leaves a fifth of the contrast), at night a few tens of metres
+//   unless his muzzle flashes (BOT.sight)
+function sightOf(e, now, R){ const Q = BOT.sight, fog = scene.fog, night = S.tod === 'night'; let r = R * BOT.sightK;
+  if(fog && fog.density > 0) r = Math.min(r, Q.fogK / fog.density); if(night) r = Math.min(r, now - (e.shotAt || -9) < Q.flashT ? Q.flash : Q.night); return r; }
+function see(now, p, R){ VIS.length = 0; B.losN = BOT.losPerTick; let tx = 0, tz = 0, tw = 0, n = 0; const F2 = BOT.front.r * BOT.front.r;
   for(let i = 0; i < enemies.length; i++){ const e = enemies[i]; if(!(e.hp > 0) || e.rise || e.gaveUp) continue; const dx = e.pos.x - p.pos.x, dz = e.pos.z - p.pos.z, d2 = dx * dx + dz * dz;
     if(d2 < F2){ const w = 1 / (1 + Math.sqrt(d2) / 12); tx += e.pos.x * w; tz += e.pos.z * w; tw += w; }   // the minimap's dots: where the fight is
-    if(d2 > S2 || !scr(e.pos.x, chestY(e), e.pos.z)) continue; const q = POOL[n] || (POOL[n] = { e:null, d:0 }); q.e = e; q.d = Math.sqrt(d2); VIS.push(q); n++; }
+    const sr = sightOf(e, now, R); if(d2 > sr * sr || !scr(e.pos.x, chestY(e), e.pos.z)) continue; const q = POOL[n] || (POOL[n] = { e:null, d:0 }); q.e = e; q.d = Math.sqrt(d2); VIS.push(q); n++; }
   VIS.sort(byD); B.thr.on = tw > 0; if(tw){ B.thr.x = tx / tw; B.thr.z = tz / tw; }
   const H = typeof document !== 'undefined' && document.getElementById('hitDir'), hn = H ? H.children.length : 0;   // the red hit markers round the crosshair (fx/cinematic.js)
   if(hn && H.lastElementChild !== B.hitEl){ B.hitEl = H.lastElementChild; B.hitAt = now; B.stats.seenHits++; const a = parseFloat(B.hitEl.style.getPropertyValue('--a')) || 0; B.hitA = a; } }
 const byD = (a, b) => a.d - b.d;
-function pickTarget(now, p, R){ const G = duelMan(); let best = null, bs = 1e9;
+const bossOn = () => { for(const Q of FBOSS.list) if(Q.e && Q.e.hp > 0 && Q.st !== 'dead' && Q.st !== 'pending' && Q.st !== 'intro') return Q.e; return null; };
+function pickTarget(now, p, R){ const G = duelMan() || bossOn(); let best = null, bs = 1e9;
   for(let i = 0, n = 0; i < VIS.length && n < 5; i++){ const q = VIS[i]; if(q.d > R * 1.08) break; n++; if(!clearLine(q.e, now, p)) continue;
     const s = q.d - (q.e === B.tgt ? 7 : 0) - (q.e === G ? 20 : 0) - (q.e.alert >= 2 ? 3 : 0); if(s < bs){ bs = s; best = q.e; } }
   if(best !== B.tgt){ B.tgt = best; B.firstShot = 0; if(best){ B.react = now + rnd(B.K.react) / 1000; B.err = gauss() * B.K.err; B.stats.eng++; B.coverWant = Math.random() < B.K.cover; } } }
@@ -68,7 +78,7 @@ function tgtGone(now){ const t = B.tgt; if(!t || t.hp > 0 && enemies.includes(t)
 // ---- the goal: what the HUD asks of him (the sector's rail, its rings and markers, the radar) ----
 function mk(i){ const M = SGOAL.marks[i]; return M && M.ring.visible ? M : null; }
 function setG(k, x, z, r, o, y){ const g = B.goal; g.k = k; g.x = x; g.z = z; g.r = r; g.o = o || null; g.y = y == null ? heightAt(x, z) + 1.4 : y; return g; }
-function goalOf(now, p, R){ if(now < B.goalAt) return B.goal; B.goalAt = now + 0.5; const c = SECT.on ? sectorCur() : null, ty = c ? c.type : '', gen = duelMan();
+function goalOf(now, p, R){ if(now < B.goalAt) return B.goal; B.goalAt = now + 0.5; const c = SECT.on ? sectorCur() : null, ty = c ? c.type : '', gen = duelMan() || bossOn();
   if(SECT.on && SECT.state !== 'fight') return setG('idle', p.pos.x, p.pos.z, 99);
   if(gen && gen.hp > 0) return setG('hunt', gen.pos.x, gen.pos.z, R * 0.7, gen);
   const M = SIDEM.cur; if(M && M.state === 'go' && M.kind === 'truck') return setG('ring', M.x, M.z, M.K.r * BOT.ringIn);
@@ -80,6 +90,7 @@ function goalOf(now, p, R){ if(now < B.goalAt) return B.goal; B.goalAt = now + 0
     else if(ty === 'pursuit' && m0) return setG('shoot', m0.ring.position.x, m0.ring.position.z, R * 0.5, null); }
   const fortGoal = ty === 'boss' || !SECT.on && S.wave >= WAVE.perStage && !WAVE.active && FORTS.length;
   if(fortGoal){ const f = mainFort(); if(f && !f.captured){ const gx = f.gx != null ? f.gx : f.x, gz = f.gz != null ? f.gz : f.z, atGate = Math.hypot(p.pos.x - gx, p.pos.z - gz) < 10 || B.goal.k === 'fort' && B.goal.o === f;
+    if(!f.breached && f.gate && f.gate.hp > 0) return setG('shoot', gx, gz, R * 0.55, f.gate);   // BAL 1 the citadel's gate shut: shoot it in (world/fortress.js breachFort)
     return atGate ? setG('fort', f.x, f.z, 6, f) : setG('go', gx, gz, 8); } }
   if(M && M.state === 'go') return setG('ring', M.x, M.z, Math.max(2, (M.K && M.K.r || 6) * BOT.ringIn));   // a side mission on offer: its ring
   if(B.thr.on) return setG('front', B.thr.x, B.thr.z, R * B.K.keep);
@@ -87,6 +98,12 @@ function goalOf(now, p, R){ if(now < B.goalAt) return B.goal; B.goalAt = now + 0
   if(ne) return setG('front', ne.pos.x, ne.pos.z, R * 0.8);
   return setG('idle', B.home.x, B.home.z, 6); }
 
+// BAL 1 a goal inside a fort's walls while he is outside them: round by the gate — the spot outside it, then the gate itself (a straight line ends at the stone)
+function viaGate(p, g){ for(const f of FORTS){ if(f.captured || f.gx == null) continue; const R = (f.Rin || f.R || 12) + 1.5, inG = Math.hypot(g.x - f.x, g.z - f.z) < R, inP = Math.hypot(p.pos.x - f.x, p.pos.z - f.z) < R;
+    if(!inG || inP) continue; const ox = f.ox != null ? f.ox : f.gx, oz = f.oz != null ? f.oz : f.gz;
+    if(Math.hypot(p.pos.x - ox, p.pos.z - oz) > 3 && Math.hypot(p.pos.x - f.gx, p.pos.z - f.gz) > 4.5) return _gw.set(ox, 0, oz); return _gw.set(f.gx + (f.x - f.gx) * 0.35, 0, f.gz + (f.z - f.gz) * 0.35); }
+  return null; }
+const _gw = new THREE.Vector3();
 // ---- cards and screens a player clicks through ----
 function menus(now){
   if(sectorForkShown()){ if(!B.cardAt) B.cardAt = now + BOT.cardWait; if(now < B.cardAt) return true; B.cardAt = 0;   // the fork: novice the easier route, good the harder, average the default
@@ -105,7 +122,7 @@ function doAct(now){ const a = B.act; if(!a) return false; if(now > a.until){ B.
   if(a.x != null){ const s = scr(a.x, heightAt(a.x, a.z) + 0.3, a.z); if(s) mouseTo(s.x, s.y); }
   if(now >= a.at){ tap(KEY('skill')); B.stats.skills[a.id] = (B.stats.skills[a.id] || 0) + 1; if(a.id === 'grenade') B.stats.nades++; B.act = null; } return true; }
 function tactics(now, p){ const K = B.K, hpF = p.hp / p.maxHp;
-  if(hpF < 0.5 && now >= B.medAt){ B.medAt = now + 1.5; if(cast('medkit', null, null, now)) return; }
+  if(hpF < K.med && now >= B.medAt){ B.medAt = now + 1.5; if(cast('medkit', null, null, now)) return; }
   if(now >= B.nadeAt && VIS.length >= BOT.nade.min){ B.nadeAt = now + BOT.nade.every; if(Math.random() < K.nade){ let bx = 0, bz = 0, bn = 0;
     for(const q of VIS){ if(q.d < BOT.nade.d[0] || q.d > BOT.nade.d[1]) continue; let n = 0, sx = 0, sz = 0; for(const r of VIS){ const dd = Math.hypot(r.e.pos.x - q.e.pos.x, r.e.pos.z - q.e.pos.z); if(dd < BOT.nade.r){ n++; sx += r.e.pos.x; sz += r.e.pos.z; } } if(n > bn){ bn = n; bx = sx / n; bz = sz / n; } }
     if(bn >= BOT.nade.min && cast('grenade', bx, bz, now)) return; } }
@@ -138,6 +155,7 @@ function think(now, dt){ const p = S.player, st = B.stats;
   if(S.mode !== 'playing' || !p){ letGo(); B.tgt = null; B.act = null; return; }
   st.playT += dt; if(!B.home.set || SECT.on && SECT.i !== B.sect && SECT.state === 'fight'){ B.home.x = p.pos.x; B.home.z = p.pos.z; B.home.set = true; B.sect = SECT.on ? SECT.i : -1; }
   const K = B.K, R = playerRange(), hpF = p.hp / p.maxHp; see(now, p, R); tgtGone(now); pickTarget(now, p, R); camTurn(now, p); const g = goalOf(now, p, R); gunCare(now, p, R);
+  if(g.k === 'shoot' && SECT.on && (sectorCur() || {}).type === 'pursuit' && B.tgt && Math.hypot(B.tgt.pos.x - p.pos.x, B.tgt.pos.z - p.pos.z) > BOT.ride.chase + 3) B.tgt = null;   // (the trucks first)
   if(!doAct(now)) tactics(now, p);
   // where to go
   let mx = 0, mz = 0, sprint = false, mode = 'goal', crouch = false; const dG = Math.hypot(g.x - p.pos.x, g.z - p.pos.z), ring = g.k === 'ring', inRing = ring && dG < g.r / BOT.ringIn;
@@ -148,7 +166,7 @@ function think(now, dt){ const p = S.player, st = B.stats;
   else if(B.retreat){ mode = 'retreat'; const hx = core ? core.pos.x : B.home.x, hz = core ? core.pos.z : B.home.z; let ax = p.pos.x - (B.thr.on ? B.thr.x : p.pos.x), az = p.pos.z - (B.thr.on ? B.thr.z : p.pos.z); const al = Math.hypot(ax, az) || 1;
     const [rx, rz] = clampFieldXZ(p.pos.x + ax / al * 20 + (hx - p.pos.x) * 0.15, p.pos.z + az / al * 20 + (hz - p.pos.z) * 0.15, 4); mx = rx - p.pos.x; mz = rz - p.pos.z; sprint = !B.rFire;
     const h = pickups.find(u => u.landed && u.def && u.def.id === 'heal' && Math.hypot(u.x - p.pos.x, u.z - p.pos.z) < BOT.loot.r * 1.2); if(h){ mx = h.x - p.pos.x; mz = h.z - p.pos.z; } }
-  else if(ring && !inRing){ mode = 'ring'; mx = g.x - p.pos.x; mz = g.z - p.pos.z; sprint = !B.tgt && dG > 15; }
+  else if(ring && !inRing){ mode = 'ring'; const w = viaGate(p, g); mx = (w ? w.x : g.x) - p.pos.x; mz = (w ? w.z : g.z) - p.pos.z; sprint = !B.tgt && dG > 15; }
   else if(B.tgt){ mode = 'fight'; const t = B.tgt, d = Math.hypot(t.pos.x - p.pos.x, t.pos.z - p.pos.z);
     if(B.coverWant && !CV.mounted && now >= B.coverAt){ B.coverAt = now + BOT.cover.every; const c = coverSpot(p.pos.x, p.pos.z, B.thr.on ? B.thr.x : t.pos.x, B.thr.on ? B.thr.z : t.pos.z, BOT.cover.r);
       B.cover = c && (!ring || Math.hypot(c.x - g.x, c.z - g.z) < g.r / BOT.ringIn) ? { x:c.x, z:c.z, at:false } : null; }
@@ -163,15 +181,18 @@ function think(now, dt){ const p = S.player, st = B.stats;
     if(!L && now >= B.lootAt){ B.lootAt = now + 0.8; let bd = BOT.loot.r; for(const u of pickups){ if(!u.landed) continue; const d = Math.hypot(u.x - p.pos.x, u.z - p.pos.z); if(d < bd && Math.random() < K.loot && (!ring || Math.hypot(u.x - g.x, u.z - g.z) < g.r / BOT.ringIn)){ bd = d; B.loot = u; } } }   // (holding a ring: only what lies inside it)   // (a novice does not notice every drop)
     if(B.loot && !(ring && !inRing)){ mode = 'loot'; mx = B.loot.x - p.pos.x; mz = B.loot.z - p.pos.z; if(Math.hypot(mx, mz) < 2.2){ st.loot++; B.loot = null; } }
     else if(dry(p) && (LOGI.base || LOGI.drops.length)){ mode = 'ammo'; const a = LOGI.drops.length ? LOGI.drops[0] : LOGI.base; mx = a.x - p.pos.x; mz = a.z - p.pos.z; sprint = true; }
-    else if(dG > g.r){ mx = g.x - p.pos.x; mz = g.z - p.pos.z; sprint = dG > 30 && g.k !== 'front'; } }
+    else if(dG > g.r || g.k === 'shoot' && B.shotBlocked && dG > 4){ const w = viaGate(p, g); mx = (w ? w.x : g.x) - p.pos.x; mz = (w ? w.z : g.z) - p.pos.z; sprint = dG > 30 && g.k !== 'front'; if(w) mode = 'gate'; } }
   if(B.unstuck > now){ mx = -B.sz * B.side; mz = B.sx * B.side; mode = 'unstuck'; }
   // the ride: on for a long way with nobody in sight, off for a fight, a ring, a cover
-  if(!CV.trans && now >= B.rideAt && now >= B.rideOff){ const far = Math.hypot(mx, mz) > 0 && dG > (g.k === 'shoot' ? BOT.ride.near * 1.3 : BOT.ride.far) && !B.tgt && !B.retreat && mode === 'goal', near = B.tgt || dG < BOT.ride.near || mode === 'ring' || mode === 'cover' || mode === 'tocover' || mode === 'loot';
+  const chase = SECT.on && (sectorCur() || {}).type === 'pursuit' && g.k === 'shoot';   // BAL 1 a convoy: after it on the ride, shooting from the saddle
+  if(!CV.trans && now >= B.rideAt && now >= B.rideOff){ const far = Math.hypot(mx, mz) > 0 && (chase ? dG > BOT.ride.chase : dG > (g.k === 'shoot' ? BOT.ride.near * 1.3 : BOT.ride.far) && !B.tgt && !B.retreat && mode === 'goal'), near = !chase && (B.tgt || dG < BOT.ride.near || mode === 'ring' || mode === 'cover' || mode === 'tocover' || mode === 'loot');
     if(CV.mounted ? near && !far : far){ if(CV.mounted && Math.abs(CV.speed) > 3){ mx = mz = 0; } else { tap(KEY('crew')); B.rideAt = now + 3; B.rideTry++; st.rides++; B.wasM = CV.mounted; } }
     if(B.rideTry > 3){ B.rideOff = now + 20; B.rideTry = 0; } }
   if(B.wasM != null && CV.mounted !== B.wasM){ B.rideTry = 0; B.wasM = null; }
+  if(chase && CV.mounted && dG > BOT.ride.chase * 1.6 && now >= (B.surgeAt || 0)){ B.surgeAt = now + BOT.ride.surge; tap(KEY('dash')); }   // BAL 1 the mount's burst of speed to close on the convoy
   // stance: down only to hide behind cover
   if(!CV.mounted && now >= B.stanceAt && (CV.want === 'crouch') !== crouch && CV.want !== 'prone'){ tap(KEY('camAuto')); B.stanceAt = now + 0.35; }
+  B.mode = mode; B.dG = dG; B.wx = mx; B.wz = mz; if(mode !== 'unstuck') steer(p, mx, mz); mx = B.wx; mz = B.wz;
   const moving = push(mx, mz, sprint && !B.down); st.modes[mode] = +((st.modes[mode] || 0) + dt).toFixed(2);
   // stuck: pushing, going nowhere — sidestep, hop; the third time on one spot, climb
   const v = Math.hypot(p.vel.x, p.vel.z); if(moving && mode !== 'unstuck' && v < BOT.stuck.v){ B.stuckT += dt; if(B.stuckT > BOT.stuck.t){ B.stuckT = 0; const L = Math.hypot(mx, mz) || 1; B.sx = mx / L; B.sz = mz / L; B.side = Math.random() < 0.5 ? -1 : 1;
@@ -179,7 +200,8 @@ function think(now, dt){ const p = S.player, st = B.stats;
   // the cursor and the trigger
   if(B.act) return;
   if(B.tgt && (mode !== 'retreat' || B.rFire)){ if(mode === 'cover' && B.hideUntil) trigger(false, now); else aimFire(now, dt, p, B.tgt.pos.x, chestY(B.tgt), B.tgt.pos.z, R, true); return; }
-  if(g.k === 'shoot' && dG < R * 1.02){ if(dG > g.r + 2 && !moving){ push(g.x - p.pos.x, g.z - p.pos.z, false); } aimFire(now, dt, p, g.x, g.y, g.z, R, false); return; }
+  if(g.k === 'shoot' && dG < R * 1.02){ if(now >= (B.shotLosAt || 0)){ B.shotLosAt = now + 0.5; B.shotBlocked = !!lineStop(p.pos.x, heightAt(p.pos.x, p.pos.z) + BOT.eye, p.pos.z, g.x, g.y, g.z, _s) && dG > 5; }
+    if((dG > g.r + 2 || B.shotBlocked) && !moving){ const w = viaGate(p, g); push((w ? w.x : g.x) - p.pos.x, (w ? w.z : g.z) - p.pos.z, false); } aimFire(now, dt, p, g.x, g.y, g.z, R, false); return; }   // (a wall between: closer, round it)
   trigger(false, now); if(moving) lookAhead(p, mx, mz); }
 function tick(){ const now = performance.now() / 1000, dt = Math.min(0.5, now - (B.t || now)); B.t = now; B.stats.t += dt;
   try{ think(now, dt); }catch(e){ B.stats.errs++; B.lastErr = String(e && e.message || e).slice(0, 200); } }

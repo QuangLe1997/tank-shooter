@@ -2428,14 +2428,16 @@ export const COMMAND = { musterT:14, assaultT:120, fightNear:{ muster:8, assault
 //   thought of every s · skillMin / skillEvery: an air strike or a fireteam when that many are in sight, thought of every s · ride: on the ride for a goal past far m, off within near ·
 //   stuck: under v m/s for t s while pushing = stuck (a side-step of side s, a hop; the third time on one spot a climb) · loot.r: drops it walks to (m) · reloadAt: a reload with nothing in
 //   sight under that share of the magazine · cam: it turns the view 45° toward a shooter / the fight more than off rad off the screen's up, at most every s · onTol: degrees off its own aim it may fire at · cardWait: s before it picks a card (reading it) · fork: the route a skill picks.
+//   BAL 1 sight: what it can make out — the fog's reach (fogK ÷ its density: a fifth of the contrast left), at night night m, flash m for flashT s after a man fires · ride.chase: a convoy
+//   (pursuit) is chased on the ride past chase m, shot at from the saddle · steer: the way ahead felt at probe m; blocked, it turns by the fan's angles (rad) to the side that is clear
 //   skill: react ms (from a new man in sight to the cursor moving), err ° (1σ of the aim, drifting), track /s (how fast the cursor closes on the man), burst (rounds, ×the gun's
 //   rate), pause s between bursts, expose s up at cover before hide s down, retreat: health share it falls back under (retreatFire: the chance it shoots as it goes), keep: the
-//   distance it fights at (× range), strafe, cover / nade / skill / loot / reload: how likely it seeks cover in a fight, throws at a group, calls a skill, notices a drop, reloads early, turns the view
+//   distance it fights at (× range), strafe, cover / nade / skill / loot / reload: how likely it seeks cover in a fight, throws at a group, calls a skill, notices a drop, reloads early, turns the view; med: health share it bandages under
 export const BOT = { think:20, sightK:1.5, eye:1.45, losEvery:0.25, losPerTick:2, front:{ r:65 }, ringIn:0.6, cover:{ r:12, every:2.5 }, nade:{ min:3, r:5, d:[10, 30], every:2.5 },
-  skillMin:4, skillEvery:7, ride:{ far:80, near:35 }, stuck:{ v:0.6, t:1.4, side:1.1 }, loot:{ r:22 }, cam:{ off:1.1, every:1.2 }, reloadAt:0.4, onTol:4, cardWait:1.5, fork:{ novice:'easy', average:'def', good:'hard' },
-  skill:{ novice:{ react:[450, 700], err:5.5, track:4, burst:[3, 7], pause:[0.45, 0.8], expose:3.5, hide:1, retreat:0.18, retreatFire:0.2, keep:0.45, strafe:false, cover:0.3, nade:0.2, skill:0.1, loot:0.55, reload:0.2, cam:0.35 },
-    average:{ react:[260, 400], err:3, track:7, burst:[4, 8], pause:[0.3, 0.55], expose:2.2, hide:1.3, retreat:0.32, retreatFire:0.45, keep:0.6, strafe:false, cover:0.6, nade:0.5, skill:0.25, loot:0.8, reload:0.5, cam:0.7 },
-    good:{ react:[170, 250], err:1.6, track:11, burst:[5, 10], pause:[0.2, 0.35], expose:1.6, hide:1.4, retreat:0.42, retreatFire:0.7, keep:0.72, strafe:true, cover:0.85, nade:0.75, skill:0.45, loot:1, reload:0.8, cam:0.95 } } };
+  skillMin:4, skillEvery:7, ride:{ far:80, near:35, chase:12, surge:7 }, steer:{ probe:[1.5, 3, 4.5], fan:[0.5, 1, 1.5, 2.1], pad:0.6 }, sight:{ fogK:1.27, night:30, flash:75, flashT:1.5 }, stuck:{ v:0.6, t:1.4, side:1.1 }, loot:{ r:22 }, cam:{ off:1.1, every:1.2 }, reloadAt:0.4, onTol:4, cardWait:1.5, fork:{ novice:'easy', average:'def', good:'hard' },
+  skill:{ novice:{ react:[500, 800], err:7, track:3, burst:[3, 7], pause:[0.45, 0.8], expose:4.5, hide:1, retreat:0.12, retreatFire:0.2, keep:0.4, strafe:false, cover:0.15, nade:0.2, skill:0.1, loot:0.55, reload:0.2, cam:0.25, med:0.3 },
+    average:{ react:[260, 400], err:3, track:7, burst:[4, 8], pause:[0.3, 0.55], expose:2.2, hide:1.3, retreat:0.32, retreatFire:0.45, keep:0.6, strafe:false, cover:0.6, nade:0.5, skill:0.25, loot:0.8, reload:0.5, cam:0.7, med:0.5 },
+    good:{ react:[150, 220], err:1.2, track:12, burst:[5, 10], pause:[0.2, 0.35], expose:1.5, hide:1.4, retreat:0.45, retreatFire:0.7, keep:0.72, strafe:true, cover:0.95, nade:0.75, skill:0.45, loot:1, reload:0.8, cam:0.95, med:0.6 } } };
 
 // Z107 FLATTER BATTLEFIELD — mostly level ground so the tank drives freely: only a handful of big rolling hills, very few old craters,
 //   a whisper of surface noise, and shells dig shallower craters (blastK) — the ground no longer fills up with pits.
