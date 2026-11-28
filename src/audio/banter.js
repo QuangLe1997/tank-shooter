@@ -12,6 +12,8 @@
 //   PROFILE.banter === false (Cài đặt → Âm thanh → Thoại vui) = all of it off; the danger calls stay.
 import * as THREE from 'three';
 import { VOICE_CHAT as C } from '../../config.js';
+import { FEELFX } from '../../config.js';   // FEEL 4
+import { SHOTS } from '../hub.js';   // FEEL 4 (actors/gun-feel.js: his own kills)
 import { CV, DIR, NADES, NIGHT, PROFILE, QUIET, RIDE_VOICE, S, VOICE, VOICE_LINES, WX, audio, camera, enemies, hudOn, master, sayVoice, squadList, voiceDuck, voiceLoad, voiceOn } from '../hub.js';
 
 const NOW = () => performance.now() / 1000, GROUP = { c:'cmd', v:'foe', f:'foe', d:'drv', s:'sol', m:'mate', e:'foe' };
@@ -71,8 +73,8 @@ function ride(who, ev, i){ const now = NOW(), float = hudOn('talk');
 
 // ---- the story's cues (campaign/story.js storyCue, one line there) ----
 export function banterCue(ev, data){ if(S.mode !== 'playing' || typeof ev !== 'string') return;
-  if(ev === 'throw'){ play(pick('s_throw')); return; }                                                               // (combat/trooper-spells.js: his own grenade)
-  if(ev === 'kill'){ if(Math.random() < C.kill.p) play(pick('s_kill')); return; }
+  if(ev === 'throw') return play(pick('s_throw'));   // (FEEL 4 true = he is heard saying it: the caller drops its text)                                                               // (combat/trooper-spells.js: his own grenade)
+  if(ev === 'kill'){ if(Math.random() < C.kill.p){ if(!FEELFX.on) play(pick('s_kill')); else later(0.05, () => { if(performance.now() / 1000 - SHOTS.killAt < FEELFX.voice.kill.mine) play(pick('s_kill')); }); } return; }   // FEEL 4 only his own kill (his round's hit lands just after the kill is cued)
   if(ev.startsWith('mate_down')){ play(pick('m_down')); return; }
   if(ev === 'mate_saved' || ev === 'patched'){ play(pick('m_saved')); return; }
   if(ev === 'surrender'){ play(pick('e_surr'), { at:foeNear() }); return; }
@@ -117,7 +119,10 @@ function tick(){ const p = S.player; if(S.mode !== 'playing' || !p || !banterOn(
 
 // a new battle (audio/voice.js voiceStage): a clean slate, the ride's voice hung on, the look-out started once
 export function banterStage(){ banterCut(); Object.assign(BANTER, { gapN:{}, cyc:{}, log:[], last:null, wait:null, endAt:-9, rideAt:-9, st:{} }); BANTER.stats = { said:0, dropped:0, cut:0 };
+  if(FEELFX.on) for(const k in FEELFX.voice.keys) for(const f of takes(FEELFX.voice.keys[k])) voiceLoad(f);   // FEEL 4 the squad's calls: loaded now, spoken only if every take is there
   RIDE_VOICE.on = true; RIDE_VOICE.play = ride; if(!BANTER.poll && typeof setInterval === 'function') BANTER.poll = setInterval(tick, C.tick * 1000); }
+// FEEL 4 a squad call spoken (audio/afx-mix.js barks): every take of base loaded → one said from where the mate stands, no text; false → the caller shows its text
+export function banterBark(base, at){ const T = takes(base); if(!T.length || !T.every(k => VOICE.bufs[k])) return false; return play(pick(base), { scene:1, at, float:true }); }
 // the settings switch turned on: one line to hear it
 export function banterPreview(){ const was = BANTER.gapN.drv; BANTER.gapN.drv = 0; play(pick('d_pickup'), { scene:1 }); BANTER.gapN.drv = was; }
 

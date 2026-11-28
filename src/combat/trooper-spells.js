@@ -1,7 +1,7 @@
 // combat/trooper-spells.js — Z307 THE SOLDIER'S OWN SKILLS (soldier mode only; the tank keeps combat/spells.js SPELLS): a hand grenade lobbed to where
 //   you aim (a small blast, not a shell's), a smoke grenade tossed a few metres ahead (the same screen that blinds laser designators, thrown by hand instead
 //   of fired from turret dischargers), a field dressing (health back, no base repair) — and the radio: an airstrike, a fireteam brought up.
-import { CAV, DRONEWAR, EQUIP } from '../../config.js';
+import { CAV, DRONEWAR, EQUIP, FEELFX } from '../../config.js';
 import { MOBILE, S, airstrike, banterCue, callFireteam, dropBeam, enemies, fireMortar, floatText, fpvCast, fpvStock, jamBurst, reconLaunch, ringPulse, sfx, spawnPart, updateHUD } from '../hub.js';
 
 const T = () => CAV.soldier;
@@ -17,7 +17,7 @@ export const TROOPER_SPELLS = [
   { id:'jammer', name:'JAMMER', vi:'GÂY NHIỄU', svg:'jam', own:true, get cd(){ return DRONEWAR.jam.cd; }, cast(now){ return jamBurst(now); } },   // DRONE 3 every enemy drone near him loses its link (campaign/drone-raid.js)
 ].filter(s => (!s.own || DRONEWAR.on) && !(s.desk && MOBILE));   // (?nodrones: off the list · desk: not on phones)
 // lobbed by hand to the aim point (the mortar's arc, a grenade's size and blast)
-function grenade(now){ banterCue('throw'); const G = T().grenade, k = S.player.nadeK || 1; fireMortar(now, { small:true, aoeR:G.r * Math.sqrt(k), bossDmg:G.dmg * k * 0.4 }, G.dmg * k); sfx('whoosh'); floatText('NÉM LỰU ĐẠN!', '#ffcf5a', S.player.pos, 15); }   // (Z350 LÍNH NÉM LỰU: nadeK)
+function grenade(now){ const said = banterCue('throw') && FEELFX.on; const G = T().grenade, k = S.player.nadeK || 1; fireMortar(now, { small:true, aoeR:G.r * Math.sqrt(k), bossDmg:G.dmg * k * 0.4 }, G.dmg * k); sfx('whoosh'); if(!said) floatText('NÉM LỰU ĐẠN!', '#ffcf5a', S.player.pos, 15); }   // FEEL 4 heard ("Lựu đạn!"): no text   // (Z350 LÍNH NÉM LỰU: nadeK)
 // a smoke grenade a few metres ahead of him
 function handSmoke(now){ const p = S.player, f = p.aimSmoothed ?? p.facing, d = T().smoke.toss, x = p.pos.x + Math.sin(f) * d, z = p.pos.z + Math.cos(f) * d;
   p.smokeUntil = now + EQUIP.smoke.dur; p.smokeX = x; p.smokeZ = z;

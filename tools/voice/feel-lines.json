@@ -1,0 +1,10 @@
+[
+ ["m1", "m_left_1", "Bên trái! Địch bên trái!", 1.12],
+ ["m2", "m_left_2", "Trái! Chúng vòng bên trái!", 1.12],
+ ["m1", "m_right_1", "Bên phải! Địch bên phải!", 1.12],
+ ["m2", "m_right_2", "Phải! Chúng vòng bên phải!", 1.12],
+ ["m1", "m_rear_1", "Sau lưng! Quay lại!", 1.12],
+ ["m2", "m_rear_2", "Địch phía sau! Quay lại!", 1.12],
+ ["m2", "m_kill_1", "Hạ một tên!", 1.08],
+ ["m1", "m_kill_2", "Gục rồi! Tên tiếp theo!", 1.08]
+]

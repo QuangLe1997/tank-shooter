@@ -35,6 +35,7 @@ export function wadeAt(x, z){ return T.wade(x, z); }
 export const DIR = { on:false, phase:'build', P:0, fin:0, near:0, flank:null }, NADES = [], VOICE = { playing:null };
 export function duelOn(){ return T.duel; }
 export function squadList(){ return T.squad; }
+export function banterBark(k){ (T.barked || (T.barked = [])).push(k); return !!T.voiced; }   // FEEL 4 a squad call spoken when its takes are loaded (T.voiced) — the text then stays off
 export function sfxLevel(){ return 0.5; }
 export function floatText(text, color, pos, size){ T.floats.push(text); T.floatAt = { x:pos.x, y:pos.y, z:pos.z }; }
 export function radio(msg){ T.radios.push(msg); radio.at = 0; }

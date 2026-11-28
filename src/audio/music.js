@@ -1,9 +1,17 @@
 // audio/music.js — Z161 ADAPTIVE BATTLE SCORE: five looped stems rendered offline (pad · war drums · bass ostinato · string spiccato · brass) that fade in with the fight, plus a theme for each general
-import { duelOn, duelId, S, actx, afxMusicHeat, enemies, musicBus } from '../hub.js';
+import { FEELFX } from '../../config.js';
+import { BIOME, FBOSS, duelOn, duelId, S, actx, afxMusicHeat, enemies, musicBus } from '../hub.js';
 
 // D minor, 96 bpm, 8 bars: i – VI – iv – V (two bars each). Every stem is the same length so they loop locked together.
-const BPM=96, BEAT=60/BPM, BARS=8, LEN=BEAT*4*BARS;
-const CHORDS=[[50,53,57],[46,50,53],[43,46,50],[45,49,52]];          // Dm · Bb · Gm · A (midi, root position around D3)
+let BPM=96, BEAT=60/BPM, LEN=BEAT*4*8; const BARS=8;
+const CHORDS0=[[50,53,57],[46,50,53],[43,46,50],[45,49,52]];          // Dm · Bb · Gm · A (midi, root position around D3)
+let CHORDS=CHORDS0, DRUM=0, LEAD='sawtooth';
+// FEEL 4 each land its own variation (FEELFX.music.lands: [key semitones, bpm, drum pattern, lead voice]) — the stems are rendered again when the land changes
+const FLAV0=[0, 96, 0, 'sawtooth'];
+function flavOf(){ const L=FEELFX.on && FEELFX.music.lands; return (L && BIOME && L[BIOME.name]) || FLAV0; }
+function setFlav(f){ BPM=f[1]; BEAT=60/BPM; LEN=BEAT*4*BARS; CHORDS=CHORDS0.map(c=>c.map(n=>n+f[0])); DRUM=f[2]|0; LEAD=f[3]||'sawtooth'; }
+// a general with no motif of his own: one of FEELFX.music.motifs picked by his id (the same general, the same theme)
+export function motifFor(id){ if(BOSS_MOTIF[id]) return BOSS_MOTIF[id]; const M=FEELFX.music.motifs; if(!FEELFX.on || !M || !M.length || !id) return BOSS_MOTIF.overlord; let h=7; for(const c of String(id)) h=(h*31+c.charCodeAt(0))>>>0; return M[h%M.length]; }
 const hz=n=>440*Math.pow(2,(n-69)/12);
 // each general's motif: semitones over the chord root, four notes a bar (null = rest) — what you hear when it rolls in
 export const BOSS_MOTIF = {
@@ -29,8 +37,8 @@ const BUILD = {
     const snare=(t,v)=>{ const s=oc.createBufferSource(), f=oc.createBiquadFilter(), g=oc.createGain(); s.buffer=N; f.type='bandpass'; f.frequency.value=1900; f.Q.value=0.8; env(g,t,0.002,0.22*v,0.16); s.connect(f).connect(g).connect(out); s.start(t, Math.random()*0.5); s.stop(t+0.25); osc(oc,'triangle',190,t,0.08,out,0.08*v); };
     const hat=(t,v)=>{ const s=oc.createBufferSource(), f=oc.createBiquadFilter(), g=oc.createGain(); s.buffer=N; f.type='highpass'; f.frequency.value=7500; env(g,t,0.001,0.05*v,0.04); s.connect(f).connect(g).connect(out); s.start(t, Math.random()*0.5); s.stop(t+0.08); };
     for(let b=0;b<BARS;b++){ const t0=b*4*BEAT;
-      for(const [bt,v] of [[0,1],[1.5,0.6],[2,0.85],[3,0.7]]) taiko(t0+bt*BEAT, v);
-      snare(t0+1*BEAT,0.8); snare(t0+3*BEAT,1); for(let e=0;e<8;e++) hat(t0+e*BEAT/2, e%2?0.6:1);
+      for(const [bt,v] of (DRUM===1 ? [[0,1],[0.5,0.5],[1,0.8],[2,1],[2.5,0.5],[3,0.8]] : DRUM===2 ? [[0,1],[2.5,0.7]] : [[0,1],[1.5,0.6],[2,0.85],[3,0.7]])) taiko(t0+bt*BEAT, v);   // FEEL 4 taiko · a march · sparse
+      snare(t0+1*BEAT,DRUM===2?0.5:0.8); snare(t0+3*BEAT,1); for(let e=0;e<8;e++) if(DRUM!==2 || e%2===0) hat(t0+e*BEAT/2, e%2?0.6:1);
       if(b%4===3) for(let k=0;k<8;k++) snare(t0+3*BEAT+k*BEAT/8, 0.35+k*0.08);   // roll into the next phrase
       if(b===BARS-1){ taiko(t0+3.5*BEAT,1); taiko(t0+3.75*BEAT,1); } } },
   bass(oc, out){ const lp=oc.createBiquadFilter(), sh=oc.createWaveShaper(); lp.type='lowpass'; lp.frequency.value=520; lp.Q.value=2; const c=new Float32Array(256); for(let i=0;i<256;i++){ const x=i/128-1; c[i]=Math.tanh(x*2.2); } sh.curve=c; sh.connect(lp).connect(out);
@@ -38,7 +46,7 @@ const BUILD = {
     CHORDS.forEach((ch,ci)=>{ for(let k=0;k<16;k++){ const t=ci*8*BEAT+k*BEAT/2; osc(oc,'sawtooth',hz(ch[0]-12+pat[k%8]),t,0.22,sh,0.3); } }); },
   strings(oc, out){ const bp=oc.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=1300; bp.Q.value=0.7; bp.connect(out);
     CHORDS.forEach((ch,ci)=>{ const tones=[ch[0]+12, ch[1]+12, ch[2]+12, ch[0]+24]; for(let k=0;k<32;k++){ const t=ci*8*BEAT+k*BEAT/4, n=tones[[0,1,2,1,0,1,2,3][k%8]];
-      osc(oc,'sawtooth',hz(n),t,0.1,bp,0.06,0.004,-5); osc(oc,'triangle',hz(n),t,0.1,bp,0.05,0.004,5); } }); },
+      osc(oc,LEAD,hz(n),t,0.1,bp,LEAD==='square'?0.04:0.06,0.004,-5); osc(oc,'triangle',hz(n),t,0.1,bp,0.05,0.004,5); } }); },
   brass(oc, out, motif){ const lp=oc.createBiquadFilter(); lp.type='lowpass'; lp.Q.value=1.2; lp.frequency.value=1400; lp.connect(out);
     CHORDS.forEach((ch,ci)=>{ for(const half of [0,1]){ const t=ci*8*BEAT+half*4*BEAT;   // a heavy chord stab at every bar line
         for(const n of [ch[0]-12, ch[0], ch[2]]) for(const dt of [-9,0,9]){ const o=oc.createOscillator(), g=oc.createGain(); o.type='sawtooth'; o.frequency.value=hz(n); o.detune.value=dt; env(g,t,0.03,0.05,1.1,0.012); g.gain.linearRampToValueAtTime(0.0001,t+BEAT*1.6); o.connect(g).connect(lp); o.start(t); o.stop(t+BEAT*1.7); }
@@ -49,24 +57,31 @@ function render(kind, motif){ const SR=Math.min(44100, (actx&&actx.sampleRate)||
   BUILD[kind](oc, out, motif); return oc.startRendering(); }
 
 // build the stems once (async, a stem at a time so the game never hitches), then start them all locked to one clock
-export async function buildScore(){ if(SCORE.ready || SCORE.building || !actx) return; SCORE.building=true;
-  try{ for(const k of STEMS){ SCORE.stems[k]=await render(k); await new Promise(r=>setTimeout(r, 30)); } SCORE.ready=true; startStems(); }catch(e){ console.warn('score', e); } SCORE.building=false; }
+export async function buildScore(){ if(SCORE.ready || SCORE.building || !actx) return; SCORE.building=true; const f=flavOf(); setFlav(f);
+  try{ const st={}; for(const k of STEMS){ st[k]=await render(k); await new Promise(r=>setTimeout(r, 30)); } SCORE.stems=st; SCORE.flav=f; SCORE.bossBuf={}; SCORE.ready=true; startStems(); }catch(e){ console.warn('score', e); } SCORE.building=false; }
+// FEEL 4 a new land: its own variation, rendered behind the old one, then swapped in on a new clock (the general's theme follows)
+async function reFlav(f){ SCORE.building=true; const old=SCORE.flav; setFlav(f);
+  try{ const st={}; for(const k of STEMS){ st[k]=await render(k); await new Promise(r=>setTimeout(r, 30)); }
+    for(const k in SCORE.srcs){ try{ SCORE.srcs[k].stop(); }catch(e){} } SCORE.srcs={}; SCORE.stems=st; SCORE.flav=f; SCORE.bossBuf={}; const b=SCORE.boss; SCORE.boss=null; startStems(); if(b) bossTheme(b); }
+  catch(e){ setFlav(old || FLAV0); SCORE.flav=old; } SCORE.building=false; }
 function startStems(){ if(!musicBus || !SCORE.ready) return; const t=actx.currentTime+0.05; SCORE.t0=t;
   for(const k of STEMS){ if(SCORE.srcs[k]) continue; const g=SCORE.gains[k]||(SCORE.gains[k]=actx.createGain()); g.gain.value=0.0001; g.connect(musicBus);
     const s=actx.createBufferSource(); s.buffer=SCORE.stems[k]; s.loop=true; s.connect(g); s.start(t); SCORE.srcs[k]=s; } }
 // the general's theme: rendered when the boss rolls in, joins on the shared clock
 export async function bossTheme(id){ if(!actx || !SCORE.ready || SCORE.boss===id) return; SCORE.boss=id;
-  try{ const buf=SCORE.bossBuf[id] || (SCORE.bossBuf[id]=await render('brass', BOSS_MOTIF[id]||BOSS_MOTIF.overlord)); if(SCORE.boss!==id) return;
+  try{ const buf=SCORE.bossBuf[id] || (SCORE.bossBuf[id]=await render('brass', motifFor(id))); if(SCORE.boss!==id) return;
     if(SCORE.srcs.boss){ try{ SCORE.srcs.boss.stop(); }catch(e){} } const g=SCORE.gains.boss||(SCORE.gains.boss=actx.createGain()); if(!SCORE.srcs.boss) { g.gain.value=0.0001; g.connect(musicBus); }
     const s=actx.createBufferSource(); s.buffer=buf; s.loop=true; s.connect(g); const off=((actx.currentTime-SCORE.t0)%LEN+LEN)%LEN; s.start(actx.currentTime, off); SCORE.srcs.boss=s; }catch(e){} }
 // called every frame: read the fight and fade the stems toward it
 export function updateScore(dt){ if(!SCORE.ready || !actx) return; SCORE.tick-=dt; if(SCORE.tick>0) return; SCORE.tick=0.25;
-  const p=S.player, play=S.mode==='playing', B=duelOn();
+  { const f=flavOf(); if(SCORE.flav && f!==SCORE.flav && !SCORE.building) reFlav(f); }
+  const fb=FEELFX.on && FBOSS ? FBOSS.list.find(b=>b.e && b.st!=='dead' && b.st!=='pending') : null;   // FEEL 4 a fort's general out: his theme too, not only the duel's
+  const p=S.player, play=S.mode==='playing', B=duelOn() || !!fb, bid=duelOn() ? duelId() : fb ? (fb.def.id || fb.def.name) : null;
   let near=0; if(play && p) for(const e of enemies){ if(e.def && !e.def.inf && (e.pos.x-p.pos.x)**2+(e.pos.z-p.pos.z)**2 < 1600) near++; }
   const hurt = play && p ? 1-Math.max(0, Math.min(1, p.hp/p.maxHp)) : 0;
   const dh = afxMusicHeat(play, B);   // AUDIO 3 the battle's director sets the heat while the sound layer is on (audio/afx-mix.js: calm in a lull, driven at a peak, a held breath before the general); −1: as before
   const want = dh>=0 ? dh : !play ? (S.mode==='countdown'||S.mode==='briefing' ? 0.25 : 0) : B ? 1 : Math.min(0.85, near/7 + hurt*0.35);
   SCORE.heat += (want-SCORE.heat)*(want>SCORE.heat?0.35:0.08);   // swell fast, settle slowly
   const h=SCORE.heat, L={ pad: play||S.mode==='countdown' ? 0.75 : 0.55, drums:Math.min(1,h*2.2), bass:h>0.3?Math.min(1,(h-0.3)*2.5):0, strings:h>0.55?Math.min(1,(h-0.55)*2.5):0, brass:B?0.55:(h>0.8?0.4:0), boss:B?1:0 };
-  if(B && SCORE.boss!==duelId()) bossTheme(duelId()); if(!B && SCORE.boss){ SCORE.boss=null; }
+  if(B && bid && SCORE.boss!==bid) bossTheme(bid); if(!B && SCORE.boss){ SCORE.boss=null; }
   for(const k in L){ const g=SCORE.gains[k]; if(!g) continue; g.gain.setTargetAtTime(Math.max(0.0001, L[k]*(k==='pad'?0.9:1)), actx.currentTime, L[k]>SCORE.lvl[k]?0.6:1.4); SCORE.lvl[k]=L[k]; } }

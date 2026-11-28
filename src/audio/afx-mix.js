@@ -1,7 +1,9 @@
 // audio/afx-mix.js — AUDIO 3 THE MIXER, THE SCORE AND THE SQUAD'S CALLS: the music dips under gunfire and under a close blast and follows the battle's director (calm in a lull, driven at a peak, a held breath before the general comes) through one low-pass and one gain on what audio/music.js already plays; the fight dips a little under the radio; a blast within a few metres leaves him deaf for a moment (a low-pass on everything, a faint ringing — "Ù tai khi nổ gần" turns it off); a soft limiter ends the master chain; the squad calls out — reloading, grenade out, man down, target down, a flank — as text over the man who says it and a radio click
-//   NO VOICE IS SYNTHESISED and no voice file is added: none of the recorded radio clips (assets/voice) says these words, so a call is its text + the click.
+//   FEEL 4 a call whose recorded takes are there (FEELFX.voice.keys → assets/voice) is SPOKEN by the mate (audio/banter.js banterBark) and its text dropped; a call
+//   with no file yet stays its text + the click.
 //   Everything here is wired in only while the layer is on (afxOn): off, the limiter goes straight to the output and the music straight to the master, as before.
-import { AUDIOFX, STORY } from '../../config.js';
+import { AUDIOFX, FEELFX, STORY } from '../../config.js';
+import { banterBark } from '../hub.js';   // FEEL 4 (audio/banter.js)
 import { AFX, DIR, FT, LOUD, NADES, PROFILE, S, VOICE, actx, afxBarkOk, afxClipCurve, afxDeaf, afxDeafHold, afxDeafLp, afxDuckMusic, afxDuckWorld, afxFollow, afxMusic, afxOn, afxPlay, afxRR, afxSquelchBuf, duelOn, floatText, heightAt, limiter, master, musicBus, muted, radio, sfxLevel, squadList } from '../hub.js';
 
 const A = AUDIOFX, mkSquelch = (sr, r) => afxSquelchBuf(sr, r), _bp = { x:0, y:0, z:0 };
@@ -44,6 +46,7 @@ function tagOf(r){ const C = STORY.cast; for(const k in C) if(C[k].field && C[k]
 export function afxBark(kind, x, z, who){ const B = A.barks, L = B.lines[kind]; if(!B.on || !L || !afxOn() || S.mode !== 'playing') return false; const r = mateNear(x, z, who); if(!r) return false;
   if(!afxBarkOk(kind.startsWith('flank') ? 'flank' : kind, AFX.now, radio.at ?? -1e9, AFXX.barks, B)) return false;
   const st = AFXX.rr[kind] || (AFXX.rr[kind] = { last:-1 }), a = r.a; _bp.x = a.pos.x; _bp.z = a.pos.z; _bp.y = heightAt(a.pos.x, a.pos.z) + B.h;
+  const vk = FEELFX.on && FEELFX.voice.keys[kind]; if(vk && banterBark(vk, a.pos)){ AFXX.said++; AFXX.voiced = (AFXX.voiced | 0) + 1; return true; }   // FEEL 4 spoken: no text over him
   floatText(tagOf(r) + ': ' + L[afxRR(st, L.length, Math.random)].replace('{who}', who ? who.name : ''), B.color, _bp, B.size); afxPlay('squelch', mkSquelch, 0, 0, a.pos, 'foley', A.prio.radio, B.click, 0.95 + Math.random() * 0.1, 0); AFXX.said++; return true; }
 // what is polled B.tick s apart: his reload beginning under fire, a grenade of ours leaving a hand, a mate falling, the director sending men round a flank
 function barks(p){ const g = p.guns && p.guns[p.gunIdx], rel = !!(g && g.rU), L = squadList(), F = DIR.on ? DIR.flank : null;
