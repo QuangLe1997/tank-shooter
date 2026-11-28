@@ -8,8 +8,9 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
-import { ASSETDIET, GLTFLOAD } from '../../config.js';
+import { ASSETDIET, GLTFLOAD, PERF_BUDGET } from '../../config.js';
 import { S, blendIn, compileReady, renderer } from '../hub.js';
+import { MODEL_MEM } from '../hub.js';   // PERF 16 (actors/models.js: the field's epoch)
 
 let _k2 = null, _ok = null, _l1 = null, _l0 = null;
 export const DIET_STATE = { ktx2:null, files:0, px:0, dropped:0, refill:0, refillMB:0, slim:0 };
@@ -42,10 +43,21 @@ function blobless(P){ const base = P.loadImageSource;
       .catch(e => { DS.fail++; console.error('THREE.GLTFLoader: Couldn\'t load texture', 'image ' + i + ' (' + d.mimeType + ')', e && e.message || e); throw e; });
     this.sourceCache[i] = p; return p; };
   return { name:'DIET_BLOBLESS' }; }
-export function loadGLB(url){ INFL.n++; return gltfLoader().then(L => L.loadAsync(url)).then(gl => { DIET_STATE.files++; return ASSETDIET.pxFrom.some(s => url.includes(s)) || (gl.parser && (gl.parser.json.skins || []).length) ? withPx(gl) : gl; }).then(gl => { keepLean(gl, url); return lateWarm(gl); }).finally(() => { if(--INFL.n <= 0){ INFL.n = 0; const W = INFL.w.splice(0); for(const f of W) f(); } }); }
+export function loadGLB(url){ INFL.n++; const ep = MODEL_MEM.ep, q = INFL.u.get(url); if(q) q.n++; else INFL.u.set(url, { n:1, ep }); return gltfLoader().then(L => L.loadAsync(url)).then(gl => { DIET_STATE.files++; return ASSETDIET.pxFrom.some(s => url.includes(s)) || (gl.parser && (gl.parser.json.skins || []).length) ? withPx(gl) : gl; }).then(gl => { keepLean(gl, url); return lateWarm(gl); }).finally(() => { const q = INFL.u.get(url); if(q && --q.n <= 0) INFL.u.delete(url); if(--INFL.n <= 0){ INFL.n = 0; const W = INFL.w.splice(0); for(const f of W) f(); } fieldCheck(); }); }
 // DIET 10 the model files still on their way: a stage's countdown waits for them (ui/briefing.js beginStage, at most late.waitMs) so SPLIT's 3-2-1 compiles and uploads them
-const INFL = { n:0, w:[] };
+const INFL = { n:0, w:[], u:new Map() };
 export const dietBusy = () => INFL.n > 0;
+export const dietInflight = () => [...INFL.u].map(([u, q]) => u.split('/').slice(-2).join('/') + (q.ep === MODEL_MEM.ep ? '' : '·bg'));   // PERF 16 which files are on their way (·bg: asked for before this field)
+// PERF 16 (C1-026) THE FIELD'S OWN FILES ONLY: the 3-2-1 (ui/briefing.js) and a sector's black (campaign/sectors.js) waited for EVERY model file on its way —
+//   and the boot keeps preloading the whole catalogue in the background (the city's buildings and cars in a desert battle, the whole infantry arsenal,
+//   the wonders), so it never drained: every battle start sat out the full late.waitMs (4 s, measured: busy from boot to the fight). Now they wait only
+//   for the files asked for since this field began (actors/models.js modelEpoch); the catalogue keeps loading behind, as it always did after the wait.
+const FW = [];
+const fieldPending = () => { const ep = MODEL_MEM.ep; for(const q of INFL.u.values()) if(q.ep === ep) return true; return false; };
+function fieldCheck(){ if(FW.length && !fieldPending()){ const W = FW.splice(0); for(const f of W) f(); } }
+export function dietClaim(url){ const q = url && INFL.u.get(url); if(q) q.ep = MODEL_MEM.ep; }   // a file still on its way that this field asks for too (actors/models.js loadGLTF): it is this field's
+export const dietFieldBusy = () => PERF_BUDGET.load.fieldOnly === false ? dietBusy() : fieldPending();
+export const dietFieldIdle = ms => PERF_BUDGET.load.fieldOnly === false ? dietIdle(ms) : !fieldPending() ? Promise.resolve(true) : new Promise(res => { const t = setTimeout(() => res(false), ms); FW.push(() => { clearTimeout(t); res(true); }); });
 export const dietIdle = ms => INFL.n <= 0 ? Promise.resolve(true) : new Promise(res => { const t = setTimeout(() => res(false), ms); INFL.w.push(() => { clearTimeout(t); res(true); }); });
 // each compressed colour map gets its fallback picture (decoded off the main thread, never sent to the GPU) as userData.px
 function withPx(gl){ const P = gl.parser, J = P && P.json; if(!J || !(J.extensionsUsed || []).includes('KHR_texture_basisu')) return gl; const jobs = [];

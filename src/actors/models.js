@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { MEM_TRIM, PHONE_LOD, REALAIR, REALRUIN, REALCITY, REALPROP, REALTREE, REALTURRET, REALROCK, REALFORT } from '../../config.js';
 import { S, loadGLB, matNormModel, nearForget, nearTag, renderer } from '../hub.js';
+import { dietClaim } from '../hub.js';   // PERF 16 (render/asset-diet.js)
 
 export const MODEL_FILES = {
   // "Bolt Action Rifle 7.62" by Mateusz Sadek — polyhaven.com, CC0. ~20k tris, 1K PBR textures (5.8 MB).
@@ -87,7 +88,7 @@ export function releaseModels(now){ if(!MEM_TRIM.on) return 0; let n = 0, d = 0;
   MODEL_MEM.released += n; MODEL_MEM.dropped += d; return n + d; }
 export function loadGLTF(key){
   useModel(key);
-  if(_gl[key]) return _gl[key];
+  if(_gl[key]){ dietClaim(MODEL_FILES[key]); return _gl[key]; }   // (PERF 16 still on its way: the 3-2-1 waits for it now)
   if(procOnly() || typeof window === 'undefined') return (_gl[key] = Promise.resolve(null));
   return (_gl[key] = loadGLB(MODEL_FILES[key]).then(gl => {   // (DIET 1 meshopt + KTX2: render/asset-diet.js)
     gl.scene.traverse(o => { if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; fixNormals(o.geometry); } }); nearTag(key, gl); warmLater(gl); matNormModel(gl.scene, key);   // (Z395 its sharp maps while the camera is near · MAT 1 measured, pulled into its kind's band)

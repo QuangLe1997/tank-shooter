@@ -20,7 +20,7 @@
 import * as THREE from 'three';
 import { BAL, FORTBOSS, SECTOR, SIDEMISSION, CONTRACTS, OBJECTIVES, SECROUTE, CONQSTORY } from '../../config.js';
 import { PERF_BUDGET } from '../../config.js';   // PERF 5 the transit's prime frames
-import { dietIdle } from '../hub.js';   // PERF 9 (render/asset-diet.js)
+import { dietFieldIdle as dietIdle } from '../hub.js';   // PERF 9 (render/asset-diet.js) · PERF 16 the new field's own files
 import { sectorStoryCard } from '../hub.js';   // SECTOR 6
 import { knobTurn, knobBack } from '../hub.js';   // MIX 1
 import { FORTS, startBoss } from '../hub.js';   // SECTOR 4
