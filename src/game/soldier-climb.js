@@ -145,7 +145,9 @@ export function climbUi(){ if(el || typeof document === 'undefined') return;
   el.style.cssText = 'position:fixed;left:50%;bottom:' + (MOBILE ? '268px' : '240px') + ';transform:translateX(-50%);z-index:40;display:none;padding:9px 18px;border-radius:999px;' +
     'background:rgba(12,16,10,0.8);border:1.5px solid #ffcf5a;color:#fff3d6;font:700 14px/1.2 system-ui,sans-serif;letter-spacing:0.04em;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:none;box-shadow:0 2px 10px rgba(0,0,0,0.45)';
   el.addEventListener('pointerdown', ev => { ev.stopPropagation(); ev.preventDefault(); soldierClimb(); });
-  document.body.appendChild(el); const loop = () => { requestAnimationFrame(loop); if(++tick % 4) return; paint(); }; loop(); }
+  document.body.appendChild(el); }
+// PERF 1 (C1-086) painted from the game's own frame (game/loop.js), every 2nd frame — it ran a frame loop of its own on every display tick
+export function climbUiTick(){ if(el && !(++tick % 2)) paint(); }
 function paint(){ const p = S.player, on = !!(p && p.cav && S.mode === 'playing' && !CV.mounted && !CV.trans && !CV.dead); let txt = null; const key = MOBILE ? '' : '  [J]', K = CV.climb;
   if(on && K){ txt = K.ph === 'top' ? '⬇ NHẢY XUỐNG' + key : K.ph === 'fall' ? null : '✋ BUÔNG TAY' + key; }
   else if(on && !CV.roll && !CV.jump){ const t = performance.now() / 1000; if(t > scanAt){ scanAt = t + C.scanT; el._s = climbScan(p, true); } const s = el._s;

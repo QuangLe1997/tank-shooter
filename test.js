@@ -3148,6 +3148,10 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
     'HUDUX: CHƠI NGAY = one click into the next fort (the briefing goes on by itself with the last contract and the remembered deployment)');
   ok(!/\{core\}|\{boss\}/.test(R('src/ui/load-veil.js')) && /export function battleTitle\(\)/.test(R('src/ui/load-veil.js')) && /fortTitle\(cq\)/.test(R('src/ui/load-veil.js')) && /const bt=battleTitle\(\)/.test(R('src/ui/briefing.js')) && /floatText\('BẠN BỊ HẠ'/.test(R('src/game/player-damage.js')) && !/TƯỚNG TRÚNG ĐẠN/.test(R('src/game/player-damage.js')),
     'HUDUX: one name per battle (Thành n · X on the veil and the 3-2-1, the operation with its names filled), the player\'s fall reads BẠN BỊ HẠ'); }
+// PERF 1 (critic C1-086) the LEO button and the ride's chip are painted from the game's own frame, not each from a requestAnimationFrame loop of its own
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), sc=R('src/game/soldier-climb.js'), rc=R('src/game/ride-call.js'), lp=R('src/game/loop.js');
+  ok(!/requestAnimationFrame/.test(sc) && !/requestAnimationFrame/.test(rc) && /export function climbUiTick\(\)/.test(sc) && /export function rideCallTick\(\)/.test(rc) && /climbUiTick\(\); rideCallTick\(\);/.test(lp),
+    'PERF 1: the climb button and the ride chip paint from game/loop.js (no frame loop of their own)'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

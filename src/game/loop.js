@@ -9,6 +9,7 @@ import { comboTick } from '../hub.js';   // HUDCLEAN 2 (game/score.js)
 import { updateSectors, updateSectorTransit } from '../hub.js';   // SECTOR 1 (campaign/sectors.js)
 import { bossCam, updateFeelFX } from '../hub.js';   // FEEL 3–4 (fx/feel-fx.js)
 import { menuCam, transitHaze } from '../hub.js';   // VIS 4 the menu's backdrop camera (game/update.js) · VIS 5 the transit's haze (world/atmosphere.js)
+import { climbUiTick, rideCallTick } from '../hub.js';   // PERF 1 (game/soldier-climb.js · game/ride-call.js)
 
 // ----------------------------- MAIN LOOP -----------------------------
 const NOGOV=typeof location!=='undefined' && /[?&]nogov\b/.test(location.search);   // PERF 1 ?nogov holds the governor still (the resolution and the occlusion pass stay as they start): for measuring
@@ -105,6 +106,7 @@ export function loop(nowMs){
   // always-on FX + core idle
   if(S.mode!=='playing'){ menuCam(dt); droneWarIdle(); updateSquadHud(now); gradePass.uniforms.aberr.value*=0.85; rangeRing.visible=false; radarCtx.clearRect(0,0,radarCanvas.width,radarCanvas.height); }
   S.timeScale += (1 - S.timeScale) * Math.min(1, dt*1.8);   // ease slow-mo back to normal
+  climbUiTick(); rideCallTick();   // PERF 1 the LEO button and the ride's chip (game/soldier-climb.js · game/ride-call.js): one frame loop, not three
   updateCore(dt, now); updateCoreAlarm(now); updateCelebration(dt, now);   // Z140 fireworks + cheering after a win
   updateRings(dt); updateFlashes(dt); updateParticles(dt); updateFireFX(dt); updateTrails(dt); updateSmokeTrails(dt); updateDebris(dt); updateShatter(dt); updateTreeFall(dt); updateTowerFalls(dt); updateBolts(dt); updateGunFX(dt); updateFeelFX(); updateRocketAim(now); flushParticles();   // Z419 shaped flashes, brass, the muzzle light's strobe
   updateWaterSpray(dt);   // HSWIM 2 the water's spray, crowns, foam and rings (fx/water-spray.js)

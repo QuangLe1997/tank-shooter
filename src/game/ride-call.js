@@ -42,7 +42,9 @@ export function rideCallUi(){ if(el || typeof document === 'undefined') return; 
     '<i style="position:absolute;left:0;right:0;bottom:0;height:1px;background:rgba(255,255,255,.08)"><b style="display:block;height:100%;width:0;background:#9be04a"></b></i>';
   [ic, tx, kb] = el.children; bar = el.querySelector('i');
   el.addEventListener('pointerdown', ev => { ev.stopPropagation(); ev.preventDefault(); if(el.dataset.off !== '1') cavToggleMount(); });
-  document.body.appendChild(el); const loop = () => { requestAnimationFrame(loop); if(++tick % 6) return; paint(); }; loop(); }
+  document.body.appendChild(el); }
+// PERF 1 (C1-086) painted from the game's own frame (game/loop.js), every 3rd frame — it ran a frame loop of its own on every display tick
+export function rideCallTick(){ if(el && !(++tick % 3)) paint(); }
 function paint(){ const K = HUDCLEAN.chip, p = S.player, t = now(), live = !!(p && p.cav && CV.H && S.mode === 'playing' && !CV.dead), foot = live && !CV.mounted && !CV.trans;
   if(note && t > note.until) note = null;
   const show = live && (foot || !!note); el.style.display = show ? 'flex' : 'none'; if(!show){ sk = ''; return; }
