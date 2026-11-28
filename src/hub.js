@@ -44,6 +44,7 @@ export * from './render/inst-view.js';   // VIEW 1 a field-wide instanced mesh d
 export * from './render/near-detail.js';   // Z395 the originals' sharp maps on whatever the camera is close to
 export * from './render/cover-batch.js';   // Z338 cover pieces drawn a few instanced draws at a time
 export * from './render/static-batch.js';   // PERF 14 the same plain mesh copied round the field: one instanced draw per geometry + material
+export * from './render/shadow-twin.js';   // PERF 20 a many-material shadow caster casts in one draw (a twin on the shadow cameras' layer)
 export * from './ui/build-watch.js';   // PERF 19 a new build is offered (a clean reload), never mixed in
 export * from './render/see-through.js';   // CAM 3 what stands between the lens and him is cut away (a shader hook of render/clouds.js)
 export * from './render/cam-arm.js';   // VIS 2 the follow camera's spring arm: never inside a solid, never pressed to one

@@ -3241,6 +3241,10 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
     'PERF 19: build.json fingerprints every module; index.html maps each module URL to ?h=<hash> (no plain main.js)');
   ok(/does not provide an export named/.test(ix) && /xk\.reload/.test(ix) && PB.build.every>=30 && /cache:'no-store'/.test(bw) && /FIGHT\[S\.mode\]/.test(bw) && /buildWatchTick\(now\)/.test(fs.readFileSync('src/game/loop.js','utf8')) && /tools\/build-id\.mjs/.test(fs.readFileSync('tools/verify.mjs','utf8')),
     'PERF 19: a module that fails to link reloads once; a new build is offered outside a fight; verify keeps build.json fresh'); }
+// PERF 20 a many-material opaque shadow caster casts through a one-draw twin on the shadow cameras' layer
+{ const fs=await import('node:fs'), { PERF_BUDGET:PB }=await import('./config.js'), st=fs.readFileSync('src/render/shadow-twin.js','utf8');
+  ok(PB.shadowTwin.minGroups>=2 && PB.shadowTwin.scan>0 && /m\.layers\.set\(LAYER\)/.test(st) && /shadow\.camera\.layers\.enable\(LAYER\)/.test(st) && /o\.castShadow = false/.test(st) && /alphaTest > 0/.test(st) && /getOwnPropertyDescriptor\(o, 'count'\)/.test(st) && /^export \* from '\.\/render\/shadow-twin\.js';/m.test(fs.readFileSync('src/hub.js','utf8')),
+    'PERF 20: the twin shares the caster\'s buffers, has no groups, sits on a shadow-only layer; cut-outs and inst-view sources keep their own shadows'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
