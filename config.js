@@ -2469,7 +2469,7 @@ export const INSTVIEW = { on:!(typeof location !== 'undefined' && /[?&]noview\b/
 // TROOP 1 (actors/soldiers.js updateTroopBatch) the batched infantry by distance from the soldier: past `far` m a man wears a copy of `keep` of his body's triangles; past the sun's
 //   shadow box (its half-width × shadowK + shadowPad m) he casts no shadow — he was drawn into the shadow map whole wherever he stood. ?notrooplod turns it off (to compare).
 export const TROOPLOD = { on:!(typeof location !== 'undefined' && /[?&]notrooplod\b/.test(location.search)), far:55, keep:0.3, shadowK:1.25, shadowPad:6 };
-// PERF 3 THE PERFORMANCE BUDGET (critic C1-024 / 025 / 026 / 091): what a battle may cost, and the far-away cuts that keep it there ("near sharp, far light").
+// PERF 3–5 THE PERFORMANCE BUDGET (critic C1-024 / 025 / 026 / 091): what a battle may cost, and the far-away cuts that keep it there ("near sharp, far light").
 //   frame — the targets every branch works to, desktop and phone (MOBILE): triangles drawn a frame (all passes), draw calls, the worst frame allowed at a
 //     battle's start and at a sector transit (ms), the first second after GO (ms), the load until the field shows (s) · fx — the share FEEL may spend:
 //     live sprite particles (fx/particles.js, PART_MAX × 1.7 today), fire / smoke cells (fx/fire-fx.js, FIREFX.max), dynamic lights lit at once, full-screen
@@ -2478,9 +2478,11 @@ export const TROOPLOD = { on:!(typeof location !== 'undefined' && /[?&]notrooplo
 //     of the triangles (keepCut2 for leaf cards, error err2); its far views keep only what is inside the camera's view turned out by cone degrees each side
 //     (coneV at the top and bottom, pad m round each thing) and nearer than fogK × the fog's ~92 % opaque distance, re-sorted at once when the camera has
 //     turned turnStep degrees or moved moveStep m; phoneLite: phones get the light copies too (they drew every far stone whole). on:false (or ?noperfview) = as before.
+//   cover (render/cover-batch.js) — a piece of cover past far m, out of the sun's shadow box, wears a copy of keep of its triangles. on:false (?noperfcover) = as before.
 export const PERF_BUDGET = { frame:{ desktop:{ tris:2.5e6, calls:350, maxMs:50, startMs:33, loadS:8 }, phone:{ tris:0.9e6, calls:220, maxMs:50, startMs:40, loadS:10 } },
   fx:{ desktop:{ particles:3000, fire:2600, lights:4, screens:2 }, phone:{ particles:1500, fire:900, lights:2, screens:1 } },
-  view:{ on:!(typeof location !== 'undefined' && /[?&]noperfview\b/.test(location.search)), far2K:2.4, far2Min:110, far2Max:240, keep2:0.08, keepCut2:0.3, err2:0.06, cone:35, coneV:25, pad:2, turnStep:12, moveStep:6, fogK:1, phoneLite:true } };
+  view:{ on:!(typeof location !== 'undefined' && /[?&]noperfview\b/.test(location.search)), far2K:2.4, far2Min:110, far2Max:240, keep2:0.08, keepCut2:0.3, err2:0.06, cone:35, coneV:25, pad:2, turnStep:12, moveStep:6, fogK:1, phoneLite:true },
+  cover:{ on:!(typeof location !== 'undefined' && /[?&]noperfcover\b/.test(location.search)), far:55, keep:0.25 } };
 // Z395 NEAR DETAIL (render/near-detail.js): the originals' sharp maps (assets/models/real/hd, tools/hd-maps.mjs) put on a model while the camera is within
 //   its reach — radius × rK m from its surface, at least min, at most at (each instance of an instanced mesh counts) — handed back past reach × out for hold s,
 //   or when maxKeys closer models hold theirs (GPU memory) · every: how often the nearest is measured (s) · maxInst: instances measured per mesh ·

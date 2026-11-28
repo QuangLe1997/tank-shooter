@@ -3166,6 +3166,10 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
     'PERF 3: the far2 copy is lighter than the far one and starts farther; the view margin is wider than the turn that re-sorts it');
   ok(/R\.far2 = mk\(g, false\)/.test(iv) && /PL\[0\] \* x \+ PL\[1\] \* y/.test(iv) && /addUpdateRange\(0, n \* at\.itemSize\)/.test(iv) && /turned\(R\) > ys \|\| moved\(R\) > PV\.moveStep/.test(iv) && /if\(d2 < d2l\)\{ V = near; j = a\+\+; \}/.test(iv),
     'PERF 3: the near view is untouched; only the far views are cut to the widened view and the fog, re-sorted at once on a turn; the upload covers only the instances in use'); }
+// PERF 4 far light for cover (render/cover-batch.js)
+{ const fs=await import('node:fs'), { PERF_BUDGET:PB }=await import('./config.js'), cb=fs.readFileSync('src/render/cover-batch.js','utf8');
+  ok(PB.cover.far>=30 && PB.cover.far<=120 && PB.cover.keep>0 && PB.cover.keep<0.6 && /farGeo\(g\.geo, PC\.keep\)/.test(cb) && /m\.castShadow && Math\.hypot\(_c\.x - tg\.x, _c\.z - tg\.z\) < sr \+ _sph\.radius\) && loOf\(g\)/.test(cb),
+    'PERF 4: a piece of cover past '+PB.cover.far+' m and out of the shadow box wears its light copy; near and shadowing ones stay whole'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
