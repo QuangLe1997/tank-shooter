@@ -3098,6 +3098,8 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
 // BAL 4 the convoy can be caught: slower than a ride at a canter, a shot-up truck limps, a charge or a rocket stops it a moment
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { BAL:Q, SECTOR:SE, CAV:CV }=await import('./config.js'), sg=R('src/campaign/sector-goals.js');
   ok(SE.types.pursuit.speed<CV.horse.cruise && SE.types.pursuit.hp>=300 && Q.pursuit.limp>0 && Q.pursuit.limp<1 && Q.pursuit.stopDmg>30 && Q.pursuit.stopT>0 && /P\.limp \+ \(1 - P\.limp\)/.test(sg) && /t\.stopUntil = /.test(sg), 'BAL 4: the convoy is slower than a ride at a canter, a shot-up truck limps, a heavy hit stops it'); }
+// BAL 5 a fort's boss falls in minutes, not a quarter of an hour: his health halved after the bot took 6.25 min over a citadel's general; the tyrant a little tougher than one
+{ const { FORTBOSS:FB, CONQSTORY:CS }=await import('./config.js'); ok(FB.hp.length===3 && FB.hp.every((h, i)=>h>=1500 && h<=3500 && (!i || h>FB.hp[i-1])) && CS.tyrant.hpK>=1 && CS.tyrant.hpK<=1.5, 'BAL 5: a fort\'s boss 1500–3500 health a tier (2–4 min for an average player), the tyrant × 1–1.5'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
