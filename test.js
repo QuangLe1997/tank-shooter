@@ -3164,7 +3164,7 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
     && PB.frame.phone.tris<PB.frame.desktop.tris && PB.fx.phone.particles<PB.fx.desktop.particles, 'PERF 3: the budget — triangles, draw calls, worst frame, first second, load; the FX share — desktop above phone');
   ok(V.far2Min>=IV.liteMax*0.6 && V.far2Max>V.far2Min && V.keep2>0 && V.keep2<IV.keep && V.keepCut2<=IV.keepCut && V.err2>0 && V.err2<0.2 && V.cone>V.turnStep && V.coneV>V.turnStep && V.pad>=0 && V.moveStep>0 && V.fogK>0 && V.fogK<=1.5,
     'PERF 3: the far2 copy is lighter than the far one and starts farther; the view margin is wider than the turn that re-sorts it');
-  ok(/R\.far2 = mk\(g, false\)/.test(iv) && /PL\[0\] \* x \+ PL\[1\] \* y/.test(iv) && /addUpdateRange\(0, n \* at\.itemSize\)/.test(iv) && /turned\(R\) > ys \|\| moved\(R\) > PV\.moveStep/.test(iv) && /if\(d2 < d2l\)\{ V = near; j = a\+\+; \}/.test(iv),
+  ok(typeof V.far2==='boolean' && /PV\.on && PV\.far2 && d2 < hide\)\{ R\.far2 = mk\(g, false\)/.test(iv) && /PL\[0\] \* x \+ PL\[1\] \* y/.test(iv) && /addUpdateRange\(0, n \* at\.itemSize\)/.test(iv) && /turned\(R\) > ys \|\| moved\(R\) > PV\.moveStep/.test(iv) && /if\(d2 < d2l\)\{ V = near; j = a\+\+; \}/.test(iv),
     'PERF 3: the near view is untouched; only the far views are cut to the widened view and the fog, re-sorted at once on a turn; the upload covers only the instances in use'); }
 // PERF 4 far light for cover (render/cover-batch.js)
 { const fs=await import('node:fs'), { PERF_BUDGET:PB }=await import('./config.js'), cb=fs.readFileSync('src/render/cover-batch.js','utf8');

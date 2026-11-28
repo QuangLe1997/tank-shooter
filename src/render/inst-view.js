@@ -60,7 +60,7 @@ function wrap(im){ const g = im.geometry, names = instNames(g), cap = im.instanc
     farGeo(g, cutout(im) ? C.keepCut : C.keep).then(lo => { if(RECS.get(im) !== R || im.geometry !== g) return; if(lo){ R.far.geometry = viewGeo(lo, names, cap); R.dirty = true; }
       else if(hide === Infinity && !shade){ unwrap(R); im.userData.noView = true; } });
     const d2 = Math.min(PV.far2Max, Math.max(PV.far2Min, dLite * PV.far2K));   // PERF 3 the farther, lighter copy (its instances stay in the far view until it is ready)
-    if(lite && PV.on && d2 < hide){ R.far2 = mk(g, false); farGeo(g, cutout(im) ? PV.keepCut2 : PV.keep2, PV.err2).then(lo => { if(RECS.get(im) !== R || im.geometry !== g || !lo) return; R.far2.geometry = viewGeo(lo, names, cap); R.dFar2 = d2; R.dirty = true; }); } }   // (it would not simplify, is never hidden and casts no shadow: nothing to gain, it draws itself again)
+    if(lite && PV.on && PV.far2 && d2 < hide){ R.far2 = mk(g, false); farGeo(g, cutout(im) ? PV.keepCut2 : PV.keep2, PV.err2).then(lo => { if(RECS.get(im) !== R || im.geometry !== g || !lo) return; R.far2.geometry = viewGeo(lo, names, cap); R.dFar2 = d2; R.dirty = true; }); } }   // (it would not simplify, is never hidden and casts no shadow: nothing to gain, it draws itself again)
   Object.defineProperty(im, 'count', { configurable:true, enumerable:true, get(){ return DRAW ? 0 : R.count; }, set(x){ R.count = x; } });
   R.off = () => unwrap(R); im.addEventListener('removed', R.off); im.parent.add(G); RECS.set(im, R); }
 
@@ -73,7 +73,7 @@ const sigOf = (im, R) => { let s = im.instanceMatrix.version * 7 + R.count * 13 
 function positions(R){ const im = R.im, N = R.count, A = im.instanceMatrix.array; if(!R.pos || R.pos.length < N * 2){ R.pos = new Float32Array(Math.max(N, R.cap) * 2); R.py = new Float32Array(Math.max(N, R.cap)); } im.updateWorldMatrix(true, false); const E = im.matrixWorld.elements, P = R.pos, PY = R.py;
   for(let i = 0; i < N; i++){ const o = i * 16, x = A[o + 12], y = A[o + 13], z = A[o + 14]; P[i * 2] = E[0] * x + E[4] * y + E[8] * z + E[12]; P[i * 2 + 1] = E[2] * x + E[6] * y + E[10] * z + E[14]; PY[i] = E[1] * x + E[5] * y + E[9] * z + E[13]; } }   // (PERF 3 its height too: the view's top and bottom)
 
-function rebuild(R, px, pz, k){ const im = R.im, N = R.count, A = im.instanceMatrix.array, CA = R.hasCol ? im.instanceColor.array : null, P = R.pos, GA = im.geometry.attributes, near = R.near, far = R.far, far2 = PV.on ? R.far2 : null; if(!far2 && R.far2 && R.far2.count){ R.far2.count = 0; R.far2.visible = false; }
+function rebuild(R, px, pz, k){ const im = R.im, N = R.count, A = im.instanceMatrix.array, CA = R.hasCol ? im.instanceColor.array : null, P = R.pos, GA = im.geometry.attributes, near = R.near, far = R.far, far2 = PV.on && PV.far2 ? R.far2 : null; if(!far2 && R.far2 && R.far2.count){ R.far2.count = 0; R.far2.visible = false; }
   const dl = R.dLite * k, d2l = dl * dl, d2h = R.dHide === Infinity ? Infinity : R.dHide * R.dHide * k * k, d2f = R.dFar2 === Infinity ? Infinity : R.dFar2 * R.dFar2 * k * k; let a = 0, b = 0, c = 0;
   const Q = CONE, cone = Q.on, cx = Q.x, cy = Q.y, cz = Q.z, PL = Q.pl, PY = R.py, rr = R.r + PV.pad, fg = Q.fog + R.r, fg2 = fg * fg;   // PERF 3 the camera's view, widened
   for(let i = 0; i < N; i++){ const dx = P[i * 2] - px, dz = P[i * 2 + 1] - pz, d2 = dx * dx + dz * dz; let V, j;

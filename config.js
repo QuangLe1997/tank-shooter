@@ -2474,8 +2474,9 @@ export const TROOPLOD = { on:!(typeof location !== 'undefined' && /[?&]notrooplo
 //     battle's start and at a sector transit (ms), the first second after GO (ms), the load until the field shows (s) · fx — the share FEEL may spend:
 //     live sprite particles (fx/particles.js, PART_MAX × 1.7 today), fire / smoke cells (fx/fire-fx.js, FIREFX.max), dynamic lights lit at once, full-screen
 //     transparent layers at once (a smoke grenade's whiteout, a blast's dust sheet).
-//   view (render/inst-view.js) — a field-wide instanced family: past far2 m (= its light copy's start × far2K, clamped far2Min…far2Max) a second copy of keep2
-//     of the triangles (keepCut2 for leaf cards, error err2); its far views keep only what is inside the camera's view turned out by cone degrees each side
+//   view (render/inst-view.js) — a field-wide instanced family: with far2 on, past far2 m (= its light copy's start × far2K, clamped far2Min…far2Max) a second copy
+//     of keep2 of the triangles (keepCut2 for leaf cards, error err2) — off: measured −1…−3 % triangles for +10…25 draw calls, and the frame is bound by draw
+//     submission (CITY: 23 ms of a 32 ms frame), not by triangles; its far views keep only what is inside the camera's view turned out by cone degrees each side
 //     (coneV at the top and bottom, pad m round each thing) and nearer than fogK × the fog's ~92 % opaque distance, re-sorted at once when the camera has
 //     turned turnStep degrees or moved moveStep m; phoneLite: phones get the light copies too (they drew every far stone whole). on:false (or ?noperfview) = as before.
 //   cover (render/cover-batch.js) — a piece of cover past far m, out of the sun's shadow box, wears a copy of keep of its triangles. on:false (?noperfcover) = as before.
@@ -2484,7 +2485,7 @@ export const TROOPLOD = { on:!(typeof location !== 'undefined' && /[?&]notrooplo
 //     waitModels: the black also waits (within the same warmMs / warmHour) for the new field's model files, so none is parsed and swapped in during the ride.
 export const PERF_BUDGET = { frame:{ desktop:{ tris:2.5e6, calls:350, maxMs:50, startMs:33, loadS:8 }, phone:{ tris:0.9e6, calls:220, maxMs:50, startMs:40, loadS:10 } },
   fx:{ desktop:{ particles:3000, fire:2600, lights:4, screens:2 }, phone:{ particles:1500, fire:900, lights:2, screens:1 } },
-  view:{ on:!(typeof location !== 'undefined' && /[?&]noperfview\b/.test(location.search)), far2K:2.4, far2Min:110, far2Max:240, keep2:0.08, keepCut2:0.3, err2:0.06, cone:35, coneV:25, pad:2, turnStep:12, moveStep:6, fogK:1, phoneLite:true },
+  view:{ on:!(typeof location !== 'undefined' && /[?&]noperfview\b/.test(location.search)), far2:false, far2K:2.4, far2Min:110, far2Max:240, keep2:0.08, keepCut2:0.3, err2:0.06, cone:35, coneV:25, pad:2, turnStep:12, moveStep:6, fogK:1, phoneLite:true },
   cover:{ on:!(typeof location !== 'undefined' && /[?&]noperfcover\b/.test(location.search)), far:55, keep:0.25 },
   transit:{ prime:6, noDrawWarm:true, waitModels:true } };
 // Z395 NEAR DETAIL (render/near-detail.js): the originals' sharp maps (assets/models/real/hd, tools/hd-maps.mjs) put on a model while the camera is within
