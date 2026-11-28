@@ -3114,7 +3114,7 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   ok(/export function smokeScreen\(/.test(ff) && /export function bossCam\(/.test(ff) && /export function feelRideCall\(/.test(ff) && /^export \* from '\.\/fx\/feel-fx\.js';/m.test(R('src/hub.js')) && /if\(bossCam\(dt\)\)\{\}/.test(R('src/game/loop.js'))
     && /banterBark\(vk, a\.pos\)/.test(am) && /export function banterBark\(/.test(bt) && /SHOTS\.killAt < FEELFX\.voice\.kill\.mine/.test(bt) && /export function motifFor\(/.test(mu) && /reFlav\(f\)/.test(mu) && /feelBossReveal\(B\)/.test(R('src/campaign/fort-boss.js')) && /FEELFX\.boss\.within\) fortBossWake\(f, now\)/.test(R('src/world/fortress.js')),
     'FEEL: the smoke screen, the general\'s cut and early entrance, the ride chip, the spoken squad calls with their text fallback, the score per land wired in');
-  const FL=JSON.parse(R('tools/voice/feel-lines.json')); ok(FL.length>=6 && FL.every(l=>/^m[12]$/.test(l[0]) && Object.values(FF.voice.keys).some(k=>l[1].startsWith(k+'_'))), 'FEEL 4 the callouts still to be recorded: '+FL.length+' lines, '+FL.reduce((n,l)=>n+l[2].length,0)+' characters'); }
+  ok(['m_left_1','m_left_2','m_right_1','m_right_2','m_rear_1','m_rear_2','m_kill_1','m_kill_2'].every(k=>fs.existsSync('assets/voice/'+k+'.mp3')), 'FEEL 5 the eight squad callouts are recorded'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
