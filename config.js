@@ -2466,6 +2466,7 @@ export const BOT = { think:20, sightK:1.5, eye:1.45, losEvery:0.25, losPerTick:2
 //   rescue.routeL / routeH / tries / callT / fortGap / firstGuards (BAL 25): the pen is placed where the last routeL m to its open end cross nothing taller than routeH m
 //     (no climb) and fortGap m clear of a fort's walls, tries spots; the hostage calls on the radio after callT s if the player is still far; the very first sector of
 //     the game (stage 1, sector 1) has firstGuards guards, no clock and no crossfire to lose to.
+//   retry (BAL 26, campaign/sectors.js): from the after-th failure of a sector: his health and his men back, the clock × clockK, the enemy's rounds × spreadK wide, the way shown.
 //   hold (BAL 14, campaign/sectors.js): the stuck truck's hold has three beats — at the shares `at` of the hold, n squads come from in front of him / his sides, d m off.
 export const BAL = { fair:{ on:true, every:0.1, r:95, fireT:1.2, maxN:6, size:30, margin:26, color:'#ff3b2b', spreadK:3.2, onT:0.5, warnT:2,
     rear:{ on:!(typeof location !== 'undefined' && /[?&]norear\b/.test(location.search)), ang:2.09, r:60, grace:1.6, graceK:8, k:4, beepGap:3 } },
@@ -2476,7 +2477,7 @@ export const BAL = { fair:{ on:true, every:0.1, r:95, fireT:1.2, maxN:6, size:30
   boss:{ revealT:12, arenaR:16 },
   rescue:{ minT:50, backOut:0.3, innerK:0.2, routeL:50, routeH:1.4, tries:16, callT:90, fortGap:12, firstGuards:3 },
   beats:{ on:true, at:[30, 60, 95], n:[1, 1, 2], lowP:0.2 },
-  infil:{ waveT:10, spreadK:2.2 },
+  infil:{ waveT:10, spreadK:2.2 }, retry:{ after:2, clockK:1.3, spreadK:1.4 },
   bossFight:{ staggerCd:6, burst:{ on:true, t:90, max:0.08 } },
   hold:{ on:true, at:[0.12, 0.45, 0.78], n:[1, 2, 2], d:[40, 55], say:['SCH: Chúng đã thấy xe — tốp đầu đang tới!', 'SCH: Chúng dồn lên hai hướng — giữ vòng tròn!', 'SCH: Đợt cuối, đông nhất — cầm cự, xe sắp ra!'] } };
 

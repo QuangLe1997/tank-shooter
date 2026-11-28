@@ -3308,6 +3308,9 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   ok(Q.rescue.routeL>=30 && Q.rescue.routeH>0.8 && Q.rescue.tries>=8 && Q.rescue.callT>=30 && Q.rescue.fortGap>=8 && Q.rescue.firstGuards>=1 && Q.rescue.firstGuards<SE.types.rescue.guards && /function walkable\(x0, z0, x1, z1\)/.test(sg) && /function rescueSpot\(K\)/.test(sg) && /fortIntactCross\(p\.pos\.x, p\.pos\.z, dx, dz\)/.test(sg)
     && /g\.safe = \(S\.stage \| 0\) <= 1 && SECT\.i === 0/.test(sg) && /if\(g\.clock <= 0 && !g\.safe\) return 'HẾT GIỜ';/.test(sg) && /if\(hit && fight && !g\.safe\)/.test(sg) && !/< BAL\.rescue\.near/.test(sg),
     'BAL 25: the pen where its door can be walked to (no climb, no fort wall), the first sector of the game without a clock or a crossfire to lose to, the hostage calling when the player is slow'); }
+// BAL 26 a sector failed twice: health and squad back, the clock longer, the enemy's fire wider (item 3)
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { BAL:Q, SECTOR:SE, CONQSTORY:CS }=await import('./config.js'), sg=R('src/campaign/sector-goals.js'), sc=R('src/campaign/sectors.js'), fb=R('src/campaign/fort-boss.js');
+  ok(Q.retry.after>=1 && Q.retry.clockK>1 && Q.retry.spreadK>1 && /SECT\.easy = SECT\.tries >= BAL\.retry\.after/.test(sc) && /if\(SECT\.easy && g\.clock > 0\) g\.clock \*= BAL\.retry\.clockK/.test(sc) && /SECT\.easy \? BAL\.retry\.spreadK/.test(R('src/ui/threat-edge.js')), 'BAL 26: from the ' + Q.retry.after + '-th failure a sector is a step easier'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

@@ -115,12 +115,15 @@ function refill(){ const p = S.player, F = T.refill; if(!p) return;
 // the fight of the sector in hand goes live (the first frame of play after its 3-2-1): the checkpoint, the goal set up
 function sectorLive(now){ const c = sectorCur(); _starting = false; { const q = SECT.seq; setTimeout(() => { if(SECT.seq === q) goQuiet(false); }, 1300); }   // SECTOR 2 the 3-2-1's "XUẤT KÍCH!" (shown 0.9 s after GO) stays unseen too
   if(SECT.dark){ SECT.dark = false; const q = SECT.seq; sectorTransitBlack(false, T.transit.fade); setTimeout(() => { if(SECT.seq === q && SECT.state === 'fight') sectorTransitShow(null); }, T.transit.fade * 1000); }   // SECTOR 2 the black held through a new hour's 3-2-1
-  SECT.state = 'fight'; SECT.t = 0; unknob(); SECT.snap = snapTake();
+  SECT.state = 'fight'; SECT.t = 0; unknob(); SECT.easy = SECT.tries >= BAL.retry.after;
+  if(SECT.easy){ const p = S.player; if(p) p.hp = p.maxHp; for(const q of squadList()) if(q.dead){ q.dead = false; q.back = true; } note('easy', SECT.tries); }   // BAL 26 failed twice: his health and his men back
+  SECT.snap = snapTake();
   const Y = T.types[c.type], g = SECT.g = { type:c.type, Y, start:0, again:0, lost0:0, clock:0, climax:false, k:0 };
   if(c.type === 'hold'){ knob(SIDEMISSION, 'perStage', 0); knob(SIDEMISSION.truck, 'hold', Y.hold); knob(SIDEMISSION.truck, 't', Y.t); knob(SIDEMISSION.truck, 'overrunT', Y.overrunT); g.again = Y.first; }   // only his truck: no other side mission offered
   else if(c.type === 'sabotage') g.clock = Y.time;
   if(c.type !== 'hold') knob(SIDEMISSION, 'perStage', 0);   // SECTOR 2 the sector's own mission is the only one
   if(sectorGoalHas(c.type)) sectorGoalStart(c.type, c, g, now);   // SECTOR 2 (campaign/sector-goals.js)
+  if(SECT.easy && g.clock > 0) g.clock *= BAL.retry.clockK;   // BAL 26 …and the clock a step longer
   conqSectorLive();   // SECTOR 2 a conquest's fort: what it lays on each field (its poison clouds)
   routeLive(c, g, now);   // SECTOR 4 the battle's consequences on this sector, its event card (campaign/sector-route.js)
   if(c.type === 'boss') g.noFort = !FORTS.some(f => f.tier === 3 && !f.captured);   // SECTOR 4 no citadel stood on this field (a crowded land): the general comes out in the open
