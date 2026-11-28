@@ -4268,8 +4268,9 @@ export const FEELFX = { on:true,
 //     the Core waits out of sight until a battle
 //   night: each battlefield's own night — moon (colour, × strength), sky top / horizon, fog colour and × density, hemisphere sky / ground (the ground
 //     colour is the light from below: lava, furnaces, torches), ambient colour and level, grade lift / gain / shadow / highlight tints, saturation,
-//     × exposure, gnd × the floor's albedo, cloud = the clouds' lit / dark tone, haze = [puffs/s, colour, opacity] of a low smoke rolling over the ground
-//   rain: soft streaks w m wide and len m long, slanted by the wind (wind m/s), n × the weather's drop count, opacity [day, night]
+//     × exposure, gnd × the floor's albedo, patch × the ground's bare patches (VIS 10: the citadel's pale gravel patches read as snow by moonlight), cloud = the clouds' lit / dark tone, haze = [puffs/s, colour, opacity] of a low smoke rolling over the ground
+//   rain: soft streaks w m wide and len m long, slanted by the wind (wind m/s), n × the weather's drop count, opacity [day, night], tint = how far their
+//     colour leans from the haze's toward white [day, night] (VIS 10: at night they no longer glow white)
 //   beam: lamp / searchlight / floodlight shafts — rim = the falloff power across the shaft, fall = power along it, hot = the glow at the lens, dust = the
 //     drifting motes' contrast, haze = how fast distance dims it (per m), gain × the old strength; cut = s between the checks that end a headlamp's cone at
 //     the first solid
@@ -4277,22 +4278,28 @@ export const FEELFX = { on:true,
 //     of the rim or outside it
 //   blood: a pool is a stain multiplied into the ground (col, the fresh tone; dry, the soaked one after soak s), gone after life s (the last fade s)
 //   boss: the hit flash keeps his texture: a warm white × k for t s
+//   r2 (VIS 10–): domeIn = the lens inside our HQ's shield dome (× its radius) hides the dome (its hex lattice filled the screen from within) · rainNear = streaks fade
+//     in between these m of the lens (no long white bars across the screen) · allyK × the glow of every ally-green battle-light ring · cloth = [metalness, roughness] for an aircraft model that is cloth (a parachute's
+//     canopy came as polished metal: a flat cream disc in the night sky) · foeNight × the enemy kit's
+//     colour at night, leaned foeGrey of the way to grey (its warm tint read as self-lit) · bigTri / bigR / bigShrink: the spring arm reads a mesh too big to
+//     ray (up to bigTri triangles, bigR m across) by its box shrunk × bigShrink — the lens inside a building's box comes in to where the ray enters it
 //   horizon: at night the far ranges' colours go night × of the way to the night air's (dark silhouettes, not tan-purple saw teeth) ·
 //   transit: on the flight between two sectors the haze thins with the lens's height over the ground — full below y0 m, down to min × over span m more
 export const VISLOOK = {
-  frame:{ on:true, y:0.6, yM:0.6, anchor:0.3, bossR:34, bossPull:0.35, topK:0.84, footK:0.62, maxEl:54, ease:0.14 },
+  frame:{ on:true, y:0.6, yM:0.6, anchor:0.3, bossR:34, bossPull:0.35, topK:0.84, footK:0.62, maxEl:46, ease:0.14 },
   arm:{ on:true, every:0.1, everyM:0.2, sweep:2, maxTri:24000, near:3.5, pad:0.45, minD:2.4, inK:16, outT:0.45, hold:0.35, head:[1.55, 2.45, 0.6] },
   see:{ band:0.22, rim:0.42, rimK:0.55, leafGap:4 },
   menu:{ on:true, r:62, h:7.5, look:30, lookY:5, spin:0.035 },
   night:{
     FOUNDRY:{ moon:[0x9aa6c8, 0.7], top:0x0a0506, hor:0x3a160c, fog:[0x22180f, 1.3], hemi:[0x2c2a36, 0x9a4a18], amb:[0x4a3428, 0.24], lift:[0.022, 0.01, 0.004], gain:[1.06, 0.97, 0.9], sh:[0.0, 0.0, 0.02], hi:[0.06, 0.025, -0.03], sat:0.95, exp:0.9, gnd:0.9, cloud:[0x2a1612, 0x0c0606], haze:[7, 0x6a6a30, 0.14] },
     VOLCANO:{ moon:[0xb0a8c0, 0.6], top:0x0c0406, hor:0x4a1206, fog:[0x241010, 1.2], hemi:[0x2a2838, 0xd0401a], amb:[0x5a2a20, 0.24], lift:[0.03, 0.006, 0.0], gain:[1.1, 0.95, 0.85], sh:[0.02, -0.005, -0.01], hi:[0.06, 0.015, -0.03], sat:1.0, exp:0.92, gnd:0.85, cloud:[0x3a1410, 0x100606], haze:[4, 0x4a2a22, 0.12] },
-    CITADEL:{ moon:[0xb0c4ff, 0.9], top:0x0a1424, hor:0x26364e, fog:[0x223046, 1.1], hemi:[0x3e5478, 0x4a3424], amb:[0x6a7ea4, 0.32], lift:[0.012, 0.018, 0.04], gain:[0.98, 1.0, 1.08], sh:[-0.015, 0.004, 0.045], hi:[0.045, 0.018, -0.02], sat:0.9, exp:1.0, gnd:0.62 },
-    DESERT:{ moon:[0xe8eeff, 1.1], top:0x0c1630, hor:0x3a4868, fog:[0x2e3a52, 1.0], hemi:[0x5a6a8a, 0x4a4034], amb:[0x8a96b4, 0.38], lift:[0.018, 0.022, 0.035], gain:[1.0, 1.0, 1.04], sh:[-0.01, 0.0, 0.03], hi:[0.02, 0.02, 0.02], sat:0.72, exp:1.0, gnd:0.95 } },
-  rain:{ w:0.04, len:1.2, wind:6.5, n:1.7, op:[0.55, 0.42] },
+    CITADEL:{ moon:[0xb0c4ff, 0.9], top:0x0a1424, hor:0x26364e, fog:[0x223046, 1.1], hemi:[0x3e5478, 0x4a3424], amb:[0x6a7ea4, 0.32], lift:[0.012, 0.018, 0.04], gain:[0.98, 1.0, 1.08], sh:[-0.015, 0.004, 0.045], hi:[0.045, 0.018, -0.02], sat:0.9, exp:1.0, gnd:0.62, patch:0.3 },
+    DESERT:{ moon:[0xd8d6cc, 0.55], top:0x0a0c18, hor:0x2a2c36, fog:[0x24252c, 1.0], hemi:[0x3a3c48, 0x3a3020], amb:[0x6a6a78, 0.22], lift:[0.012, 0.012, 0.018], gain:[1.03, 1.0, 0.97], sh:[0.0, 0.0, 0.02], hi:[0.045, 0.03, 0.0], sat:0.62, exp:0.8, gnd:0.8 } },
+  rain:{ w:0.03, len:1.0, wind:9, n:2.2, op:[0.45, 0.3], tint:[0.5, 0.2] },
   beam:{ rim:3.2, fall:2.2, hot:1.6, dust:1.25, haze:0.022, gain:0.62, cut:0.2 },
   ring:{ w:0.32, op:0.62, step:3.2, h:0.75, edge:2.5, glow:2.2, col:0xd8e0c0 },
   blood:{ col:[0.42, 0.1, 0.08], dry:[0.5, 0.3, 0.24], soak:6, life:20, fade:5 },
   boss:{ k:0.55, t:0.08 },
   transit:{ y0:18, span:60, min:0.3 },
-  horizon:{ night:0.55 } };
+  horizon:{ night:0.55 },
+  r2:{ domeIn:1.08, rainNear:[2.2, 6.5], allyK:0.45, cloth:{ para_trooper:[0, 0.92] }, foeNight:0.78, foeGrey:0.45, bigTri:400000, bigR:60, bigShrink:0.9 } };

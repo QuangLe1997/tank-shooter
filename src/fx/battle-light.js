@@ -4,7 +4,7 @@
 //   (tick marks, a radar sweep, a progress arc, scan lines). Red / amber = danger, cyan = our own systems, green = allies and objectives,
 //   gold = loot. Pulses are smooth (a raised cosine that never goes fully dark) on a few shared rates, so nothing strobes.
 import * as THREE from 'three';
-import { BLIGHT } from '../../config.js';
+import { BLIGHT, VISLOOK } from '../../config.js';
 
 export const BL_T = { value:0 };                                                   // the shared clock every ring reads
 export function blTick(dt){ BL_T.value = (BL_T.value + dt) % 3600; }
@@ -54,7 +54,7 @@ function holoCompile(shader){ const u = this.userData.holo; shader.uniforms.uHol
   shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\n' + FS_PARS).replace('#include <alphatest_fragment>', '#include <alphatest_fragment>\n' + FS).replace('#include <fog_fragment>', FS_FOG); }
 // o: col, gain, core (half-width of the line), halo (falloff length), fill (inner glow depth), ticks (count), tickLen, sweep (turns/s),
 //    arc (0..1 of the ring lit), dark (backing), scan (0..1), spin (tick turns/s), fog, depthTest, opacity — all in the mesh's own units
-export function holoMat(R, o = {}){ const P = o.kind ? { ...BLIGHT.ring[o.kind], ...o } : o;
+export function holoMat(R, o = {}){ const P = o.kind ? { ...BLIGHT.ring[o.kind], ...o } : o; if(o.kind === 'ally' && o.gain == null) P.gain = (P.gain ?? BLIGHT.gain) * VISLOOK.r2.allyK;   // (VIS 10 ally-green rings glow less: a mark, not a neon wall)
   const m = new THREE.MeshBasicMaterial({ color:blCol(P.col ?? 'white'), transparent:true, opacity:P.opacity ?? 1, depthWrite:false, depthTest:P.depthTest ?? true, side:THREE.DoubleSide, fog:P.fog ?? true,
     blending:THREE.CustomBlending, blendEquation:THREE.AddEquation, blendSrc:THREE.OneFactor, blendDst:THREE.OneMinusSrcAlphaFactor });
   m.userData.holo = { a:{ value:new THREE.Vector4(R, P.core ?? R * 0.012, P.halo ?? R * 0.05, P.fill ?? 0) }, b:{ value:new THREE.Vector4(P.ticks ?? 0, P.tickLen ?? R * 0.06, P.sweep ?? 0, P.arc ?? 1) },

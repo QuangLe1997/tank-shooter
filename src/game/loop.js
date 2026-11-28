@@ -104,7 +104,7 @@ export function loop(nowMs){
   else if(S.mode==='countdown'){ S.timeNow=now; updateCountdown(dt); updateCamera(dt, now); cavIdle(dt); towersIdle(dt); }   // Z136 3 · 2 · 1: the world waits
   else if(S.mode==='dying'){ S.timeNow=now; updateDeath(dt, now); }   // death → respawn cinematic (flip + burn + close cam)
   else if(S.mode==='transit'){ S.timeNow=now; updateSectorTransit(dt, now); }   // SECTOR 1 between two sectors: the black, the build, the drop onto the new field
-  transitHaze(S.mode==='transit');   // VIS 5 the haze thins on the flight between sectors (world/atmosphere.js)
+  transitHaze(S.mode==='transit' || S.mode==='intro');   // (VIS 10 the opening flight too)   // VIS 5 the haze thins on the flight between sectors (world/atmosphere.js)
   coopTick(dt, now, nowMs);   // COOP 5 each page's soldier to the other, the host's snapshot (returns at once without a room)
   // always-on FX + core idle
   if(S.mode!=='playing'){ menuCam(dt); droneWarIdle(); updateSquadHud(now); gradePass.uniforms.aberr.value*=0.85; rangeRing.visible=false; radarCtx.clearRect(0,0,radarCanvas.width,radarCanvas.height); }

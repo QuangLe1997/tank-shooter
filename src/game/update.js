@@ -90,6 +90,12 @@ export function frameLookY(c, tx, tz, p, fov){ const F=VISLOOK.frame, hx=tx-c.x,
 // VIS 1 the lens may look down on him at most maxEl°: past that it comes down (and out to 2.5 m) — what stands between is faded, not climbed over
 function frameMaxEl(c, p){ const F=VISLOOK.frame; if(!F.on) return; const py=heightAt(p.pos.x, p.pos.z)+(p.lift||0)+frameChest(p), dx=c.x-p.pos.x, dz=c.z-p.pos.z, hd=Math.hypot(dx, dz), t=Math.tan(F.maxEl*_DEGR);
   if(c.y-py <= t*Math.max(hd, 0.01)) return; const h2=Math.max(hd, 2.5); if(hd>0.01 && h2>hd){ c.x=p.pos.x+dx/hd*h2; c.z=p.pos.z+dz/hd*h2; } c.y=py+t*h2; }
+// VIS 10 our HQ's shield dome is a lattice of hexes drawn additively: seen from inside, a metre or two from the lens, it filled the screen with blue lines —
+//   so it is not drawn while the lens or he is inside it (VISLOOK.r2.domeIn × its radius); from outside it shows as before
+const _dv=new THREE.Vector3(), _ds=new THREE.Vector3();
+function domeFade(){ const d=core && core.dome; if(!d) return; d.getWorldPosition(_dv); d.getWorldScale(_ds);
+  const r=5.6*_ds.x*VISLOOK.r2.domeIn, p=S.player, inside=(core.shieldUntil||0)<=performance.now()/1000 && (_dv.distanceTo(camera.position)<r || (p && Math.hypot(p.pos.x-_dv.x, p.pos.z-_dv.z)<r));
+  if(d.visible===inside) d.visible=!inside; }   // (and while he stands inside it, the lens just outside: the lattice lay over the whole view; the emergency shield still shows)
 // VIS 4 THE MENU'S BACKDROP: behind the home screen and its overlays the scene is no longer a top view of the Core (it read as a tank, and the
 //   game has none) — a slow, low orbit across the field toward its far side and the horizon; the Core waits out of sight until a battle
 const MC={ on:false, a:0 };
@@ -182,5 +188,6 @@ export function updateCamera(dt, now){
   if(p.cav && p.bike) rideCam(p, dt, now, g);   // Z301 on the ride: the camera feels the road
   gradePass.uniforms.aberr.value = t2*SHAKE.aberr;
   seeCam(p);   // CAM 3 where the cut-away goes this frame
+  domeFade();   // VIS 10 the lens inside our HQ's shield dome: the dome is not drawn
   S.shake = Math.max(0, S.shake - dt*(S.shake*2.6 + 1.2));
 }

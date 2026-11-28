@@ -9,17 +9,20 @@ import * as THREE from 'three';
 import { VISLOOK } from '../../config.js';
 import { MOBILE, scene } from '../hub.js';
 
-export const ARM = { list:[], seen:new Map(), sweepAt:-1, at:-1, share:1, want:1, clearAt:0, ms:0, rays:0, n:0, pulls:0 };
-const _rc = new THREE.Raycaster(), _o = new THREE.Vector3(), _d = new THREE.Vector3(), _hits = [], _rev = [], _sph = new THREE.Sphere(), _m = new THREE.Matrix4(), _v = new THREE.Vector3();
+export const ARM = { list:[], big:[], nBig:0, seen:new Map(), sweepAt:-1, at:-1, share:1, want:1, clearAt:0, ms:0, rays:0, n:0, pulls:0 };
+const _c = new THREE.Vector3(), _ry = new THREE.Ray(), _hp = new THREE.Vector3(), _rc = new THREE.Raycaster(), _o = new THREE.Vector3(), _d = new THREE.Vector3(), _hits = [], _rev = [], _sph = new THREE.Sphere(), _m = new THREE.Matrix4(), _v = new THREE.Vector3();
 _rc.firstHitOnly = true;
 let _skip = null;
 // SWEEP: who counts as a solid (static over two sweeps: a moving man, horse, bike, a falling wall never does)
 function sweep(now, skip){ const A = VISLOOK.arm; if(now - ARM.sweepAt < A.sweep) return; ARM.sweepAt = now; const mine = _skip || (_skip = new Set()); mine.clear();
   if(skip) for(const r of skip) if(r) r.traverse(o => mine.add(o));
-  const L = ARM.list; L.length = 0; const seen = ARM.seen, keep = new Set();
+  const L = ARM.list; L.length = 0; ARM.nBig = 0; const seen = ARM.seen, keep = new Set(), R2 = VISLOOK.r2;
   scene.traverseVisible(o => { if(!o.isMesh || o.isSkinnedMesh || !o.castShadow || mine.has(o) || !o.geometry || !o.geometry.attributes.position) return; const u = o.userData;
     if(u && (u.tree || u.forest || u.noArm)) return; const m = Array.isArray(o.material) ? o.material[0] : o.material; if(!m || m.transparent || m.alphaTest > 0 || m.side === THREE.BackSide) return;
-    const g = o.geometry, tri = (g.index ? g.index.count : g.attributes.position.count) / 3; if(tri > A.maxTri) return;
+    const g = o.geometry, tri = (g.index ? g.index.count : g.attributes.position.count) / 3;
+    if(tri > A.maxTri){ if(o.isInstancedMesh || tri > R2.bigTri) return; if(!g.boundingBox) g.computeBoundingBox();   // VIS 10 a building too big to ray: its box, shrunk
+      const B = ARM.big[ARM.nBig] || (ARM.big[ARM.nBig] = new THREE.Box3()); B.copy(g.boundingBox).applyMatrix4(o.matrixWorld); B.getSize(_v); if(Math.max(_v.x, _v.z) > R2.bigR || _v.y < 2) return;
+      B.getCenter(_c); B.min.sub(_c).multiplyScalar(R2.bigShrink).add(_c); B.max.sub(_c).multiplyScalar(R2.bigShrink).add(_c); ARM.nBig++; return; }
     const ver = o.isInstancedMesh ? o.instanceMatrix.version + o.count * 1e6 : 0, e = o.matrixWorld.elements, sig = e[12] * 7.1 + e[13] * 3.3 + e[14] * 5.7 + e[0] + e[2] + ver;
     const was = seen.get(o); keep.add(o); seen.set(o, sig); if(was === undefined || was !== sig) return;   // new or moved since the last sweep: not yet a solid
     if(o.isInstancedMesh){ if(!o.boundingSphere || o._armV !== ver){ o.computeBoundingSphere(); o._armV = ver; } _sph.copy(o.boundingSphere); }
@@ -45,10 +48,12 @@ export function armPull(pos, hx, hy, hz, dt, now, skip){ const A = VISLOOK.arm; 
     cast(hx, hy, hz, ux, uy, uz, L + A.pad, _out); const d = _out[0], obj = _out[1];
     if(obj){ let pull = d >= L - A.near; if(!pull){ _o.set(pos.x, pos.y, pos.z); _d.set(-ux, -uy, -uz); _rc.set(_o, _d); _rc.far = L - d + 0.01; _rev.length = 0; obj.raycast(_rc, _rev); pull = !_rev.length; }   // inside it (no face of it seen from the lens), or it is right at the lens
       if(pull && d - A.pad >= A.minD) want = (d - A.pad) / L; }
+    if(want >= 1){ _hp.set(hx, hy, hz); for(let i = 0; i < ARM.nBig; i++){ const B = ARM.big[i]; if(!B.containsPoint(pos) || B.containsPoint(_hp)) continue;   // VIS 10 the lens inside a building's box, he outside it: in to where the ray enters it
+      _ry.set(_hp, _d.set(ux, uy, uz)); if(!_ry.intersectBox(B, _c)) continue; const e = _c.distanceTo(_hp) - A.pad; if(e >= A.minD) want = Math.min(want, e / L); } }
     ARM.want = want; if(want < 0.999){ ARM.clearAt = now; ARM.pulls++; } ARM.rays++; ARM.ms += (performance.now() - t0 - ARM.ms) * 0.1; }
   let w = ARM.want; if(w >= 0.999 && now - ARM.clearAt < A.hold) w = Math.min(1, ARM.share);   // clear: hold a moment before easing out (no in-out-in past a row of posts)
   ARM.share += (w - ARM.share) * (w < ARM.share ? Math.min(1, dt * A.inK) : Math.min(1, dt / Math.max(0.05, A.outT)));
   if(ARM.share < 0.999) pos.set(hx + dx * ARM.share, hy + dy * ARM.share, hz + dz * ARM.share);
   return pos; }
 export function armReset(){ ARM.share = 1; ARM.want = 1; ARM.at = -1; }
-export const armStats = () => ({ solids:ARM.n, share:+ARM.share.toFixed(2), ms:+ARM.ms.toFixed(3), rays:ARM.rays, pulls:ARM.pulls });
+export const armStats = () => ({ solids:ARM.n, boxes:ARM.nBig, share:+ARM.share.toFixed(2), ms:+ARM.ms.toFixed(3), rays:ARM.rays, pulls:ARM.pulls });

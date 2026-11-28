@@ -14,7 +14,8 @@ import * as THREE from 'three';
 import { BAL, SECTOR, TROOPS, HUDUX } from '../../config.js';
 import { BIOME, COVER_K, COVER_SET, CONTAINER_PAINT, SECT, buildObjective, buildTower, camera, coverGeo, coverVariant, crushables, makeCoverMesh, ncBattle, ncHit, BUMPS } from '../hub.js';   // SECTOR 3
 import { ARENA, FORTS, OBJ, QUIET, S, TRAIL, UGRID, WAVE, animateSoldier, bigExplode, blocks, buildTransport, clampFieldXZ, damageObjective, edgeEntry, edgeNote, enemies, fieldEdgePoint,
-  fireball, guardsLeft, heightAt, holoRing, inField, makeSoldierMesh, makeTruck, radio, ringPulse, scene, sfx, soldierKneel, spawnEnemy, spawnGuards, spawnSquad, svgBadgeTex } from '../hub.js';
+  fireball, guardsLeft, heightAt, inField, makeSoldierMesh, makeTruck, radio, ringPulse, scene, sfx, soldierKneel, spawnEnemy, spawnGuards, spawnSquad, svgBadgeTex } from '../hub.js';
+import { zoneMark } from '../hub.js';   // VIS 10 (world/zone-mark.js)
 
 const Y = SECTOR.types, SAY = SECTOR.say, _pt = { x:0, y:0, z:0 };
 const fill = (t, o) => String(t ?? '').replace(/\{(\w+)\}/g, (m, k) => o && o[k] != null ? o[k] : '');
@@ -25,10 +26,10 @@ export const SGOAL = { g:null, cell:null, man:null, trucks:[], heli:null, props:
 // ---- markers: up to two rings with a badge (made once, moved, hidden) ----
 // SECTOR 3 small (the side missions' ring at most, a badge of 1.5 m) and, in a battle, faded to a ghost while it stands inside the aim zone (ui/nocenter.js ncHit)
 const _mv = new THREE.Vector3();
-function mark(i, x, z, r, icon, col, h){ let M = SGOAL.marks[i]; if(!M){ const ring = holoRing(6, { kind:'ally', depthTest:true }), badge = new THREE.Sprite(new THREE.SpriteMaterial({ transparent:true, depthWrite:false }));
-    badge.scale.set(SECTOR.mark.badge, SECTOR.mark.badge, 1); scene.add(ring); scene.add(badge); M = SGOAL.marks[i] = { ring, badge, icon:'' }; }
+function mark(i, x, z, r, icon, col, h){ let M = SGOAL.marks[i]; if(!M){ const zm = zoneMark(), ring = zm.g, badge = new THREE.Sprite(new THREE.SpriteMaterial({ transparent:true, depthWrite:false }));
+    badge.scale.set(SECTOR.mark.badge, SECTOR.mark.badge, 1); scene.add(badge); M = SGOAL.marks[i] = { ring, zm, badge, icon:'' }; }   // (VIS 10 the ring painted on the ground: world/zone-mark.js — the flat neon ring floated over the low side)
   if(M.icon !== icon + col){ M.icon = icon + col; M.badge.material.map = svgBadgeTex(icon, col); M.badge.material.needsUpdate = true; }
-  const gy = heightAt(x, z), by = gy + (h || SECTOR.mark.y) + Math.sin(performance.now() / 450) * 0.15; M.ring.visible = M.badge.visible = true; M.ring.position.set(x, gy + 0.12, z); M.ring.scale.setScalar(Math.min(r, SECTOR.mark.ring) / 6); M.badge.position.set(x, by, z);
+  const gy = heightAt(x, z), by = gy + (h || SECTOR.mark.y) + Math.sin(performance.now() / 450) * 0.15; M.badge.visible = true; M.zm.set(x, z, Math.min(r, SECTOR.mark.ring)); if(S.player) M.zm.tick(S.player.pos.x, S.player.pos.z); M.badge.position.set(x, by, z);
   _mv.set(x, by, z).project(camera); const sx = (_mv.x + 1) / 2 * innerWidth, sy = (1 - _mv.y) / 2 * innerHeight, q = SECTOR.mark.badge * 14;
   { const k = Math.min(SECTOR.mark.badge, HUDUX.mark.px / Math.max(200, innerHeight) * 2 * camera.position.distanceTo(M.badge.position) * Math.tan(camera.fov * Math.PI / 360)); M.badge.scale.set(k, k, 1); }   // HUDUX at most HUDUX.mark.px on the screen (it grew to ~100 px near)
   M.badge.material.opacity = ncBattle() && _mv.z < 1 && ncHit(sx - q, sy - q, sx + q, sy + q) || ncBattle() && sy < HUDUX.mark.top ? SECTOR.mark.ghost : 1; }   // (HUDUX faint under the top HUD band too)
