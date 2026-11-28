@@ -3297,6 +3297,11 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
     'HUDUX 5: CHƠI NGAY skips the tour; a fort opens on one story card, the rest on the radio while he fights');
   ok(/html body:not\(\.hux-play\) #voiceSub#voiceSub,html body:not\(\.hux-play\) #radio#radio\{display:none!important;\}/.test(css) && /q\.cap >= 10 \? Math\.max\(0, Math\.min\(9, q\.sel \| 0\)\)/.test(ux) && /'Đánh lại '/.test(R('src/ui/conquest-map.js')),
     'HUDUX 5: no battle caption over the pause or a menu; all ten forts taken, CHƠI NGAY replays the fort last picked'); }
+// VIS 11 round 3: the HQ dome only while shielding, aircraft not mirrors, a muted marker smoke, the far plain dark at night, a wider near cut
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { VISLOOK:V }=await import('./config.js'), Q=V.r2;
+  ok(/const inside=\(core\.shieldUntil\|\|0\)<=performance\.now\(\)\/1000;/.test(R('src/game/update.js')), 'VIS 11: our HQ\'s hex dome is drawn only while the emergency shield is up (it lay across the view from close outside too)');
+  ok(Q.airMetal>=0 && Q.airMetal<0.6 && /VISLOOK\.r2\.airMetal/.test(R('src/actors/real-air.js')) && /VISLOOK\.r2\.markSmoke/.test(R('src/campaign/surprises.js')) && !/0x6aff7a/.test(R('src/campaign/surprises.js')), 'VIS 11: aircraft are painted, not mirrors (no flat cream shape at night); the marker smoke a muted green');
+  ok(Q.plainNight>0 && Q.plainNight<1 && /VISLOOK\.r2\.plainNight/.test(R('src/world/heightfield.js')) && V.see.near>2 && V.see.near<6 && /VISLOOK\.see\.near/.test(R('src/game/update.js')), 'VIS 11: the plain to the horizon sinks into the night; a wall right at the lens goes whole'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

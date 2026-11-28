@@ -6,7 +6,7 @@
 //   · a HELICOPTER of whatever kind the hat picks
 //   · and sometimes the luck is ours: OUR ARTILLERY drops a fire mission on the thickest knot of enemies
 import * as THREE from 'three';
-import { BAL, REAL } from '../../config.js';
+import { BAL, REAL, VISLOOK } from '../../config.js';
 import { FT, S, UNDER, aoeDamage, bigExplode, clampFieldXZ, decalCrater, enemies, enemyGroundStrike, floatText, heightAt, radio, ringPulse, sfx, showBanner, spawnEnemy, spawnPart, spawnSquad, tunnelSquad, dirSurpriseOk, droneRaid, droneRaidOk, droneRaidW } from '../hub.js';
 import { viewYaw, frontYaw } from '../hub.js';   // BAL 3 (ui/threat-edge.js: never from behind him)
 import { MODE, SAFE, SECT, sneaking } from '../hub.js';   // BAL 10–12
@@ -37,7 +37,7 @@ function friendly(now){ const p=S.player, C=REAL.surprise.friendly; let best=nul
   for(const e of enemies){ if(e.def.air) continue; if(Math.hypot(e.pos.x-p.pos.x, e.pos.z-p.pos.z)<16) continue; let n=0; for(const o of enemies) if(!o.def.air && (o.pos.x-e.pos.x)**2+(o.pos.z-e.pos.z)**2<100) n++; if(n>bn){ bn=n; best=e; } }
   if(!best || bn<C.minFoes) return false; const cx=best.pos.x, cz=best.pos.z;
   for(const a of FT) if(Math.hypot(a.pos.x-cx, a.pos.z-cz)<12) return false;
-  for(let i=0;i<10;i++) spawnPart(cx+(Math.random()-0.5)*1.5, heightAt(cx,cz)+0.5, cz+(Math.random()-0.5)*1.5, (Math.random()-0.5)*0.6, 2.2, (Math.random()-0.5)*0.6, { color:0x6aff7a, size:1.4+Math.random(), life:2.4, smoke:true, grav:0.6, drag:1.2, grow:2.4, op:0.5 });   // green marker smoke
+  for(let i=0;i<10;i++) spawnPart(cx+(Math.random()-0.5)*1.5, heightAt(cx,cz)+0.5, cz+(Math.random()-0.5)*1.5, (Math.random()-0.5)*0.6, 2.2, (Math.random()-0.5)*0.6, { color:VISLOOK.r2.markSmoke, size:1.4+Math.random(), life:2.4, smoke:true, grav:0.6, drag:1.2, grow:2.4, op:0.6 });   // green marker smoke (VIS 11 a muted signal green: the neon one read as a glowing blob, C1-048)
   for(let i=0;i<C.shells;i++){ const a=Math.random()*6.283, r=Math.random()*7; SURP.shells.push({ x:cx+Math.cos(a)*r, z:cz+Math.sin(a)*r, t:2.2+i*0.32+Math.random()*0.2, warn:0, R:C.R, dmg:C.dmg, ours:true, pulse:0, wh:false }); }
   tell('PHÁO TA CHI VIỆN!', '#9be04a', 'PHÁO BINH: Đã nhận toạ độ khói xanh — bắn hiệu quả, chú ý!'); floatText('KHÓI XANH — PHÁO TA', '#9be04a', { x:cx, y:heightAt(cx,cz)+3, z:cz }, 15); return true; }
 const EV = { ambush, heli, friendly, drone:droneRaid }, EVX = { drone:{ get w(){ return droneRaidW(); }, from:1, ok:now => droneRaidOk(now) } };   // DRONE 3 the enemy's drones (campaign/drone-raid.js: its own stage gate, weight and announcement), in the hat the way EVENT 2's events are

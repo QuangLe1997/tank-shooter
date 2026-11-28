@@ -4284,7 +4284,8 @@ export const FEELFX = { on:true,
 //     triangles a mesh): a surface the lens is inside, or one within near m of it, pulls the lens in to pad m short of it (never nearer him than minD m);
 //     one closer to him is faded instead (render/see-through.js); in at inK 1/s, back out over outT s once clear for hold s
 //   see: the fade of what stands between — the screen-door dots are gone: the cut is clean, a narrow band (band, share of the strength) feathers it and a
-//     rim (rim, share) dims toward rimK; leaves and trunks more than leafGap m nearer the lens than he stands go whole, the whole screen over (the canopy the lens rides in)
+//     rim (rim, share) dims toward rimK; leaves and trunks more than leafGap m nearer the lens than he stands go whole, the whole screen over (the canopy the lens rides in); near = anything this
+//     close to the lens goes whole (VIS 11: was CAM_ROOM.see.near 2 m — a wall's corner 3 m off filled half the screen)
 //   menu: the scene behind the menus (mode start): a slow orbit r m out, h m up, looking look m past the field's centre at lookY m, turning spin rad/s;
 //     the Core waits out of sight until a battle
 //   night: each battlefield's own night — moon (colour, × strength), sky top / horizon, fog colour and × density, hemisphere sky / ground (the ground
@@ -4301,7 +4302,9 @@ export const FEELFX = { on:true,
 //   boss: the hit flash keeps his texture: a warm white × k for t s
 //   r2 (VIS 10–): domeIn = the lens inside our HQ's shield dome (× its radius) hides the dome (its hex lattice filled the screen from within) · rainNear = streaks fade
 //     in between these m of the lens (no long white bars across the screen) · allyK × the glow of every ally-green battle-light ring · cloth = [metalness, roughness] for an aircraft model that is cloth (a parachute's
-//     canopy came as polished metal: a flat cream disc in the night sky) · foeNight × the enemy kit's
+//     canopy came as polished metal: a flat cream disc in the night sky) · airMetal = the most metal any aircraft model is (they came as metal 1 / rough 1:
+//     a uniform reflection of the sky — a flat cream shape at night) · (VIS 11 at rest our HQ's dome is not drawn at all — close by, its lattice lay across the view from
+//     outside too; the emergency shield still shows) · plainNight × the plain to the horizon at night (seen from the transit's height it was a white band) · markSmoke = the artillery's marker smoke (a muted signal green, not a glowing neon) · foeNight × the enemy kit's
 //     colour at night, leaned foeGrey of the way to grey (its warm tint read as self-lit) · bigTri / bigR / bigShrink: the spring arm reads a mesh too big to
 //     ray (up to bigTri triangles, bigR m across) by its box shrunk × bigShrink — the lens inside a building's box comes in to where the ray enters it
 //   horizon: at night the far ranges' colours go night × of the way to the night air's (dark silhouettes, not tan-purple saw teeth) ·
@@ -4309,7 +4312,7 @@ export const FEELFX = { on:true,
 export const VISLOOK = {
   frame:{ on:true, y:0.6, yM:0.6, anchor:0.3, bossR:34, bossPull:0.35, topK:0.84, footK:0.62, maxEl:46, ease:0.14 },
   arm:{ on:true, every:0.1, everyM:0.2, sweep:2, maxTri:24000, near:3.5, pad:0.45, minD:2.4, inK:16, outT:0.45, hold:0.35, head:[1.55, 2.45, 0.6] },
-  see:{ band:0.22, rim:0.42, rimK:0.55, leafGap:4 },
+  see:{ band:0.22, rim:0.42, rimK:0.55, leafGap:4, near:3.2 },
   menu:{ on:true, r:62, h:7.5, look:30, lookY:5, spin:0.035 },
   night:{
     FOUNDRY:{ moon:[0x9aa6c8, 0.7], top:0x0a0506, hor:0x3a160c, fog:[0x22180f, 1.3], hemi:[0x2c2a36, 0x9a4a18], amb:[0x4a3428, 0.24], lift:[0.022, 0.01, 0.004], gain:[1.06, 0.97, 0.9], sh:[0.0, 0.0, 0.02], hi:[0.06, 0.025, -0.03], sat:0.95, exp:0.9, gnd:0.9, cloud:[0x2a1612, 0x0c0606], haze:[7, 0x6a6a30, 0.14] },
@@ -4323,4 +4326,4 @@ export const VISLOOK = {
   boss:{ k:0.55, t:0.08 },
   transit:{ y0:18, span:60, min:0.3 },
   horizon:{ night:0.55 },
-  r2:{ domeIn:1.08, rainNear:[2.2, 6.5], allyK:0.45, cloth:{ para_trooper:[0, 0.92] }, foeNight:0.78, foeGrey:0.45, bigTri:400000, bigR:60, bigShrink:0.9 } };
+  r2:{ domeIn:1.08, rainNear:[2.2, 6.5], allyK:0.45, cloth:{ para_trooper:[0, 0.92] }, airMetal:0.35, markSmoke:0x4f7a44, plainNight:0.45, foeNight:0.78, foeGrey:0.45, bigTri:400000, bigR:60, bigShrink:0.9 } };

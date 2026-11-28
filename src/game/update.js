@@ -90,12 +90,11 @@ export function frameLookY(c, tx, tz, p, fov){ const F=VISLOOK.frame, hx=tx-c.x,
 // VIS 1 the lens may look down on him at most maxEl°: past that it comes down (and out to 2.5 m) — what stands between is faded, not climbed over
 function frameMaxEl(c, p){ const F=VISLOOK.frame; if(!F.on) return; const py=heightAt(p.pos.x, p.pos.z)+(p.lift||0)+frameChest(p), dx=c.x-p.pos.x, dz=c.z-p.pos.z, hd=Math.hypot(dx, dz), t=Math.tan(F.maxEl*_DEGR);
   if(c.y-py <= t*Math.max(hd, 0.01)) return; const h2=Math.max(hd, 2.5); if(hd>0.01 && h2>hd){ c.x=p.pos.x+dx/hd*h2; c.z=p.pos.z+dz/hd*h2; } c.y=py+t*h2; }
-// VIS 10 our HQ's shield dome is a lattice of hexes drawn additively: seen from inside, a metre or two from the lens, it filled the screen with blue lines —
-//   so it is not drawn while the lens or he is inside it (VISLOOK.r2.domeIn × its radius); from outside it shows as before
-const _dv=new THREE.Vector3(), _ds=new THREE.Vector3();
-function domeFade(){ const d=core && core.dome; if(!d) return; d.getWorldPosition(_dv); d.getWorldScale(_ds);
-  const r=5.6*_ds.x*VISLOOK.r2.domeIn, p=S.player, inside=(core.shieldUntil||0)<=performance.now()/1000 && (_dv.distanceTo(camera.position)<r || (p && Math.hypot(p.pos.x-_dv.x, p.pos.z-_dv.z)<r));
-  if(d.visible===inside) d.visible=!inside; }   // (and while he stands inside it, the lens just outside: the lattice lay over the whole view; the emergency shield still shows)
+// VIS 10–11 our HQ's shield dome is a lattice of hexes drawn additively: from inside, and from close outside, it lay across the view as blue lines —
+//   so it is drawn only while the emergency shield is up
+function domeFade(){ const d=core && core.dome; if(!d) return;
+  const inside=(core.shieldUntil||0)<=performance.now()/1000;   // VIS 11 at rest not drawn at all (from close outside too its lattice lay across the view): only the emergency shield shows it
+  if(d.visible===inside) d.visible=!inside; }
 // VIS 4 THE MENU'S BACKDROP: behind the home screen and its overlays the scene is no longer a top view of the Core (it read as a tank, and the
 //   game has none) — a slow, low orbit across the field toward its far side and the horizon; the Core waits out of sight until a battle
 const MC={ on:false, a:0 };
@@ -127,7 +126,8 @@ function seeCam(p){ const C=CAM_ROOM.see, u=SEE.u; SEE.at=performance.now()/1000
   _sv.set(p.pos.x, gH+1.2, p.pos.z).applyMatrix4(camera.matrixWorldInverse); const dz=-_sv.z; _sv.applyMatrix4(camera.projectionMatrix); const hx=_sv.x*asp, hy=_sv.y;
   const a=camAimA(p), ax=p.pos.x+Math.sin(a)*C.ahead, az=p.pos.z+Math.cos(a)*C.ahead; let tx=hx, ty=hy;
   _sv.set(ax, heightAt(ax, az)+1.0, az).applyMatrix4(camera.matrixWorldInverse); if(-_sv.z>0.5){ _sv.applyMatrix4(camera.projectionMatrix); tx=_sv.x*asp; ty=_sv.y; }
-  u.uSeeA.value.set(hx, hy, tx, ty); u.uSeeB.value.set(dz, MOBILE ? C.rM : C.r, C.near, dz>0.5 ? C.k : 0); u.uSeeC.value.set(asp, C.soft, C.far, C.ramp); }
+  u.uSeeA.value.set(hx, hy, tx, ty); u.uSeeB.value.set(dz, MOBILE ? C.rM : C.r, C.near, dz>0.5 ? C.k : 0); u.uSeeB.value.z=Math.max(C.near, VISLOOK.see.near); u.uSeeC.value.set(asp, C.soft, C.far, C.ramp); }
+// (VIS 11 the near cut reaches VISLOOK.see.near m: a wall's corner 3 m from the lens filled half the screen)
 export function updateCamera(dt, now){
   const p=S.player; if(!p) return;
   const F=CAM_FEEL, CS=applyCamStyle(), st=Math.min(dt, 1/20);

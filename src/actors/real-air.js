@@ -37,7 +37,7 @@ function prep(gl, k){ const S = REALAIR.models[k]; let src = null; gl.scene.upda
     g = subset(g, keep); }
   g.computeBoundingBox(); b = g.boundingBox; g.translate(-(b.min.x + b.max.x) / 2, -(b.min.y + b.max.y) / 2, -(b.min.z + b.max.z) / 2); g.computeBoundingBox(); g.computeBoundingSphere();
   const mat = src.material.clone(); mat.envMapIntensity = S.env ?? 1; mat.side = S.double ? THREE.DoubleSide : THREE.FrontSide;
-  { const C = VISLOOK.r2.cloth[k]; if(C){ mat.metalness = C[0]; mat.roughness = C[1]; } }   // VIS 10 a canopy is cloth, not polished metal (a flat cream disc at night)
+  { const C = VISLOOK.r2.cloth[k]; if(C){ mat.metalness = C[0]; mat.roughness = C[1]; } else mat.metalness = Math.min(mat.metalness, VISLOOK.r2.airMetal); }   // (VIS 11 painted airframes are not mirrors)   // VIS 10 a canopy is cloth, not polished metal (a flat cream disc at night)
   return { geo:g, mat, size:g.boundingBox.getSize(new THREE.Vector3()) }; }
 
 // dress a procedural airframe group (or a parachute) as model k: now if it is in, else as soon as it is
