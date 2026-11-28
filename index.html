@@ -54,6 +54,7 @@
 <link rel="stylesheet" href="css/hud-slim.css" />
 <link rel="stylesheet" href="css/ui-xk.css" />
 <link rel="stylesheet" href="css/ui-kit.css" />
+<link rel="stylesheet" href="css/hudux.css" />
 </head>
 <body>
 <!-- BOOT GATE — holds a clean branded screen until the world is live (and on touch: one tap → audio + fullscreen) -->
@@ -108,9 +109,9 @@
     <div id="chpbar" class="wbar core"><span class="wlabel" data-icon="bunker"></span><i></i></div>
   </div>
   <div id="abilities">
-    <div class="ability ready" id="ab-dash"><span class="ic" data-icon="dash"></span><span class="k">CÁCH</span><div class="cool" id="cool-dash"></div></div>
+    <div class="ability ready" id="ab-dash"><span class="ic" data-icon="dash"></span><span class="k">SPACE</span><div class="cool" id="cool-dash"></div></div>
     <div class="ability ready" id="ab-spell"><span class="ic" data-icon="spark"></span><span class="k">E</span><div class="cool" id="cool-spell"></div></div>
-    <span class="ab-nm" id="ab-spell-nm">Q ‹ KỸ NĂNG ›</span>
+    <span class="ab-nm" id="ab-spell-nm">Q · KỸ NĂNG</span>
   </div>
   <div id="combo">LIÊN HOÀN ×2</div>
   <div id="fsBtn" class="chip"><span class="ic" data-icon="expand"></span></div>
@@ -177,14 +178,14 @@
     <div class="xb xb-pri xb-hero" id="playBtn" role="button"><span class="xb-hl"><span class="xb-t">Chơi ngay</span><small id="playSub"></small></span><span class="ic" data-icon="play"></span></div>
     <div class="xb xb-pri xb-hero" id="continueBtn" role="button" hidden><span class="xb-hl"><span class="xb-t">Chơi tiếp</span><small id="contSub"></small></span><span class="ic" data-icon="play"></span></div>
     <div class="xk-grid">
-      <div class="xb xb-sec" id="terrainBtn" role="button"><span class="ic" data-icon="target"></span><span>Chọn trận</span></div>
+      <div class="xb xb-sec" id="terrainBtn" role="button"><span class="ic" data-icon="flag"></span><span>Chọn trận</span></div>
       <div class="xb xb-sec" id="arsenalBtn" role="button"><span class="ic" data-icon="rifle"></span><span>Kho súng</span></div>
       <div class="xb xb-sec" id="rankBtn" role="button"><span class="ic" data-icon="star"></span><span>Xếp hạng</span></div>
     </div>
     <!-- MODE 1–2 the two extra modes (campaign/night-defence.js · campaign/daily.js): the same grid and buttons as the row above -->
     <div class="xk-grid">
       <div class="xb xb-sec" id="nightBtn" role="button"><span class="ic" data-icon="bunker"></span><span>Thủ đêm</span></div>
-      <div class="xb xb-sec" id="dailyBtn" role="button" style="grid-column:span 2"><span class="ic" data-icon="target"></span><span id="dailyBtnT">Thử thách hôm nay</span></div>
+      <div class="xb xb-sec" id="dailyBtn" role="button" style="grid-column:span 2"><span class="ic" data-icon="hourglass"></span><span id="dailyBtnT">Thử thách hôm nay</span></div>
     </div>
     <div class="xk-util">
       <div class="xb xb-ghost" id="settingsBtn" role="button"><span class="ic" data-icon="gear"></span><span>Cài đặt</span></div>
@@ -197,8 +198,8 @@
 <!-- NICKNAME (first launch) -->
 <div class="overlay hidden xk-dlg" id="nick">
   <div class="xk-card">
-    <h2 class="xk-ttl">Chào mừng, chỉ huy</h2>
-    <p class="xk-sub">Chọn mật danh của bạn — tên này hiện trên bảng xếp hạng.</p>
+    <h2 class="xk-ttl">Chỉ huy, xưng danh</h2>
+    <p class="xk-sub">Mật danh của anh — tên này hiện trên bảng xếp hạng.</p>
     <input id="nickInput" type="text" maxlength="16" placeholder="Mật danh" autocomplete="off" autocapitalize="words" spellcheck="false" enterkeyhint="done" inputmode="text" aria-label="Mật danh" />
     <div class="xk-acts"><div class="xb xb-pri" id="nickSave" role="button">Xác nhận</div></div>
   </div>
@@ -390,6 +391,7 @@
       <div class="xb xb-sec" id="keysBtnP" role="button"><span class="ic" data-icon="keys"></span><span>Phím tắt</span></div>
       <div class="xb xb-ghost xk-leave" id="homeBtn" role="button"><span class="ic" data-icon="home"></span><span>Về trang chủ</span></div>
     </div>
+    <aside class="hux-pz" id="pauseSide" aria-live="off"></aside>
   </div>
   <footer class="xk-foot">
     <div class="xk-quick">
@@ -432,7 +434,7 @@
   </header>
   <div class="xk-body">
     <div class="dp-body">
-      <div class="dp-col dp-posts"><div class="dp-h">Trọng điểm — rải quân</div><div id="dp-posts"></div></div>
+      <div class="dp-col dp-posts"><div class="dp-h">Trọng điểm — rải quân</div><p class="dp-tip hidden" id="dp-tip"></p><div id="dp-posts"></div></div>
       <div class="dp-col dp-side">
         <canvas id="dp-map" width="180" height="180"></canvas>
         <div class="dp-h">Binh chủng</div><div id="dp-roles"></div>

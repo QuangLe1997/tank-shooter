@@ -246,7 +246,7 @@ function bar(B, on){ const bb = document.getElementById('bossbar'); if(!bb) retu
   const e = B.e, hp = document.getElementById('boss-hp'), k = e ? Math.max(0, e.hp / e.maxHp) : 1; if(hp) hp.style.width = (k * 100).toFixed(1) + '%';
   const live = B.guards ? B.guards.filter(g => enemies.includes(g)).length : 0, nPl = PL.filter(z => B.pl[z] > 0).length, key = B.phase + '|' + nPl + '|' + (B.st === 'stagger') + '|' + live, st = document.getElementById('boss-st');
   if(st && FBOSS.barK !== key){ FBOSS.barK = key; st.textContent = ''; const b = document.createElement('b'); b.className = B.phase === 3 ? 'vu' : 'sh';
-    b.textContent = (B.st === 'stagger' ? 'CHOÁNG! · ' : B.phase === 3 ? 'NỔI ĐIÊN · ' : '') + B.def.sub + ' · GIÁP ' + nPl + '/5' + (live ? ' · CẬN VỆ ' + live : ''); st.appendChild(b); } }
+    b.textContent = (B.st === 'stagger' ? 'CHOÁNG · ' : B.phase === 3 ? 'NỔI ĐIÊN · ' : '') + '●'.repeat(nPl) + '○'.repeat(Math.max(0, 5 - nPl)) + (live ? ' · CẬN VỆ ' + live : ''); b.title = 'Giáp ' + nPl + '/5'; st.appendChild(b); } }   // HUDUX the name, the bar, the armour as dots — no class / weapon words
 // a new battlefield (world/fortress.js clearForts)
 export function fortBossReset(){ FBOSS.seq++; for(const B of FBOSS.list){ for(const z of B.zones) disposeArtZone(z.zone); if(B.laser){ scene.remove(B.laser); B.laser.material.dispose(); } if(B.look) fortBossStrip(B.look, false); }
   FBOSS.list.length = 0; for(const g of FBOSS.guest.values()) if(g.look) fortBossStrip(g.look, false); FBOSS.guest.clear(); fortBossLookClear(); fortBossCorpsesClear(); FBOSS.pre = false; const bb = document.getElementById('bossbar'); if(bb && FBOSS.barB) bb.style.display = 'none'; FBOSS.barB = null; }

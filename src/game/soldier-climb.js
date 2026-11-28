@@ -149,5 +149,5 @@ export function climbUi(){ if(el || typeof document === 'undefined') return;
 function paint(){ const p = S.player, on = !!(p && p.cav && S.mode === 'playing' && !CV.mounted && !CV.trans && !CV.dead); let txt = null; const key = MOBILE ? '' : '  [J]', K = CV.climb;
   if(on && K){ txt = K.ph === 'top' ? '⬇ NHẢY XUỐNG' + key : K.ph === 'fall' ? null : '✋ BUÔNG TAY' + key; }
   else if(on && !CV.roll && !CV.jump){ const t = performance.now() / 1000; if(t > scanAt){ scanAt = t + C.scanT; el._s = climbScan(p, true); } const s = el._s;
-    if(s) txt = s.why === 'high' ? 'QUÁ CAO ĐỂ LEO (' + Math.round(s.h) + ' m)' : s.why ? null : (s.vault ? '⤴ TRÈO LÊN' : '⛰ LEO') + ' · ' + s.h.toFixed(1) + ' m' + key; }
+    if(s) txt = s.why === 'high' ? 'QUÁ CAO' : s.why ? null : (s.vault ? '⤴ TRÈO' : '⛰ LEO') + key; }   // HUDUX a short chip beside the gun (css/hudux.css places it), no metres
   el.style.display = txt ? 'block' : 'none'; if(txt && el.textContent !== txt) el.textContent = txt; }

@@ -5,7 +5,6 @@ import { FT, FTSQ, MOBILE, S, squadOrderLabel } from '../hub.js';
 
 const ROLE={ rifle:'BB', mg:'ĐL', mortar:'CỐI', sapper:'CB', medic:'YT' };   // (Z351 the soldier's own medic)
 const TASK={ fight:'f', cover:'c', evade:'c', fallback:'r', post:'g', form:'g', advance:'a', order:'a', muster:'a', assault:'a', fetch:'l', rally:'l' };
-const LEG=[['f','GIAO CHIẾN'],['c','ẨN NẤP'],['a','VẬN ĐỘNG'],['r','RÚT / BĂNG'],['g','HỘ TỐNG'],['l','NHẶT ĐỒ'],['j','NHIỆM VỤ']];
 const POST={ advance:['ÁP SÁT','adv'], hold:['GIỮ THẾ','hold'], fallback:['RÚT LUI','fb'] };
 let _el=null, _at=0, _sig='';
 function taskOf(a){ if(a.healing && a.task==='fallback') return 'r'; if(a.goalKind==='form') return 'g'; return TASK[a.task] || 'j'; }
@@ -18,9 +17,7 @@ export function updateSquadHud(now){
   const post=POST[FTSQ.posture||'hold']||POST.hold, ord=squadOrderLabel();
   const sig=ord+'|'+post[0]+'|'+men.map(m=>m.join(':')).join(',');
   if(sig===_sig) return; _sig=sig; _el.classList.remove('hidden');
-  let h='<div class="sq-h"><b>TỔ BỘ BINH</b><span class="sq-n">'+FT.length+'</span><span class="sq-p '+post[1]+'">'+post[0]+'</span></div>';
-  h+='<div class="sq-o"><kbd>U</kbd> LỆNH: <b>'+ord+'</b></div><div class="sq-g">';
-  for(const [r,hp,t] of men) h+='<i class="t-'+t+(hp<=3?' low':'')+'"><s>'+r+'</s><u style="width:'+(hp*10)+'%"></u></i>';
-  h+='</div><div class="sq-l">';
-  for(const [k,tx] of LEG) if(cnt[k]) h+='<span class="t-'+k+'"><em></em>'+tx+' '+cnt[k]+'</span>';
-  _el.innerHTML=h+'</div>'; }
+  // HUDUX one line: the squad's size, the order in force, its posture — and a dot per man (colour = what he is doing, dim = hurt); no role letters, no legend
+  let h='<div class="sq-h sq-one"><b>TỔ '+FT.length+'</b><span class="sq-o"><kbd>U</kbd> '+ord+'</span><span class="sq-p '+post[1]+'">'+post[0]+'</span></div><div class="sq-d">';
+  for(const [r,hp,t] of men) h+='<i class="t-'+t+(hp<=3?' low':'')+'" title="'+r+'"></i>';
+  _el.innerHTML=h+'</div>'; _el.dataset.n=String(cnt.f||0); }

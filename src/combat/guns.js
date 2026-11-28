@@ -1,7 +1,7 @@
 // combat/guns.js — ARMS DOCTRINE helpers: damage class × armour, range falloff, battlefield conditions, smart gun pick
 import * as THREE from 'three';
-import { DMG_TYPE, ARMOR, ENV, FORT, GUNHOLD, INFGUN, LOOT } from '../../config.js';
-import { bladeHeld, BIOME, CV, GUNS, S, ammoDry, ammoLoad, ammoReserve, reloadPlan, brakeBlast, enemies, floatText, gunFlash, gunLight, heightAt, ringPulse, scene, sfx, spawnPart, updateGunHUD, weatherDef, weatherRange, tentHidesFromPlayer } from '../hub.js';
+import { DMG_TYPE, ARMOR, ENV, FORT, GUNHOLD, HUDUX, INFGUN, LOOT } from '../../config.js';
+import { bladeHeld, BIOME, CV, GUNS, S, camera, ammoDry, ammoLoad, ammoReserve, reloadPlan, brakeBlast, enemies, floatText, gunFlash, gunLight, heightAt, ringPulse, scene, sfx, spawnPart, updateGunHUD, weatherDef, weatherRange, tentHidesFromPlayer } from '../hub.js';
 
 // ---- ARMS DOCTRINE helpers: damage class × armour, range falloff, battlefield conditions ----
 export let ENVMOD = { night:false, fire:1, he:1 };
@@ -61,7 +61,7 @@ export function drawReloadDial(prog, secs, ready){   // Z324 compact: a thin rin
   x.lineWidth=5; x.strokeStyle='rgba(255,255,255,0.16)'; x.beginPath(); x.arc(c,c,r,0,Math.PI*2); x.stroke();
   const col = ready ? '#9be35a' : '#ffce4a'; x.lineWidth=6; x.strokeStyle=col;
   x.beginPath(); x.arc(c,c,r,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,Math.max(0,prog))); x.stroke();
-  if(!ready){ x.fillStyle=col; x.textAlign='center'; x.textBaseline='middle'; x.font='bold 36px "Share Tech Mono",monospace'; x.shadowColor='rgba(0,0,0,.85)'; x.shadowBlur=5; x.fillText(secs.toFixed(1), c, c+1); x.shadowBlur=0; }
+  // HUDUX no number in it (the seconds left read as text over the aim): the ring alone fills round
   reloadTex.needsUpdate=true;
 }
 export function updateReload(now){
@@ -80,6 +80,7 @@ export function updateReload(now){
   if(reloading || ready){
     reloadSprite.visible=true;
     reloadSprite.position.set(p.pos.x, (p.lift||0) + 4.4, p.pos.z);   // over his head
+    { const k=HUDUX.reload.px/Math.max(200, innerHeight)*2*Math.tan((camera.fov||50)*Math.PI/360)*(160/104)*camera.position.distanceTo(reloadSprite.position); reloadSprite.scale.set(k,k,1); }   // HUDUX the ring (104 of the canvas's 160 px) HUDUX.reload.px tall on the screen, however near the camera
     const rem = reloading ? eq.rU-now : 0;
     drawReloadDial(reloading ? 1-rem/eq.rD : 1, rem, ready);
   } else reloadSprite.visible=false;

@@ -11,7 +11,7 @@
 //     A truck takes rounds like a wall piece (world/cover.js damageBlock → its hit), burns, and its crew bails out.
 //   Everything here is taken off the field by sectorGoalClear (the next sector's rebuild, a replay, the battle's end).
 import * as THREE from 'three';
-import { BAL, SECTOR, TROOPS } from '../../config.js';
+import { BAL, SECTOR, TROOPS, HUDUX } from '../../config.js';
 import { BIOME, COVER_K, COVER_SET, CONTAINER_PAINT, SECT, buildObjective, buildTower, camera, coverGeo, coverVariant, crushables, makeCoverMesh, ncBattle, ncHit, BUMPS } from '../hub.js';   // SECTOR 3
 import { ARENA, FORTS, OBJ, QUIET, S, TRAIL, UGRID, WAVE, animateSoldier, bigExplode, blocks, buildTransport, clampFieldXZ, damageObjective, edgeEntry, edgeNote, enemies, fieldEdgePoint,
   fireball, guardsLeft, heightAt, holoRing, inField, makeSoldierMesh, makeTruck, radio, ringPulse, scene, sfx, soldierKneel, spawnEnemy, spawnGuards, spawnSquad, svgBadgeTex } from '../hub.js';
@@ -30,7 +30,8 @@ function mark(i, x, z, r, icon, col, h){ let M = SGOAL.marks[i]; if(!M){ const r
   if(M.icon !== icon + col){ M.icon = icon + col; M.badge.material.map = svgBadgeTex(icon, col); M.badge.material.needsUpdate = true; }
   const gy = heightAt(x, z), by = gy + (h || SECTOR.mark.y) + Math.sin(performance.now() / 450) * 0.15; M.ring.visible = M.badge.visible = true; M.ring.position.set(x, gy + 0.12, z); M.ring.scale.setScalar(Math.min(r, SECTOR.mark.ring) / 6); M.badge.position.set(x, by, z);
   _mv.set(x, by, z).project(camera); const sx = (_mv.x + 1) / 2 * innerWidth, sy = (1 - _mv.y) / 2 * innerHeight, q = SECTOR.mark.badge * 14;
-  M.badge.material.opacity = ncBattle() && _mv.z < 1 && ncHit(sx - q, sy - q, sx + q, sy + q) ? SECTOR.mark.ghost : 1; }
+  { const k = Math.min(SECTOR.mark.badge, HUDUX.mark.px / Math.max(200, innerHeight) * 2 * camera.position.distanceTo(M.badge.position) * Math.tan(camera.fov * Math.PI / 360)); M.badge.scale.set(k, k, 1); }   // HUDUX at most HUDUX.mark.px on the screen (it grew to ~100 px near)
+  M.badge.material.opacity = ncBattle() && _mv.z < 1 && ncHit(sx - q, sy - q, sx + q, sy + q) || ncBattle() && sy < HUDUX.mark.top ? SECTOR.mark.ghost : 1; }   // (HUDUX faint under the top HUD band too)
 function unmark(i){ const M = SGOAL.marks[i]; if(M) M.ring.visible = M.badge.visible = false; }
 // a spot d0…d1 m from him, inside the field with m to spare, clear of anything solid; ahead (toward the enemy's side) when it can
 function spot(d0, d1, m){ const p = S.player;

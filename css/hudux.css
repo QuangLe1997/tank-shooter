@@ -1,0 +1,113 @@
+/* HUDUX — the critic's HUD / UI-UX round 1 (loaded last). The battle HUD keeps to the corners: nothing over the soldier (the bottom centre is his),
+   nothing worded over the aim (NOCENTER.zone), the military kit's look (css/ui-kit.css tokens). ui/hudux.js sets body.hux-play / hux-sect / --hux-hurt. */
+
+/* ---- battle buttons never outlive the battle (the phone's ĐAO / THỦ, the LEO and ride chips stayed on the menus) ---- */
+body:not(.hux-play) :is(#bladeBtn,#bladeGuardBtn,#climbBtn,#rideCall){display:none!important;}
+
+/* ---- desktop: the gun goes to the bottom-right corner, over the health readout; the bottom centre stays clear for the soldier ---- */
+html body:not(.touch) #weaponchip#weaponchip{left:auto!important;right:max(14px,env(safe-area-inset-right))!important;bottom:calc(max(16px,env(safe-area-inset-bottom)) + 74px)!important;transform:none!important;}
+html body:not(.touch) #gunlist#gunlist{left:auto!important;right:max(14px,env(safe-area-inset-right))!important;bottom:calc(max(16px,env(safe-area-inset-bottom)) + 122px)!important;transform:none!important;justify-content:flex-end!important;}
+html body:not(.touch) #lootToast#lootToast{bottom:236px!important;}
+/* the LEO prompt: a small chip over the gun strip, out of the aim zone (it sat 240 px up the middle) */
+html body:not(.touch) #climbBtn#climbBtn{left:auto!important;right:max(14px,env(safe-area-inset-right))!important;bottom:calc(max(16px,env(safe-area-inset-bottom)) + 172px)!important;transform:none!important;
+  padding:4px 11px!important;font:600 12.5px/1.2 var(--k-ui,'Saira Condensed',sans-serif)!important;letter-spacing:.08em!important;border-radius:2px!important;border-width:1px!important;}
+html body.touch #climbBtn#climbBtn{left:auto!important;right:max(96px,calc(env(safe-area-inset-right) + 86px))!important;bottom:calc(max(10px,env(safe-area-inset-bottom)) + 136px)!important;transform:none!important;padding:7px 12px!important;font-size:12px!important;}
+/* the radio and the spoken lines: bottom-left, two lines at most, never across the soldier */
+html body:not(.touch) #radio#radio{left:max(14px,env(safe-area-inset-left))!important;right:auto!important;top:auto!important;bottom:calc(max(16px,env(safe-area-inset-bottom)) + 76px)!important;transform:none!important;width:min(400px,30vw)!important;max-width:min(400px,30vw)!important;}
+html body:not(.touch) #radio .rd-txt{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:14px!important;}
+html body:not(.touch) #voiceSub#voiceSub{left:calc(max(14px,env(safe-area-inset-left)) + 150px)!important;right:auto!important;bottom:max(18px,env(safe-area-inset-bottom))!important;transform:none!important;max-width:min(420px,32vw)!important;text-align:left!important;
+  display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+html body.touch #voiceSub#voiceSub{display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+
+/* ---- the squad: one line and a dot a man (ui/squad-hud.js) ---- */
+html body:not(.touch) #sqHud#sqHud{width:auto!important;min-width:150px;max-width:240px;bottom:calc(max(16px,env(safe-area-inset-bottom)) + 150px)!important;padding:5px 9px!important;}
+#sqHud .sq-one{display:flex;align-items:center;gap:7px;font-size:11px;letter-spacing:.12em;}
+#sqHud .sq-one b{font-family:var(--k-ui,'Saira Condensed',sans-serif);font-weight:700;letter-spacing:.14em;color:#e6ecd8;}
+#sqHud .sq-one .sq-o{margin:0;font-size:11px;color:var(--k-acc-hi,#ffd27a);letter-spacing:.06em;}
+#sqHud .sq-one .sq-o kbd{font:700 9px/1 var(--k-mono,'Share Tech Mono',monospace);padding:1px 3px;margin-right:3px;}
+#sqHud .sq-one .sq-p{margin-left:auto;font-size:9.5px;}
+#sqHud .sq-d{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px;}
+#sqHud .sq-d i{display:block;width:7px;height:7px;border-radius:50%;background:var(--c,#888);box-shadow:0 0 0 1px rgba(0,0,0,.5);}
+#sqHud .sq-d i.low{opacity:.4;}
+
+/* ---- the hurt edge: only the rim (≤ a quarter of the screen), deeper as health falls (--hux-hurt) — the middle stays clean ---- */
+#hurtEdge#hurtEdge{background:radial-gradient(ellipse 72% 76% at var(--hx) var(--hy),rgba(255,56,40,0) 74%,rgba(255,52,38,calc(.2 * var(--hux-hurt,.5))) 88%,rgba(226,30,22,calc(.62 * var(--hux-hurt,.5))) 100%)!important;}
+
+/* ---- where a hit came from: a thin short arc on a ring 60 % of the screen's height (it was a 46 vh red band round the soldier) ---- */
+#hitDir#hitDir i{width:60vh!important;height:60vh!important;margin:-30vh 0 0 -30vh!important;border-top-width:3px!important;filter:drop-shadow(0 0 4px rgba(255,40,20,.7))!important;
+  -webkit-mask:linear-gradient(90deg,transparent 40%,#000 46%,#000 54%,transparent 60%)!important;mask:linear-gradient(90deg,transparent 40%,#000 46%,#000 54%,transparent 60%)!important;}
+
+/* ---- the top: a battle of sectors shows ĐIỂM and the sector rail (no MÀN / ĐỢT); the rail reads on any ground ---- */
+body.hux-sect #topbar .cell.stage,body.hux-sect #topbar .cell.wave{display:none!important;}
+#secRail#secRail{background:rgba(9,11,8,.72)!important;border:1px solid rgba(214,226,196,.16);color:rgba(238,231,210,.72)!important;opacity:1!important;padding:4px 10px!important;}
+#secRail .sr-s.on > span{color:var(--k-acc-hi,#ffd27a);}
+
+/* ---- the 3-2-1: small, at the top, the field left clear; the land's conditions are on the briefing (ui/briefing.js) ---- */
+#countdown#countdown{top:21%!important;font-size:clamp(44px,7vw,84px)!important;}
+#countdown#countdown.go{font-size:clamp(30px,4.6vw,56px)!important;}
+#cdSub#cdSub{top:calc(21% + clamp(30px,5vw,58px))!important;font-size:clamp(12px,1.6vw,15px)!important;}
+#cdSub .cdc{display:none!important;}
+#briefing .br-cond{display:block;margin-top:4px;color:var(--k-acc-hi,#ffd27a);font-size:13px;}
+
+/* ---- the phone's ĐAO / THỦ beside the fire buttons (it sat on the radar) ---- */
+html body.touch #bladeBtn#bladeBtn{right:max(22px,calc(env(safe-area-inset-right) + 12px))!important;bottom:calc(max(10px,env(safe-area-inset-bottom)) + 136px)!important;}
+html body.touch #bladeGuardBtn#bladeGuardBtn{right:max(22px,calc(env(safe-area-inset-right) + 12px))!important;bottom:calc(max(10px,env(safe-area-inset-bottom)) + 196px)!important;}
+
+/* ---- the deployment: its note on its own screen, readable sizes, a bigger map ---- */
+#deploy .dp-tip{margin:2px 0 10px;padding:7px 10px;border-left:2px solid var(--k-info,#6fc0ff);background:rgba(111,192,255,.07);font-size:13px;line-height:1.4;color:#dfe7d2;}
+#deploy .dp-tip.hidden{display:none;}
+html body #deploy .dp-nm span,html body #deploy .dp-nm small{font-size:12.5px!important;}
+html body #deploy .dp-gun{font-size:12px!important;}
+html body #deploy #dp-map{width:min(240px,100%)!important;height:auto!important;aspect-ratio:1;}
+@media (max-height:520px){ html body #deploy .dp-nm b{font-size:13px!important;} html body #deploy .dp-nm span{font-size:11px!important;} html body #deploy #dp-map{width:150px!important;} }
+
+/* ---- the setup cards: brighter pictures, readable stats; a key cap that reads (the stencil's G looked like a 6) ---- */
+html body #battleSetup kbd,html body .xk-screen kbd{font-family:Rajdhani,'Saira Condensed',system-ui,sans-serif!important;font-weight:700!important;font-size:12px!important;}
+
+/* ---- the pause screen: the battle's state on the right half ---- */
+#pause .xk-body{display:flex!important;gap:clamp(16px,4vw,56px);align-items:flex-start;}
+#pause .hux-pz:empty{display:none;}
+#pause .hux-pz{flex:0 1 380px;margin-left:auto;padding:14px 16px;border:1px solid var(--xk-line,rgba(214,226,196,.16));background:rgba(12,15,9,.72);}
+#pause .hux-pz .pz-k{margin:0;font:700 11px/1 var(--k-ui,'Saira Condensed',sans-serif);letter-spacing:.2em;text-transform:uppercase;color:var(--k-acc,#ffae34);}
+#pause .hux-pz .pz-t{margin:6px 0 10px;font:700 22px/1.1 var(--k-ui,'Saira Condensed',sans-serif);color:#ece0c2;}
+#pause .hux-pz .pz-r{display:flex;gap:10px;align-items:baseline;padding:5px 0;border-top:1px solid rgba(214,226,196,.1);}
+#pause .hux-pz .pz-r small{flex:0 0 76px;font-size:12px;color:var(--xk-mute,#a9ad98);letter-spacing:.06em;}
+#pause .hux-pz .pz-r b{font-size:14px;font-weight:600;color:#e6ecd8;}
+#pause .hux-pz .pz-map{display:block;width:min(200px,60%);height:auto;margin-top:10px;border:1px solid rgba(214,226,196,.16);background:#0b0e08;}
+@media (max-width:700px),(max-height:460px){ #pause .hux-pz{flex-basis:260px;padding:10px 12px;} #pause .hux-pz .pz-map{width:120px;} #pause .hux-pz .pz-t{font-size:17px;} }
+@media (orientation:portrait) and (max-width:600px){ #pause .xk-body{flex-direction:column;} #pause .hux-pz{margin-left:0;flex-basis:auto;width:100%;} }
+
+/* ---- menus: the key art behind the call-sign, a medal button like its neighbours, a readable "today" line ---- */
+#nick#nick{background:linear-gradient(180deg,rgba(3,5,2,.25),rgba(3,5,2,.72)),url('../assets/keyart-desktop.jpg') 62% 40%/cover no-repeat,#0f120b!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
+@media (orientation:portrait){ #nick#nick{background:linear-gradient(180deg,rgba(3,5,2,.25),rgba(3,5,2,.78)),url('../assets/keyart-mobile.jpg') center 30%/cover no-repeat,#0f120b!important;} }
+#start .bestline#dailyLine{color:#d8d2bc;}
+/* the arsenal: all 16 fit (smaller cards on a wide screen) and a visible scrollbar when they do not */
+@media (min-width:1000px){ #loadout #ldgrid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))!important;gap:8px!important;} }
+#loadout .xk-body{scrollbar-width:thin;scrollbar-color:var(--k-acc,#ffae34) rgba(255,255,255,.06);}
+/* settings → account: the credits readable and scrolling in their own box */
+#setCredits .xs-tx span{display:block;font-size:12.5px!important;line-height:1.45!important;max-height:38vh;overflow-y:auto;padding-right:6px;scrollbar-width:thin;}
+/* the keys sheet: the keyboard first; the pad diagram after it unless a pad is in use */
+body:not(.pad) #keysDlg .ks-grp.padview{order:50;}
+/* the setup: the ride / soldier pictures lit, the stat words ≥ 12 px */
+#battleSetup .su-ph{filter:brightness(1.3) contrast(1.04)!important;}
+#battleSetup :is(.su-man,.su-ride):not(.on) .su-ph{filter:saturate(.7) brightness(1.02)!important;}
+#battleSetup .su-cap{background:linear-gradient(180deg,rgba(8,10,6,0) 0%,rgba(8,10,6,.55) 55%,rgba(8,10,6,.82) 100%);}
+#battleSetup .su-pr{font-size:12px!important;letter-spacing:.06em!important;color:rgba(234,242,220,.86)!important;}
+#battleSetup .su-pr span{width:auto!important;min-width:64px;}
+@media (max-height:560px){ #battleSetup .su-pr{font-size:11px!important;} }
+
+/* ---- the fort's opening lines: a lower-third caption like the radio, the field above it in view, the same on a phone and a desktop ---- */
+html body #secTransit .st-story{align-items:flex-end!important;padding-bottom:max(9vh,52px);background:none!important;}
+#secTransit .ss-card{width:min(720px,84vw)!important;padding:12px 20px 10px!important;text-align:left!important;background:linear-gradient(90deg,rgba(9,11,8,.86),rgba(9,11,8,.66))!important;border-left:3px solid var(--k-acc,#ffae34);}
+#secTransit .ss-tx{font-size:clamp(15px,1.7vw,19px)!important;line-height:1.35!important;}
+#secTransit .ss-dots{justify-content:flex-start!important;margin-top:8px!important;}
+@media (orientation:landscape) and (max-height:520px){ #secTransit .st-story{padding-bottom:16px;} #secTransit .ss-card{width:min(560px,70vw)!important;padding:8px 14px 8px!important;} #secTransit .ss-tx{font-size:14px!important;} }
+/* the briefing: a short lead and the rest as points (ui/hudux.js uxBriefTidy) */
+#br-brief .hux-lead{display:block;}
+#br-brief .hux-pts{margin:6px 0 0;padding-left:18px;} #br-brief .hux-pts li{margin:2px 0;line-height:1.4;}
+#br-brief .hux-pts li::marker{color:var(--k-acc,#ffae34);}
+/* the top edge's note ("KHU 1 · NGOẠI VI", a fort's alarm): under the score box, readable — it sat at y 0, 9 px, cut by the screen's edge */
+html body #edgeNote#edgeNote{top:calc(env(safe-area-inset-top,0px) + 104px)!important;font-size:12px!important;background:rgba(9,11,8,.6);padding:3px 9px;}
+html body.touch #edgeNote#edgeNote{top:calc(env(safe-area-inset-top,0px) + 70px)!important;font-size:11px!important;}
+/* the phone: while the ride chip (LÊN XE / GỌI XE, top-left) shows, the edge stack's lines go under it (they were written over each other) */
+html body.touch:has(#rideCall[style*="flex"]) #ncFeed#ncFeed{top:calc(max(8px,env(safe-area-inset-top)) + 182px)!important;}

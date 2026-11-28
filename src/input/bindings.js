@@ -20,7 +20,7 @@ export function bindKey(id, slot, key){ const b=store(); const cur=keysFor(id).s
 export function bindPad(id, btn){ const b=store(); const old=padFor(id); for(const a of ACTIONS) if(a[0]!==id && padFor(a[0])===btn) b.p[a[0]]=old; b.p[id]=btn; saveProfile(); }
 export function clearKey(id, slot){ const b=store(); const cur=keysFor(id).slice(); cur.splice(slot,1); b.k[id]=cur; saveProfile(); rebuild(); }
 export function resetBinds(){ PROFILE.binds={ k:{}, p:{} }; saveProfile(); rebuild(); }
-export function keyLabel(k){ return ({ ' ':'CÁCH', arrowup:'↑', arrowdown:'↓', arrowleft:'←', arrowright:'→', escape:'ESC', enter:'ENTER', tab:'TAB', shift:'SHIFT', control:'CTRL', alt:'ALT', backspace:'⌫' })[k] || k.toUpperCase(); }
+export function keyLabel(k){ return ({ ' ':'SPACE', arrowup:'↑', arrowdown:'↓', arrowleft:'←', arrowright:'→', escape:'ESC', enter:'ENTER', tab:'TAB', shift:'SHIFT', control:'CTRL', alt:'ALT', backspace:'⌫' })[k] || k.toUpperCase(); }
 export const PAD_NAMES=['A','B','X','Y','LB','RB','LT','RT','⧉ View','☰ Menu','L3','R3','D-pad ↑','D-pad ↓','D-pad ←','D-pad →','Home','M1 (nút sau)','M2 (nút sau)','M3 (nút sau)','M4 (nút sau)'];
 
 // ---- run an action (phase 'down' / 'up'); the same entry point for keys and pad buttons ----

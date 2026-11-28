@@ -39,7 +39,7 @@ export function playerDie(now){
 export function beginDeath(now, final){
   const p=S.player; S.mode='dying'; S.firing=false;
   DEATH.active=true; DEATH.t=0; DEATH.wreck.copy(p.pos); DEATH.face=p.facing||0; DEATH.final=!!final;
-  cavDeathStart(p, now); driverSurrender(CV.H); floatText('TƯỚNG TRÚNG ĐẠN', '#ff5a3c', new THREE.Vector3(p.pos.x,3.2,p.pos.z), 28); const v=document.getElementById('vignette'); if(v) v.style.opacity='1'; updateHUD();   // Z254 the soldier is shot off his ride
+  cavDeathStart(p, now); driverSurrender(CV.H); floatText('BẠN BỊ HẠ', '#ff5a3c', new THREE.Vector3(p.pos.x,3.2,p.pos.z), 28); const v=document.getElementById('vignette'); if(v) v.style.opacity='1'; updateHUD();   // Z254 the soldier is shot off his ride
 }
 export function updateDeath(dt, now){
   const p=S.player, m=p.mesh; DEATH.t+=dt;
@@ -82,6 +82,7 @@ export let bannerTimer=0;
 // HUDCLEAN 2 big = a rare moment (a general / boss down, a fort taken, the battle won): the big centred plate, brief; anything else is one small line under
 //   the score bar (#combo.mini — no plate, no pop), off the line of sight
 export function showBanner(text, color, big){
+  if(/^ĐỢT \d+$/.test(text) && document.body.classList.contains('hux-sect')) return;   // HUDUX a battle of sectors has no waves to number (ui/hudux.js sets hux-sect)
   const el=document.getElementById('combo'), B=HUDCLEAN2.banner;
   el.textContent=text; el.style.color=color||'#e7b54a'; el.style.opacity='1'; el.classList.toggle('mini', !big); el.classList.toggle('long', !!big && text.length>34); el.classList.toggle('warn', /^⚠|!$/.test(text));   // Z228 a warning gets the hazard-striped plate   // Z84: long notices drop to a calm, readable size
   el.style.transform=big ? 'translateX(-50%) scale(1.1)' : 'translateX(-50%)';
