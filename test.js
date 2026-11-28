@@ -3224,6 +3224,10 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   ok(/if\(!rearArc\(x, z\) && !blocksNear/.test(R('src/actors/helis.js')) && /if\(!rearArc\(q\[0\], q\[1\]\)/.test(R('src/actors/paradrop.js')) && /const q = sideOf\(e\.pos\.x, e\.pos\.z\); if\(q\)/.test(R('src/campaign/entries.js')) && /if\(rearArc\(f\.gx\?\?f\.x, f\.gz\?\?f\.z\)\)\{ f\.sallyAt=now\+2; return; \}/.test(R('src/world/fortress.js')),
     'BAL 16: no rope, no paradrop, no raised man, no fort sally behind him');
   ok(/door:W\(0, C\.hl \+ 2\.5\)/.test(R('src/campaign/sector-goals.js')) && /SGOAL\.cell && SGOAL\.cell\.door/.test(bot) && BT.stuck.prog>0 && BT.steer.near>=4 && /B\.detour/.test(bot) && /f\.gateShut && f\.gate/.test(bot), 'BAL 16: the bot goes into a cell by its open end, feels long walls, takes a detour when it makes no progress'); }
+// PERF 14 the same plain mesh copied round the field is one instanced draw (render/static-batch.js)
+{ const fs=await import('node:fs'), { PERF_BUDGET:PB }=await import('./config.js'), sb=fs.readFileSync('src/render/static-batch.js','utf8');
+  ok(PB.batch.min>=2 && PB.batch.min<=8 && PB.batch.scan>0 && PB.batch.scan<=5 && /m\.transparent \|\| m\.alphaToCoverage/.test(sb) && /if\(p\.isLOD/.test(sb) && /determinant\(\) < 0/.test(sb) && /finally\{ if\(HID\.length\) restore\(\); \}/.test(sb) && /^export \* from '\.\/render\/static-batch\.js';/m.test(fs.readFileSync('src/hub.js','utf8')),
+    'PERF 14: copies of one geometry + material ('+PB.batch.min+'+) drawn as one instanced mesh; transparent, LOD-switched, mirrored or hooked ones draw themselves; the copies are back on after every render'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
