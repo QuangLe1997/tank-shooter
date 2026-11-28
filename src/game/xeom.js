@@ -94,6 +94,9 @@ function lampUpdate(H, dt){ const Lp = H.lamps, U = XEOM.lamp; if(!Lp) return; c
 const _cv = new THREE.Vector3(), _cd = new THREE.Vector3();
 function coneCut(c){ const now = performance.now() / 1000; if(now - (c.userData.cutAt || 0) < VISLOOK.beam.cut) return; c.userData.cutAt = now; const L = XEOM.lamp.beam.len;
   c.getWorldPosition(_cv); _cd.set(0, -1, 0).transformDirection(c.matrixWorld); c.material.uniforms.uCut.value = solidHit(_cv.x, _cv.y, _cv.z, _cv.x + _cd.x * L, _cv.y + _cd.y * L, _cv.z + _cd.z * L); }
+// PERF 10 (C1-091) the headlight's SpotLight follows the night from the first frame of the stage (game/cavalry.js cavIdle: the fly-in and the 3-2-1), not from
+//   the first ridden frame: switched on at GO it changed the light count every lit program is keyed on — 62 programs rebuilt in one 0.69 s frame at a night fort's start.
+export function bikeLampsNight(H){ const b = H && H.lamps && H.lamps.beam; if(b && b.visible !== NIGHT.on) b.visible = NIGHT.on; }
 // Z302 TYRE TRACKS: each tyre leaves its line in the ground — thin dark strips laid on the real terrain every few centimetres of travel, darkening the
 //   ground by multiplying it (so they read on sand and on tarmac alike) and fading out over TRAIL.life seconds; a ring of instances, nothing allocated
 const TRAIL = { n:MOBILE ? 500 : 1400, i:0, mesh:null, born:null, dk:null, life:24, dark:0.66, step:0.16, fadeAt:0 }, _tm = new THREE.Matrix4(), _tq = new THREE.Quaternion(), _ts = new THREE.Vector3(), _tc = new THREE.Color(), _ty = new THREE.Vector3(0, 1, 0);

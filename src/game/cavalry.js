@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { CAV, FEELFX, HORSE, HORSERIDE, HUMAN_SCALE, RIDE, RIDEFEEL, XEOM, XHAIR } from '../../config.js';
 import { feelRideCall, bladeFoot, bladeTick, ARENA, BIOME, MOBILE, S, actx, afxHoof, afxOn, pushOutRocks, aimTarget, animateHorse, animateSoldier, autoFire, barrelFixed, blocks, buildGeneral, buildHorse, burst, clampField, cloakFoot, controlScheme, core, damageEnemy, endFall, enemies, fitRealCav, floatText, getMoveDir, heightAt, master, playerRange, poseRider, poseSoldier, scene, sfx, spawnPart, startFall, stepFall, turnInput, trackOnTarget, trackTarget, turretTracks, updateRealCav, buildBikeMount, bikeWheelie, horseAir, rideBump, rideClear, rideCollide, rideLeap, rideReset, rideSpeedK, rideImpacts, callRide, rideNote, hudOn, rideCallStep, rideCallUi, rideCanCome, soldierFire, trooperGuns, soldierJump, footStance, footMotion, footPose, footMoveState, heldAction, solidShape, pushOutShape, mountDur, mountMove, mountOwn, aimAwake, seatTurnOff, driverBack, rideHull, ridePower, rideOver, rideRam, rideLowReset, RIDE_LOW, rideAvoid, rideAvoidReset, rideStopStep, rideStopEase, rideStopReset, rideSlopeK, climbStep, climbAfter, climbOver, climbPh, climbReset, climbUi, climbing, footY, medalHit } from '../hub.js';
 import { swimPlace, swimStep } from '../hub.js';   // SWIM 1 (game/swim.js)
+import { bikeLampsNight } from '../hub.js';   // PERF 10 (game/xeom.js)
 import { horseSwimBlock, horseSwimDef, horseSwimHoof, horseSwimStep, horseSwimTop, horseSwimTurn } from '../hub.js';   // HSWIM 1 (game/horse-swim.js)
 
 export const CV = { on:false, mounted:true, H:null, G:null, speed:0, facing:-Math.PI, hPos:new THREE.Vector3(), yawRate:0, stance:'stand', want:'stand', surgeUntil:0, surgeCd:0, sprintUntil:0, sprintCd:0,
@@ -197,7 +198,7 @@ function collide(p, now){ const R=p.radius, H=CV.H, PW=CV.mounted ? ridePower(H)
   if(core) solid(core, core.r||3);
   if(CV.mounted) rideCollide(p, now); else rideClear(p.pos, R); }   // (Z337 on foot the trees, poles, parked cars, street furniture and wire are solid too)   // Z311 and everything a tank rolls over: trees, poles, parked cars, street furniture, wire
 // the horse and the general idle through the intro and the 3-2-1 (no input)
-export function cavIdle(dt){ const p=S.player; if(!p || !p.cav || !CV.H) return; const H=CV.H;
+export function cavIdle(dt){ const p=S.player; if(!p || !p.cav || !CV.H) return; const H=CV.H; if(H.bike) bikeLampsNight(H);   // PERF 10 (game/xeom.js)
   if(CV.mounted){ H.root.position.set(0,0,0); H.root.rotation.y=0; p.mesh.position.set(p.pos.x, heightAt(p.pos.x,p.pos.z), p.pos.z); p.mesh.rotation.y=CV.facing=p.facing;
     const save=H.root.position.clone(); if(!H.bike){ H.root.position.copy(p.mesh.position); H.root.rotation.y=p.facing; } animateHorse(H, dt, 0, 0); H.root.position.copy(save); H.root.rotation.y=0; poseRider(CV.G, H, dt, 0, false); updateRealCav(CV, dt, { twist:0, footV:0, stance:'stand' }); } }
 
