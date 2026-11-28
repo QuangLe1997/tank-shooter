@@ -110,8 +110,8 @@ export function normalizeSpec(spec, opts){ opts = opts || {}; const M = opts.M |
   if(P('enemy.haste').k * simK > R.effClock) setK('enemy.haste', R.effClock / simK, 'địch nhanh tổng ≤ ×' + R.effClock);
   if(P('foe.aware').v > R.unfair.aware && P('foe.aim').v > R.unfair.aim && dialOf('enemy.count') >= R.unfair.density) setK('foe.aim', mixCurve(M.params['foe.aim'].curve, R.unfair.aimCap), 'nhạy + thiện xạ + đông cùng cực: không công bằng');
   if(tod === 'night' && wx !== 'clear' && P('elite.aim').v > R.nightMarks.aim) setK('elite.aim', mixCurve(M.params['elite.aim'].curve, R.nightMarks.aim), 'đêm + thời tiết xấu: không đặt xạ thủ ưu tú');
-  { const mate = (P('mate.aware').v + P('mate.aim').v + P('mate.tough').v + P('mate.move').v) / 4, elite = (P('elite.iq').v + P('elite.aim').v + P('elite.tough').v) / 3;
-    if(mate > elite + R.mateGap){ const cut = mate - elite - R.mateGap; for(const id of ['mate.aware', 'mate.aim', 'mate.tough', 'mate.move']) setK(id, mixCurve(M.params[id].curve, clamp(P(id).v - cut, 0, 100)), 'đồng đội không giỏi hơn tinh nhuệ địch quá ' + R.mateGap); } }
+  { const SUB7 = ['iq', 'aware', 'aim', 'tough', 'move', 'aggro', 'morale'], avg = g => SUB7.reduce((t, k) => t + P(g + '.' + k).v, 0) / 7, mate = avg('mate'), elite = avg('elite');   // (MIX 6 all seven, now every one is wired)
+    if(mate > elite + R.mateGap){ const cut = mate - elite - R.mateGap; for(const id of SUB7.map(k => 'mate.' + k)) setK(id, mixCurve(M.params[id].curve, clamp(P(id).v - cut, 0, 100)), 'đồng đội không giỏi hơn tinh nhuệ địch quá ' + R.mateGap); } }
   { const t = P('foe.tough').k * P('enemy.hp').k * Math.sqrt(P('enemy.count').k); if(t > R.ttk.budget) setK('foe.tough', P('foe.tough').k * R.ttk.budget / t, 'máu × mật độ vượt ngân sách thời gian hạ địch'); }
   if(P('enemy.count').k > B.countK) setK('enemy.count', B.countK, 'ngân sách thiết bị (' + device + ')');
   { const m0 = device === 'phone' ? CFG.INFANTRY.squad.maxMobile : CFG.INFANTRY.squad.maxOnField; if(m0 * P('enemy.cap').k > B.liveInf) setK('enemy.cap', B.liveInf / m0, 'ngân sách thiết bị (' + device + '): lính sống cùng lúc'); }

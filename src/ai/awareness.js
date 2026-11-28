@@ -47,7 +47,7 @@ export function suspectEnemy(e, now, x, z, why){ if(!e.def || !e.def.inf) return
 export function awareTick(e, now){ if(e.alert === undefined) init(e, now); if(now < e.awAt) return;
   const dtk = Math.min(1, now - e.awT), p = S.player; e.awT = now; e.awAt = now + R2(A.tick); if(!p || S.mode !== 'playing' || e.rise){ e.sees = false; return; }
   const dx = p.pos.x - e.pos.x, dz = p.pos.z - e.pos.z, d = Math.hypot(dx, dz) || 1, al = e.alert >= 2, C = A.see, k = e.lk;
-  let R = al ? Math.max(PL.r * C.alertK, PL.spotted ? STEALTH.alertR : 0) : PL.r * coneK(e, dx, dz), vis = 0; const flat = !al && ambushFlat(e, now);   // AMBUSH 1 the man an ambush is begun on: no time to sense it (game/ambush.js)
+  let R = (al ? Math.max(PL.r * C.alertK, PL.spotted ? STEALTH.alertR : 0) : PL.r * coneK(e, dx, dz)) * (e.awK || 1), vis = 0;   /* MIX 6 an elite's own sight (ai/tiers.js eliteK) */ const flat = !al && ambushFlat(e, now);   // AMBUSH 1 the man an ambush is begun on: no time to sense it (game/ambush.js)
   if(al && e.sees) R = Math.max(R, C.r * C.track * (1 - (1 - C.night) * (NIGHT.k || 0)) * (PL.bush ? C.bush : 1));   // a man he is watching does not vanish by dropping flat in the open
   const nr = C.near * sneakK(e, dx, dz);   // SUPPLY 3 (crept up on from behind he senses a man only at arm's length — game/quiet.js)
   if(d < Math.max(R, nr) && playerSight(e.pos.x, heightAt(e.pos.x, e.pos.z) + 1.6, e.pos.z)) vis = d < nr ? 1 : Math.max(0.03, 1 - d / R);

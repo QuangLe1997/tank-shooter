@@ -48,7 +48,7 @@ export function navPath(x0, z0, x1, z1, now){ navBuild(now||performance.now()/10
 
 // ================= SUPPRESSION =================
 // a round that passes close: the man flinches toward the ground (k ≈ how heavy the fire is)
-export function suppress(u, k){ u.supp=Math.min(1, (u.supp||0)+k); }
+export function suppress(u, k){ u.supp=Math.min(1, (u.supp||0)+k*(u.suppK||1)); }   // MIX 6 (an elite's morale: ai/tiers.js eliteK)
 
 // ================= ENEMY SQUADS =================
 function squadThink(sq, now){

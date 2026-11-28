@@ -8,7 +8,7 @@
 //   Every tier: a squad that breaks FALLS BACK TO COVER (not a line across the open), and the LAST MAN of a squad may throw down his rifle and put his hands
 //     up — he stands there, then walks off the field (shoot him and he dies like any other).
 //   The tier also scales what each man knows (ai/awareness.js: reaction delay, time to make him out, how far a shout carries) and how often a squad thinks.
-import { AWARE, DIRECTOR } from '../../config.js';
+import { AWARE, DIRECTOR, MIXER } from '../../config.js';
 import { DIR, PL, S, _cv, addScore, animateSoldier, camera, canThrow, clampField, coverSpot, dirDiff, dirSay, dropSoldierGun, enemies, enemyPool, fieldEdgePoint, floatText, freeEnemyBar, heightAt, inCamView, inField, infPushBlocks, losBlocked, poseSoldier, radio, reviveSoldierMesh, sfx, spawnBullet, spawnPart, storyCue, throwNade } from '../hub.js';
 import { muzzleFX } from '../hub.js';   // GUNFX 1 (fx/gunfx.js)
 
@@ -27,8 +27,13 @@ export function tierK(k){ const t = tacTier(), a = T.scale[k]; return (t && a ? 
 // ---- roles (tier 3): one man of a fresh squad may carry the machine gun, one may be a marksman who leaves the squad to hold a lane of his own ----
 function count(role){ let n = 0; for(let i = 0; i < enemies.length; i++) if(enemies[i].role === role) n++; return n; }
 function makeMG(e){ const M = T.mg; e.role = 'mg'; e.def = { ...e.def, mg:true, range:M.range, keep:M.keep, dmg:e.def.dmg * M.dmgK, burst:M.burst, gap:M.gap, rest:M.rest, spreadK:M.spreadK, score:e.def.score * 2 };
-  e.maxHp = e.hp = Math.round(e.maxHp * M.hpK); TAC.mg++; }
-function makeMarksman(e){ const M = T.marksman; e.role = 'marksman'; e.def = { ...e.def, mk:true, range:M.range, keep:M.keep, aimT:M.tel, fireCd:M.cd, dmg:M.dmg, bspeed:M.bspeed, score:e.def.score * 2 }; e.sq = null; TAC.marksman++; }
+  e.maxHp = e.hp = Math.round(e.maxHp * M.hpK); TAC.mg++; eliteK(e); }
+function makeMarksman(e){ const M = T.marksman; e.role = 'marksman'; e.def = { ...e.def, mk:true, range:M.range, keep:M.keep, aimT:M.tel, fireCd:M.cd, dmg:M.dmg, bspeed:M.bspeed, score:e.def.score * 2 }; e.sq = null; TAC.marksman++; eliteK(e); }
+// MIX 6 THE ELITES' OWN QUALITY (the battle mixer's elite.aware / move / aggro / morale — config.js MIXER.live, 1 = today): a specialist's sight (×, ai/awareness.js reads
+//   e.awK), his pace, how close he is willing to work (keep ÷ aggression) and how much a burst at him pins him (ai/squads.js suppress reads e.suppK = 1 / morale)
+function eliteK(e){ const L = MIXER.live; e.def.speed *= L.eliteMove; e.def.keep /= L.eliteAggro; e.awK = L.eliteAware; e.suppK = 1 / L.eliteMorale; }
+// MIX 6 dev / probes: a man made a specialist on demand ('mg' · 'marksman')
+export function tacRole(e, role){ if(role === 'mg') makeMG(e); else makeMarksman(e); return e; }
 // ai/squads.js makeSquad: the men of a new squad → the men who stay in it
 export function tierRoles(m){ if(tacTier() < 3 || m.length < T.roles.minMen) return m; const rf = m.filter(e => !e.def.rpg && !e.role && !e.general && !e.genGuard); if(rf.length < 3) return m;
   if(count('mg') < T.mg.max && Math.random() < T.mg.chance) makeMG(rf[1]);
