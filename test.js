@@ -3272,6 +3272,9 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
 // BAL 19 the fair-fire / no-rear rules in every mode: no reinforcement out of a fort's gate behind him, a man behind him stays wide (C2-007)
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { BAL:Q, SECTOR:SE, DIRECTOR:D }=await import('./config.js'), sg=R('src/campaign/sector-goals.js'), dr=R('src/campaign/director.js');
   ok(/!rearArc\(f\.ix\?\?f\.x, f\.iz\?\?f\.z\)/.test(R('src/world/fortress.js')) && Q.fair.rear.k>=3, 'BAL 19: no wave marches out of a gate behind him; a man behind him × ' + Q.fair.rear.k + ' wide'); }
+// BAL 20 every sector has beats when the field is quiet (C2-013)
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { BAL:Q, SECTOR:SE, DIRECTOR:D }=await import('./config.js'), sg=R('src/campaign/sector-goals.js'), dr=R('src/campaign/director.js');
+  ok(Q.beats.at.length===Q.beats.n.length && Q.beats.at.every((a, i)=>a>0 && (!i || a>Q.beats.at[i-1])) && Q.beats.lowP>0 && Q.beats.lowP<0.5 && /const Q = BAL\.beats;/.test(R('src/campaign/sectors.js')) && /if\(DIR\.P < Q\.lowP\)/.test(R('src/campaign/sectors.js')), 'BAL 20: a sector\'s beats at ' + Q.beats.at.join(' / ') + ' s, only when the field is quiet'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

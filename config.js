@@ -2457,6 +2457,8 @@ export const BOT = { think:20, sightK:1.5, eye:1.45, losEvery:0.25, losPerTick:2
 //     never faster than his health over minT s. The pen: its back wall backOut × its depth behind the containers' ends (flush), the hostage innerK × the containers'
 //     half-length in from the middle — clear of every collider (he knelt inside the back wall's).
 //   fair.rear.k (BAL 19): a man behind him stays that much wider — in every mode (world/fortress.js: no wave out of a gate behind him either).
+//   beats (BAL 20, campaign/sectors.js): every sector but a hold or the general's gets beats at the sector's seconds `at` — n squads from in front of him / his sides,
+//     BAL.hold.d m off — when the director's pressure is under lowP (a fight already on is left alone).
 //   hold (BAL 14, campaign/sectors.js): the stuck truck's hold has three beats — at the shares `at` of the hold, n squads come from in front of him / his sides, d m off.
 export const BAL = { fair:{ on:true, every:0.1, r:95, fireT:1.2, maxN:6, size:30, margin:26, color:'#ff3b2b', spreadK:3.2, onT:0.5, warnT:2,
     rear:{ on:!(typeof location !== 'undefined' && /[?&]norear\b/.test(location.search)), ang:2.09, r:60, grace:1.6, graceK:8, k:4, beepGap:3 } },
@@ -2466,6 +2468,7 @@ export const BAL = { fair:{ on:true, every:0.1, r:95, fireT:1.2, maxN:6, size:30
   start:{ first:45, t:15, spreadK:4 }, surp:{ ambushMax:1, sectorQuiet:20 }, medal:{ toastFrom:2 },
   boss:{ revealT:12, arenaR:16 },
   rescue:{ near:45, minT:50, backOut:0.3, innerK:0.2 },
+  beats:{ on:true, at:[30, 60, 95], n:[1, 1, 2], lowP:0.2 },
   hold:{ on:true, at:[0.12, 0.45, 0.78], n:[1, 2, 2], d:[40, 55], say:['SCH: Chúng đã thấy xe — tốp đầu đang tới!', 'SCH: Chúng dồn lên hai hướng — giữ vòng tròn!', 'SCH: Đợt cuối, đông nhất — cầm cự, xe sắp ra!'] } };
 
 // Z107 FLATTER BATTLEFIELD — mostly level ground so the tank drives freely: only a handful of big rolling hills, very few old craters,

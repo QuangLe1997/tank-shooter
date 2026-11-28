@@ -28,6 +28,7 @@ import { enemies, bullets, parts, renderer } from '../hub.js';
 import { sectorDeal, forkOpen, forkTake, consWon, consRefillK, routeLive, routeTick, routeEnd } from '../hub.js';   // SECTOR 4 (campaign/sector-route.js)
 import { sectorGoalHas, sectorGoalStart, sectorGoalTick, sectorGoalClock, sectorGoalClear, sectorClimax, conqSectorLive } from '../hub.js';   // SECTOR 2 (campaign/sector-goals.js · campaign/conquest.js)
 import { spawnClear, addScore, spawnSquad, inField, inCamView, wetAt, frontYaw, rearArc, mainFort, fortBossWake, sectorMark } from '../hub.js';   // BAL 6 (game/flow.js) · BAL 7 (game/score.js)
+import { DIR } from '../hub.js';   // BAL 20 (campaign/director.js)
 import { ARENA, BIOME, CV, LOGI, OBJ, S, SIDEM, SOLDIER, WAVE, ammoStart, applyBiome, beginStage, bigEventStart, blendScene, buildBlocks, buildLava, buildObjective, buildTrails, buildUnderground, camRestPose, camera,
   cavRespawn, clearField, clearSoldierWar, clearSoldiers, coopActive, compileReady, deploySoldiers, driverBack, gpuHeld, gpuRelease, modeSeed, modelEpoch, parkAtSpawn, radio, rebuildCore, scene,
   sectorRail, sectorTransitBlack, sectorTransitLine, sectorTransitShow, selectGun, gameOver, sfx, edgeNote, modeStageWon, sideMissionStart, squadList, stageWon, updateGunHUD, updateHUD, heightAt } from '../hub.js';
@@ -144,6 +145,8 @@ export function updateSectors(dt, now){ _starting = false; if(!SECT.on || !S.pla
   if(g.type === 'sabotage'){ if(OBJ && !OBJ.alive) return goalDone(now, null); g.clock -= dt; g.k = OBJ ? 1 - OBJ.b.hp / OBJ.b.maxHp : 0;
     if(g.Y.climax && (g.k >= g.Y.climax.at || g.clock <= g.Y.time * (1 - g.Y.climax.at))) climax(now);
     if(g.clock <= 0) return sectorFail('HẾT GIỜ'); rail(); return; }
+  { const Q = BAL.beats; g.bt = g.bt || 0; if(Q.on && g.type !== 'hold' && g.type !== 'boss' && !(g.type === 'infiltrate' && g.ph === 'sneak') && g.bt < Q.at.length && SECT.t >= Q.at[g.bt]){   // BAL 20 a sector's beats
+      if(DIR.P < Q.lowP){ beatSquads(Q.n[g.bt], BAL.hold.d); note('beat', g.bt + 1); } g.bt++; } }
   if(g.type === 'boss' && !g.noFort && !g.shown && SECT.t >= BAL.boss.revealT){ g.shown = true; const f = mainFort();   // BAL 15 the general shows: he comes out of his keep (not a quarter of an hour of his garrison first)
     if(f && !f.captured){ g.arena = arenaOf(f); if(g.arena) f.arena = g.arena; if(FORTBOSS.on && !f.boss) fortBossWake(f, now); else if(!FORTBOSS.on && !f.duel){ f.duel = true; startBoss(now, f); } note('general', 'revealed'); } }   // (the gates stand open: world/fortress.js Z315)
   if(g.type === 'boss' && g.arena){ const f = mainFort(), up = f && f.boss && f.boss.st !== 'dead'; sectorMark(1, up ? g.arena.x : null, g.arena.z, g.arena.r, 'flag', '#ff7a5a'); }   // BAL 17 the way to his arena, shown till he falls
