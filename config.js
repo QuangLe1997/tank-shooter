@@ -4187,7 +4187,7 @@ export const FEELFX = { on:true,
 //     only anchor × the look-ahead carries it forward (riding the whole lead it looked down on him from 4 m behind); a fort boss within bossR m has his top
 //     fitted under topK of the upper half while the soldier's chest stays above footK of the lower half, and the auto camera draws back bossPull more; maxEl = the steepest the lens may look down on
 //     him (°, a courtyard's wall no longer tips it to a top view — what stands between is faded); ease = s the solved pitch glides
-//   arm: the spring arm — every s a ray from his head to the lens against the standing solids (static over two sweeps of sweep s, at most maxTri
+//   arm: the spring arm — every s (phones everyM) a ray from his head to the lens against the standing solids (static over two sweeps of sweep s, at most maxTri
 //     triangles a mesh): a surface the lens is inside, or one within near m of it, pulls the lens in to pad m short of it (never nearer him than minD m);
 //     one closer to him is faded instead (render/see-through.js); in at inK 1/s, back out over outT s once clear for hold s
 //   see: the fade of what stands between — the screen-door dots are gone: the cut is clean, a narrow band (band, share of the strength) feathers it and a
@@ -4209,7 +4209,7 @@ export const FEELFX = { on:true,
 //   transit: on the flight between two sectors the haze thins with the lens's height over the ground — full below y0 m, down to min × over span m more
 export const VISLOOK = {
   frame:{ on:true, y:0.6, yM:0.6, anchor:0.3, bossR:34, bossPull:0.35, topK:0.84, footK:0.62, maxEl:54, ease:0.14 },
-  arm:{ on:true, every:0.1, sweep:2, maxTri:24000, near:3.5, pad:0.45, minD:2.4, inK:16, outT:0.45, hold:0.35, head:[1.55, 2.45, 0.6] },
+  arm:{ on:true, every:0.1, everyM:0.2, sweep:2, maxTri:24000, near:3.5, pad:0.45, minD:2.4, inK:16, outT:0.45, hold:0.35, head:[1.55, 2.45, 0.6] },
   see:{ band:0.22, rim:0.42, rimK:0.55, leafGap:4 },
   menu:{ on:true, r:62, h:7.5, look:30, lookY:5, spin:0.035 },
   night:{

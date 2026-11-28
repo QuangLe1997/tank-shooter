@@ -7,7 +7,7 @@
 //   (a headlamp's cone ends there). No allocation per frame.
 import * as THREE from 'three';
 import { VISLOOK } from '../../config.js';
-import { scene } from '../hub.js';
+import { MOBILE, scene } from '../hub.js';
 
 export const ARM = { list:[], seen:new Map(), sweepAt:-1, at:-1, share:1, want:1, clearAt:0, ms:0, rays:0, n:0, pulls:0 };
 const _rc = new THREE.Raycaster(), _o = new THREE.Vector3(), _d = new THREE.Vector3(), _hits = [], _rev = [], _sph = new THREE.Sphere(), _m = new THREE.Matrix4(), _v = new THREE.Vector3();
@@ -41,7 +41,7 @@ export function solidHit(ax, ay, az, bx, by, bz){ if(!ARM.list.length) return 1;
 // the arm: pos (the lens as the camera wants it) is pulled toward the head at (hx, hy, hz) in place; skip = his own kit (never a solid)
 export function armPull(pos, hx, hy, hz, dt, now, skip){ const A = VISLOOK.arm; if(!A.on){ ARM.share = 1; return pos; } sweep(now, skip);
   const dx = pos.x - hx, dy = pos.y - hy, dz = pos.z - hz, L = Math.hypot(dx, dy, dz);
-  if(L > 0.5 && now - ARM.at >= A.every){ ARM.at = now; const t0 = performance.now(), ux = dx / L, uy = dy / L, uz = dz / L; let want = 1;
+  if(L > 0.5 && now - ARM.at >= (MOBILE ? A.everyM : A.every)){ ARM.at = now; const t0 = performance.now(), ux = dx / L, uy = dy / L, uz = dz / L; let want = 1;
     cast(hx, hy, hz, ux, uy, uz, L + A.pad, _out); const d = _out[0], obj = _out[1];
     if(obj){ let pull = d >= L - A.near; if(!pull){ _o.set(pos.x, pos.y, pos.z); _d.set(-ux, -uy, -uz); _rc.set(_o, _d); _rc.far = L - d + 0.01; _rev.length = 0; obj.raycast(_rc, _rev); pull = !_rev.length; }   // inside it (no face of it seen from the lens), or it is right at the lens
       if(pull && d - A.pad >= A.minD) want = (d - A.pad) / L; }
