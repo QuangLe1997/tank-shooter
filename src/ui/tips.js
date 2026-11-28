@@ -1,6 +1,6 @@
 // ui/tips.js — Z94 · FIRST-TIME TIPS — the first time something new happens, a short field note explains it (Z168: a side card, the battle keeps running). Once per lifetime (saved).
-import { AMBUSH } from '../../config.js';
-import { MOBILE, PROFILE, S, iconEl, saveProfile, sfx, tapEl } from '../hub.js';
+import { AMBUSH, HUDUX } from '../../config.js';
+import { MOBILE, PROFILE, S, iconEl, saveProfile, sfx, tapEl, uxTipOk, uxTipShown } from '../hub.js';
 
 // ===== Z94 · FIRST-TIME TIPS — the first time something new happens, the battle PAUSES and a short field note explains it. Once per lifetime (saved). =====
 export const TIPS={
@@ -13,7 +13,7 @@ export const TIPS={
   gunship: ['drone','Trực thăng vũ trang', 'Đạn M79 bay vòng cung không với tới. Dùng <b>súng bắn thẳng</b> (đại liên, súng tỉa) hoặc <b>B41</b> khi nó lượn thấp.'],
   elite:   ['star','Địch tinh nhuệ', 'Địch có hào quang vàng: trâu hơn, mạnh hơn nhưng <b>luôn rơi đồ quý</b> và nhiều điểm hơn.'],
   core:    ['bunker','Lõi đang nguy!', 'Nếu <b>LÕI</b> bị phá là thua. Quay về đánh bật địch quanh Lõi, nhặt <b>SỬA CĂN CỨ</b> để hồi máu cho Lõi.'],
-  deploy:  ['team','Bố trí trận địa', 'Trước mỗi màn bạn <b>chia quân</b>: bao nhiêu người <b>giữ Lõi</b>, áp sát <b>trại giam / kho</b>, giữ <b>hai cánh</b>. Chọn thêm <b>súng máy</b>, <b>cối</b>, <b>công binh</b> (đánh sập tháp canh). Lính được bố trí sẽ <b>giữ khu vực</b> của mình. Lần sau tự nhớ cách bố trí.'],
+  deploy:  ['team','Bố trí trận địa', 'Chia quân vào các <b>trọng điểm</b> bên trái: áp sát <b>trại giam / kho</b>, giữ <b>hai cánh</b>, canh <b>khu tập kết</b>. Chọn thêm <b>súng máy</b>, <b>cối</b>, <b>công binh</b> (đánh sập tháp canh). Lính được bố trí sẽ <b>giữ khu vực</b> của mình. Lần sau tự nhớ cách bố trí.'],
   pow:     ['team','Trại giam lính ta', 'Lính ta bị giam sau hàng rào thép gai. <b>Diệt hết lính canh</b>, rồi <b>áp sát cổng</b> (hoặc cho lính vào): tù binh được thả, <b>cầm súng theo anh</b>.'],
   depot:   ['bunker','Kho vũ khí địch', 'Diệt lính canh, rồi <b>thả lính xuống</b> trong vòng xanh vài giây để <b>chiếm kho</b>. Kho phát <b>ống phóng rocket</b> cho lính ta và tung đồ tiếp tế.'],
   rally:   ['spark','Khu tập kết', 'Lính nhặt được vật phẩm sẽ <b>mang về khu tập kết</b> (vòng xanh có cờ, bên phía ta). Đồ ở đó <b>không biến mất</b> — tới đó để nhận.'],
@@ -23,10 +23,13 @@ export const TIPS={
 export const TIPQ=[]; export let _tipOpen=null;
 // Z104 only the notes that change how you play stop the battle; simple sightings stay quiet (still in the field manual)
 export const TIP_SHOW={ deploy:1, drive2:1, core:1, pow:1, depot:1, rally:1, paradrop:1, blade:1 };
-export function tip(id){ if(!TIPS[id] || !TIP_SHOW[id]) return; const P=PROFILE.tips||(PROFILE.tips={}); if(P[id] || TIPQ.includes(id) || _tipOpen===id) return; TIPQ.push(id); }
+export function tip(id){ if(!TIPS[id] || !TIP_SHOW[id]) return; const P=PROFILE.tips||(PROFILE.tips={}); if(P[id] || TIPQ.includes(id) || _tipOpen===id) return; if(HUDUX.tips.offBattle.includes(id)) return; TIPQ.push(id); }   // HUDUX a note with its own screen is shown there (tipInline), never later in the battle
+// HUDUX a first-time note shown on its own screen (the deployment's): its words into `host`, marked as read
+export function tipInline(id, host){ const T=TIPS[id]; if(!T || !host) return false; const P=PROFILE.tips||(PROFILE.tips={}); host.innerHTML=T[2]; host.classList.remove('hidden'); if(!P[id]){ P[id]=1; saveProfile(); } return true; }
 export const TIP_URGENT={ arty:1, atgm:1, boss:1, shield:1, core:1 }; export let _tipNextAt=0;
 export function pumpTips(){ if(_tipOpen || !TIPQ.length || S.mode!=='playing') return; const nowT=performance.now()/1000;
   let qi=TIPQ.findIndex(k=>TIP_URGENT[k]); if(qi<0){ if(nowT<_tipNextAt) return; qi=0; }      // urgent notes jump the queue; the rest wait 6 s of play between them
+  if(!uxTipOk(!!TIP_URGENT[TIPQ[qi]])) return; uxTipShown();   // HUDUX only in a lull (the director's release), at most HUDUX.tips.perBattle a battle
   const id=TIPQ.splice(qi,1)[0], T=TIPS[id], el=document.getElementById('tipCard'); if(!el) return;
   _tipOpen=id; _tipUntil=nowT+tipSecs();   // Z168 no more pausing the battle: a side card that dismisses itself (a pad could never close the old modal → the game looked frozen)
   el.querySelector('.tc-ic').replaceChildren(iconEl(T[0])); el.querySelector('.tc-ttl').textContent=T[1]; el.querySelector('.tc-body').innerHTML=T[2];

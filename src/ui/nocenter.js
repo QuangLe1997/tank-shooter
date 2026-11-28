@@ -3,7 +3,7 @@
 //   to a small stack at the screen's left edge (ncFeed), cosmetics dropped; an attack warning from off screen gets a wordless chevron on the edge (ncArrow).
 //   A last net (the guard) hides any HUD text card that would still cross the zone until it is clear (css/nocenter.css places them outside it).
 import { NOCENTER } from '../../config.js';
-import { MOBILE, S } from '../hub.js';
+import { MOBILE, S, uxNote, uxNoteEl } from '../hub.js';
 
 export const NCZ = { l:0, r:0, t:0, b:0, w:0, h:0, guarded:0, fed:0, chips:0, arrows:0, dropped:0, feedEl:null, chipEl:null, chipT:0, arrows3:[], gT:0, hid:new Set(), gl:[] };
 // the zone in px for the current viewport (cached per size)
@@ -19,7 +19,8 @@ export function ncFeed(text, color){ if(typeof document === 'undefined' || !docu
   let el = NCZ.feedEl; if(!el || !el.isConnected){ el = NCZ.feedEl = document.createElement('div'); el.id = 'ncFeed'; document.body.appendChild(el); }
   const last = el.lastElementChild; NCZ.fed++;
   if(last && last._tx === text && now - last._t0 < F.merge){ last._n++; last.textContent = text + ' ×' + last._n; last._t0 = now; clearTimeout(last._k); last._k = setTimeout(() => last.remove(), F.hold * 1000); return; }
-  const ln = document.createElement('div'); ln.className = 'nc-ln'; ln.textContent = text; ln.style.color = color || '#e8e4d0'; ln._tx = text; ln._n = 1; ln._t0 = now;
+  const q = uxNote(text, false); if(!q) return;   // HUDUX the text diet counts the edge stack too
+  const ln = document.createElement('div'); ln.className = 'nc-ln'; uxNoteEl(q, ln, F.hold); ln.textContent = text; ln.style.color = color || '#e8e4d0'; ln._tx = text; ln._n = 1; ln._t0 = now;
   el.appendChild(ln); const max = MOBILE ? F.maxTouch : F.max; while(el.children.length > max) el.firstElementChild.remove();
   ln._k = setTimeout(() => ln.remove(), F.hold * 1000); }
 
@@ -45,3 +46,10 @@ function guard(){ if(!ncBattle()){ if(NCZ.hid.size){ for(const e of NCZ.hid) e.c
     const hit = ncHit(r.left, r.top, r.right, r.bottom), was = NCZ.hid.has(e);
     if(hit && !was){ if(getComputedStyle(e).opacity < 0.05) continue; e.classList.add('nc-off'); NCZ.hid.add(e); NCZ.guarded++; if(NCZ.gl.length < 12) NCZ.gl.push((e.id || e.className) + '@' + Math.round(r.left) + ',' + Math.round(r.top)); } else if(!hit && was){ e.classList.remove('nc-off'); NCZ.hid.delete(e); } } }
 if(typeof setInterval === 'function' && typeof document !== 'undefined') NCZ.gT = setInterval(() => { try{ guard(); }catch(err){} }, NOCENTER.guard.every * 1000);
+// HUDUX the aim-zone check (tools/ts.mjs samples it in a battle): every visible text inside NOCENTER.zone — "id.class: words" (the perf readout and hidden cards aside)
+export function ncZoneText(){ if(typeof document === 'undefined' || !document.body) return []; const Z = ncZone(), out = [], w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); let n;
+  while((n = w.nextNode())){ const t = n.textContent.trim(); if(!t || !/\p{L}|\d/u.test(t)) continue; const e = n.parentElement; if(!e || e.closest('.hidden,.nc-off,#perfHud,.overlay')) continue;
+    const r0 = e.getBoundingClientRect(); if(r0.width < 1 || r0.right < Z.l || r0.left > Z.r || r0.bottom < Z.t || r0.top > Z.b) continue;
+    let op = 1; for(let a = e; a && a !== document.body; a = a.parentElement){ const c = getComputedStyle(a); if(c.display === 'none' || c.visibility === 'hidden'){ op = 0; break; } op *= +c.opacity; } if(op < 0.15) continue;
+    const rg = document.createRange(); rg.selectNodeContents(n); const r = rg.getBoundingClientRect(); if(r.width && ncHit(r.left, r.top, r.right, r.bottom)) out.push(((e.closest('[id]') || {}).id || '') + '.' + (typeof e.className === 'string' ? e.className : e.tagName) + ': ' + t.slice(0, 50)); }
+  return out; }

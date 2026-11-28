@@ -2,7 +2,7 @@
 //   report over an end screen (best moments, the counts, the XP bar filling to the next rank, the medals won), the Quân hàm & huân chương screen from home,
 //   the rank line on the home screen, and the lock on a gun the rank has not opened (ui/loadout.js, ui/setup-units.js). Built in code (index.html stays a
 //   shell), styled by css/medals.css in the XK-UI palette (olive, sand, brass; bronze / silver / gold only on the medals).
-import { HUDCLEAN2, MEDALS } from '../../config.js';
+import { HUDCLEAN2, HUDUX, MEDALS } from '../../config.js';
 import { MOBILE, GUNS, MEDAL_TIER_VI, carInsignia, carRank, carRankName, carTop, escapeHtml, gunOpen, gunRankReq, hide, medalCareer, medalDef, medalMoments, sfx, show, svgMarkup,
   tapEl, medalHush } from '../hub.js';
 
@@ -29,7 +29,7 @@ function el(tag, cls, html){ const e = document.createElement(tag); if(cls) e.cl
 // ---- the toasts in battle: one at a time, a short queue ----
 const TQ = { q:[], busy:false, el:null };
 function toastHost(){ if(TQ.el && TQ.el.isConnected) return TQ.el; TQ.el = el('div', 'mdl-toasts'); TQ.el.id = 'mdlToasts'; TQ.el.setAttribute('aria-live', 'polite'); document.body.appendChild(TQ.el); return TQ.el; }
-export function medalToast(d, tier, v){ if(typeof document === 'undefined') return; const T = M().toast; if(TQ.q.length >= T.max) TQ.q.shift(); TQ.q.push({ d, tier, v }); if(!TQ.busy) nextToast(); }
+export function medalToast(d, tier, v){ if(typeof document === 'undefined' || !HUDUX.medals.toast) return;   /* HUDUX the medals wait for the battle report (its 'Huân chương trận này' row) */ const T = M().toast; if(TQ.q.length >= T.max) TQ.q.shift(); TQ.q.push({ d, tier, v }); if(!TQ.busy) nextToast(); }
 function nextToast(){ const it = TQ.q.shift(); if(!it){ TQ.busy = false; return; } TQ.busy = true; const T = M().toast, h = toastHost(), d = it.d;
   const n = el('div', 'mdl-toast ' + TIER_CLS[it.tier], medalDiscHTML(d, it.tier) + '<span class="tx"><small>Huân chương · <em>' + capTier(it.tier) + '</em></small><b>' + escapeHtml(d.nm) + '</b><span>' + escapeHtml(d.ds) + ' · ' + fmt(it.v) + '</span></span>');
   h.appendChild(n); requestAnimationFrame(() => n.classList.add('in')); try{ sfx('powerup'); }catch(e){}
@@ -37,7 +37,7 @@ function nextToast(){ const it = TQ.q.shift(); if(!it){ TQ.busy = false; return;
 const capTier = t => { const s = MEDAL_TIER_VI[t] || ''; return s.charAt(0) + s.slice(1).toLocaleLowerCase('vi'); };
 // ---- the career's rank-up in battle: the board, the new rank, what it opens ----
 let _rk = null;
-export function medalRankCard(r, guns){ if(typeof document === 'undefined') return; if(_rk) _rk.remove();
+export function medalRankCard(r, guns){ if(typeof document === 'undefined' || !HUDUX.medals.rankCard) return;   /* HUDUX the rank-up shows on the battle report (its 'Thăng quân hàm!' line) */ if(_rk) _rk.remove();
   const gl = (guns || []).filter(id => GUNS[id]).map(id => escapeHtml(GUNS[id].name)).join(' · ');
   _rk = el('div', 'mdl-rankup', '<small>Thăng quân hàm</small>' + insigniaSVG(r) + '<b>' + escapeHtml(capName(carRankName(r))) + '</b>' + (gl ? '<span>Mở khoá súng: ' + gl + '</span>' : '<span>Chiến công được ghi vào hồ sơ</span>'));
   document.body.appendChild(_rk); requestAnimationFrame(() => _rk && _rk.classList.add('in')); try{ sfx('levelup'); }catch(e){}
@@ -107,7 +107,7 @@ export function renderMedals(){ const E = screen(), c = medalCareer(), k = carRa
 // ---- home: the rank under the call-sign (ui/menus.js refreshStartUI), the button into the screen ----
 export function medalHomeLine(){ if(typeof document === 'undefined' || !M().on) return; const h = document.getElementById('hello'); if(!h) return; let s = document.getElementById('mdlHome');
   if(!s){ const row = el('div', 'mdl-homerow'); s = el('div', 'mdl-home'); s.id = 'mdlHome'; s.setAttribute('role', 'button'); s.tabIndex = 0; tapEl(s, () => openMedals('start'));
-    const b = el('div', 'xb xb-ghost mdl-homebtn', '<span class="ic">' + medalGlyph('star') + '</span><span>Huân chương</span>'); b.id = 'medalsBtn'; b.setAttribute('role', 'button'); tapEl(b, () => openMedals('start'));   // MEDAL 4 a plain way in beside the rank
+    const b = el('div', 'xb xb-sec mdl-homebtn', '<span class="ic">' + medalGlyph('star') + '</span><span>Huân chương</span>'); b.id = 'medalsBtn'; b.setAttribute('role', 'button'); tapEl(b, () => openMedals('start'));   // MEDAL 4 a plain way in beside the rank
     row.append(s, b); h.insertAdjacentElement('afterend', row); }
   const c = medalCareer(), k = carRank(c.xp); s.innerHTML = insigniaSVG(k.r) + '<span><small>Quân hàm</small><b>' + escapeHtml(capName(carRankName(k.r))) + '</b><i><u style="width:' + (k.need ? Math.min(100, 100 * k.into / k.need) : 100).toFixed(1) + '%"></u></i></span>'; }
 // ---- the gun strips: is this gun his to carry in, and what does a locked one say ----

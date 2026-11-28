@@ -17,7 +17,8 @@
 //   --frames dir  BAL 2 a probe may call window.__frame(name): a JPEG of the page into dir (tools/calib.mjs: every 20 s and at the battle's moments)
 //   --watchdog s  BOT 1 s more before the runner gives up (a probe that plays a whole battle: tools/calib.mjs)
 //   --novsync     frames as fast as the GPU allows (to compare frame times; with vsync every frame over 16.7 ms falls to 33).
-//   Out: { ok, biome, load, frame:{ p50, p95, max, n }, calls, tris, errors:[…], eval, shot } — exit code 0 only when the page logged no error.
+//   Out: { ok, biome, load, frame:{ p50, p95, max, n }, calls, tris, nocenter:{ samples, withText, texts }, flags?, errors:[…], eval, shot } — exit code 0 only when the page logged no error.
+//   HUDUX nocenter: the fight is sampled every 0.6 s for any text inside the aim zone (NOCENTER.zone); found → out.flags names it (the run is not failed for it).
 // It serves the repo itself (code never cached, assets cached), keeps ONE Chrome profile between runs (compiled shaders and the files stay, so the
 // second run starts fast), lets only one test use the GPU at a time (a lock directory), and always closes the browser.
 // Needs playwright-core: `npx playwright-core --version` once, or TS_PLAYWRIGHT=/path/to/playwright-core/index.mjs.
@@ -96,7 +97,9 @@ try{
   out.load = +((Date.now() - t0) / 1000).toFixed(1);
   // frame times over the watched seconds: the game's own probe (?perf — render/perfhud.js PH.frm, the time between two frames it drew), sampled as it goes
   await p.evaluate(async () => { const H = window.__H = await import('/src/hub.js'), PH = H.PH, F = window.__tsF = []; let seen = PH.frm.i;
-    window.__tsI = setInterval(() => { const r = PH.frm, n = r.a.length; while(seen !== r.i){ F.push(r.a[seen]); seen = (seen + 1) % n; } }, 200); });
+    const Z = window.__tsZ = { n:0, hit:0, t:{} }; let zk = 0;   // HUDUX the aim-zone check: every 0.6 s of the fight, any text inside NOCENTER.zone (ui/nocenter.js ncZoneText)
+    window.__tsI = setInterval(() => { const r = PH.frm, n = r.a.length; while(seen !== r.i){ F.push(r.a[seen]); seen = (seen + 1) % n; }
+      if(++zk % 3 || H.S.mode !== 'playing' || !H.ncZoneText) return; const L = H.ncZoneText(); Z.n++; if(L.length){ Z.hit++; for(const x of L) if(Object.keys(Z.t).length < 12) Z.t[x] = (Z.t[x] || 0) + 1; } }, 200); });
   let cdpP = null; if(opt('--cpuprofile')){ cdpP = await ctx.newCDPSession(p); await cdpP.send('Profiler.enable'); await cdpP.send('Profiler.setSamplingInterval', { interval:200 }); await cdpP.send('Profiler.start'); }
   if(cdpP){ const w = Math.min(secs, +opt('--cpuprofile')) * 1000; await p.waitForTimeout(w); const { profile:P } = await cdpP.send('Profiler.stop'); await p.waitForTimeout(Math.max(0, secs * 1000 - w));   // DIET 7 where the main thread's time went in the fight's first seconds
     const self = new Map(), byId = new Map(P.nodes.map(n => [n.id, n])); P.samples.forEach((id, i) => self.set(id, (self.get(id) || 0) + (P.timeDeltas[i] || 0)));
@@ -108,7 +111,8 @@ try{
     out.cpu = { top:Object.entries(agg).filter(([k]) => !/^\((idle|program)\)/.test(k)).sort((a, b) => b[1] - a[1]).slice(0, 18).map(([k, v]) => Math.round(v / 1000) + 'ms ' + k), busy:busy.slice(0, 30) }; }
   else await p.waitForTimeout(secs * 1000);
   Object.assign(out, await p.evaluate(() => { clearInterval(window.__tsI); const H = window.__H, F = window.__tsF.sort((a, b) => a - b), at = k => F.length ? +F[Math.min(F.length - 1, Math.floor(F.length * k))].toFixed(1) : 0;
-    return { frame:{ p50:at(0.5), p95:at(0.95), max:at(1), n:F.length }, calls:H.PH.calls, tris:H.PH.tris }; }));
+    const Z = window.__tsZ; return { frame:{ p50:at(0.5), p95:at(0.95), max:at(1), n:F.length }, calls:H.PH.calls, tris:H.PH.tris, nocenter:{ samples:Z.n, withText:Z.hit, texts:Z.t } }; }));
+  if(out.nocenter && out.nocenter.withText) out.flags = ['NOCENTER: text in the aim zone in ' + out.nocenter.withText + '/' + out.nocenter.samples + ' samples — ' + Object.keys(out.nocenter.texts).slice(0, 4).join(' | ')];   // HUDUX flagged, not failed (the owner decides)
   if(opt('--eval')){ const body = fs.readFileSync(opt('--eval'), 'utf8'); try{ out.eval = await p.evaluate(`(async (H, S) => { ${body}\n})(window.__H, window.__H.S)`); }catch(e){ out.errors.push('eval: ' + String(e.message).slice(0, 400)); } }
   if(has('--glslow')) out.glslow = await p.evaluate(() => { const t1 = window.__H && window.__H.PH && window.__H.PH.t1 || 0; return window.__glSlow.map(([t, ms, n, s]) => [+((t - t1) / 1000).toFixed(2), ms, n, s]); });
   if(has('--gpumem')){ out.gpu = await p.evaluate(() => window.__gpuMem());   // + what macOS charges this Chrome's processes (footprint: the GPU process holds the textures, the renderer the page)

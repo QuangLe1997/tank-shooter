@@ -1,7 +1,7 @@
 // fx/hud-fx.js — FX (rings, float text, screen)
 import * as THREE from 'three';
 import { NOCENTER } from '../../config.js';
-import { NCZ, VIEW, blTick, camera, heightAt, holoRing, ncArrow, ncBattle, ncChip, ncFeed, ncLabelHit, scene, soldierHit } from '../hub.js';
+import { NCZ, VIEW, blTick, camera, heightAt, holoRing, ncArrow, ncBattle, ncChip, ncFeed, ncLabelHit, scene, soldierHit, uxNote, uxNoteEl } from '../hub.js';
 
 // ----------------------------- FX (rings, float text, screen) -----------------------------
 export const _v = new THREE.Vector3();
@@ -14,14 +14,15 @@ export function worldToScreen(v){
 //   dropped in the zone; no kind: a line with words goes to the edge stack, a bare mark ("!", "✝", "+40") is dropped. Near the edges a label stays, small.
 const WARN_RX = /^⚠/;
 export function floatText(text, color, worldPos, size=20, kind){
-  const s = worldToScreen(worldPos);
+  const s = worldToScreen(worldPos); let q = null;
   if(ncBattle()){ const N = NOCENTER.float, w = innerWidth, h = innerHeight, boss = kind === 'boss' || kind === 'bosswarn', warn = kind === 'warn' || kind === 'bosswarn' || WARN_RX.test(text);
     if(boss && ncChip(text, color)){ if(warn && !(s.infront && s.x >= 0 && s.x <= w && s.y >= 0 && s.y <= h)) ncArrow(s, color); return; }
     if(!s.infront || s.x < 0 || s.x > w || s.y < 0 || s.y > h){ if(warn) ncArrow(s, color); return; }
     size = Math.min(size, N.edgeMax);
-    if(ncLabelHit(s.x, s.y, text, size)){ if(kind === 'fx' || kind === 'warn' || !/\p{L}{2}/u.test(text)) NCZ.dropped++; else ncFeed(text, color); return; } }
+    if(ncLabelHit(s.x, s.y, text, size)){ if(kind === 'fx' || kind === 'warn' || !/\p{L}{2}/u.test(text)) NCZ.dropped++; else ncFeed(text, color); return; }
+    if(kind !== 'fx' && /\p{L}{2}/u.test(text)){ q = uxNote(text, warn); if(!q) return; } }   // HUDUX the text diet: ≤ 2 worded notes at once, no repeats, no lines without an action
   else if(!s.infront) return;
-  const el = document.createElement('div'); el.className='pop'; el.textContent=text;
+  const el = document.createElement('div'); el.className='pop'; el.textContent=text; if(q) uxNoteEl(q, el, 0.95);
   el.style.left=s.x+'px'; el.style.top=s.y+'px'; el.style.color=color; el.style.fontSize=size+'px';
   document.getElementById('popups').appendChild(el);
   setTimeout(()=>el.remove(), 950);
