@@ -3269,6 +3269,9 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { BAL:Q, SECTOR:SE, DIRECTOR:D }=await import('./config.js'), sg=R('src/campaign/sector-goals.js'), dr=R('src/campaign/director.js');
   ok(Q.rescue.minT>=20 && Q.rescue.near>=20 && /g\.g0 = guardsLeft\(g\.zone\)/.test(sg) && /Math\.min\(hit \* K\.dps, K\.hp \/ BAL\.rescue\.minT\)/.test(sg) && /guardsLeft\(g\.zone\) < \(g\.g0 \?\? K\.guards\)/.test(sg),
     'BAL 18: the hostage is hurt only once the fight round him has started (a posted guard down, he is out, the player near), never in under ' + Q.rescue.minT + ' s'); }
+// BAL 19 the fair-fire / no-rear rules in every mode: no reinforcement out of a fort's gate behind him, a man behind him stays wide (C2-007)
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { BAL:Q, SECTOR:SE, DIRECTOR:D }=await import('./config.js'), sg=R('src/campaign/sector-goals.js'), dr=R('src/campaign/director.js');
+  ok(/!rearArc\(f\.ix\?\?f\.x, f\.iz\?\?f\.z\)/.test(R('src/world/fortress.js')) && Q.fair.rear.k>=3, 'BAL 19: no wave marches out of a gate behind him; a man behind him × ' + Q.fair.rear.k + ' wide'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

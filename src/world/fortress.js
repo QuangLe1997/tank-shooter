@@ -490,7 +490,7 @@ function sally(f, now){ if(!dirSallyOk(now)){ f.sallyAt=now+2; return; }
   for(let i=n0;i<enemies.length;i++) enemies[i].fortOf=f;   // Z107 sally troops belong to their fortress (they don't hold a wave open)
   fortLaunch(f, n0, now); }                                  // Z111b formed up INSIDE the gate → it swings open → they march out
 // wave reinforcements come out of a fortress gate (most of the time) instead of over the fence — raised inside, then the gate opens
-export function fortSpawnPoint(){ const alive=FORTS.filter(f=>!f.captured && f.g && f.posture!=='hold'); if(!alive.length || Math.random()>FORT.fromGate) return null;
+export function fortSpawnPoint(){ const alive=FORTS.filter(f=>!f.captured && f.g && f.posture!=='hold' && !rearArc(f.ix??f.x, f.iz??f.z)); if(!alive.length || Math.random()>FORT.fromGate) return null;   // BAL 19 (not out of a gate behind him)
   const p=S.player; alive.sort((a,b)=>Math.hypot(a.ox-p.pos.x,a.oz-p.pos.z)-Math.hypot(b.ox-p.pos.x,b.oz-p.pos.z)); const f=alive[Math.random()<0.6?0:(Math.random()*alive.length)|0];
   return { x:f.ix+(Math.random()-0.5)*3, z:f.iz+(Math.random()-0.5)*3, fort:f }; }
 // Z140 the enemy pole topples (1.4 s), then our flag rises up a fresh pole

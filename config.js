@@ -2456,9 +2456,10 @@ export const BOT = { think:20, sightK:1.5, eye:1.45, losEvery:0.25, losPerTick:2
 //   rescue (BAL 18, campaign/sector-goals.js): the hostage is hurt only once the fight round him started (a posted guard down, he is out, or the player within near m),
 //     never faster than his health over minT s. The pen: its back wall backOut × its depth behind the containers' ends (flush), the hostage innerK × the containers'
 //     half-length in from the middle — clear of every collider (he knelt inside the back wall's).
+//   fair.rear.k (BAL 19): a man behind him stays that much wider — in every mode (world/fortress.js: no wave out of a gate behind him either).
 //   hold (BAL 14, campaign/sectors.js): the stuck truck's hold has three beats — at the shares `at` of the hold, n squads come from in front of him / his sides, d m off.
 export const BAL = { fair:{ on:true, every:0.1, r:95, fireT:1.2, maxN:6, size:30, margin:26, color:'#ff3b2b', spreadK:3.2, onT:0.5, warnT:2,
-    rear:{ on:!(typeof location !== 'undefined' && /[?&]norear\b/.test(location.search)), ang:2.09, r:60, grace:1.6, graceK:8, k:2.4, beepGap:3 } },
+    rear:{ on:!(typeof location !== 'undefined' && /[?&]norear\b/.test(location.search)), ang:2.09, r:60, grace:1.6, graceK:8, k:4, beepGap:3 } },
   pursuit:{ limp:0.4, stopDmg:55, stopT:2.5 },
   spawn:{ on:true, w:3.5, l:12 }, score:{ kill:100, elite:2, heavy:3, boss:10, team:0.25, mineT:3, comboMax:2, goal:1000 },
   mates:{ dmgK:0.2 },
