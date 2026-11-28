@@ -3284,6 +3284,10 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
 // BAL 23 the squad's share follows the player's (C1-019)
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { BAL:Q, SECTOR:SE, DIRECTOR:D }=await import('./config.js'), sg=R('src/campaign/sector-goals.js'), dr=R('src/campaign/director.js');
   ok(Q.mates.share>0.3 && Q.mates.share<0.7 && Q.mates.lo>0 && Q.mates.lo<1 && Q.mates.hi>1, 'BAL 23: the squad hits harder or softer by the player\'s share of the kills ('+Q.mates.lo+'–'+Q.mates.hi+' ×)'); }
+// BAL 24 a general's fight: no stun-lock, a burst over his armour turned with a visible GIÁP CHẶN, his health by source for the probes (C2-003, C2-004)
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { BAL:Q, SECTOR:SE, DIRECTOR:D }=await import('./config.js'), sg=R('src/campaign/sector-goals.js'), dr=R('src/campaign/director.js');
+  const fb=R('src/campaign/fort-boss.js'); ok(Q.bossFight.staggerCd>=3 && Q.bossFight.burst.t>=30 && Q.bossFight.burst.max>0 && Q.bossFight.burst.max<0.3 && /now < \(B\.stagCd \|\| 0\)/.test(fb) && /'GIÁP CHẶN'/.test(fb) && /B\.src\[src\] \+= out/.test(fb),
+    'BAL 24: a stagger then ' + Q.bossFight.staggerCd + ' s of none; a burst over his armour turned (shown), the steady fire never'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

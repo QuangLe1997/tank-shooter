@@ -16,7 +16,7 @@
 //   CO-OP: the host runs him; the guest's page sees the host's puppet dressed as him (APPEAR), his plates as they go and his phase (PLATE), the warning
 //   of each move (ATK) and the fort taken (TAKEN) — CUE events, FORTBOSS.cue, allowed host → guest only (net/rules.js).
 import * as THREE from 'three';
-import { FORT, FORTBOSS, TROOPS } from '../../config.js';
+import { BAL, FORT, FORTBOSS, TROOPS } from '../../config.js';
 import { tyrantStep } from '../hub.js';   // SECTOR 6
 import { feelBossReveal } from '../hub.js';   // FEEL 4
 import { fortBossAct, fortBossAnim, fortBossCorpseTick, fortBossCorpsesClear, fortBossFlash, fortBossLookId, fortBossPreload, fortBossWarm } from '../hub.js';   // BOSS 2 (actors/fort-boss-glb.js)
@@ -101,6 +101,13 @@ export function fortBossDmg(e, dmg){ const B = e.fortBoss; if(!B || B.st === 'de
   else { const pack = z === 'pack'; B.pl[z] -= raw; out = raw * (pack ? C.packK : C.armK);
     if(pack) mark(B, 'ĐIỂM YẾU!', '#ffd24a', now); else if(Math.random() < 0.3){ e.mesh.updateMatrixWorld(); const g = B.look.plates[z]; if(g){ g.getWorldPosition(_m); spawnPart(_m.x, _m.y, _m.z, (Math.random() - 0.5) * 5, 2 + Math.random() * 3, (Math.random() - 0.5) * 5, { color:0xffe0a0, size:0.22, life:0.2, grav:10, drag:1 }); } if(Math.random() < 0.15) sfx('ricochet', e.pos, 0.5); }
     if(B.pl[z] <= 0){ B.pl[z] = 0; plateGone(B, z, now, -bx, -bz); if(pack) out += hp * C.packBoom; } }
+  // BAL 24 what took his health, by who (probes: FBOSS.list[i].src) — and a burst over what his armour can shed is turned (squad focus fire, stacked charges, a barrage):
+  //   a bucket refilled at maxHp / burst.t per s, at most burst.max of it; the player's own steady fire never empties it. Turned: sparks and "GIÁP CHẶN" — armour, not a bug
+  { const Q = BAL.bossFight.burst, mine = e._mkBy === 1 && now - (e._mkT || 0) < 0.05, src = e._blast ? (mine ? 'pBlast' : 'blast') : mine ? 'player' : 'squad'; B.src = B.src || { player:0, pBlast:0, squad:0, blast:0, turned:0 }; if(src === 'squad') out *= BAL.mates.bossK;   // (his squad pins the general, the player brings him down: their hits × bossK — 73 % of Vệ Binh Thép was theirs)
+    if(Q.on){ const cap = hp * Q.max; B.bucket = Math.min(cap, (B.bucket ?? cap) + (now - (B.bucketAt || now)) * hp / Q.t); B.bucketAt = now; if(out > B.bucket){ B.src.turned += out - B.bucket; out = Math.max(0, B.bucket);
+        if(now > (B.turnAt || 0)){ B.turnAt = now + 0.6; floatText('GIÁP CHẶN', '#c8d8ff', { x:e.pos.x, y:heightAt(e.pos.x, e.pos.z) + 3, z:e.pos.z }, 14, 'fx'); spawnPart(e.pos.x, heightAt(e.pos.x, e.pos.z) + 1.6, e.pos.z, (Math.random() - 0.5) * 6, 3, (Math.random() - 0.5) * 6, { color:0xffe8b0, size:0.3, life:0.25, grav:10, drag:1.5 }); } }
+      B.bucket -= out; }
+    B.src[src] += out; }
   if(out >= e.hp) e._quietKill = true;   // (he does not fly: he folds forward like a felled tree — actors/infantry.js infantryDown)
   B.dmgIn += out; if(out > 0) fortBossFlash(B.look); return out; }
 function mark(B, t, col, now){ if(now < B.hitTxtAt) return; B.hitTxtAt = now + 0.7; const e = B.e; floatText(t, col, { x:e.pos.x, y:heightAt(e.pos.x, e.pos.z) + 3.2, z:e.pos.z }, 15, 'fx'); }
@@ -111,7 +118,7 @@ function plateGone(B, z, now, ux, uz){ fortBossAct(B.look, 'hit', now); const e 
   else { if(z === 'helmet') showBanner('MŨ SẮT VỠ — BẮN VÀO ĐẦU!', '#ffb04a'); stagger(B, now, C.stagger.plate); }
   sync(B); }
 function sync(B){ emit(C.cue.PLATE, B.fi, fortBossBits(B.pl, B.phase, B.st === 'stagger')); }
-function stagger(B, now, T){ if(B.st === 'dead') return; const was = B.st === 'stagger' ? B.until : 0; endAct(B); B.st = 'stagger'; B.until = Math.max(was, now + T); B.e.held = true; B.gap = Math.max(B.gap, now + T + 1); floatText('CHOÁNG!', '#9be0ff', { x:B.e.pos.x, y:heightAt(B.e.pos.x, B.e.pos.z) + 3, z:B.e.pos.z }, 18, 'boss'); }
+function stagger(B, now, T){ if(B.st === 'dead' || now < (B.stagCd || 0)) return; B.stagCd = now + T + BAL.bossFight.staggerCd;   /* BAL 24 one stagger, then a breather before the next */ const was = B.st === 'stagger' ? B.until : 0; endAct(B); B.st = 'stagger'; B.until = Math.max(was, now + T); B.e.held = true; B.gap = Math.max(B.gap, now + T + 1); floatText('CHOÁNG!', '#9be0ff', { x:B.e.pos.x, y:heightAt(B.e.pos.x, B.e.pos.z) + 3, z:B.e.pos.z }, 18, 'boss'); }
 function endAct(B){ B.act = null; laser(B, false); }
 // ---- once a frame in battle (game/loop.js) ----
 export function updateFortBoss(dt, now){ fortBossLookTick(dt); fortBossCorpseTick(dt); preload(); if(!FBOSS.list.length) return;

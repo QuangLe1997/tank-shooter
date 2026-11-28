@@ -2461,17 +2461,20 @@ export const BOT = { think:20, sightK:1.5, eye:1.45, losEvery:0.25, losPerTick:2
 //     BAL.hold.d m off — when the director's pressure is under lowP (a fight already on is left alone).
 //   infil (BAL 21, campaign/sector-goals.js, director.js infilHold): in an infiltration the waves wait waveT s after the alarm and the enemy's rounds are × spreadK wide (night: they search more than they aim).
 //   mates.share / lo / hi (BAL 23, actors/fireteam.js): the squad's hits × (his share of the kills ÷ share), held to lo…hi — a player who kills little gets a squad that pins more.
+//   mates.bossK, bossFight (BAL 24, campaign/fort-boss.js): the squad's hits on a fort's boss count bossK (they pin him, he is the player's); after a stagger none for staggerCd s;
+//     a burst over a bucket refilled at his maxHp / burst.t per s (at most burst.max) is turned — sparks and GIÁP CHẶN; FBOSS.list[i].src: his health by player / pBlast / squad / blast.
 //   hold (BAL 14, campaign/sectors.js): the stuck truck's hold has three beats — at the shares `at` of the hold, n squads come from in front of him / his sides, d m off.
 export const BAL = { fair:{ on:true, every:0.1, r:95, fireT:1.2, maxN:6, size:30, margin:26, color:'#ff3b2b', spreadK:3.2, onT:0.5, warnT:2,
     rear:{ on:!(typeof location !== 'undefined' && /[?&]norear\b/.test(location.search)), ang:2.09, r:60, grace:1.6, graceK:8, k:4, beepGap:3 } },
   pursuit:{ limp:0.4, stopDmg:55, stopT:2.5 },
   spawn:{ on:true, w:3.5, l:12 }, score:{ kill:100, elite:2, heavy:3, boss:10, team:0.25, mineT:3, comboMax:2, goal:1000 },
-  mates:{ dmgK:0.2, share:0.45, lo:0.3, hi:2.2 },
+  mates:{ dmgK:0.2, share:0.45, lo:0.3, hi:2.2, bossK:0.25 },
   start:{ first:45, t:15, spreadK:4 }, surp:{ ambushMax:1, sectorQuiet:20 }, medal:{ toastFrom:2 },
   boss:{ revealT:12, arenaR:16 },
   rescue:{ near:45, minT:50, backOut:0.3, innerK:0.2 },
   beats:{ on:true, at:[30, 60, 95], n:[1, 1, 2], lowP:0.2 },
   infil:{ waveT:10, spreadK:2.2 },
+  bossFight:{ staggerCd:6, burst:{ on:true, t:90, max:0.08 } },
   hold:{ on:true, at:[0.12, 0.45, 0.78], n:[1, 2, 2], d:[40, 55], say:['SCH: Chúng đã thấy xe — tốp đầu đang tới!', 'SCH: Chúng dồn lên hai hướng — giữ vòng tròn!', 'SCH: Đợt cuối, đông nhất — cầm cự, xe sắp ra!'] } };
 
 // Z107 FLATTER BATTLEFIELD — mostly level ground so the tank drives freely: only a handful of big rolling hills, very few old craters,
