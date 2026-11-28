@@ -4118,11 +4118,14 @@ export const MIXER = { v:1,
   // CROSS-RULES (src/data/mixer-math.js rules): thresholds
   rules:{ hardStingy:{ diff:75, bounty:30 }, denseLull:{ density:75, lull:0.85 }, speedDense:{ speed:75, density:70, lull:0.8 }, longTypes:{ min:15, types:3 }, nightMarks:{ aim:70 },
     unfair:{ aware:80, aim:80, density:70, aimCap:75 }, mateGap:25, ttk:{ budget:2.2 }, effClock:2.2 },
-  // SCORING (first-principles, to be calibrated — tank-shooter-audit/mixer-mapping.md §6): neutral = level 3, every param at 50
-  score:{ ref:{ stage:3, ttk:0.55, kpm:6, waveMin:1.25, bossMin:2, transitMin:0.4 }, typeMin:{ hold:3, sabotage:4.5, boss:4, rescue:4.5, breach:4, infiltrate:4.5, pursuit:3.5 },
+  // SCORING (first-principles — tank-shooter-audit/mixer-mapping.md §6): neutral = level 3, every param at 50. BOT 3 calibrated by the fighting bot (tools/calib.mjs, 13 battles at
+  //   'average', ≤ 6 min each): diffK 20 → 12, intK 24 → 16 (measured hardness / pressure spread less than predicted: least squares said 7.7 / 14.3, taken part way — one run a spec,
+  //   and the bot is blind to night and fog), kpm 6 → 5.8 (his own kills a minute), typeMin hold 3 → 2 and sabotage 4.5 → 3.2 (measured 1.5 from 6 holds won, 1.8 from 3
+  //   sabotages — taken part way: a bot is quicker at a target than a player, and MIXER.rules.longTypes still has to see its 15 min chains) — the rest unmeasured
+  score:{ ref:{ stage:3, ttk:0.55, kpm:5.8, waveMin:1.25, bossMin:2, transitMin:0.4 }, typeMin:{ hold:2, sabotage:3.2, boss:4, rescue:4.5, breach:4, infiltrate:4.5, pursuit:3.5 },
     // MIX 7 THE AGENT'S GATE (tools/spec.mjs check · mixerCheck): a "good" battle — these floors, the asked difficulty / minutes within tol (spec.target), none of the hard warnings
     good:{ appeal:65, fairness:70, joy:50, variety:35, diffTol:10, minTol:0.25, intTol:15, hard:['grind', 'unfair', 'unreadable', 'hot', 'flat', 'short', 'long'] },
-    diffK:20, intK:24, warn:{ flat:40, grind:{ diff:85, joy:30 }, unreadable:75, unfair:45, short:4, long:30, samey:25, hot:{ int:85, fair:50 } } },
+    diffK:12, intK:16, warn:{ flat:40, grind:{ diff:85, joy:30 }, unreadable:75, unfair:45, short:4, long:30, samey:25, hot:{ int:85, fair:50 } } },
   // the mixer battle's own words (campaign/mixer.js: the briefing, the radio, the result card — never in the aim zone)
   say:{ op:'TRẬN TỰ DỰNG', kick:'TRẬN TỰ DỰNG', won:'THẮNG TRẬN', lost:'THẤT THỦ', again:'ĐÁNH LẠI', desk:'VỀ BÀN TRỘN', why:'Dự báo: độ khó {d} · khoảng {m} phút',
     brief:'Trận dựng từ bàn trộn — dự báo độ khó {d}, độ căng {i}, khoảng {m} phút.', obj:'Hạ tướng địch', objSect:'Chiếm từng khu, tới khu cuối',
