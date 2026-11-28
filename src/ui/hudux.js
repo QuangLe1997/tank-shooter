@@ -5,7 +5,7 @@
 //   · tips only in a lull and at most perBattle a battle (uxTipOk); the leaderboard's test names (uxBoardHidden) and a test run never posting (uxDevRun);
 //   · CHƠI NGAY = one click to the next fort (uxPlayNow), the briefing then goes on by itself (uxQuickGo).
 import { HUDUX } from '../../config.js';
-import { BIOME, CQ, DIR, MOBILE, PROFILE, S, SECT, SGOAL, _tipOpen, closeTip, enemies, heightAt, ncHit, worldToScreen, battleTitle, biomeVi, conqLaunch, conqStore, escapeHtml, sectorStoryRadio } from '../hub.js';
+import { BIOME, CQ, DIR, MOBILE, PROFILE, S, SECT, SGOAL, _tipOpen, closeTip, enemies, heightAt, ncHit, worldToScreen, battleTitle, biomeVi, conqLaunch, conqStore, escapeHtml, sectorStoryRadio, sectorGoalPos } from '../hub.js';
 
 export const UX = { hitAt:0, hp0:0, tipChk:0, tipOk:false, tipLull:false, k:0, map:null, tips:0, runId:null, notes:[], quick:false, dropped:0, capped:0, iv:0 };
 const PLAY = new Set(['playing', 'countdown', 'transit', 'dying', 'tip']);
@@ -73,7 +73,7 @@ function goalEl(){ if(_gEl && _gEl.isConnected) return _gEl; const d = _gEl = do
   d.innerHTML = '<s class="hg-p"></s><s class="hg-p hg-p2"></s><i class="hg-d"></i><b class="hg-m"></b><em class="hg-a"></em>'; document.body.appendChild(d); d._m = d.children[3]; d._a = d.children[4]; d._t = ''; d._k = ''; d._pt = 0; d._pd = 1e9; return d; }
 // HUDUX 6 a ping (two rings, 0.6 s): restarted by toggling the class
 function goalPing(d){ d.classList.remove('ping'); void d.offsetWidth; d.classList.add('ping'); }
-export function uxGoalAt(){ const L = SGOAL.marks; if(!L) return null; for(let i = 0; i < L.length; i++){ const M = L[i]; if(M && M.badge && M.badge.visible){ if(M._hk !== M.icon){ M._hk = M.icon; const c = /#[0-9a-f]{6}$/i.exec(M.icon || ''); M._hc = c ? c[0] : '#ffd27a'; } _ga.x = M.badge.position.x; _ga.z = M.badge.position.z; _ga.col = M._hc; _ga.i = i; return _ga; } } return null; }
+export function uxGoalAt(){ const L = SGOAL.marks; if(!L) return null; for(let i = 0; i < L.length; i++){ const M = L[i]; if(M && M.badge && M.badge.visible){ if(M._hk !== M.icon){ M._hk = M.icon; const c = /#[0-9a-f]{6}$/i.exec(M.icon || ''); M._hc = c ? c[0] : '#ffd27a'; } _ga.x = M.badge.position.x; _ga.z = M.badge.position.z; _ga.col = M._hc; _ga.i = i; const q = sectorGoalPos(); if(q){ _ga.x = q.x; _ga.z = q.z; } return _ga; } } return null; }   // BAL 27 the sector's live goal (hostage → evac, gate → yard, the arena)
 export function uxGoalTick(){ if(typeof document === 'undefined' || !HUDUX.goal.on) return; const d = goalEl(), p = S.player, g = S.mode === 'playing' && p && SECT.on ? uxGoalAt() : null;
   if(!g){ if(!d.classList.contains('hidden')) d.classList.add('hidden'); return; } const G = HUDUX.goal, F = MOBILE ? G.touch : G.desk, w = innerWidth, h = innerHeight;
   _gv.x = g.x; _gv.z = g.z; _gv.y = heightAt(g.x, g.z) + G.y; const s = worldToScreen(_gv), dist = Math.hypot(g.x - p.pos.x, g.z - p.pos.z);

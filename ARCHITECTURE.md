@@ -53,7 +53,7 @@ tools/
 test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 ```
 
-### 2.1 Danh mục module (334 module theo thứ tự hub · 35.844 dòng)
+### 2.1 Danh mục module (334 module theo thứ tự hub · 35.872 dòng)
 
 <!-- MODULES:BEGIN (npm run modmap) -->
 | # | Module | Dòng | Nội dung |
@@ -303,8 +303,8 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 126 | `src/campaign/entries.js` | 53 | AI 2 NOBODY POPS INTO EXISTENCE. Every enemy soldier raised during a battle comes onto the field by a way th… |
 | 127 | `src/campaign/side-missions.js` | 217 | EVENT 1 SIDE MISSIONS IN THE MIDDLE OF A FIGHT (config.js SIDEMISSION): when the director has room for more,… |
 | 128 | `src/campaign/big-events.js` | 198 | EVENT 2 BIG BATTLEFIELD EVENTS (config.js BIGEVENT): now and then the battle itself does something big — dra… |
-| 133 | `src/campaign/operations.js` | 125 | Z83 · CAMPAIGN OPERATIONS — named operation per stage: briefing, radio chatter, scripted waves and a high-va… |
-| 158 | `src/campaign/waves.js` | 110 | WAVES: difficulty / NG+ loop multipliers, wave queue per stage, random wave events, edge spawn points |
+| 133 | `src/campaign/operations.js` | 126 | Z83 · CAMPAIGN OPERATIONS — named operation per stage: briefing, radio chatter, scripted waves and a high-va… |
+| 158 | `src/campaign/waves.js` | 111 | WAVES: difficulty / NG+ loop multipliers, wave queue per stage, random wave events, edge spawn points |
 | 159 | `src/campaign/boss.js` | 41 | THE STAGE'S GENERAL (no-tanks: Z96 the super-heavy, its weak points, armour arcs, phases, shield pylons, min… |
 | 202 | `src/campaign/soldier-war.js` | 24 | Z309 A SOLDIER'S WAR: the waves are men — riflemen and RPG teams, squads, troop helicopters dropping more me… |
 | 209 | `src/campaign/general-duel.js` | 84 | Z353 THE GENERAL ON FOOT (no-tanks: the stage's boss fight): the general waits in his citadel and takes the … |
@@ -316,9 +316,9 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 308 | `src/campaign/night-defence.js` | 192 | MODE 1 NIGHT DEFENCE ("THỦ ĐÊM", config NIGHTDEF; the run kit: campaign/mode-run.js; its arithmetic: data/mo… |
 | 309 | `src/campaign/daily.js` | 84 | MODE 2 THE DAILY CHALLENGE ("THỬ THÁCH HÔM NAY", config DAILY; the run kit: campaign/mode-run.js; the genera… |
 | 310 | `src/campaign/conquest.js` | 172 | CONQ 1 CHINH PHẠT 10 THÀNH (config CONQUEST; the road on the battle setup: ui/conquest-map.js). The campaign… |
-| 312 | `src/campaign/sectors.js` | 261 | SECTOR 1 A LONG BATTLE IS A CHAIN OF SECTORS (config.js SECTOR · the rail and the transit's overlay: ui/sect… |
+| 312 | `src/campaign/sectors.js` | 266 | SECTOR 1 A LONG BATTLE IS A CHAIN OF SECTORS (config.js SECTOR · the rail and the transit's overlay: ui/sect… |
 | 313 | `src/campaign/mixer.js` | 83 | MIX 1 composeBattle(spec): ONE BATTLE FROM A BattleSpec (the arithmetic: data/mixer-math.js · the numbers: c… |
-| 315 | `src/campaign/sector-goals.js` | 200 | SECTOR 2 THE FOUR NEW SECTOR MISSIONS (config.js SECTOR.types · the run and its flow: campaign/sectors.js). … |
+| 315 | `src/campaign/sector-goals.js` | 221 | SECTOR 2 THE FOUR NEW SECTOR MISSIONS (config.js SECTOR.types · the run and its flow: campaign/sectors.js). … |
 | 316 | `src/campaign/sector-route.js` | 86 | SECTOR 4 THE ROUTE OF A LONG BATTLE (config.js SECROUTE · the run itself: campaign/sectors.js · the card, th… |
 | 317 | `src/campaign/conq-story.js` | 43 | SECTOR 6 THE CONQUEST'S STORY, FORT BY FORT (config.js CONQSTORY · text only). A fort's battle is a sector r… |
 | 318 | `src/campaign/tyrant.js` | 37 | SECTOR 6 BẠO CHÚA, THE LAST FORT'S GENERAL (config.js CONQSTORY.tyrant). He is the citadel's boss of campaig… |
