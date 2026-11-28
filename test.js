@@ -3288,6 +3288,15 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { BAL:Q, SECTOR:SE, DIRECTOR:D }=await import('./config.js'), sg=R('src/campaign/sector-goals.js'), dr=R('src/campaign/director.js');
   const fb=R('src/campaign/fort-boss.js'); ok(Q.bossFight.staggerCd>=3 && Q.bossFight.burst.t>=30 && Q.bossFight.burst.max>0 && Q.bossFight.burst.max<0.3 && /now < \(B\.stagCd \|\| 0\)/.test(fb) && /'GIÁP CHẶN'/.test(fb) && /B\.src\[src\] \+= out/.test(fb),
     'BAL 24: a stagger then ' + Q.bossFight.staggerCd + ' s of none; a burst over his armour turned (shown), the steady fire never'); }
+// HUDUX 5 the critic's round 3: an on-screen goal marker, bars behind walls, the world stops under the ending, CHƠI NGAY → gun in hand fast, no caption over the pause
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { HUDUX:U }=await import('./config.js'), ux=R('src/ui/hudux.js'), css=R('css/hudux.css');
+  ok(U.goal.on && U.goal.desk.top>=60 && U.goal.touch.left>=40 && U.goal.near>0 && /export function uxGoalTick\(\)/.test(ux) && /SGOAL\.marks/.test(ux) && /ncHit\(x - 24/.test(ux) && /uxGoalTick\(\);/.test(R('src/ui/squad-hud.js')) && /#huxGoal\.tick \.hg-m\{display:none;\}/.test(css),
+    'HUDUX 5: a goal marker pinned over the sector\'s goal, held in the safe frame with an arrow when off screen, a wordless tick inside the aim zone');
+  ok(/depthTest:true,depthWrite:false\}\), cap\);   \/\/ HUDUX 5/.test(R('src/actors/soldiers.js')) && /S\.mode = 'gameover'; S\.firing = false; try\{ medalHush\(\); \}catch\(e\)\{\}/.test(R('src/campaign/conq-story.js')), 'HUDUX 5: health bars are hidden by walls; the world stops under the war\'s ending');
+  ok(U.opening.cards===1 && U.opening.cardT<=3.6 && U.opening.radioGap>0 && /HUDUX\.opening\.cards/.test(R('src/campaign/sectors.js')) && /uxStoryRest\(tr\.lines, tr\.k, SECT\.seq\)/.test(R('src/campaign/sectors.js')) && /\|\| UX\.quick;/.test(R('src/game/intro.js')),
+    'HUDUX 5: CHƠI NGAY skips the tour; a fort opens on one story card, the rest on the radio while he fights');
+  ok(/html body:not\(\.hux-play\) #voiceSub#voiceSub,html body:not\(\.hux-play\) #radio#radio\{display:none!important;\}/.test(css) && /q\.cap >= 10 \? Math\.max\(0, Math\.min\(9, q\.sel \| 0\)\)/.test(ux) && /'Đánh lại '/.test(R('src/ui/conquest-map.js')),
+    'HUDUX 5: no battle caption over the pause or a menu; all ten forts taken, CHƠI NGAY replays the fort last picked'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

@@ -108,7 +108,7 @@ html body #secTransit .st-story{align-items:flex-end!important;padding-bottom:ma
 #br-brief .hux-pts li::marker{color:var(--k-acc,#ffae34);}
 /* the top edge's note ("KHU 1 · NGOẠI VI", a fort's alarm): under the score box, readable — it sat at y 0, 9 px, cut by the screen's edge */
 html body #edgeNote#edgeNote{top:calc(env(safe-area-inset-top,0px) + 104px)!important;font-size:12px!important;background:rgba(9,11,8,.6);padding:3px 9px;}
-html body.touch #edgeNote#edgeNote{top:calc(env(safe-area-inset-top,0px) + 70px)!important;font-size:11px!important;}
+html body.touch #edgeNote#edgeNote{top:calc(env(safe-area-inset-top,0px) + 48px)!important;left:60%!important;font-size:11px!important;max-width:34vw;overflow:hidden;text-overflow:ellipsis;}   /* HUDUX 5 between the sector rail and the aim zone, clear of the gun strip (it sat on it) */
 /* the phone: while the ride chip (LÊN XE / GỌI XE, top-left) shows, the edge stack's lines go under it (they were written over each other) */
 html body.touch:has(#rideCall[style*="flex"]) #ncFeed#ncFeed{top:calc(max(8px,env(safe-area-inset-top)) + 182px)!important;}
 
@@ -130,3 +130,19 @@ body.hux-nostage #topbar .cell.stage{display:none!important;}
 #voiceSub.hux-subhold{visibility:hidden!important;}   /* HUDUX 4 waiting for the radio's line to end (ui/hudux.js subQueue) */
 /* HUDUX 4 the phone: a loot card (top-left, ~3 s) and the ride chip share the corner — the chip steps aside while the card shows (they were written over each other) */
 html body.touch:has(#lootToast.on) #rideCall#rideCall{visibility:hidden!important;}
+
+/* ---- HUDUX 5 the goal marker (ui/hudux.js uxGoalTick): a small diamond in the goal's colour with the metres under it; on the safe frame's edge an arrow toward it;
+        inside the aim zone (or within a few metres) only a tiny tick — no words over the aim ---- */
+#huxGoal{position:fixed;left:0;top:0;z-index:14;pointer-events:none;will-change:transform;--gc:#ffd27a;}
+#huxGoal.hidden{display:none;}
+#huxGoal .hg-d{position:absolute;left:-7px;top:-7px;width:12px;height:12px;transform:rotate(45deg);border:2px solid var(--gc);background:rgba(9,11,8,.55);box-shadow:0 0 0 1px rgba(0,0,0,.55),0 0 8px color-mix(in srgb,var(--gc) 55%,transparent);}
+#huxGoal .hg-m{position:absolute;left:50%;top:10px;transform:translateX(-50%);white-space:nowrap;font:700 12px/1 var(--k-mono,'Share Tech Mono',monospace);color:#f2eedc;text-shadow:0 1px 2px #000,0 0 5px rgba(0,0,0,.8);letter-spacing:.04em;}
+#huxGoal .hg-a{display:none;position:absolute;left:-15px;top:-15px;width:30px;height:30px;}
+#huxGoal .hg-a::after{content:'';position:absolute;right:-2px;top:50%;margin-top:-5px;border-left:9px solid var(--gc);border-top:5px solid transparent;border-bottom:5px solid transparent;filter:drop-shadow(0 0 2px #000);}
+#huxGoal.off .hg-a{display:block;}
+#huxGoal.tick .hg-d{left:-4px;top:-4px;width:6px;height:6px;border-width:1.5px;box-shadow:0 0 0 1px rgba(0,0,0,.5);}
+#huxGoal.tick .hg-m{display:none;}
+body.touch #huxGoal .hg-m{font-size:11px;}
+
+/* ---- HUDUX 5 no battle caption over the pause screen or a menu (round 1 forced #voiceSub to show on a phone; it must still go when the battle is not on screen) ---- */
+html body:not(.hux-play) #voiceSub#voiceSub,html body:not(.hux-play) #radio#radio{display:none!important;}

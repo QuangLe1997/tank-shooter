@@ -1,7 +1,7 @@
 // ui/squad-hud.js — Z220 TỔ BỘ BINH panel (desktop HUD, bottom-left): the squad order in force ([U] cycles it), how the squad reads the fight
 //   (press / hold / fall back), and one tile per man — his kit, his health, and what he is doing right now (colour = task). Rebuilt only when
 //   something visible changes (4×/s check).
-import { FT, FTSQ, MOBILE, S, squadOrderLabel } from '../hub.js';
+import { FT, FTSQ, MOBILE, S, squadOrderLabel, uxGoalTick } from '../hub.js';
 
 const ROLE={ rifle:'BB', mg:'ĐL', mortar:'CỐI', sapper:'CB', medic:'YT' };   // (Z351 the soldier's own medic)
 const TASK={ fight:'f', cover:'c', evade:'c', fallback:'r', post:'g', form:'g', advance:'a', order:'a', muster:'a', assault:'a', fetch:'l', rally:'l' };
@@ -9,6 +9,7 @@ const POST={ advance:['ÁP SÁT','adv'], hold:['GIỮ THẾ','hold'], fallback:[
 let _el=null, _at=0, _sig='';
 function taskOf(a){ if(a.healing && a.task==='fallback') return 'r'; if(a.goalKind==='form') return 'g'; return TASK[a.task] || 'j'; }
 export function updateSquadHud(now){
+  uxGoalTick();   // HUDUX 5 the goal marker, every frame (ui/hudux.js)
   if(!_el){ _el=document.getElementById('sqHud'); if(!_el) return; }
   if(now<_at) return; _at=now+0.25;
   const show = S.mode==='playing' && FT.length>0 && !MOBILE;

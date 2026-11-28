@@ -278,8 +278,8 @@ export const _sV=new THREE.Vector3();
 //   into two instanced meshes (the backs, then the fills on top, drawn over everything as before).
 const BARS=[], BAR={ bg:null, fill:null, cap:0 }, _bf=new THREE.Matrix4();
 function barMeshes(cap){ for(const m of [BAR.bg, BAR.fill]) if(m){ if(m.parent) m.parent.remove(m); m.dispose(); }
-  const bg=new THREE.InstancedMesh(new THREE.PlaneGeometry(1.1,0.27), new THREE.MeshBasicMaterial({color:0x080b05,transparent:true,opacity:0.86,depthTest:false,depthWrite:false}), cap);   // HUDUX 4 a dark frame round the fill (it read as a loose stripe)
-  const fill=new THREE.InstancedMesh(new THREE.PlaneGeometry(1.0,0.15), new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,depthTest:false,depthWrite:false}), cap);
+  const bg=new THREE.InstancedMesh(new THREE.PlaneGeometry(1.1,0.27), new THREE.MeshBasicMaterial({color:0x080b05,transparent:true,opacity:0.86,depthTest:true,depthWrite:false}), cap);   // HUDUX 5 depth-tested: a wall hides it (it floated through walls at night)   // HUDUX 4 a dark frame round the fill (it read as a loose stripe)
+  const fill=new THREE.InstancedMesh(new THREE.PlaneGeometry(1.0,0.15), new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,depthTest:true,depthWrite:false}), cap);
   bg.renderOrder=20; fill.renderOrder=21; for(const m of [bg, fill]){ m.frustumCulled=false; m.count=0; m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); }
   fill.setColorAt(0, new THREE.Color()); fill.instanceColor.setUsage(THREE.DynamicDrawUsage); BAR.bg=bg; BAR.fill=fill; BAR.cap=cap; }
 export function makeSoldierBar(){   // tiny billboarded HP bar above each soldier's head

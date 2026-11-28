@@ -5,7 +5,7 @@
 //   once the fort falls (before the treasure screen); the last fort ends on THE ENDING (cqEnding): the epilogue paragraph by paragraph, the credits, then the
 //   conquest map with its ten flags. The five-operation campaign story (STORY.stages) is untouched: this speaks only in a conquest battle.
 import { CONQSTORY, STORY } from '../../config.js';
-import { escapeHtml, openBattleSetup, quitToMenu, sectorStoryCard, sfx, storyCue } from '../hub.js';
+import { S, escapeHtml, medalHush, openBattleSetup, quitToMenu, sectorStoryCard, sfx, storyCue } from '../hub.js';
 
 const C = CONQSTORY, keys = c => c ? [c.type + ':' + c.obj, c.type] : [];
 const lineFor = (map, c) => { if(!map) return null; for(const k of keys(c)) if(map[k]) return map[k]; return null; };
@@ -30,6 +30,7 @@ export function cqEnding(){ if(typeof document === 'undefined') return false; co
   d.innerHTML = '<div class="ce-in"><p class="ce-kick">CHINH PHẠT 10 THÀNH</p><h2 class="ce-ttl">' + escapeHtml(E.title) + '</h2><div class="ce-paras">' + E.paras.map(p => '<p>' + escapeHtml(p) + '</p>').join('') + '</div>' +
     '<div class="ce-roll">' + E.credits.map((t, k) => '<p' + (k ? '' : ' class="top"') + '>' + escapeHtml(t) + '</p>').join('') + '</div><p class="ce-hint">' + escapeHtml(E.skip) + '</p>' +
     '<button class="xb xb-pri ce-go hidden" data-pad>' + escapeHtml(E.go) + '</button></div>';
+  S.mode = 'gameover'; S.firing = false; try{ medalHush(); }catch(e){}   // HUDUX 5 the world stops behind the ending (it fought on 150 s: FPV, alarms, pickups)
   document.body.appendChild(d); const P = [...d.querySelectorAll('.ce-paras p')], roll = d.querySelector('.ce-roll'), go = d.querySelector('.ce-go'), hint = d.querySelector('.ce-hint'); let k = -1, t = 0;
   const next = () => { k++; if(k < P.length){ P.forEach((p, j) => p.classList.toggle('on', j === k)); P.forEach((p, j) => p.classList.toggle('past', j < k)); clearTimeout(t); t = setTimeout(next, E.paraT * 1000); return; }
     if(k === P.length){ d.classList.add('roll'); roll.classList.add('on'); clearTimeout(t); t = setTimeout(next, 6000); return; }

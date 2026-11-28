@@ -3811,6 +3811,10 @@ export const NOCENTER = {
 //   reload = the reload dial over the soldier: px on the screen (constant whatever the camera distance), no number
 //   bars = an enemy's health bar only while he was hit in the last `hold` s or is under the crosshair; HUDUX 4 never on a man down, never within `near` m of the lens
 //   beacon = HUDUX 4 the relic's shaft of light (loot/relic.js): k × its light, w × its width; between near[0] and near[1] m from him it fades to nearK (it was the brightest thing on screen)
+//   goal = HUDUX 5 the on-screen goal marker (ui/hudux.js uxGoalTick): a diamond + metres pinned over the sector's goal (its world mark: hostage, target, gate, general's
+//     arena, evac ring), held inside the screen's safe frame (px from each edge, desk / touch) with an arrow when off screen; a tiny tick, no words, inside the aim zone;
+//     closer than near m it is a tick too; y = m above the ground it points at
+//   opening = HUDUX 5 a fort's opening lines: the first `cards` as a card (cardT s each), the rest on the radio every radioGap s once he is fighting
 //   mark = a sector goal's world badge: at most px tall on the screen, faint while it is in the top band (y < top px: the score, the sector rail)
 //   board = the leaderboard: names that read as tests are not shown (rx, case-insensitive, the WHOLE trimmed name: a test word and maybe a number — HUDUX 4: "Q.Anh",
 //     "Demo Lâm", "Dev Nguyễn" are real names; a name of `minLen` characters or fewer too),
@@ -3824,6 +3828,8 @@ export const HUDUX = {
   bars:{ hold:3, near:7 },
   mark:{ px:36, top:96 },
   beacon:{ k:0.4, w:0.5, near:[20, 70], nearK:0.25 },
+  goal:{ on:true, desk:{ top:100, right:22, bottom:98, left:22 }, touch:{ top:64, right:96, bottom:70, left:96 }, near:5, y:2.4 },
+  opening:{ cards:1, cardT:2.6, radioGap:4.2 },
   board:{ rx:/^(qa|test|tester|bench|smoke|critic|bot|calib|perf|probe|debug|hudux)[\s_\-.#]*\d*$/i, minLen:1, query:/[?&](perf|bot|test|smoke|calib|critic|bench|nogov)\b/ },
   quickPlay:true };
 // DIET 1–3 resource diet (render/asset-diet.js, tools/asset-diet.mjs): KTX2 maps read compressed (ktx2: off = every texture reads its fallback picture),
