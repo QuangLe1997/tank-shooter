@@ -799,7 +799,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z323 no shader compiles once the fight is on: the countdown waits for a guarded compile; the burnt wreck keeps its model's own shader
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'), br=R('src/ui/briefing.js'), fw=R('src/fx/fire-wrecks.js');
-  ok(/function compileQuiet\(\)/.test(br) && /renderer\.properties\.get\(m\)\.currentProgram/.test(br) && /if\(!pr \|\| pr\.isReady\(\)\)/.test(br) && /if\(_warm && S\.cd-dt<=0\.05\)/.test(br) && !/compileAsync\(scene, camera\)/.test(br), 'the countdown holds until the stage shaders are compiled; the compile wait cannot throw or hang');
+  ok(/function compileQuiet\(\)/.test(br) && /renderer\.properties\.get\(m\)\.currentProgram/.test(br) && /if\(!pr \|\| pr\.isReady\(\)\)/.test(br) && /if\(\(_warm \|\| !_files\) && S\.cd-dt<=0\.05\)/.test(br) && !/compileAsync\(scene, camera\)/.test(br), 'the countdown holds until the stage shaders are compiled; the compile wait cannot throw or hang');
    }
 
 // Z324 the battle HUD: dialogue / cards / banners each switchable, see-through glass cards, a slim banner band, a compact reload ring
@@ -3232,6 +3232,10 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
 { const fs=await import('node:fs'), { PERF_BUDGET:PB }=await import('./config.js'), ad=fs.readFileSync('src/render/asset-diet.js','utf8'), br=fs.readFileSync('src/ui/briefing.js','utf8'), sc=fs.readFileSync('src/campaign/sectors.js','utf8');
   ok(typeof PB.load.fieldOnly==='boolean' && /INFL\.u\.set\(url, \{ n:1, ep \}\)/.test(ad) && /q\.ep === ep/.test(ad) && /dietFieldBusy\(\)\)\{ _goWait = 1; dietFieldIdle\(ASSETDIET\.late\.waitMs\)/.test(br) && /dietFieldIdle as dietIdle/.test(sc),
     'PERF 16: a load is tagged with the field it was asked for; the 3-2-1 and the transit wait only for this field\'s files (the catalogue preload no longer holds every start for late.waitMs)'); }
+// PERF 17 the 3-2-1 starts at once and holds on "1" until this field's files are in (as it does for the shaders)
+{ const fs=await import('node:fs'), { PERF_BUDGET:PB }=await import('./config.js'), br=fs.readFileSync('src/ui/briefing.js','utf8');
+  ok(typeof PB.load.overlap==='boolean' && /_files = !dietFieldBusy\(\); if\(!_files\)\{ dietFieldIdle\(ASSETDIET\.late\.waitMs\)\.then\(\(\) => \{ _files = true;/.test(br) && /if\(\(_warm \|\| !_files\) && S\.cd-dt<=0\.05\)/.test(br),
+    'PERF 17: the countdown runs over the field\'s files (bounded by ASSETDIET.late.waitMs) and holds on "1" until they are in'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

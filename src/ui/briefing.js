@@ -1,5 +1,6 @@
 // ui/briefing.js — STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin; XK-UI its back button: to the battle setup (a fresh launch from it) or home (asks mid-run)
 import { ASSETDIET, CONTRACTS, DMG_TYPE, LOOT_REAL, OBJECTIVES, OBJ_REWARD } from '../../config.js';
+import { PERF_BUDGET } from '../../config.js';   // PERF 17 (the 3-2-1 over the field's files)
 import { setLootIcon, bladeChip, modeBrief, bigEventsReset, sideMissionsReset, directorReset, opTitle, placeLine, capVi, askConfirm, quitToMenu, openBattleSetup, BS, BIOME, GUNS, PROFILE, S, WAVE, biomeVi, bossForStage, camera, coachFirstRun, conditionsText, escapeHtml, floatText, gunPicEl, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, renderer, resetEnvEvents, resetSurprises, saveProfile, sayVoice, scene, setFocus, setIcon, sfx, show, spawnRelic, storyBrief, storyReset, tapEl, voiceStage, spellNow, briefTeam, nemBrief, droneWarReset, ammoHud, coopActive, coopGate } from '../hub.js';
 import { blendScene, compileFor, fightWarm } from '../hub.js';
 import { dietFieldBusy, dietFieldIdle } from '../hub.js';   // PERF 16 (render/asset-diet.js)   // SPLIT 2 (render/fight-warm.js) · DIET 8 (render/blend-in.js)
@@ -53,9 +54,10 @@ export function chooseContract(c, quick){
 }
 // Z136 COUNTDOWN: after XUẤT KÍCH the world stays frozen for 3 · 2 · 1 (camera already on the battlefield, nobody moves or shoots), then the fight goes live
 let _go=null, _cdN=0;
-const _graded = new Set(); let _goWait = 0;   // DIET 10 0 · 1 waiting for the model files still loading · 2 done waiting
+const _graded = new Set(); let _goWait = 0, _files = true;   // DIET 10 0 · 1 waiting for the model files still loading · 2 done waiting
 export function beginStage(c, ctx){
-  if(_goWait === 1) return; if(_goWait === 0 && dietFieldBusy()){ _goWait = 1; dietFieldIdle(ASSETDIET.late.waitMs).then(() => { _goWait = 2; beginStage(c, ctx); }); return; } _goWait = 0;   // DIET 10 the 3-2-1 starts once the field's model files are in (≤ late.waitMs): what lands after GO is compiled and uploaded in the fight
+  if(_goWait === 0 && PERF_BUDGET.load.overlap){ _files = !dietFieldBusy(); if(!_files){ dietFieldIdle(ASSETDIET.late.waitMs).then(() => { _files = true; if(S.mode === 'countdown') prewarmStage(); }); } }   // PERF 17 the 3-2-1 runs while the field's files come in (it holds on "1" for the rest, as for the shaders)
+  else if(_goWait === 1) return; else if(_goWait === 0 && dietFieldBusy()){ _goWait = 1; dietFieldIdle(ASSETDIET.late.waitMs).then(() => { _goWait = 2; beginStage(c, ctx); }); return; } _goWait = 0;   // DIET 10 the 3-2-1 starts once the field's model files are in (≤ late.waitMs): what lands after GO is compiled and uploaded in the fight
   if(!_graded.has(S.runId + ':' + S.stage)){ _graded.add(S.runId + ':' + S.stage); try{ blendScene(scene); }catch(e){} }   // DIET 8 the field's materials take their grading variant (blendIn3) BEFORE the 3-2-1 compiles them: a load fast enough to reach GO before the floor's photo (blendWhenReady) had them recompiled in the fight's first second — 33 programs, one 0.45–0.6 s frame; the later grading only moves uniforms
   S.mode='countdown'; S.cd=3.05; _go={ c, ctx }; _cdN=0; S.firing=false; prewarmStage(); fightWarm(); voiceStage();   // Z168 the troops / riders / roof gun just deployed: compile them during the 3-2-1
   { const sub=document.getElementById('cdSub'); if(sub){ const bt=battleTitle(); sub.innerHTML=bt ? '<div>'+escapeHtml(bt)+'</div>' : ''; sub.classList.toggle('on', !!bt); } }   // HUDUX one name for the battle (ui/load-veil.js battleTitle); the conditions are on the briefing, not over the field   // Z138 the mission line rides under the numbers (NO-TANKS 8: the intro already named the place)
@@ -71,7 +73,7 @@ function goLive(){ const g=_go||{ c:S.contract||{}, ctx:{} }, c=g.c, ctx=g.ctx||
   const el=document.getElementById('countdown'); if(el){ el.textContent='XUẤT KÍCH!'; el.className='go show'; setTimeout(()=>{ if(el.textContent==='XUẤT KÍCH!') el.className=''; }, 900); }
   sfx('levelup'); }
 export function updateCountdown(dt){ const el=document.getElementById('countdown');
-  if(_warm && S.cd-dt<=0.05){ S.cd=0.05; _hold+=dt; if(_hold>0.5 && el && el.textContent!=='NẠP…'){ el.textContent='NẠP…'; el.className='show'; } return; }   // Z323 the shaders are still compiling: wait on "1" (then NẠP…) so the fight never starts mid-compile — the stutter when you first open fire
+  if((_warm || !_files) && S.cd-dt<=0.05){ S.cd=0.05; _hold+=dt; if(_hold>0.5 && el && el.textContent!=='NẠP…'){ el.textContent='NẠP…'; el.className='show'; } return; }   // Z323 the shaders are still compiling: wait on "1" (then NẠP…) so the fight never starts mid-compile — the stutter when you first open fire
   _hold=0; S.cd-=dt; const n=Math.max(0, Math.ceil(S.cd));
   if(n!==_cdN && n>0){ _cdN=n; if(el){ el.textContent=String(n); el.className=''; void el.offsetWidth; el.className='show'; } sfx('beep'); }
   if(S.cd<=0){ if(coopActive() && !coopGate()){ S.cd=0.02; if(el && el.textContent!=='CHỜ ĐỒNG ĐỘI…'){ el.textContent='CHỜ ĐỒNG ĐỘI…'; el.className='show'; } return; }   // COOP 4 the fight goes live on both pages together

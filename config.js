@@ -2502,14 +2502,15 @@ export const TROOPLOD = { on:!(typeof location !== 'undefined' && /[?&]notrooplo
 //   batch (render/static-batch.js) — every plain mesh that has min or more copies (same geometry, same material) is drawn as one instanced draw; the
 //     membership is looked at again every scan s; lod: a LOD's levels too (the LOD switched by the batch, once a frame). on:false (?nosbatch) = as before.
 //   load (render/asset-diet.js) — fieldOnly: the 3-2-1 and a sector's black wait only for the model files this field asked for (not the catalogue the boot
-//     keeps preloading behind it); false = every file on its way, as before.
+//     keeps preloading behind it); false = every file on its way, as before. overlap: the 3-2-1 starts at once and holds on "1" until those files are in
+//     (≤ ASSETDIET.late.waitMs from its start, as it holds for the shaders) — it used to start only after them, the field frozen and silent meanwhile.
 export const PERF_BUDGET = { frame:{ desktop:{ tris:2.5e6, calls:350, maxMs:50, startMs:33, loadS:8 }, phone:{ tris:0.9e6, calls:220, maxMs:50, startMs:40, loadS:10 } },
   fx:{ desktop:{ particles:3000, fire:2600, lights:4, screens:2 }, phone:{ particles:1500, fire:900, lights:2, screens:1 } },
   view:{ on:!(typeof location !== 'undefined' && /[?&]noperfview\b/.test(location.search)), far2:false, far2K:2.4, far2Min:110, far2Max:240, keep2:0.08, keepCut2:0.3, err2:0.06, cone:35, coneV:25, pad:2, turnStep:12, moveStep:6, fogK:1, phoneLite:true },
   cover:{ on:!(typeof location !== 'undefined' && /[?&]noperfcover\b/.test(location.search)), far:55, keep:0.25 },
   transit:{ prime:6, noDrawWarm:true, waitModels:true, afterPrimeMs:1500 },
   batch:{ on:!(typeof location !== 'undefined' && /[?&]nosbatch\b/.test(location.search)), min:2, scan:1.5, lod:true },
-  load:{ fieldOnly:true } };
+  load:{ fieldOnly:true, overlap:true } };
 // Z395 NEAR DETAIL (render/near-detail.js): the originals' sharp maps (assets/models/real/hd, tools/hd-maps.mjs) put on a model while the camera is within
 //   its reach — radius × rK m from its surface, at least min, at most at (each instance of an instanced mesh counts) — handed back past reach × out for hold s,
 //   or when maxKeys closer models hold theirs (GPU memory) · every: how often the nearest is measured (s) · maxInst: instances measured per mesh ·
