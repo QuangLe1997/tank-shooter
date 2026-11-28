@@ -3,7 +3,7 @@
 //   goes on out there — black smoke columns stand on the horizon over burning towns, gun flashes flicker along it, and jets scream across the sky.
 import * as THREE from 'three';
 import { ARENA, BIOME, MOBILE, REAL_CITY, S, SKY, buildBackdrop, farSites, plantForest, hillDetail, loadRealCity, realCityReady, realHorizon, scene, sectorize, sfx, smokeTex2, spawnPart, windowLights } from '../hub.js';
-import { REALCITY, SKYLINE, STONE } from '../../config.js';
+import { REALCITY, SKYLINE, STONE, VISLOOK } from '../../config.js';
 
 export const HZN = { g:null, cols:[], flashes:[], jets:[], jetAt:0, flashAt:0, smokeTex:null, glowTex:null };
 // per battlefield: [base colour, snow/highlight colour, shape kind, height (m)] — Z235 the green lands' ranges are forested blue-green, never the meadow's yellow-green
@@ -77,7 +77,11 @@ function mergeGeos(list){ let n=0; for(const g of list) n+=g.toNonIndexed().attr
   for(const g0 of list){ const g=g0.toNonIndexed(), p=g.attributes.position.array; out.set(p,o); o+=p.length; g.dispose(); g0.dispose(); }
   const g=new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(out,3)); return g; }
 export function clearHorizon(){ if(HZN.g){ scene.remove(HZN.g); HZN.g.traverse(o=>{ if(o.geometry) o.geometry.dispose(); if(o.material && !o.material.map) o.material.dispose(); }); } HZN.g=null; HZN.cols.length=0; HZN.flashes.length=0; }
-export function buildHorizon(b){ clearHorizon(); if(b.cave) return; texes(); const L=LOOK[b.name]||LOOK.DESERT, fogC=scene.fog.color.clone(), g=new THREE.Group(); HZN.g=g; scene.add(g);
+// VIS 5 at night the far ranges sink toward the night air (VISLOOK.horizon.night of the way to the fog's colour): dark silhouettes under the sky's
+//   glow, not a sunlit tan-purple saw-blade against the stars
+const _hn=new THREE.Color();
+function hznNight(L, fogC){ if(S.tod!=='night') return L; const k=VISLOOK.horizon.night, f=c=>_hn.setHex(c).lerp(fogC, k).getHex(); return [f(L[0]), f(L[1]), L[2], L[3]]; }
+export function buildHorizon(b){ clearHorizon(); if(b.cave) return; texes(); const fogC=scene.fog.color.clone(), L=hznNight(LOOK[b.name]||LOOK.DESERT, fogC), g=new THREE.Group(); HZN.g=g; scene.add(g);
   const R0=ARENA*1.55, kind=L[2], H=L[3]*(MOBILE?0.85:1);
   let SK=!MOBILE && SKYLINE.on && !/noscene/.test(location.search+location.hash) && SKYLINE.biomes[b.name]; if(typeof SK==='string') SK=SKYLINE.biomes[SK]; const real=!!(SK && SK.skyline);   // Z383 the scanned summits, forests, ruins and works on this horizon (desktop); real = they are its near skyline
   const rk = SK && SK.rings || (kind==='city'||kind==='stacks' ? 'hill' : kind);   // behind a skyline there are still hills (Z383 or the ranges the real horizon asks for)

@@ -1,7 +1,7 @@
 // world/atmosphere.js — Z97 VISIBLE SKY: a real gradient dome (zenith → horizon haze that melts into the fog), sun glow by day, moon + stars by night
 import * as THREE from 'three';
-import { ART_TONE, GROUNDED, LIGHT, BLIGHT, LOOK } from '../../config.js';
-import { ATMOS, CLOUD, MOBILE, S, SHADOW_EXT, SHADOW_MAP, SUN_DIR, TOD_ORDER, WX, ambient, applySkyPhoto, cloudTex, gradePass, hemi, renderer, scene, setNightLights, skyEnvTexture, sun, bloom } from '../hub.js';
+import { ART_TONE, GROUNDED, LIGHT, BLIGHT, LOOK, VISLOOK } from '../../config.js';
+import { ATMOS, CLOUD, MOBILE, S, SHADOW_EXT, SHADOW_MAP, SUN_DIR, TOD_ORDER, WX, ambient, applySkyPhoto, cloudTex, gradePass, hemi, renderer, scene, setNightLights, skyEnvTexture, sun, bloom, camera, heightAt } from '../hub.js';
 
 export function todFor(stage){ return TOD_ORDER[(Math.max(1,stage)-1)%TOD_ORDER.length]; }
 export function todAtmos(A, tod){
@@ -108,7 +108,8 @@ export function updateSkyMood(dt){ const u=SKY.material.uniforms, c=CLOUD.u.uClo
   const M=SKYMOOD.m; if(M.bolt && S.mode==='playing'){ SKYMOOD.boltT-=dt; if(SKYMOOD.boltT<=0){ SKYMOOD.boltT=M.bolt[0]+Math.random()*(M.bolt[1]-M.bolt[0]); u.cFlash.value=1; try{ WX.flash=Math.max(WX.flash, 0.35); }catch(e){} } } }
 export function setSky(A){ const u=SKY.material.uniforms; u.top.value.setHex(A.top); u.hor.value.copy(A._fogC||new THREE.Color(A.fog)); u.sunCol.value.setHex(A.sun); u.sunDir.value.copy(SUN_DIR); u.night.value=A.night?1:0; u.moonPh.value=0.5+Math.random()*2.2; }   // Z235 the moon's phase changes from battle to battle
 export function applyAtmosphere(b){
-  const A=todAtmos(ATMOS[b.name]||ATMOS.DESERT, S.tod||'day');
+  const A=todAtmos(ATMOS[b.name]||ATMOS.DESERT, S.tod||'day'), NS=nightSig(b.name, A);   // VIS 5 the battlefield's own night
+  if(NS){ A.sun=NS.moon[0]; A.sunI*=NS.moon[1]; A.top=NS.top; A.hor=NS.hor; A.fog=NS.fog[0]; A.fogD*=NS.fog[1]; A.hemiG=NS.hemi[1]; A.lift=NS.lift; A.gain=NS.gain; A.sh=NS.sh; A.hi=NS.hi; A.sat=NS.sat; A.exp*=NS.exp; }
   SUN_DIR.set(Math.cos(A.el)*Math.sin(A.az), Math.sin(A.el), Math.cos(A.el)*Math.cos(A.az)).normalize();
   scene.environment = skyEnvTexture(b.name, A); scene.environmentIntensity = 0.6;
   const fogC=new THREE.Color(A.fog); if(!A.night) fogC.lerp(new THREE.Color(A.top), LIGHT.fogBlue);   // Z244 distance turns faintly blue, never milky white   // Z235 aerial perspective: distance turns faintly blue                          // Z97 daylight haze is bright (aerial perspective), never a dark smog band
@@ -121,6 +122,7 @@ export function applyAtmosphere(b){
   renderer.toneMappingExposure = A.exp||1.08;
   hemi.intensity = A.night ? 0.85 : 0.72; scene.environmentIntensity = A.night ? 0.5 : 0.6;
   if(A.night){ hemi.color.setHex(0x44567e); ambient.color.setHex(0x7a8ab4); ambient.intensity=0.36; }   // moonlight fill — shadows stay blue-grey, never black
+  if(NS){ hemi.color.setHex(NS.hemi[0]); hemi.groundColor.setHex(NS.hemi[1]); ambient.color.setHex(NS.amb[0]); ambient.intensity=NS.amb[1]; }   // VIS 5 the light from below: lava, furnaces, torches
   u.vig.value = A.night ? 0.22 : 0.28;                                                                 // softer vignette (less eye strain)
   setSky(A);                                                                                           // Z97 visible sky dome matches the light
   SKY.visible=!A.cave;
@@ -136,10 +138,20 @@ export function applyAtmosphere(b){
       else { sun.intensity*=L.sunK; hemi.intensity*=dusk?L.duskHemiK:L.hemiK; ambient.intensity=dusk?L.duskAmbient:L.ambient; scene.environmentIntensity*=L.envK; } } }
   if(GROUNDED.on && GROUNDED.fill.on && !A.cave) groundedFill(A);   // LIGHT 1 the shade lit by a pale sky and the ground's warm bounce
   artTone(b.name, A); lookTone(b.name, A);
+  if(NS){ const g=gradePass.uniforms; g.shTint.value.set(...NS.sh); g.hiTint.value.set(...NS.hi); if(NS.cloud){ const u=SKY.material.uniforms; u.cLit.value.setHex(NS.cloud[0]); u.cDark.value.setHex(NS.cloud[1]); } }   // VIS 5 its split-tone and its clouds over the film's
   setNightLights(!!A.night);
   { const B=BLIGHT.bloom[A.night||A.cave ? 'night' : S.tod==='sunset' ? 'dusk' : 'day']; bloom.strength=B[0]; bloom.radius=B[1]; bloom.threshold=B[2]; }   // Z318 the battle lights bloom more in the dark
   try{ WX.base=null; }catch(e){}   // Z144 weather re-reads this fresh atmosphere as its base (at boot the weather module is not loaded yet)
 }
+// VIS 5 the flight between two sectors: the haze thins as the lens climbs (the ride over a foggy field was a white-out); the fog's own density is put back
+//   when it lands — and if the new field set its own fog meanwhile, that one is the base
+const TH={ on:false, d0:0, set:-1 };
+export function transitHaze(on){ const f=scene.fog; if(!f) return; const T=VISLOOK.transit;
+  if(!on){ if(TH.on){ TH.on=false; if(f.density===TH.set) f.density=TH.d0; } return; }
+  if(!TH.on || f.density!==TH.set){ TH.on=true; TH.d0=f.density; }
+  const y=camera.position.y-heightAt(camera.position.x, camera.position.z), k=Math.max(T.min, 1-Math.max(0, y-T.y0)/T.span); f.density=TH.set=TH.d0*k; }
+// VIS 5 the night's signature for this battlefield (config VISLOOK.night), or null (by day, underground, or a land with the plain moonlit night)
+export const nightSig = (name, A) => (A && A.night && !A.cave && VISLOOK.night[name]) || null;
 // LIGHT 1 SKY FILL AND GROUND BOUNCE: a clear sky lights the shade pale blue, not cobalt (its zenith colour greyed toward the horizon's), and the
 //   sunlit ground throws its own colour up into everything's underside — the hemisphere's ground colour = the battlefield's ground × the sun's colour
 //   × bounce; hemiK × the sky fill (the shade side of a man, the shadowed sand), envK × the sky's reflections, expK × the exposure (by day)

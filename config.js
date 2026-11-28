@@ -4182,3 +4182,45 @@ export const FEELFX = { on:true,
   music:{ lands:{ DESERT:[0, 96, 0, 'sawtooth'], RUINS:[-2, 88, 2, 'triangle'], ARCTIC:[-5, 84, 2, 'triangle'], FOUNDRY:[1, 104, 1, 'square'], CITADEL:[-3, 92, 1, 'sawtooth'],
       MEADOW:[2, 90, 2, 'triangle'], CITY:[3, 100, 1, 'square'], SAVANNA:[-1, 98, 0, 'sawtooth'], VOLCANO:[1, 108, 0, 'square'], QUARRY:[-4, 94, 1, 'sawtooth'] },
     motifs:[[0, 3, 7, 3], [0, null, 5, 7], [0, -2, -5, -2], [7, 5, 3, 0], [0, 0, 6, null], [0, 12, 10, 7], [0, 1, 5, 1], [3, 2, 0, -5]] } };
+// VIS 1–9 THE LOOK (round-1 critic: camera, light, weather, marks) — render/, world/, the follow camera (game/update.js) ·
+//   frame: the follow camera sets his chest at y (phones yM) of the screen's height from the top — the HUD's foot never over him; the lens rides on him and
+//     only anchor × the look-ahead carries it forward (riding the whole lead it looked down on him from 4 m behind); a fort boss within bossR m has his top
+//     fitted under topK of the upper half while the soldier's chest stays above footK of the lower half, and the auto camera draws back bossPull more; maxEl = the steepest the lens may look down on
+//     him (°, a courtyard's wall no longer tips it to a top view — what stands between is faded); ease = s the solved pitch glides
+//   arm: the spring arm — every s a ray from his head to the lens against the standing solids (static over two sweeps of sweep s, at most maxTri
+//     triangles a mesh): a surface the lens is inside, or one within near m of it, pulls the lens in to pad m short of it (never nearer him than minD m);
+//     one closer to him is faded instead (render/see-through.js); in at inK 1/s, back out over outT s once clear for hold s
+//   see: the fade of what stands between — the screen-door dots are gone: the cut is clean, a narrow band (band, share of the strength) feathers it and a
+//     rim (rim, share) dims toward rimK; leaves and trunks more than leafGap m nearer the lens than he stands go whole, the whole screen over (the canopy the lens rides in)
+//   menu: the scene behind the menus (mode start): a slow orbit r m out, h m up, looking look m past the field's centre at lookY m, turning spin rad/s;
+//     the Core waits out of sight until a battle
+//   night: each battlefield's own night — moon (colour, × strength), sky top / horizon, fog colour and × density, hemisphere sky / ground (the ground
+//     colour is the light from below: lava, furnaces, torches), ambient colour and level, grade lift / gain / shadow / highlight tints, saturation,
+//     × exposure, gnd × the floor's albedo, cloud = the clouds' lit / dark tone, haze = [puffs/s, colour, opacity] of a low smoke rolling over the ground
+//   rain: soft streaks w m wide and len m long, slanted by the wind (wind m/s), n × the weather's drop count, opacity [day, night]
+//   beam: lamp / searchlight / floodlight shafts — rim = the falloff power across the shaft, fall = power along it, hot = the glow at the lens, dust = the
+//     drifting motes' contrast, haze = how fast distance dims it (per m), gain × the old strength; cut = s between the checks that end a headlamp's cone at
+//     the first solid
+//   ring: a hold zone's mark — a painted band w m wide draped on the ground (op its paint), posts every step m (h m tall), lit (glow) only within edge m
+//     of the rim or outside it
+//   blood: a pool is a stain multiplied into the ground (col, the fresh tone; dry, the soaked one after soak s), gone after life s (the last fade s)
+//   boss: the hit flash keeps his texture: a warm white × k for t s
+//   horizon: at night the far ranges' colours go night × of the way to the night air's (dark silhouettes, not tan-purple saw teeth) ·
+//   transit: on the flight between two sectors the haze thins with the lens's height over the ground — full below y0 m, down to min × over span m more
+export const VISLOOK = {
+  frame:{ on:true, y:0.6, yM:0.6, anchor:0.3, bossR:34, bossPull:0.35, topK:0.84, footK:0.62, maxEl:54, ease:0.14 },
+  arm:{ on:true, every:0.1, sweep:2, maxTri:24000, near:3.5, pad:0.45, minD:2.4, inK:16, outT:0.45, hold:0.35, head:[1.55, 2.45, 0.6] },
+  see:{ band:0.22, rim:0.42, rimK:0.55, leafGap:4 },
+  menu:{ on:true, r:62, h:7.5, look:30, lookY:5, spin:0.035 },
+  night:{
+    FOUNDRY:{ moon:[0x9aa6c8, 0.7], top:0x0a0506, hor:0x3a160c, fog:[0x22180f, 1.3], hemi:[0x2c2a36, 0x9a4a18], amb:[0x4a3428, 0.24], lift:[0.022, 0.01, 0.004], gain:[1.06, 0.97, 0.9], sh:[0.0, 0.0, 0.02], hi:[0.06, 0.025, -0.03], sat:0.95, exp:0.9, gnd:0.9, cloud:[0x2a1612, 0x0c0606], haze:[7, 0x6a6a30, 0.14] },
+    VOLCANO:{ moon:[0xb0a8c0, 0.6], top:0x0c0406, hor:0x4a1206, fog:[0x241010, 1.2], hemi:[0x2a2838, 0xd0401a], amb:[0x5a2a20, 0.24], lift:[0.03, 0.006, 0.0], gain:[1.1, 0.95, 0.85], sh:[0.02, -0.005, -0.01], hi:[0.06, 0.015, -0.03], sat:1.0, exp:0.92, gnd:0.85, cloud:[0x3a1410, 0x100606], haze:[4, 0x4a2a22, 0.12] },
+    CITADEL:{ moon:[0xb0c4ff, 0.9], top:0x0a1424, hor:0x26364e, fog:[0x223046, 1.1], hemi:[0x3e5478, 0x4a3424], amb:[0x6a7ea4, 0.32], lift:[0.012, 0.018, 0.04], gain:[0.98, 1.0, 1.08], sh:[-0.015, 0.004, 0.045], hi:[0.045, 0.018, -0.02], sat:0.9, exp:1.0, gnd:0.62 },
+    DESERT:{ moon:[0xe8eeff, 1.1], top:0x0c1630, hor:0x3a4868, fog:[0x2e3a52, 1.0], hemi:[0x5a6a8a, 0x4a4034], amb:[0x8a96b4, 0.38], lift:[0.018, 0.022, 0.035], gain:[1.0, 1.0, 1.04], sh:[-0.01, 0.0, 0.03], hi:[0.02, 0.02, 0.02], sat:0.72, exp:1.0, gnd:0.95 } },
+  rain:{ w:0.04, len:1.2, wind:6.5, n:1.7, op:[0.55, 0.42] },
+  beam:{ rim:3.2, fall:2.2, hot:1.6, dust:1.25, haze:0.022, gain:0.62, cut:0.2 },
+  ring:{ w:0.32, op:0.62, step:3.2, h:0.75, edge:2.5, glow:2.2, col:0xd8e0c0 },
+  blood:{ col:[0.42, 0.1, 0.08], dry:[0.5, 0.3, 0.24], soak:6, life:20, fade:5 },
+  boss:{ k:0.55, t:0.08 },
+  transit:{ y0:18, span:60, min:0.3 },
+  horizon:{ night:0.55 } };

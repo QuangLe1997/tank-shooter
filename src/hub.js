@@ -44,6 +44,7 @@ export * from './render/inst-view.js';   // VIEW 1 a field-wide instanced mesh d
 export * from './render/near-detail.js';   // Z395 the originals' sharp maps on whatever the camera is close to
 export * from './render/cover-batch.js';   // Z338 cover pieces drawn a few instanced draws at a time
 export * from './render/see-through.js';   // CAM 3 what stands between the lens and him is cut away (a shader hook of render/clouds.js)
+export * from './render/cam-arm.js';   // VIS 2 the follow camera's spring arm: never inside a solid, never pressed to one
 export * from './render/perfhud.js';   // Z240 frame-time probe + F3 HUD
 export * from './world/atmosphere.js';
 export * from './world/sky-photo.js';   // Z255 photographed HDRI skies per hour of the day
@@ -143,6 +144,7 @@ export * from './world/tower-fall.js';   // Z452 towers topple for real, tear th
 export * from './world/tower-kinds.js';
 export * from './world/camps.js';
 export * from './world/zones.js';
+export * from './world/zone-mark.js';   // VIS 8 a hold zone's mark painted on the ground (posts lit only at its rim)
 export * from './world/fortress.js';
 export * from './world/fort-hill.js';   // Z453 castles on crags: the hills, the open citadel's ward, the paved yards
 export * from './world/hill-trees.js';   // Z455 dead trees at the crags' lips, ancient oaks on the knolls

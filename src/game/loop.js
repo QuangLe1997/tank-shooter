@@ -8,6 +8,7 @@ import { tierDprTop } from '../hub.js';   // SPLIT 3 (render/quality.js)
 import { comboTick } from '../hub.js';   // HUDCLEAN 2 (game/score.js)
 import { updateSectors, updateSectorTransit } from '../hub.js';   // SECTOR 1 (campaign/sectors.js)
 import { bossCam, updateFeelFX } from '../hub.js';   // FEEL 3–4 (fx/feel-fx.js)
+import { menuCam, transitHaze } from '../hub.js';   // VIS 4 the menu's backdrop camera (game/update.js) · VIS 5 the transit's haze (world/atmosphere.js)
 
 // ----------------------------- MAIN LOOP -----------------------------
 const NOGOV=typeof location!=='undefined' && /[?&]nogov\b/.test(location.search);   // PERF 1 ?nogov holds the governor still (the resolution and the occlusion pass stay as they start): for measuring
@@ -99,9 +100,10 @@ export function loop(nowMs){
   else if(S.mode==='countdown'){ S.timeNow=now; updateCountdown(dt); updateCamera(dt, now); cavIdle(dt); }   // Z136 3 · 2 · 1: the world waits
   else if(S.mode==='dying'){ S.timeNow=now; updateDeath(dt, now); }   // death → respawn cinematic (flip + burn + close cam)
   else if(S.mode==='transit'){ S.timeNow=now; updateSectorTransit(dt, now); }   // SECTOR 1 between two sectors: the black, the build, the drop onto the new field
+  transitHaze(S.mode==='transit');   // VIS 5 the haze thins on the flight between sectors (world/atmosphere.js)
   coopTick(dt, now, nowMs);   // COOP 5 each page's soldier to the other, the host's snapshot (returns at once without a room)
   // always-on FX + core idle
-  if(S.mode!=='playing'){ droneWarIdle(); updateSquadHud(now); gradePass.uniforms.aberr.value*=0.85; rangeRing.visible=false; radarCtx.clearRect(0,0,radarCanvas.width,radarCanvas.height); }
+  if(S.mode!=='playing'){ menuCam(dt); droneWarIdle(); updateSquadHud(now); gradePass.uniforms.aberr.value*=0.85; rangeRing.visible=false; radarCtx.clearRect(0,0,radarCanvas.width,radarCanvas.height); }
   S.timeScale += (1 - S.timeScale) * Math.min(1, dt*1.8);   // ease slow-mo back to normal
   updateCore(dt, now); updateCoreAlarm(now); updateCelebration(dt, now);   // Z140 fireworks + cheering after a win
   updateRings(dt); updateFlashes(dt); updateParticles(dt); updateFireFX(dt); updateTrails(dt); updateSmokeTrails(dt); updateDebris(dt); updateShatter(dt); updateTreeFall(dt); updateTowerFalls(dt); updateBolts(dt); updateGunFX(dt); updateFeelFX(); updateRocketAim(now); flushParticles();   // Z419 shaped flashes, brass, the muzzle light's strobe
