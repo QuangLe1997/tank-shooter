@@ -16,6 +16,7 @@ import { BIOME, COVER_K, COVER_SET, CONTAINER_PAINT, SECT, buildObjective, build
 import { ARENA, FORTS, OBJ, QUIET, S, TRAIL, UGRID, WAVE, animateSoldier, bigExplode, blocks, buildTransport, clampFieldXZ, damageObjective, edgeEntry, edgeNote, enemies, fieldEdgePoint,
   fireball, guardsLeft, heightAt, inField, makeSoldierMesh, makeTruck, radio, ringPulse, scene, sfx, soldierKneel, spawnEnemy, spawnGuards, spawnSquad, svgBadgeTex } from '../hub.js';
 import { zoneMark } from '../hub.js';   // VIS 10 (world/zone-mark.js)
+import { blocksNear, inBlock, blockTop, fortIntactCross } from '../hub.js';   // BAL 25
 
 const Y = SECTOR.types, SAY = SECTOR.say, _pt = { x:0, y:0, z:0 };
 const fill = (t, o) => String(t ?? '').replace(/\{(\w+)\}/g, (m, k) => o && o[k] != null ? o[k] : '');
@@ -63,17 +64,27 @@ function pen(x, z, face, K){ const out = [], c = Math.cos(face), s = Math.sin(fa
   for(const sd of [-1, 1]) put(bag, sd * (gap / 2 + C.hw * 2 + 1.4), C.hl + 1.2, sd * 0.5, { hp:220, maxHp:220, steel:false, heavy:false });   // the guards' sandbag nests at the open end
   const [tx, tz] = W((Math.random() < 0.5 ? -1 : 1) * (gap / 2 + C.hw * 2 + 6), -C.hl - 3); if(inField(tx, tz, 4)) buildTower(tx, tz);   // the guard post over it
   UGRID.blkAt = 0; return { blocks:out, inner:W(0, -C.hl * BAL.rescue.innerK), depth:C.hl, door:W(0, C.hl + 2.5) }; }   // BAL 18 the back closed flush behind the boxes and the hostage clear of it (he knelt inside its collider: nobody could get to his side)   // (BAL 1 door: just outside the open end — the bot's way in)
-function rescueStart(g, c, now){ const K = g.Y, p = S.player, [x, z] = spot(K.d[0], K.d[1], K.clear), face = Math.atan2(p.pos.x - x, p.pos.z - z);
+// BAL 25 the way in on foot: nothing taller than routeH m (a rock to climb, a wall) across the last routeL m to the pen's open end
+const _rb = [];
+function walkable(x0, z0, x1, z1){ const L = Math.hypot(x1 - x0, z1 - z0) || 1, n = Math.ceil(Math.min(L, BAL.rescue.routeL) / 2);
+  for(let i = 0; i <= n; i++){ const k = i * 2 / L, x = x1 + (x0 - x1) * Math.min(1, k), z = z1 + (z0 - z1) * Math.min(1, k);
+    for(const b of blocksNear(x, z, 8, _rb)) if(!b.ours && !b.pen && inBlock(b, x, z, 0.6) && blockTop(b) - heightAt(x, z) > BAL.rescue.routeH) return false; } return true; }
+function rescueSpot(K){ const p = S.player; let q = null; for(let k = 0; k < BAL.rescue.tries && !q; k++){ const [x, z] = spot(K.d[0], K.d[1], K.clear), a = Math.atan2(p.pos.x - x, p.pos.z - z), dx = x + Math.sin(a) * 6, dz = z + Math.cos(a) * 6;
+    if(FORTS.some(f => !f.captured && Math.hypot(x - f.x, z - f.z) < (f.R || 20) + BAL.rescue.fortGap) || fortIntactCross(p.pos.x, p.pos.z, dx, dz)) continue;   // (BAL 25 not against a fort's wall: its walls are not blocks — fort 8's pen opened onto a bunker)
+    if(walkable(p.pos.x, p.pos.z, dx, dz)) q = [x, z]; }
+  return q || spot(K.d[0], K.d[1], K.clear); }
+function rescueStart(g, c, now){ const K = g.Y, p = S.player, [x, z] = rescueSpot(K), face = Math.atan2(p.pos.x - x, p.pos.z - z);
   SGOAL.cell = pen(x, z, face, K); const [ix, iz] = SGOAL.cell.inner, m = makeSoldierMesh(); m.scale.setScalar(TROOPS.look.scale); m.userData.gun.visible = false; m.position.set(ix, heightAt(ix, iz), iz); m.rotation.y = face; soldierKneel(m, true); scene.add(m);
-  SGOAL.man = m; g.x = x; g.z = z; g.zone = { x, z, r:SGOAL.cell.depth + K.ring }; spawnGuards(g.zone, K.guards, K.rpg); g.home = { x:p.pos.x, z:p.pos.z };
-  g.who = K.who[c.obj] || K.who.civ; g.ph = 'held'; g.hp = K.hp; g.free = 0; g.clock = K.time; g.hx = ix; g.hz = iz; g.g0 = guardsLeft(g.zone); }   // (BAL 18 g0: the guards really posted)
+  SGOAL.man = m; g.x = x; g.z = z; g.zone = { x, z, r:SGOAL.cell.depth + K.ring }; spawnGuards(g.zone, (S.stage | 0) <= 1 && SECT.i === 0 ? BAL.rescue.firstGuards : K.guards, K.rpg); g.home = { x:p.pos.x, z:p.pos.z };   // (BAL 25 the game's first sector: fewer guards)
+  g.who = K.who[c.obj] || K.who.civ; g.ph = 'held'; g.hp = K.hp; g.free = 0; g.clock = K.time; g.hx = ix; g.hz = iz; g.g0 = guardsLeft(g.zone); g.safe = (S.stage | 0) <= 1 && SECT.i === 0; g.t0 = now; }   // (BAL 25 safe: the game's very first sector — it can only be slow)   // (BAL 18 g0: the guards really posted)
 function rescueTick(g, dt, now){ const K = g.Y, p = S.player, m = SGOAL.man; if(!m) return 'CON TIN MẤT TÍCH'; g.clock -= dt;
-  // the crossfire once the shooting has started round him — BAL 18 a guard of those posted down, or he is out with us, or the player is within BAL.rescue.near m —
+  // the crossfire once the shooting has started round him — BAL 18 a guard of those posted down, or he is out with us (BAL 25: no longer 'the player is near') —
   //   and never faster than his health over BAL.rescue.minT s (the rail counts his health down: never a sector lost before the player could act)
-  const hit = alerted(g.hx, g.hz, K.fireR), fight = g.ph !== 'held' || guardsLeft(g.zone) < (g.g0 ?? K.guards) || Math.hypot(p.pos.x - g.hx, p.pos.z - g.hz) < BAL.rescue.near;
-  if(hit && fight) g.hp -= Math.min(hit * K.dps, K.hp / BAL.rescue.minT) * dt;
+  const hit = alerted(g.hx, g.hz, K.fireR), fight = g.ph !== 'held' || guardsLeft(g.zone) < (g.g0 ?? K.guards);   // (BAL 25 no more 'the player is near': he was stuck 31 m off at a rock while the pilot died)
+  if(hit && fight && !g.safe) g.hp -= Math.min(hit * K.dps, K.hp / BAL.rescue.minT) * dt;
+  if(g.ph === 'held' && !g.called && now - g.t0 > BAL.rescue.callT && Math.hypot(p.pos.x - g.hx, p.pos.z - g.hz) > 25){ g.called = true; radio(fill(SAY.rescueCall || '{who}: Tôi ở đây — trong lò giam bằng container, cửa mở về phía các anh!', { who:g.who })); }   // BAL 25 a slow rescue: he calls
   if(g.hp <= 0){ soldierKneel(m, false); m.rotation.x = -Math.PI / 2; m.position.y = heightAt(g.hx, g.hz) + 0.25; SGOAL.props.push(m); SGOAL.man = null; return fill(SAY.rescueDead, { who:g.who }).toLocaleUpperCase('vi'); }
-  if(g.clock <= 0) return 'HẾT GIỜ';
+  if(g.clock <= 0 && !g.safe) return 'HẾT GIỜ';   /* BAL 25 the first sector has no clock to lose to */
   const d = Math.hypot(p.pos.x - g.hx, p.pos.z - g.hz), hpTx = Math.max(0, Math.round(g.hp / K.hp * 100)) + '%';
   if(g.ph === 'held'){ const left = guardsLeft(g.zone); mark(0, g.hx, g.hz, 3, 'heart', '#7fd0ff', 4.2);
     if(!left && d < K.reach){ g.free += dt; g.sub = fill(SAY.rescueFree, { who:g.who }); if(g.free >= K.free){ g.ph = 'follow'; soldierKneel(m, false); sfx('powerup'); edgeNote(fill(SAY.rescueGo, { who:g.who }).toLocaleUpperCase('vi'), '#9be04a'); radio('SCH: ' + fill(SAY.rescueGo, { who:g.who })); } }

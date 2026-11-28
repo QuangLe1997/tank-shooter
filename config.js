@@ -2453,7 +2453,7 @@ export const BOT = { think:20, sightK:1.5, eye:1.45, losEvery:0.25, losPerTick:2
 //   medal (BAL 13, game/medals.js): only tiers from toastFrom (2 = silver) are toasted mid-battle; the rest wait for the report.
 //   boss (BAL 15 / 17, campaign/sectors.js): revealT s into the general's sector he comes out — through his gate into an open courtyard of arenaR m outside it (his leash
 //     there; a marker on the rail leads to it), so the last fight is in the open, never behind his walls.
-//   rescue (BAL 18, campaign/sector-goals.js): the hostage is hurt only once the fight round him started (a posted guard down, he is out, or the player within near m),
+//   rescue (BAL 18, campaign/sector-goals.js): the hostage is hurt only once the fight round him started (a posted guard down, he is out),
 //     never faster than his health over minT s. The pen: its back wall backOut × its depth behind the containers' ends (flush), the hostage innerK × the containers'
 //     half-length in from the middle — clear of every collider (he knelt inside the back wall's).
 //   fair.rear.k (BAL 19): a man behind him stays that much wider — in every mode (world/fortress.js: no wave out of a gate behind him either).
@@ -2463,6 +2463,9 @@ export const BOT = { think:20, sightK:1.5, eye:1.45, losEvery:0.25, losPerTick:2
 //   mates.share / lo / hi (BAL 23, actors/fireteam.js): the squad's hits × (his share of the kills ÷ share), held to lo…hi — a player who kills little gets a squad that pins more.
 //   mates.bossK, bossFight (BAL 24, campaign/fort-boss.js): the squad's hits on a fort's boss count bossK (they pin him, he is the player's); after a stagger none for staggerCd s;
 //     a burst over a bucket refilled at his maxHp / burst.t per s (at most burst.max) is turned — sparks and GIÁP CHẶN; FBOSS.list[i].src: his health by player / pBlast / squad / blast.
+//   rescue.routeL / routeH / tries / callT / fortGap / firstGuards (BAL 25): the pen is placed where the last routeL m to its open end cross nothing taller than routeH m
+//     (no climb) and fortGap m clear of a fort's walls, tries spots; the hostage calls on the radio after callT s if the player is still far; the very first sector of
+//     the game (stage 1, sector 1) has firstGuards guards, no clock and no crossfire to lose to.
 //   hold (BAL 14, campaign/sectors.js): the stuck truck's hold has three beats — at the shares `at` of the hold, n squads come from in front of him / his sides, d m off.
 export const BAL = { fair:{ on:true, every:0.1, r:95, fireT:1.2, maxN:6, size:30, margin:26, color:'#ff3b2b', spreadK:3.2, onT:0.5, warnT:2,
     rear:{ on:!(typeof location !== 'undefined' && /[?&]norear\b/.test(location.search)), ang:2.09, r:60, grace:1.6, graceK:8, k:4, beepGap:3 } },
@@ -2471,7 +2474,7 @@ export const BAL = { fair:{ on:true, every:0.1, r:95, fireT:1.2, maxN:6, size:30
   mates:{ dmgK:0.2, share:0.45, lo:0.3, hi:2.2, bossK:0.25 },
   start:{ first:45, t:15, spreadK:4 }, surp:{ ambushMax:1, sectorQuiet:20 }, medal:{ toastFrom:2 },
   boss:{ revealT:12, arenaR:16 },
-  rescue:{ near:45, minT:50, backOut:0.3, innerK:0.2 },
+  rescue:{ minT:50, backOut:0.3, innerK:0.2, routeL:50, routeH:1.4, tries:16, callT:90, fortGap:12, firstGuards:3 },
   beats:{ on:true, at:[30, 60, 95], n:[1, 1, 2], lowP:0.2 },
   infil:{ waveT:10, spreadK:2.2 },
   bossFight:{ staggerCd:6, burst:{ on:true, t:90, max:0.08 } },

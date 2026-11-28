@@ -3267,8 +3267,8 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   ok(Q.bigTri>V.arm.maxTri && Q.bigR>10 && Q.bigShrink>0.5 && Q.bigShrink<=1 && /ARM\.nBig/.test(R('src/render/cam-arm.js')) && V.frame.maxEl<=46 && V.night.DESERT.moon[1]<0.8, 'VIS 10: the arm keeps the lens out of a building\'s box; a lower ceiling on looking down; a darker desert night'); }
 // BAL 18 a rescue cannot be lost before the player can act (C2-001)
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { BAL:Q, SECTOR:SE, DIRECTOR:D }=await import('./config.js'), sg=R('src/campaign/sector-goals.js'), dr=R('src/campaign/director.js');
-  ok(Q.rescue.minT>=20 && Q.rescue.near>=20 && /g\.g0 = guardsLeft\(g\.zone\)/.test(sg) && /Math\.min\(hit \* K\.dps, K\.hp \/ BAL\.rescue\.minT\)/.test(sg) && /guardsLeft\(g\.zone\) < \(g\.g0 \?\? K\.guards\)/.test(sg),
-    'BAL 18: the hostage is hurt only once the fight round him has started (a posted guard down, he is out, the player near), never in under ' + Q.rescue.minT + ' s'); }
+  ok(Q.rescue.minT>=20 && /g\.g0 = guardsLeft\(g\.zone\)/.test(sg) && /Math\.min\(hit \* K\.dps, K\.hp \/ BAL\.rescue\.minT\)/.test(sg) && /guardsLeft\(g\.zone\) < \(g\.g0 \?\? K\.guards\)/.test(sg),
+    'BAL 18: the hostage is hurt only once the fight round him has started (a posted guard down, he is out), never in under ' + Q.rescue.minT + ' s'); }
 // BAL 19 the fair-fire / no-rear rules in every mode: no reinforcement out of a fort's gate behind him, a man behind him stays wide (C2-007)
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { BAL:Q, SECTOR:SE, DIRECTOR:D }=await import('./config.js'), sg=R('src/campaign/sector-goals.js'), dr=R('src/campaign/director.js');
   ok(/!rearArc\(f\.ix\?\?f\.x, f\.iz\?\?f\.z\)/.test(R('src/world/fortress.js')) && Q.fair.rear.k>=3, 'BAL 19: no wave marches out of a gate behind him; a man behind him × ' + Q.fair.rear.k + ' wide'); }
@@ -3303,6 +3303,11 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   ok(/const inside=\(core\.shieldUntil\|\|0\)<=performance\.now\(\)\/1000;/.test(R('src/game/update.js')), 'VIS 11: our HQ\'s hex dome is drawn only while the emergency shield is up (it lay across the view from close outside too)');
   ok(Q.airMetal>=0 && Q.airMetal<0.6 && /VISLOOK\.r2\.airMetal/.test(R('src/actors/real-air.js')) && /VISLOOK\.r2\.markSmoke/.test(R('src/campaign/surprises.js')) && !/0x6aff7a/.test(R('src/campaign/surprises.js')), 'VIS 11: aircraft are painted, not mirrors (no flat cream shape at night); the marker smoke a muted green');
   ok(V.see.near>2 && V.see.near<6 && /VISLOOK\.see\.near/.test(R('src/game/update.js')), 'VIS 11: a wall right at the lens goes whole'); }
+// BAL 25 a rescue you can walk to and the game's first sector you cannot lose (C3-001, C3-002)
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { BAL:Q, SECTOR:SE, CONQSTORY:CS }=await import('./config.js'), sg=R('src/campaign/sector-goals.js'), sc=R('src/campaign/sectors.js'), fb=R('src/campaign/fort-boss.js');
+  ok(Q.rescue.routeL>=30 && Q.rescue.routeH>0.8 && Q.rescue.tries>=8 && Q.rescue.callT>=30 && Q.rescue.fortGap>=8 && Q.rescue.firstGuards>=1 && Q.rescue.firstGuards<SE.types.rescue.guards && /function walkable\(x0, z0, x1, z1\)/.test(sg) && /function rescueSpot\(K\)/.test(sg) && /fortIntactCross\(p\.pos\.x, p\.pos\.z, dx, dz\)/.test(sg)
+    && /g\.safe = \(S\.stage \| 0\) <= 1 && SECT\.i === 0/.test(sg) && /if\(g\.clock <= 0 && !g\.safe\) return 'HẾT GIỜ';/.test(sg) && /if\(hit && fight && !g\.safe\)/.test(sg) && !/< BAL\.rescue\.near/.test(sg),
+    'BAL 25: the pen where its door can be walked to (no climb, no fort wall), the first sector of the game without a clock or a crossfire to lose to, the hostage calling when the player is slow'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
