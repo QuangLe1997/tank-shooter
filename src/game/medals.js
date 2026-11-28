@@ -5,7 +5,7 @@
 //   decides every kill: a kill its own judgment gave the guest goes back with the death's event (coop-puppets.js coopHostDeath → medalCreditFor) and the
 //   guest counts only that (medalHostWord) — a guest's page never credits itself a kill. Every count is clamped (statCap), kills to perS a second, the
 //   battle's experience to xp.cap.
-import { MEDALS } from '../../config.js';
+import { BAL, MEDALS } from '../../config.js';
 import { AMBST, CO, CV, MATE, NEM, PROFILE, S, battleXp, carRank, carRankName, gunsOpenedBy, medalBoardLater, medalCareerAdd, medalCareerClean, medalCreditRead, medalCreditWord, medalLedger, medalLedgerClean,
   medalRankCard, medalTierOf, medalToast, paintChip, saveProfile, voiceStage, radio, radioType } from '../hub.js';
 
@@ -66,7 +66,7 @@ export function medalTick(){ if(!M().on) return; const p = S.player, now = NOW()
   if(MDL.dirty || now > MDL.checkAt){ MDL.dirty = false; MDL.checkAt = now + 0.5; check(); } }
 // new medal tiers this battle → a toast each; the experience so far → the career's rank, live
 function check(){ const L = medalLedgerClean(MDL.L);
-  for(const d of M().list){ const t = medalTierOf(d, L[d.stat] || 0); if(t > (MDL.tiers[d.id] || 0)){ MDL.tiers[d.id] = t; MDL.stats.toasts++; medalToast(d, t, L[d.stat]); } }
+  for(const d of M().list){ const t = medalTierOf(d, L[d.stat] || 0); if(t > (MDL.tiers[d.id] || 0)){ MDL.tiers[d.id] = t; if(t >= BAL.medal.toastFrom){ MDL.stats.toasts++; medalToast(d, t, L[d.stat]); } } }   // BAL 13 a bronze waits for the battle's report (no toast mid-fight)
   MDL.live = battleXp(L, '').total; const r = carRank(MDL.base + MDL.live).r;
   if(r > MDL.rank){ const was = MDL.rank; MDL.rank = r; MDL.stats.ranks++; medalRankCard(r, gunsOpenedBy(was, r)); paintChip(); } }
 // ---- the battle ends: won · final (the campaign) · lost · quit. The ledger goes into the career, the report opens over the end screen ----

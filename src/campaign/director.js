@@ -12,9 +12,10 @@
 //   It WRAPS the wave queue (campaign/waves.js), the surprise timer (campaign/surprises.js) and the general's entrance — the same enemies overall, their timing
 //   and direction reactive. DIRECTOR.on / ?nodirector: off, it still reads the fight (DIR.P, the peaks it would have called) and decides nothing.
 import * as THREE from 'three';
-import { DIRECTOR, ENTRY } from '../../config.js';
+import { BAL, DIRECTOR, ENTRY } from '../../config.js';
 import { rearArc } from '../hub.js';   // BAL 3 (ui/threat-edge.js: never behind him)
 import { CO, coopDirAt, coopDirCountK, FORTS, PROFILE, S, SURP, WAVE, saveProfile, surpriseNow, camera, duelOn, edgeFrom, enemies, entrySeen, inCamView, inField, isFoot, radio, reliefDrop, storyCue, tacticsReset, tacticsTick, wetAt } from '../hub.js';
+import { SECT, SGOAL } from '../hub.js';   // BAL 10 / 11 (campaign/sectors.js, campaign/sector-goals.js)
 
 const D = DIRECTOR, R2 = a => a[0] + Math.random() * (a[1] - a[0]), sat = x => x < 0 ? 0 : x > 1 ? 1 : x, _v = new THREE.Vector3();
 const OFF = typeof location !== 'undefined' && /nodirector/.test(location.search + location.hash);
@@ -40,10 +41,16 @@ export function dirDeath(){ const key = (S.loop || 0) + ':' + (S.stage || 1), a 
   const e = easeNow(); if(e !== DIR.ease){ DIR.ease = e; note(performance.now() / 1000, 'eased', 'deaths ' + a.deaths + ' → × ' + e.toFixed(2)); } }
 // the stage is won (campaign/boss.js): the step is taken back
 export function dirWin(){ if(PROFILE.dirEase){ PROFILE.dirEase = null; saveProfile(true); } }
+// BAL 10 THE FIRST STRETCH IS CALM: at a battle's first GO (a one-stage battle, or the first sector's first try) for BAL.start.first s on stage 1 (the first fort,
+//   a newcomer's first battle) and BAL.start.t s otherwise, nothing is escalated, the waves' queue and the surprises wait, and an enemy round is wide (ui/threat-edge.js) ·
+//   BAL 11 AN INFILTRATION IS AN INFILTRATION: while he is unseen in it (sector-goals.js ph 'sneak') the director sends nothing, no wave comes in, no surprise is played
+export const SAFE = { until:0 };
+export function sneaking(){ const g = SGOAL.g; return !!(SECT.on && g && g.type === 'infiltrate' && g.ph === 'sneak'); }
 // a stage begins (ui/briefing.js): everything forgotten but the deaths on it
 export function directorReset(now){ const st = DIR.stats; for(const k in st) st[k] = 0; DIR.log.length = 0; DIR.contact.length = 0; tacticsReset();
+  if(!SECT.on || SECT.i === 0 && !SECT.tries){ SAFE.until = now + (S.stage <= 1 ? BAL.start.first : BAL.start.t); SURP.next = Math.max(SURP.next || 0, SAFE.until); }   // BAL 10
   Object.assign(DIR, { on:D.on && !OFF, phase:'build', P:0, raw:0, hurt:0, hp:1, hp0:S.player ? S.player.hp : 0, alerted:0, near:0, firing:0, lowT:0, hiT:0, t0:now, at:now, prev:now, phaseAt:now, lullUntil:0, lullMax:0,
-    escAt:now + D.build.first, escN:0, hitAt:-1e9, killAt:now, sayAt:-1e9, dropAt:-1e9, surAt:-1e9, sallyPass:0, heldAt:0, pass:0, bore:0, waveNo:-1, reserve:0, reserveAt:0, resDone:false, fin:0, ease:easeNow(), flank:null, cue:null, lastSide:'' }); }
+    escAt:Math.max(now + D.build.first, SAFE.until), escN:0, hitAt:-1e9, killAt:now, sayAt:-1e9, dropAt:-1e9, surAt:-1e9, sallyPass:0, heldAt:0, pass:0, bore:0, waveNo:-1, reserve:0, reserveAt:0, resDone:false, fin:0, ease:easeNow(), flank:null, cue:null, lastSide:'' }); }
 // an enemy has fallen (actors/damage.js)
 export function dirKill(){ DIR.killAt = performance.now() / 1000; }
 
@@ -100,6 +107,7 @@ function think(now, dt){ const hi = thrHi(), t = now - DIR.phaseAt, crit = DIR.h
   if(DIR.cue && now >= DIR.cue.at && !radio.jam){ dirSay(now, DIR.cue.side, true); DIR.cue = null; }   // (EVENT 2 the net jammed: the flank's cue is held until it is back)
   if(DIR.heldAt) st.held += dt;
   if(S.awaitingUpgrade) return;                                                                                    // the stage is won: nothing more is sent at him
+  if(sneaking()) return;   // BAL 11 nor while he sneaks in unseen
   if(duelOn()){ if(DIR.fin !== -1){ if(DIR.phase !== 'finale') setPhase('finale', now, 'the general'); else DIR.phaseAt = now; DIR.fin = -1; DIR.flank = null; ground(now, D.finale.ground); } return; }   // (fin: 0 none · > 0 the last lull, until then · −1 the duel is on)
   if(DIR.phase === 'finale'){ if(DIR.fin === -1){ DIR.fin = 0; setPhase('build', now, 'the duel is over'); } return; }   // (fin > 0: waves.js asks dirFinale when he may come)
   if(DIR.phase === 'build'){ const busy = DIR.P >= D.build.meter * DIR.ease; if(busy) DIR.bore = 0;   // (little to do: the clock runs in full; something but not much: at midK; busy: it runs back)
@@ -118,7 +126,7 @@ export function updateDirector(dt, now){ const p = S.player; if(!p || now < DIR.
 
 // ---- what the waves, the surprises and the general ask ----
 // must the wave's queue wait? (peak, release, the last lull — or he simply has enough on his hands; in the build-up a held queue still lets a few through every holdMax s)
-export function dirWaveHold(now){ if(!DIR.on) return false; const ph = DIR.phase, B = D.build;
+export function dirWaveHold(now){ if(now < SAFE.until || sneaking()) return true; if(!DIR.on) return false;   /* BAL 10 / 11 */ const ph = DIR.phase, B = D.build;
   if(S.wave !== DIR.waveNo){ DIR.waveNo = S.wave; DIR.reserve = Math.floor(WAVE.spawnQueue.length * B.reserve); DIR.reserveAt = now + B.reserveMax; DIR.resDone = false; }   // a new wave: its tail (the set piece with it) is the director's reserve
   if(!DIR.resDone && now >= DIR.reserveAt){ DIR.resDone = true; if(ph === 'build' && !DIR.flank){ flankFrom(now); note(now, 'reserve', 'flank-' + DIR.flank.side); } }                    // (nobody asked for it in reserveMax s: it comes anyway, round a flank)
   const hold = ph === 'peak' || ph === 'release' || (ph === 'finale' ? DIR.fin > 0 || now - DIR.phaseAt < D.finale.quiet || DIR.P >= B.meter * DIR.ease : DIR.P >= B.meter * DIR.ease);
@@ -134,7 +142,7 @@ export function dirSallyOk(now){ return !DIR.on || now < DIR.sallyPass || DIR.ph
 // in a lull every rifleman's rests between bursts are this much longer (actors/infantry.js): the fire slackens for as long as the lull lasts
 export function dirFireK(){ return DIR.on && DIR.phase === 'release' ? D.lull.fireK : 1; }
 // may a surprise be played now? (never on top of a peak or in a lull; in the duel only once it has run a while)
-export function dirSurpriseOk(now){ if(!DIR.on) return true; const hi = thrHi();
+export function dirSurpriseOk(now){ if(now < SAFE.until || sneaking()) return false; if(!DIR.on) return true;   /* BAL 10 / 11 */ const hi = thrHi();
   return DIR.phase === 'build' ? DIR.P < hi * D.thr.off : DIR.phase === 'finale' && DIR.fin < 0 && now - DIR.phaseAt > D.finale.quiet && DIR.P < hi * D.thr.off; }
 // EVENT 1 may a side mission be offered now (campaign/side-missions.js)? In a build-up with room for more — where a release ends too — never in a peak, a lull,
 //   the last lull or the duel, never while he is nearly dead

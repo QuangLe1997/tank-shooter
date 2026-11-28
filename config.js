@@ -2448,11 +2448,15 @@ export const BOT = { think:20, sightK:1.5, eye:1.45, losEvery:0.25, losPerTick:2
 //   score (BAL 7, actors/damage.js, game/score.js, campaign/sectors.js): a kill = kill (× elite, × heavy for a vehicle / aircraft, × boss for a fort's boss / the general);
 //     a kill by his squad × team (his own: he hit the man within mineT s); the combo at most × comboMax; a sector's goal = goal; a replay keeps the score.
 //   mates (BAL 9, actors/fireteam.js): his squad's rounds hit for dmgK of what they did — they pin, he finishes.
-export const BAL = { fair:{ on:true, every:0.1, r:95, fireT:1.2, maxN:6, size:30, margin:26, color:'#ff3b2b', spreadK:3.2, onT:0.5, warnT:0.8,
+//   start (BAL 10, campaign/director.js): the first stretch of a battle is calm for `first` s on stage 1 (the first fort), t s otherwise — no escalation, no wave entries,
+//     no surprise, enemy rounds × spreadK wide. surp (BAL 12, campaign/surprises.js, operations.js): at most ambushMax ambushes a battle, none in a sector's first sectorQuiet s.
+//   medal (BAL 13, game/medals.js): only tiers from toastFrom (2 = silver) are toasted mid-battle; the rest wait for the report.
+export const BAL = { fair:{ on:true, every:0.1, r:95, fireT:1.2, maxN:6, size:30, margin:26, color:'#ff3b2b', spreadK:3.2, onT:0.5, warnT:2,
     rear:{ on:!(typeof location !== 'undefined' && /[?&]norear\b/.test(location.search)), ang:2.09, r:60, grace:1.6, graceK:8, k:2.4, beepGap:3 } },
   pursuit:{ limp:0.4, stopDmg:55, stopT:2.5 },
   spawn:{ on:true, w:3.5, l:12 }, score:{ kill:100, elite:2, heavy:3, boss:10, team:0.25, mineT:3, comboMax:2, goal:1000 },
-  mates:{ dmgK:0.2 } };
+  mates:{ dmgK:0.2 },
+  start:{ first:45, t:15, spreadK:4 }, surp:{ ambushMax:1, sectorQuiet:20 }, medal:{ toastFrom:2 } };
 
 // Z107 FLATTER BATTLEFIELD — mostly level ground so the tank drives freely: only a handful of big rolling hills, very few old craters,
 //   a whisper of surface noise, and shells dig shallower craters (blastK) — the ground no longer fills up with pits.

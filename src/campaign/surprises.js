@@ -6,9 +6,10 @@
 //   · a HELICOPTER of whatever kind the hat picks
 //   · and sometimes the luck is ours: OUR ARTILLERY drops a fire mission on the thickest knot of enemies
 import * as THREE from 'three';
-import { REAL } from '../../config.js';
+import { BAL, REAL } from '../../config.js';
 import { FT, S, UNDER, aoeDamage, bigExplode, clampFieldXZ, decalCrater, enemies, enemyGroundStrike, floatText, heightAt, radio, ringPulse, sfx, showBanner, spawnEnemy, spawnPart, spawnSquad, tunnelSquad, dirSurpriseOk, droneRaid, droneRaidOk, droneRaidW } from '../hub.js';
 import { viewYaw, frontYaw } from '../hub.js';   // BAL 3 (ui/threat-edge.js: never from behind him)
+import { MODE, SAFE, SECT, sneaking } from '../hub.js';   // BAL 10–12
 
 const rnd = a => a[0]+Math.random()*(a[1]-a[0]);
 export const SURP = { next:0, shells:[], last:null, count:0 };
@@ -18,7 +19,12 @@ function tell(t, c, r){ showBanner(t, c); if(r) radio(r); sfx('alarm'); }
 const _v=new THREE.Vector3();
 
 // ---- the events ----
-function ambush(now){ const p=S.player;
+// BAL 12 an ambush is a surprise once: at most BAL.surp.ambushMax a battle, never in a sector's first sectorQuiet s, never while he sneaks in or in the calm first stretch
+const AMB = { key:'', n:0 };
+export function ambushOk(now){ const key = MODE.seq + ':' + (S.stage | 0); if(AMB.key !== key){ AMB.key = key; AMB.n = 0; }
+  return AMB.n < BAL.surp.ambushMax && !(SECT.on && SECT.t < BAL.surp.sectorQuiet) && !sneaking() && now >= SAFE.until; }
+export function ambushTaken(){ AMB.n++; }
+function ambush(now){ const p=S.player; if(!ambushOk(now)) return false; ambushTaken();
   const sd=Math.random()<0.5?1:-1, side=viewYaw()+sd*Math.PI*0.5, L=sd>0?'TRÁI':'PHẢI';   // BAL 3 the ambush comes from a side he can turn to, named — never from behind him (he faces only forward)
   if(tunnelSquad(side)){ tell('⚠ PHỤC KÍCH TỪ ĐỊA ĐẠO BÊN SƯỜN '+L+'!', '#ffb070', 'SCH: Địch chui lên từ hầm ngầm bên sườn '+L.toLowerCase()+' — xoay lại!'); return true; }   // Z225 if they have tunnels, they come up out of one
   const C=REAL.surprise.ambush, back=side, n=Math.round(rnd(C.squads));   // (BAL 3 was: behind him)
@@ -41,7 +47,7 @@ export function surpriseAdd(k, fn, o){ EV[k]=fn; EVX[k]=o||{}; }
 
 function roll(now, hostile){ const C=REAL.surprise, live=enemies.length, pool=[];   // (hostile: the director's escalation — never our own artillery, and the last one may come again)
   for(const k in EV){ const X=EVX[k], w=X ? X.w : C.w[k]??1; if(S.stage<((X ? X.from : C.from[k])||1) || (hostile ? k==='friendly' : k===SURP.last)) continue;
-    if(X ? X.ok && !X.ok(now) : live>110 && k!=='friendly') continue; if(w>0) pool.push([k, w]); }
+    if(X ? X.ok && !X.ok(now) : live>110 && k!=='friendly') continue; if(k==='ambush' && !ambushOk(now)) continue; if(w>0) pool.push([k, w]); }   // (BAL 12)
   if(!pool.length) return null; let tot=0; for(const [,w] of pool) tot+=w; let r=Math.random()*tot;
   for(const [k,w] of pool){ r-=w; if(r<=0){ if(EV[k](now)){ SURP.last=k; SURP.count++; return k; } break; } }
   return null; }

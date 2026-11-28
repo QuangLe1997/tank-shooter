@@ -4,6 +4,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { ENTRY, RAMP, OPERATIONS, OBJECTIVES, OBJ_REWARD } from '../../config.js';
 import { ARENA, S, WAVE, _canvasTex, realObjective, addScore, aoeDamage, bigExplode, blocks, camera, clampFieldXZ, decalScorch, deformCrater, diffHpMul, fireball, freeEnemyBar, getEnemyBar, heightAt, hitFlash, inField, loopHpMul, makeFlag, panelTex, propTex, radioType, ringPulse, sayVoice, scene, sfx, showBanner, spawnPart, spawnSquad, storyOp, unwave, bannerTex, voiceKeyFor, CO, coopRadio } from '../hub.js';
 import { sectorObj } from '../hub.js';   // SECTOR 1
+import { ambushOk, ambushTaken } from '../hub.js';   // BAL 12 (campaign/surprises.js)
 
 // ===== Z83 · CAMPAIGN OPERATIONS — named operation per stage: briefing, radio chatter, scripted waves and a high-value objective =====
 export let OBJ=null; export const OBJ_SCALE=1.5;   // objectives read as big, important structures
@@ -109,7 +110,7 @@ export function updateObjHUD(){
   el.querySelector('.ob-bar i').style.width = (OBJ.alive ? Math.max(0,OBJ.b.hp/OBJ.b.maxHp*100) : 0)+'%';
 }
 // scripted wave events for this operation (override the random roll)
-export function scriptedEvent(){ const sc=opFor(S.stage).script[S.wave]; if(!sc) return false;
+export function scriptedEvent(){ const sc=opFor(S.stage).script[S.wave]; if(!sc) return false; if(sc==='ambush'){ if(!ambushOk(performance.now()/1000)) return false; ambushTaken(); }   // BAL 12 (one ambush a battle, not in a sector's first seconds)
   const B={ ambush:['⚠ PHỤC KÍCH — BỘ BINH ÁP SÁT','#ffb070'], column:['ĐOÀN BỘ BINH ĐANG TỚI','#ff8a4a'], airraid:['⚠ KHÔNG KÍCH — TRỰC THĂNG ĐANG TỚI','#ff7ae0'] }[sc];
   WAVE.event=sc; WAVE.eventBanner=B[0]; WAVE.eventColor=B[1]; sfx('alarm'); return true; }
 export function applyScriptedWave(now){
