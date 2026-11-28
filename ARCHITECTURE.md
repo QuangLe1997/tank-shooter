@@ -53,7 +53,7 @@ tools/
 test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 ```
 
-### 2.1 Danh mục module (324 module theo thứ tự hub · 34.967 dòng)
+### 2.1 Danh mục module (325 module theo thứ tự hub · 35.036 dòng)
 
 <!-- MODULES:BEGIN (npm run modmap) -->
 | # | Module | Dòng | Nội dung |
@@ -95,7 +95,7 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 30 | `src/render/air-aa.js` | 22 | AIR 4 LESS SHIMMER: what sparkled while the camera moves. Specular anti-aliasing in every lit physical mater… |
 | 32 | `src/render/surface.js` | 103 | Z145 REAL SURFACES: what makes a built wall read as stone instead of painted plastic. |
 | 34 | `src/render/lod.js` | 54 | Z107 RENDER BUDGET: trims draw calls where the eye can't tell — soldier shadows only near the tank, tower / … |
-| 35 | `src/render/asset-diet.js` | 88 | DIET 1 ONE LOADER FOR EVERY MODEL FILE: meshopt geometry always (EXT_meshopt_compression), and KTX2 maps (KH… |
+| 35 | `src/render/asset-diet.js` | 108 | DIET 1 ONE LOADER FOR EVERY MODEL FILE: meshopt geometry always (EXT_meshopt_compression), and KTX2 maps (KH… |
 | 36 | `src/render/far-lod.js` | 111 | Z328 FAR LOD: a big static model (a fort's towers and gatehouse, our HQ) swaps to a simplified copy of itsel… |
 | 37 | `src/render/shadow-split.js` | 86 | SPLIT 1 (A1) THE SUN'S SHADOW IN TWO PARTS: what stands still (ground, walls, houses, rocks, trees, the fiel… |
 | 38 | `src/render/quality.js` | 44 | SPLIT 3 (A9) THREE QUALITY LEVELS + A FALL-BACK AFTER A CRASHED LOAD. Thấp / Vừa / Cao are the same battlefi… |
@@ -397,7 +397,8 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 306 | `src/dev/mixer-desk.js` | 141 | MIX 3 THE MIXER DESK (mixer.html): ten macro faders, the channel strips, live scores / clamps / warnings / t… |
 | 322 | `src/dev/hooks.js` | 72 | Z103 split from game/loop.js: window._* inspection/driving hooks used by Playwright smoke tests and the |
 | 323 | `src/dev/bot.js` | 196 | BOT 1 THE FIGHTING BOT: a player at the keyboard and mouse for calibrating the battle mixer (tools/calib.mjs… |
-| 324 | `src/dev/pose-studio.js` | 129 | Z349 THE POSE STUDIO: calibrate and judge how a soldier holds each of his weapons — for every new soldier mo… |
+| 324 | `src/dev/gltf-trace.js` | 49 | GLTF 1 THE MODEL LOADER'S BLOB LEDGER (dev only, asleep unless ?gltftrace): every blob: URL made and revoked… |
+| 325 | `src/dev/pose-studio.js` | 129 | Z349 THE POSE STUDIO: calibrate and judge how a soldier holds each of his weapons — for every new soldier mo… |
 <!-- MODULES:END -->
 
 ---

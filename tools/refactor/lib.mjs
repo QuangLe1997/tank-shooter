@@ -27,7 +27,7 @@ export function analyse(code){ const ast=parse(code), { mod }=scopeOf(ast), decl
   return { ast, mod, decls, local, other, hubBound, free, refs }; }
 export function exportIndex(){ const idx=new Map(); for(const f of listModules()){ for(const d of topDecls(parse(fs.readFileSync(f,'utf8')))) if(d.exported) idx.set(d.name,{ mod:rel(f).replace(/\.js$/,''), kind:d.kind }); } return idx; }
 // browser + language globals a module may use without importing (anything else must come from the hub)
-export const GLOBALS = new Set(('Path2D ResizeObserver MutationObserver MouseEvent URLSearchParams window document navigator location history localStorage sessionStorage performance console screen visualViewport innerWidth innerHeight devicePixelRatio '+
+export const GLOBALS = new Set(('Path2D ResizeObserver MutationObserver MouseEvent createImageBitmap ImageDecoder URLSearchParams window document navigator location history localStorage sessionStorage performance console screen visualViewport innerWidth innerHeight devicePixelRatio '+
  'requestAnimationFrame cancelAnimationFrame requestIdleCallback setTimeout clearTimeout setInterval clearInterval queueMicrotask structuredClone fetch alert confirm prompt '+
  'addEventListener removeEventListener dispatchEvent getComputedStyle matchMedia Image Audio AudioContext OfflineAudioContext OffscreenCanvas HTMLElement Event CustomEvent KeyboardEvent DOMParser XMLSerializer '+
  'Math JSON Date Promise Map Set WeakMap WeakSet Array Object Number String Boolean Symbol Error TypeError RangeError Float32Array Float64Array Uint8Array Uint16Array Uint32Array Int8Array Int16Array Int32Array Uint8ClampedArray ArrayBuffer DataView '+
