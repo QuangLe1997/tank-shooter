@@ -27,7 +27,7 @@ import { FORTS, startBoss } from '../hub.js';   // SECTOR 4
 import { enemies, bullets, parts, renderer } from '../hub.js';
 import { sectorDeal, forkOpen, forkTake, consWon, consRefillK, routeLive, routeTick, routeEnd } from '../hub.js';   // SECTOR 4 (campaign/sector-route.js)
 import { sectorGoalHas, sectorGoalStart, sectorGoalTick, sectorGoalClock, sectorGoalClear, sectorClimax, conqSectorLive } from '../hub.js';   // SECTOR 2 (campaign/sector-goals.js · campaign/conquest.js)
-import { spawnClear, addScore, spawnSquad, inField, inCamView, wetAt, frontYaw, rearArc, mainFort, fortBossWake, sectorMark, radio as sayRadio } from '../hub.js';   // BAL 6 (game/flow.js) · BAL 7 (game/score.js)
+import { spawnClear, addScore, spawnSquad, inField, inCamView, wetAt, frontYaw, rearArc, mainFort, fortBossWake, sectorMark } from '../hub.js';   // BAL 6 (game/flow.js) · BAL 7 (game/score.js)
 import { ARENA, BIOME, CV, LOGI, OBJ, S, SIDEM, SOLDIER, WAVE, ammoStart, applyBiome, beginStage, bigEventStart, blendScene, buildBlocks, buildLava, buildObjective, buildTrails, buildUnderground, camRestPose, camera,
   cavRespawn, clearField, clearSoldierWar, clearSoldiers, coopActive, compileReady, deploySoldiers, driverBack, gpuHeld, gpuRelease, modeSeed, modelEpoch, parkAtSpawn, radio, rebuildCore, scene,
   sectorRail, sectorTransitBlack, sectorTransitLine, sectorTransitShow, selectGun, gameOver, sfx, edgeNote, modeStageWon, sideMissionStart, squadList, stageWon, updateGunHUD, updateHUD, heightAt } from '../hub.js';
@@ -135,7 +135,7 @@ export function updateSectors(dt, now){ _starting = false; if(!SECT.on || !S.pla
   if(g.type === 'hold'){ const M = SIDEM.cur;
     if(!g.start || !M || M.kind !== 'truck'){ if(g.start && !M) g.start = 0; if((g.again -= dt) <= 0){ g.lost0 = SIDEM.stats.lost; if(sideMissionStart('truck', now)){ g.start = 1; note('truck'); } else g.again = 1; if(!g.start) return; } else { g.k = 0; rail(); return; } }
     const M2 = SIDEM.cur; if(!M2) return; g.k = M2.prog || 0; g.sub = M2.sub || '';
-    { const Q = BAL.hold; g.beat = g.beat || 0; if(Q.on && g.beat < Q.at.length && g.k >= Q.at[g.beat]){ beatSquads(Q.n[g.beat], Q.d); sayRadio(Q.say[g.beat]); g.beat++; note('beat', g.beat); } }   // BAL 14 arrive · push · peak
+    { const Q = BAL.hold; g.beat = g.beat || 0; if(Q.on && g.beat < Q.at.length && g.k >= Q.at[g.beat]){ beatSquads(Q.n[g.beat], Q.d); radio(Q.say[g.beat]); g.beat++; note('beat', g.beat); } }   // BAL 14 arrive · push · peak
     if(M2.state === 'won') return goalDone(now, null);
     if(M2.state === 'lost'){ if(SIDEM.stats.lost > g.lost0) return sectorFail('XE TIẾP TẾ BỊ ĐỐT'); g.start = 0; g.again = g.Y.again; note('again'); }   // expired / aborted (a life lost): offered again
     if(g.Y.climax && g.k >= g.Y.climax.at) climax(now); rail(); return; }
