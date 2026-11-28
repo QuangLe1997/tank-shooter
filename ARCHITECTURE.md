@@ -53,7 +53,7 @@ tools/
 test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 ```
 
-### 2.1 Danh mục module (334 module theo thứ tự hub · 35.814 dòng)
+### 2.1 Danh mục module (334 module theo thứ tự hub · 35.844 dòng)
 
 <!-- MODULES:BEGIN (npm run modmap) -->
 | # | Module | Dòng | Nội dung |
@@ -320,7 +320,7 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 313 | `src/campaign/mixer.js` | 83 | MIX 1 composeBattle(spec): ONE BATTLE FROM A BattleSpec (the arithmetic: data/mixer-math.js · the numbers: c… |
 | 315 | `src/campaign/sector-goals.js` | 200 | SECTOR 2 THE FOUR NEW SECTOR MISSIONS (config.js SECTOR.types · the run and its flow: campaign/sectors.js). … |
 | 316 | `src/campaign/sector-route.js` | 86 | SECTOR 4 THE ROUTE OF A LONG BATTLE (config.js SECROUTE · the run itself: campaign/sectors.js · the card, th… |
-| 317 | `src/campaign/conq-story.js` | 42 | SECTOR 6 THE CONQUEST'S STORY, FORT BY FORT (config.js CONQSTORY · text only). A fort's battle is a sector r… |
+| 317 | `src/campaign/conq-story.js` | 43 | SECTOR 6 THE CONQUEST'S STORY, FORT BY FORT (config.js CONQSTORY · text only). A fort's battle is a sector r… |
 | 318 | `src/campaign/tyrant.js` | 37 | SECTOR 6 BẠO CHÚA, THE LAST FORT'S GENERAL (config.js CONQSTORY.tyrant). He is the citadel's boss of campaig… |
 | | **loot/** — Vật phẩm, rơi đồ, nâng cấp roguelite | | |
 | 206 | `src/loot/soldier-arms.js` | 37 | Z352 ARMS OFF THE FIELD (soldier mode only): what a dead enemy carried is his to take. A rifleman sometimes … |
@@ -354,18 +354,18 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 254 | `src/ui/confirm.js` | 13 | XK-UI ONE CONFIRMATION DIALOG (#xkConfirm) for the choices that throw something away: leaving a battle, rest… |
 | 255 | `src/ui/hud-prefs.js` | 12 | Z324 WHAT THE BATTLE HUD SHOWS (CÀI ĐẶT): the dialogue on screen (the radio box, the driver's and the soldie… |
 | 256 | `src/ui/nocenter.js` | 56 | NOCENTER · no words over the aim. In a battle nothing textual is drawn inside the aim zone (NOCENTER.zone, t… |
-| 257 | `src/ui/hudux.js` | 74 | HUDUX the critic's HUD / UI-UX round 1: one small clock (4×/s) that keeps the battle HUD honest, and the rul… |
+| 257 | `src/ui/hudux.js` | 100 | HUDUX the critic's HUD / UI-UX round 1: one small clock (4×/s) that keeps the battle HUD honest, and the rul… |
 | 258 | `src/ui/loadout.js` | 37 | Z103 split from ui/menus.js. KHO SÚNG — Z411 THE SOLDIER'S ARSENAL (from the start screen, CHUẨN BỊ TRẬN or … |
 | 259 | `src/ui/medals-ui.js` | 116 | MEDAL 3 THE CAREER ON SCREEN: the shoulder board a rank wears, the medal discs, a medal's toast and the rank… |
 | 260 | `src/ui/result-fx.js` | 24 | UIX 3 the end-of-battle numbers count up: when a result screen opens (#gameover, #victory, #modeEnd, the bat… |
 | 261 | `src/ui/ranking.js` | 30 | Z163 BẢNG XẾP HẠNG: this week's and all-time best runs (lb/{uid}, lbw/{week}/e/{uid} — written only by the s… |
 | 266 | `src/ui/radar.js` | 51 | RADAR / MINIMAP |
 | 267 | `src/ui/instruments.js` | 67 | Z228 the soldier's instrument panel (desktop HUD, bottom-right): a north-up azimuth dial with him and his ri… |
-| 268 | `src/ui/squad-hud.js` | 24 | Z220 TỔ BỘ BINH panel (desktop HUD, bottom-left): the squad order in force ([U] cycles it), how the squad re… |
+| 268 | `src/ui/squad-hud.js` | 25 | Z220 TỔ BỘ BINH panel (desktop HUD, bottom-left): the squad order in force ([U] cycles it), how the squad re… |
 | 272 | `src/ui/alarm.js` | 34 | CORE-UNDER-ATTACK ALARM. Z133 early warning: the moment the core takes damage a banner shows its HP and dist… |
 | 276 | `src/ui/drone-hud.js` | 77 | DRONE 1 WHAT THE DRONE WAR SHOWS HIM: the red diamond over every marked enemy (one instanced mesh drawn over… |
 | 311 | `src/ui/conquest-map.js` | 41 | CONQ 1 THE CONQUEST'S ROAD on the battle setup's "Chiến dịch" tab (config CONQUEST; the battles: campaign/co… |
-| 319 | `src/ui/sector-hud.js` | 84 | SECTOR 1 what a sector run shows (css/sector.css): THE RAIL — one small line at the top of the HUD, "1 NGOẠI… |
+| 319 | `src/ui/sector-hud.js` | 86 | SECTOR 1 what a sector run shows (css/sector.css): THE RAIL — one small line at the top of the HUD, "1 NGOẠI… |
 | 320 | `src/ui/threat-edge.js` | 47 | BAL 3 A SHOOTER OFF THE SCREEN IS SHOWN AT ITS EDGE: a red chevron on the screen's rim toward every man off … |
 | 324 | `src/ui/coop-lobby.js` | 48 | COOP 4 THE CO-OP LOBBY'S SCREEN (shown instead of the home screen when the address has ?room=CODE) and the t… |
 | | **game/** — Luồng game, vòng lặp, khởi động | | |
