@@ -3325,6 +3325,10 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { BAL:Q, SECTOR:SE, CONQSTORY:CS }=await import('./config.js'), sg=R('src/campaign/sector-goals.js'), sc=R('src/campaign/sectors.js'), fb=R('src/campaign/fort-boss.js');
   ok(Q.infil.objD>=40 && Q.infil.objD<=120 && SE.types.infiltrate.time>=360 && SE.types.infiltrate.plantR>=4 && /const inf=\(sectorCur\(\)\|\|\{\}\)\.type==='infiltrate'/.test(R('src/campaign/operations.js')) && /if\(duelOn\(\) \|\| sneaking\(\)\) return;/.test(R('src/campaign/waves.js')),
     'BAL 30: the infiltration\'s target within reach of the insertion, ' + SE.types.infiltrate.time + ' s, nothing sent while he sneaks'); }
+// VOICEOFF 1 the spoken radio and the squad's talk off for everyone by default (owner, 28/11) — once per profile, Settings turns them back on
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), pf=R('src/core/profile.js'), st=R('src/ui/settings.js'), vc=R('src/audio/voice.js');
+  ok(/if\(!pr\.voiceOff1128\)\{ pr\.voiceOff1128=true; pr\.voice=false; pr\.banter=false; \}/.test(pf) && /PROFILE\.voice=false; PROFILE\.banter=false;/.test(st) && /export function voiceOn\(\)\{ return PROFILE\.voice!==false/.test(vc),
+    'VOICEOFF 1: voice and banter switched off once per profile, the audio reset keeps them off, every spoken line goes through voiceOn'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

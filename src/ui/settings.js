@@ -71,7 +71,7 @@ export function setTab(t){ SET.tab = SET_TABS.includes(t) ? t : 'game';
 export function resetTab(){ const D=SETTINGS_DEF, t=SET.tab;
   if(t==='game'){ PROFILE.difficulty=D.difficulty; PROFILE.hud=null; PROFILE.gore=true; saveProfile(); applyHud(); }
   else if(t==='video'){ PROFILE.quality=D.quality; PROFILE.fps=D.fps; PROFILE.shake=SHAKE.def; saveProfile(); setQuality(D.quality); }
-  else if(t==='audio'){ PROFILE.sound=true; PROFILE.sfxVol=D.sfxVol; PROFILE.music=true; PROFILE.voice=true; PROFILE.banter=true; PROFILE.ambience=true; PROFILE.realAudio=true; PROFILE.tinnitus=true; saveProfile(); audio(); setMuted(false); setMusicOn(true); }
+  else if(t==='audio'){ PROFILE.sound=true; PROFILE.sfxVol=D.sfxVol; PROFILE.music=true; PROFILE.voice=false; PROFILE.banter=false; PROFILE.ambience=true; PROFILE.realAudio=true; PROFILE.tinnitus=true; saveProfile(); audio(); setMuted(false); setMusicOn(true); }
   else if(t==='ctrl'){ PROFILE.ctrl=D.ctrl; padCfg().phone=PAD_CFG.def.phone; saveProfile(); }
   else if(t==='pad'){ const C=padCfg(); for(const k in PAD_CFG.def) C[k]=PAD_CFG.def[k]; saveProfile(); }
   else if(t==='cam'){ PROFILE.camStyle=D.camStyle; PROFILE.camTune=null; saveProfile(); }

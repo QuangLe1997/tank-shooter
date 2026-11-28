@@ -18,6 +18,7 @@ export function loadProfile(){
   if(!pr.best||typeof pr.best!=='object') pr.best={score:0,stage:1};
   if(pr.save && (typeof pr.save!=='object' || !(pr.save.stage>1 || (pr.save.loop|0)>0))) pr.save=null;   // resume if past stage 1 OR in an NG+ loop
   if(pr.save) pr.save.loop=pr.save.loop|0;
+  if(!pr.voiceOff1128){ pr.voiceOff1128=true; pr.voice=false; pr.banter=false; }   // VOICEOFF 1 (owner, 28/11): the spoken radio and the squad's talk off for everyone by default — the text stays; Settings → Âm thanh turns them back on
   if(!pr.perfCal6){ pr.perfCal6=true; delete pr.perfDpr; delete pr.perfAO; }   // PERF 7 the frame got lighter (stones, the ground's reads): what the FPS governor once took away (the resolution it settled at, the occlusion pass — kept for good) is given back once, for it to judge again
   if(!pr.biomes253){ pr.biomes253=true;   // Z253 the battlefield list shrank from 15 to 10: a saved pick moves to the nearest one that is left
     const OLD=['DESERT','RUINS','TUNDRA','FOUNDRY','CITADEL','MEADOW','CITY','HILLS','VILLAGE','SAVANNA','ARCTIC','STEELMILL','VOLCANO','QUARRY','CAVERN'], TO={ TUNDRA:'ARCTIC', HILLS:'MEADOW', VILLAGE:'MEADOW', STEELMILL:'FOUNDRY', CAVERN:'QUARRY' };
