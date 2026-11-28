@@ -19,17 +19,17 @@ const job = fn => new Promise((res, rej) => { JOBS.push(() => { try{ res(fn()); 
 const SEED = new WeakMap();
 export function farSeed(geo, lo){ if(geo && lo) SEED.set(geo, lo); }
 // the light copy of a geometry (cached per geometry: every tower of a fort shares one)
-export function farGeo(geo, keep){ if(SEED.has(geo)) return Promise.resolve(SEED.get(geo)); const K = keep || FARLOD.keep, C = LO.get(geo) || {}; if(!LO.has(geo)) LO.set(geo, C); if(C[K]) return C[K];   // Z412 keep: the share of triangles kept (one copy per share)
+export function farGeo(geo, keep, err){ if(SEED.has(geo)) return Promise.resolve(SEED.get(geo)); const K = keep || FARLOD.keep, E = err || FARLOD.err, CK = err ? K + '|' + err : K, C = LO.get(geo) || {}; if(!LO.has(geo)) LO.set(geo, C); if(C[CK]) return C[CK];   // (PERF 3 err: a looser error for a farther copy)   // Z412 keep: the share of triangles kept (one copy per share)
   const p = simplifier().then(S => S && job(() => { const g = geo.index ? geo : mergeVertices(geo, 1e-4), P = g.attributes.position;
     if(!g.index || !P || P.isInterleavedBufferAttribute) return null; return { g, mi:!!(g.attributes.mi && geo.groups && geo.groups.length) }; })
-    .then(r => r && offThread({ idx:new Uint32Array(r.g.index.array), pos:new Float32Array(r.g.attributes.position.array), keep:K, min:192, err:FARLOD.err, flags:[], mi:r.mi ? new Float32Array(r.g.attributes.mi.array) : null })
-      .then(w => w && w.err === 'worker' ? job(() => farInline(S, r.g, K, r.mi)) : w && !w.err && w.out.length < w.n * 0.8 ? { out:w.out, groups:w.groups } : null)   // (it would barely be lighter: none)
+    .then(r => r && offThread({ idx:new Uint32Array(r.g.index.array), pos:new Float32Array(r.g.attributes.position.array), keep:K, min:192, err:E, flags:[], mi:r.mi ? new Float32Array(r.g.attributes.mi.array) : null })
+      .then(w => w && w.err === 'worker' ? job(() => farInline(S, r.g, K, r.mi, E)) : w && !w.err && w.out.length < w.n * 0.8 ? { out:w.out, groups:w.groups } : null)   // (it would barely be lighter: none)
       .then(w => { if(!w) return null; const g = r.g, lo = new THREE.BufferGeometry(); for(const [k, a] of Object.entries(g.attributes)) lo.setAttribute(k, a); lo.setIndex(new THREE.BufferAttribute(w.out, 1));
         if(w.groups) for(const [a, b, c] of w.groups) lo.addGroup(a, b, c);   // Z435 a model of several materials keeps a group per material
         if(!geo.boundingSphere) geo.computeBoundingSphere(); lo.boundingSphere = geo.boundingSphere.clone(); if(geo.boundingBox) lo.boundingBox = geo.boundingBox.clone(); lo.userData.farOf = geo.uuid; return lo; }))).catch(() => null);
-  C[K] = p; return p; }
+  C[CK] = p; return p; }
 // (the same on this thread, where no worker can run: the simplified index and its groups per material)
-function farInline(S, g, K, mi){ const idx = Uint32Array.from(g.index.array), pos = Float32Array.from(g.attributes.position.array), target = Math.max(192, Math.floor(idx.length * K / 3) * 3), [out] = S.simplify(idx, pos, 3, target, FARLOD.err, []);
+function farInline(S, g, K, mi, E){ const idx = Uint32Array.from(g.index.array), pos = Float32Array.from(g.attributes.position.array), target = Math.max(192, Math.floor(idx.length * K / 3) * 3), [out] = S.simplify(idx, pos, 3, target, E || FARLOD.err, []);
   if(!out || out.length >= idx.length * 0.8) return null; return mi ? byMat(out, g.attributes.mi.array) : { out, groups:null }; }
 function byMat(out, M){ const n = out.length / 3, ord = [...Array(n).keys()].sort((a, b) => M[out[a * 3]] - M[out[b * 3]]), o2 = new Uint32Array(out.length), groups = [];
   ord.forEach((t, i) => { o2[i * 3] = out[t * 3]; o2[i * 3 + 1] = out[t * 3 + 1]; o2[i * 3 + 2] = out[t * 3 + 2]; });

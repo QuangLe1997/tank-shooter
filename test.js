@@ -837,7 +837,7 @@ ok(RAM.minV < RAM.fullV && RAM.fullV < 26, 'a ram needs speed, and full effect c
 
 // Z328 far models swap to a light copy (meshoptimizer), the ground scars are read by the ground's own shader
 { const fs=await import('node:fs'); const R=f=>fs.readFileSync(f,'utf8'), fl=R('src/render/far-lod.js'), C=await import('./config.js');
-  ok(/ASSETDIET\.simplifier/.test(fl) && /meshopt_simplifier\.module\.js/.test(C.ASSETDIET.simplifier) && /S\.simplify\(idx, pos, 3, target, FARLOD\.err, \[\]\)/.test(fl) && /new THREE\.LOD\(\)/.test(fl) && /lod\.addLevel\(lm, d, FARLOD\.hys\)/.test(fl) && C.FARLOD.on && C.FARLOD.keep<0.3 && C.FARLOD.far>=40, 'far LOD: a simplified copy past FARLOD.far, the model whole up close');
+  ok(/ASSETDIET\.simplifier/.test(fl) && /meshopt_simplifier\.module\.js/.test(C.ASSETDIET.simplifier) && /S\.simplify\(idx, pos, 3, target, E \|\| FARLOD\.err, \[\]\)/.test(fl) && /new THREE\.LOD\(\)/.test(fl) && /lod\.addLevel\(lm, d, FARLOD\.hys\)/.test(fl) && C.FARLOD.on && C.FARLOD.keep<0.3 && C.FARLOD.far>=40, 'far LOD: a simplified copy past FARLOD.far, the model whole up close');
   ok(/host\.add\(m\); return farLOD\(m\); \}/.test(R('src/world/fortress.js')) && /farLOD\(hq\)/.test(R('src/actors/core.js')) && /render\/far-lod\.js/.test(R('src/hub.js')), 'fort towers, gatehouses, keeps and the HQ get their far copies');
   const d=R('src/world/decals.js'), g=R('src/world/ground.js');
   ok(!/terrainGeo\(\)/.test(d) && /DECAL_U\.decalS\.value = decalTex\(DECAL\.stat\)/.test(d) && /vec2 duv = vec2\(vWXZ\.x \* decalK \+ 0\.5, 0\.5 - vWXZ\.y \* decalK\)/.test(g) && /'macroGround5'/.test(g), 'ground scars are drawn by the ground shader, not by two extra copies of the terrain'); }
@@ -2796,7 +2796,7 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
     'DIET 4 a KTX2 map\'s CPU copy is dropped once it is on the GPU, the parsed file let go once built, the fallback pictures after '+D.pxHold+' s; an empty map is refilled from its file before it is drawn'); }
   { const nd=rd('src/render/near-detail.js'); ok(/if\(hi && e\.twin\.source !== e\.hi\)\{ e\.twin\.dispose\(\); e\.twin\.source = e\.hi; e\.twin\.needsUpdate = true; \}/.test(nd) && /e\.hi = null; setTimeout\(\(\) => h\.data && h\.data\.close/.test(nd),
     'DIET 5 the sharp picture is closed after each hand-back, so a KTX2 map\'s twin wears the freshly fetched one on every swap-in (never a closed, 0-px picture: black trees)'); }
-  { const fl=rd('src/render/far-lod.js'); ok(D.offThread===true && /new window\.Worker\(URL\.createObjectURL/.test(fl) && /const weld = /.test(fl) && /job\(\(\) => farInline\(S, r\.g, K, r\.mi\)\)/.test(fl) && /job\(\(\) => shadowInline\(S, geo\)\)/.test(fl) && !/TextDecoder/.test(rd('src/render/asset-diet.js')),
+  { const fl=rd('src/render/far-lod.js'); ok(D.offThread===true && /new window\.Worker\(URL\.createObjectURL/.test(fl) && /const weld = /.test(fl) && /job\(\(\) => farInline\(S, r\.g, K, r\.mi, E\)\)/.test(fl) && /job\(\(\) => shadowInline\(S, geo\)\)/.test(fl) && !/TextDecoder/.test(rd('src/render/asset-diet.js')),
     'DIET 6 the far and shadow copies are welded and simplified in a worker (the vendored simplifier), on this thread only where no worker runs'); }
   { const br=rd('src/ui/briefing.js'); ok(/try\{ blendScene\(scene\); \}catch\(e\)\{\} \}\s+\/\/ DIET 8/.test(br) && br.indexOf('blendScene(scene)') < br.indexOf("S.mode='countdown'") && /--cpuprofile/.test(rd('tools/ts.mjs')) && /--noperf/.test(rd('tools/ts.mjs')),
     'DIET 8 the field is graded (its blendIn3 variants) before the 3-2-1 compiles its shaders, never in the fight; ts.mjs can profile the fight\'s first seconds and run without ?perf'); }
@@ -3158,6 +3158,14 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
     'PERF 2: the budget table holds the awake count (desktop '+B.desktop.activeFoes+', phone '+B.phone.activeFoes+') and the sleep radius (m)');
   ok(/foeSleepTick\(now\);/.test(tc) && /if\(foeAsleep\(e\)\) continue;/.test(tc) && /e\.guard \|\| e\.general \|\| e\.fortBoss/.test(fz) && /e\.hp < e\.maxHp - 0\.5/.test(fz) && /nosleep/.test(fz) && /^export \* from '\.\/ai\/foe-sleep\.js';/m.test(fs.readFileSync('src/hub.js','utf8')),
     'PERF 2: tactics ranks the men twice a second and skips the sleeping ones; bosses, generals, guards, scripted men and the hurt never sleep; ?nosleep turns it off'); }
+// PERF 3 (critic C1-024 / item 11) the performance budget and the far views of the field-wide instanced families (render/inst-view.js)
+{ const fs=await import('node:fs'), { PERF_BUDGET:PB, INSTVIEW:IV }=await import('./config.js'), iv=fs.readFileSync('src/render/inst-view.js','utf8'), V=PB.view;
+  ok(['desktop','phone'].every(d=>PB.frame[d].tris>0 && PB.frame[d].tris<=3e6 && PB.frame[d].calls>0 && PB.frame[d].maxMs<=50 && PB.frame[d].startMs<=PB.frame[d].maxMs && PB.frame[d].loadS<=10 && PB.fx[d].particles>0 && PB.fx[d].lights>=1)
+    && PB.frame.phone.tris<PB.frame.desktop.tris && PB.fx.phone.particles<PB.fx.desktop.particles, 'PERF 3: the budget — triangles, draw calls, worst frame, first second, load; the FX share — desktop above phone');
+  ok(V.far2Min>=IV.liteMax*0.6 && V.far2Max>V.far2Min && V.keep2>0 && V.keep2<IV.keep && V.keepCut2<=IV.keepCut && V.err2>0 && V.err2<0.2 && V.cone>V.turnStep && V.coneV>V.turnStep && V.pad>=0 && V.moveStep>0 && V.fogK>0 && V.fogK<=1.5,
+    'PERF 3: the far2 copy is lighter than the far one and starts farther; the view margin is wider than the turn that re-sorts it');
+  ok(/R\.far2 = mk\(g, false\)/.test(iv) && /PL\[0\] \* x \+ PL\[1\] \* y/.test(iv) && /addUpdateRange\(0, n \* at\.itemSize\)/.test(iv) && /turned\(R\) > ys \|\| moved\(R\) > PV\.moveStep/.test(iv) && /if\(d2 < d2l\)\{ V = near; j = a\+\+; \}/.test(iv),
+    'PERF 3: the near view is untouched; only the far views are cut to the widened view and the fog, re-sorted at once on a turn; the upload covers only the instances in use'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

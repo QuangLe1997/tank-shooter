@@ -9,11 +9,18 @@
 //   and past dHide (small things only: a stone is a few pixels there) nothing. Distances come from the thing's size (a wall is never hidden, a stone
 //   is), and stretch when the camera pulls back. A view is rebuilt when the soldier has moved INSTVIEW.step m or the source changed — a few a frame.
 import * as THREE from 'three';
-import { INSTVIEW } from '../../config.js';
-import { MOBILE, S, camera, farGeo, renderer, scene } from '../hub.js';
+import { INSTVIEW, PERF_BUDGET } from '../../config.js';
+import { MOBILE, S, SHADOW_EXT, camera, farGeo, fogDist, renderer, scene } from '../hub.js';
+// PERF 3 FAR LIGHT, AND NOTHING BEHIND THE CAMERA OR IN THE FOG (PERF_BUDGET.view): the far view held every instance from dLite to dHide, all round the
+//   soldier, in one light copy — 85–90 % of a family's instances (a field of stones is mostly far) and most of the triangles a battle drew. Now
+//   · past far2 m (from the size, at least far2Min) a second, lighter copy (keep2 of the triangles, a looser error): a stone that is 15 px there;
+//   · the far views keep only what lies inside the camera's view widened by `cone` / `coneV` degrees each side (re-sorted at once when the camera
+//     has turned turnStep degrees or moved moveStep m — the margin is wider than a turn in one frame) and nearer than the fog's ~92 % opaque distance;
+//   · the near view (the mesh's own geometry, its shadows) is untouched: within dLite everything is drawn, behind him too (its shadows fall into view).
+//   Only while he plays (a fly-in, a transit, a death camera keep the whole ring). The upload is only the part of each buffer in use.
 
 const C = INSTVIEW, RECS = new Map(), _m = new THREE.Matrix4(), _v = new THREE.Vector3();
-let DRAW = 0, _scanT = 0, _was = '';
+let DRAW = 0, _scanT = 0, _was = ''; const PV = PERF_BUDGET.view, CONE = { on:false, x:0, y:0, z:0, pl:new Float32Array(16), fog:Infinity };
 const trisOf = g => (g.index ? g.index.count : g.attributes.position ? g.attributes.position.count : 0) / 3;
 const instNames = g => Object.keys(g.attributes).filter(k => g.attributes[k].isInstancedBufferAttribute);
 const cutout = im => (Array.isArray(im.material) ? im.material : [im.material]).some(m => m && (m.alphaTest > 0 || m.transparent));
@@ -38,7 +45,7 @@ function viewGeo(src, names, cap){ if(!names.length) return src; const g = new T
 function wrap(im){ const g = im.geometry, names = instNames(g), cap = im.instanceMatrix.count, n = trisOf(g); if(!g.boundingSphere) g.computeBoundingSphere();
   let sc = 0, k = 0; for(let i = 0; i < im.count && k < 8; i += Math.max(1, (im.count / 8) | 0)){ im.getMatrixAt(i, _m); const s = _v.setFromMatrixColumn(_m, 0).length(); if(s > 1e-4){ sc += s; k++; } }
   const r = g.boundingSphere.radius * (k ? sc / k : 1); if(!(r > 0) || r > C.maxR){ im.userData.noView = true; return; }   // (a ridge, a backdrop piece: tuned where it is made)
-  const hide = r * C.hideK < C.never ? Math.max(C.hideMin, r * C.hideK) : Infinity, lite = !MOBILE && n >= C.liteMinTris;
+  const hide = r * C.hideK < C.never ? Math.max(C.hideMin, r * C.hideK) : Infinity, lite = (!MOBILE || (PV.on && PV.phoneLite)) && n >= C.liteMinTris;   // (PERF 3 phones too: the light copies are made off the main thread since DIET 6)
   const shade = !!im.castShadow && !MOBILE;   // VIEW 2 a shadow caster gains even with no light copy and never hidden: only its near instances go into the shadow pass
   if(!lite && !shade && hide === Infinity){ im.userData.noView = true; return; }   // nothing to gain
   const dLite = lite || shade ? Math.min(hide, im.userData.viewLite || Math.min(C.liteMax, Math.max(C.liteMin, r * C.liteK))) : hide;   // (A3 a mesh with a light copy made offline says where it starts: userData.viewLite)
@@ -48,32 +55,51 @@ function wrap(im){ const g = im.geometry, names = instNames(g), cap = im.instanc
     if(im.customDepthMaterial) v.customDepthMaterial = im.customDepthMaterial; if(im.customDistanceMaterial) v.customDistanceMaterial = im.customDistanceMaterial;
     if(im.instanceColor) v.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(cap * 3), 3).setUsage(THREE.DynamicDrawUsage);
     v.userData.viewOf = im; G.add(v); return v; };
-  const R = { im, G, geo:g, mat:im.material, cap, names, hasCol:!!im.instanceColor, dLite, dHide:hide, near:mk(g, true), far:null, dyn:im.instanceMatrix.usage !== THREE.StaticDrawUsage, pos:null, sig:-1, cx:1e9, cz:1e9, k:1, dirty:true, count:im.count, off:null };
+  const R = { im, G, geo:g, mat:im.material, cap, names, hasCol:!!im.instanceColor, dLite, dHide:hide, near:mk(g, true), far:null, far2:null, dFar2:Infinity, r, dyn:im.instanceMatrix.usage !== THREE.StaticDrawUsage, pos:null, sig:-1, cx:1e9, cz:1e9, k:1, cone:false, fx:0, fy:0, fz:1, qx:0, qy:0, qz:0, dirty:true, count:im.count, off:null };
   if((lite || shade) && dLite < hide){ R.far = mk(g, false); if(lite)   // the far view wears the whole geometry until its light copy is ready (or for good: a packed scan, a tree of loose leaves)
     farGeo(g, cutout(im) ? C.keepCut : C.keep).then(lo => { if(RECS.get(im) !== R || im.geometry !== g) return; if(lo){ R.far.geometry = viewGeo(lo, names, cap); R.dirty = true; }
-      else if(hide === Infinity && !shade){ unwrap(R); im.userData.noView = true; } }); }   // (it would not simplify, is never hidden and casts no shadow: nothing to gain, it draws itself again)
+      else if(hide === Infinity && !shade){ unwrap(R); im.userData.noView = true; } });
+    const d2 = Math.min(PV.far2Max, Math.max(PV.far2Min, dLite * PV.far2K));   // PERF 3 the farther, lighter copy (its instances stay in the far view until it is ready)
+    if(lite && PV.on && d2 < hide){ R.far2 = mk(g, false); farGeo(g, cutout(im) ? PV.keepCut2 : PV.keep2, PV.err2).then(lo => { if(RECS.get(im) !== R || im.geometry !== g || !lo) return; R.far2.geometry = viewGeo(lo, names, cap); R.dFar2 = d2; R.dirty = true; }); } }   // (it would not simplify, is never hidden and casts no shadow: nothing to gain, it draws itself again)
   Object.defineProperty(im, 'count', { configurable:true, enumerable:true, get(){ return DRAW ? 0 : R.count; }, set(x){ R.count = x; } });
   R.off = () => unwrap(R); im.addEventListener('removed', R.off); im.parent.add(G); RECS.set(im, R); }
 
 function unwrap(R){ const im = R.im; if(RECS.get(im) !== R) return; RECS.delete(im); im.removeEventListener('removed', R.off);
   Object.defineProperty(im, 'count', { value:R.count, writable:true, configurable:true, enumerable:true }); R.G.removeFromParent();
-  for(const v of [R.near, R.far]) if(v) v.dispose(); }   // (their matrices and colours leave the GPU; a twin geometry shares the source's vertex buffers and is left to the collector)
+  for(const v of [R.near, R.far, R.far2]) if(v) v.dispose(); }   // (their matrices and colours leave the GPU; a twin geometry shares the source's vertex buffers and is left to the collector)
 
 const sigOf = (im, R) => { let s = im.instanceMatrix.version * 7 + R.count * 13 + (im.instanceColor ? im.instanceColor.version * 3 : 0); for(const k of R.names) s += im.geometry.attributes[k].version * 5; return s; };
 // where each instance stands (world x, z)
-function positions(R){ const im = R.im, N = R.count, A = im.instanceMatrix.array; if(!R.pos || R.pos.length < N * 2) R.pos = new Float32Array(Math.max(N, R.cap) * 2); im.updateWorldMatrix(true, false); const E = im.matrixWorld.elements, P = R.pos;
-  for(let i = 0; i < N; i++){ const o = i * 16, x = A[o + 12], y = A[o + 13], z = A[o + 14]; P[i * 2] = E[0] * x + E[4] * y + E[8] * z + E[12]; P[i * 2 + 1] = E[2] * x + E[6] * y + E[10] * z + E[14]; } }
+function positions(R){ const im = R.im, N = R.count, A = im.instanceMatrix.array; if(!R.pos || R.pos.length < N * 2){ R.pos = new Float32Array(Math.max(N, R.cap) * 2); R.py = new Float32Array(Math.max(N, R.cap)); } im.updateWorldMatrix(true, false); const E = im.matrixWorld.elements, P = R.pos, PY = R.py;
+  for(let i = 0; i < N; i++){ const o = i * 16, x = A[o + 12], y = A[o + 13], z = A[o + 14]; P[i * 2] = E[0] * x + E[4] * y + E[8] * z + E[12]; P[i * 2 + 1] = E[2] * x + E[6] * y + E[10] * z + E[14]; PY[i] = E[1] * x + E[5] * y + E[9] * z + E[13]; } }   // (PERF 3 its height too: the view's top and bottom)
 
-function rebuild(R, px, pz, k){ const im = R.im, N = R.count, A = im.instanceMatrix.array, CA = R.hasCol ? im.instanceColor.array : null, P = R.pos, GA = im.geometry.attributes, near = R.near, far = R.far;
-  const dl = R.dLite * k, d2l = dl * dl, d2h = R.dHide === Infinity ? Infinity : R.dHide * R.dHide * k * k; let a = 0, b = 0;
+function rebuild(R, px, pz, k){ const im = R.im, N = R.count, A = im.instanceMatrix.array, CA = R.hasCol ? im.instanceColor.array : null, P = R.pos, GA = im.geometry.attributes, near = R.near, far = R.far, far2 = PV.on ? R.far2 : null; if(!far2 && R.far2 && R.far2.count){ R.far2.count = 0; R.far2.visible = false; }
+  const dl = R.dLite * k, d2l = dl * dl, d2h = R.dHide === Infinity ? Infinity : R.dHide * R.dHide * k * k, d2f = R.dFar2 === Infinity ? Infinity : R.dFar2 * R.dFar2 * k * k; let a = 0, b = 0, c = 0;
+  const Q = CONE, cone = Q.on, cx = Q.x, cy = Q.y, cz = Q.z, PL = Q.pl, PY = R.py, rr = R.r + PV.pad, fg = Q.fog + R.r, fg2 = fg * fg;   // PERF 3 the camera's view, widened
   for(let i = 0; i < N; i++){ const dx = P[i * 2] - px, dz = P[i * 2 + 1] - pz, d2 = dx * dx + dz * dz; let V, j;
-    if(d2 < d2l){ V = near; j = a++; } else if(far && d2 < d2h){ V = far; j = b++; } else continue;
+    if(d2 < d2l){ V = near; j = a++; } else if(far && d2 < d2h){
+      if(cone){ const x = P[i * 2], y = PY[i], z = P[i * 2 + 1], ex = x - cx, ez = z - cz; if(ex * ex + ez * ez > fg2) continue;   // (in the fog,
+        if(PL[0] * x + PL[1] * y + PL[2] * z + PL[3] < -rr || PL[4] * x + PL[5] * y + PL[6] * z + PL[7] < -rr || PL[8] * x + PL[9] * y + PL[10] * z + PL[11] < -rr || PL[12] * x + PL[13] * y + PL[14] * z + PL[15] < -rr) continue; }   //  or outside the widened view)
+      if(far2 && d2 >= d2f){ V = far2; j = c++; } else { V = far; j = b++; } } else continue;
     const T = V.instanceMatrix.array, o = i * 16, t = j * 16; for(let q = 0; q < 16; q++) T[t + q] = A[o + q];
     if(CA){ const TC = V.instanceColor.array; TC[j * 3] = CA[i * 3]; TC[j * 3 + 1] = CA[i * 3 + 1]; TC[j * 3 + 2] = CA[i * 3 + 2]; }
     for(let q = 0; q < R.names.length; q++){ const s = GA[R.names[q]], d = V.geometry.attributes[R.names[q]], w = s.itemSize; for(let e = 0; e < w; e++) d.array[j * w + e] = s.array[i * w + e]; } }
-  for(const V of [near, far]){ if(!V) continue; const n = V === near ? a : b; V.count = n; V.visible = n > 0; if(!n) continue; V.instanceMatrix.needsUpdate = true; if(CA) V.instanceColor.needsUpdate = true;
-    for(let q = 0; q < R.names.length; q++) V.geometry.attributes[R.names[q]].needsUpdate = true; }
-  R.cx = px; R.cz = pz; R.k = k; R.dirty = false; }
+  for(const V of [near, far, far2]){ if(!V) continue; const n = V === near ? a : V === far ? b : c; V.count = n; V.visible = n > 0; if(!n) continue; upTo(V.instanceMatrix, n); if(CA) upTo(V.instanceColor, n);
+    for(let q = 0; q < R.names.length; q++) upTo(V.geometry.attributes[R.names[q]], n); }
+  R.cx = px; R.cz = pz; R.k = k; R.cone = cone; R.fx = _fw.x; R.fy = _fw.y; R.fz = _fw.z; R.qx = Q.x; R.qy = Q.y; R.qz = Q.z; R.pv = PV.on; R.dirty = false; }
+// PERF 3 only the instances in use go to the GPU (the whole buffer was sent on every rebuild)
+function upTo(at, n){ if(at.clearUpdateRanges){ at.clearUpdateRanges(); at.addUpdateRange(0, n * at.itemSize); } at.needsUpdate = true; }
+// PERF 3 where the camera looks this frame (off outside play — a fly-in, a transit, a death camera — or with PERF_BUDGET.view.on false)
+//   the view: the camera's own frustum, each side turned out by `cone` degrees (sides) / coneV (top, bottom) — its four side planes, near and far ignored
+const _wc = new THREE.PerspectiveCamera(), _fr = new THREE.Frustum(), _pm = new THREE.Matrix4(), _fw = new THREE.Vector3();
+function coneNow(){ const Q = CONE; Q.on = PV.on && (S.mode === 'playing' || S.mode === 'countdown'); if(!Q.on) return;
+  camera.updateMatrixWorld(); const D = Math.PI / 180, vh = Math.min(85 * D, camera.fov * D / 2 + PV.coneV * D), hh = Math.min(85 * D, Math.atan(Math.tan(camera.fov * D / 2) * camera.aspect) + PV.cone * D);
+  _wc.fov = 2 * vh / D; _wc.aspect = Math.tan(hh) / Math.tan(vh); _wc.near = 0.1; _wc.far = 10; _wc.updateProjectionMatrix();
+  _fr.setFromProjectionMatrix(_pm.multiplyMatrices(_wc.projectionMatrix, camera.matrixWorldInverse)); for(let i = 0; i < 4; i++){ const p = _fr.planes[i]; Q.pl[i * 4] = p.normal.x; Q.pl[i * 4 + 1] = p.normal.y; Q.pl[i * 4 + 2] = p.normal.z; Q.pl[i * 4 + 3] = p.constant; }
+  Q.x = camera.position.x; Q.y = camera.position.y; Q.z = camera.position.z; camera.getWorldDirection(_fw); Q.fog = fogDist() * PV.fogK; }
+// how far the camera has turned (rad) or moved (m) since a view was sorted for it
+const turned = R => Math.acos(Math.max(-1, Math.min(1, R.fx * _fw.x + R.fy * _fw.y + R.fz * _fw.z)));
+const moved = R => Math.hypot(CONE.x - R.qx, CONE.y - R.qy, CONE.z - R.qz);
 
 // every frame (game/loop.js): find new field-wide meshes now and then, follow the soldier
 // SECTOR 1 is it still in the battle? A source taken down inside its group (a fort, a camp, a whole field rebuilt) keeps its parent and never hears
@@ -81,7 +107,7 @@ function rebuild(R, px, pz, k){ const im = R.im, N = R.count, A = im.instanceMat
 const inScene = o => { while(o.parent) o = o.parent; return o === scene; };
 export function updateInstViews(){ if(!C.on){ if(RECS.size) for(const R of [...RECS.values()]) unwrap(R); return; } const now = performance.now() / 1000;   // (INSTVIEW.on switched off while playing: every source draws itself again)
   if(now > _scanT || (S.mode === 'playing' && _was !== 'playing')){ _scanT = now + C.scan; scene.traverse(o => { if(eligible(o)) wrap(o); }); } _was = S.mode;
-  if(!RECS.size) return; const pl = S.player && S.player.pos, px = pl ? pl.x : camera.position.x, pz = pl ? pl.z : camera.position.z;
+  if(!RECS.size) return; coneNow(); const ys = PV.turnStep * Math.PI / 180; const pl = S.player && S.player.pos, px = pl ? pl.x : camera.position.x, pz = pl ? pl.z : camera.position.z;
   const k = pl ? Math.min(C.maxK, Math.max(1, Math.hypot(camera.position.x - px, camera.position.y - (pl.y || 0), camera.position.z - pz) / C.ref)) : 1; let budget = C.perFrame;
   for(const R of RECS.values()){ const im = R.im;
     if(!im.parent || !inScene(im) || im.geometry !== R.geo || im.material !== R.mat || !!im.instanceColor !== R.hasCol || im.instanceMatrix.count !== R.cap){ unwrap(R); continue; }   // (changed under us: wrapped anew at the next scan)
@@ -89,8 +115,9 @@ export function updateInstViews(){ if(!C.on){ if(RECS.size) for(const R of [...R
     const s = sigOf(im, R);
     if(s !== R.sig){ R.sig = s; positions(R); R.dirty = true; }
     else if(!R.dirty){ const dx = px - R.cx, dz = pz - R.cz; if(dx * dx + dz * dz > C.step * C.step || Math.abs(k - R.k) > C.kStep) R.dirty = true; }
+    if(R.far && (R.cone !== CONE.on || R.pv !== PV.on || (CONE.on && (turned(R) > ys || moved(R) > PV.moveStep)))){ rebuild(R, px, pz, k); continue; }   // PERF 3 turned (or the cone came on / off): at once, outside the budget
     if(R.dirty && budget > 0){ budget--; rebuild(R, px, pz, k); } } }
 // what the views save right now (tools/ts.mjs probes, the perf HUD)
 export function instViewSwitch(on){ C.on = !!on; _scanT = 0; }   // (tests: compare both ways in one battle)
-export function instViewStats(){ let src = 0, drawn = 0, n = 0; for(const R of RECS.values()){ const t = trisOf(R.geo); src += t * R.count; drawn += trisOf(R.near.geometry) * R.near.count + (R.far ? trisOf(R.far.geometry) * R.far.count : 0); n++; }
+export function instViewStats(){ let src = 0, drawn = 0, n = 0; for(const R of RECS.values()){ const t = trisOf(R.geo); src += t * R.count; drawn += trisOf(R.near.geometry) * R.near.count + (R.far ? trisOf(R.far.geometry) * R.far.count : 0) + (R.far2 ? trisOf(R.far2.geometry) * R.far2.count : 0); n++; }
   return { meshes:n, tris:Math.round(src), drawn:Math.round(drawn) }; }
