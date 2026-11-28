@@ -3174,6 +3174,10 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
 { const fs=await import('node:fs'), { PERF_BUDGET:PB }=await import('./config.js'), sc=fs.readFileSync('src/campaign/sectors.js','utf8');
   ok(Number.isInteger(PB.transit.prime) && PB.transit.prime>=0 && PB.transit.prime<=12 && /tr\.ph = 'prime'/.test(sc) && /function primeStep\(tr\)/.test(sc) && /if\(tr\.ph === 'prime'\)\{ primeStep\(tr\); return; \}/.test(sc),
     'PERF 5: compiled and still black, the camera visits '+PB.transit.prime+' points of the ride before the black lifts'); }
+// PERF 6 the perf HUD's worst frame in a fight counts the frames since GO (the loading veil's first frame no longer reads as the battle's start)
+{ const fs=await import('node:fs'), ph=fs.readFileSync('src/render/perfhud.js','utf8');
+  ok(/function perfMax\(r, last\)/.test(ph) && /PH\.goN=1; PH\.lm=S\.mode;/.test(ph) && /worst=perfMax\(PH\.frm, S\.mode==='playing' \? Math\.max\(1, PH\.goN\) : 0\)/.test(ph) && /push\(PH\.frm, dtMs\); PH\.goN\+\+;/.test(ph),
+    'PERF 6: the HUD\'s worst frame in play is the worst since GO (the ring itself is untouched: tools/ts.mjs reads it by index)'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
