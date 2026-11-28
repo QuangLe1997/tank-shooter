@@ -8,7 +8,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
-import { ASSETDIET } from '../../config.js';
+import { ASSETDIET, GLTFLOAD } from '../../config.js';
 import { S, blendIn, compileReady, renderer } from '../hub.js';
 
 let _k2 = null, _ok = null, _l1 = null, _l0 = null;
@@ -21,7 +21,27 @@ export function ktx2Ok(){ if(_ok) return _ok;
   return (_ok = Promise.race([_k2.loadAsync(ASSETDIET.basis + 'probe.ktx2').then(t => { t.dispose(); return true; }), late]).catch(e => { console.warn('[diet] KTX2 off —', e && e.message); return false; })
     .then(ok => (DIET_STATE.ktx2 = ok))); }
 // a GLTF loader: the KTX2 one once proven, else the one that reads the fallback pictures (both read meshopt)
-export const gltfLoader = () => ktx2Ok().then(ok => ok ? (_l1 || (_l1 = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).setKTX2Loader(_k2))) : (_l0 || (_l0 = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder))));
+export const gltfLoader = () => ktx2Ok().then(ok => ok ? (_l1 || (_l1 = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).setKTX2Loader(_k2).register(blobless))) : (_l0 || (_l0 = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).register(blobless))));
+// GLTF 1 an embedded picture read straight from the file's bytes (config GLTFLOAD): three's loadImageSource made a Blob + blob: URL per picture and fetched
+//   it back; a used Blob's bytes stay counted against Chrome's live-blob cap until its JS object is collected, and once the cap is full every new blob
+//   fetch fails ("Couldn't load texture blob:…", the map left off). A KTX2 one: its bytes to the transcoder (no Blob); a JPEG / PNG: decoded from its bytes
+//   by WebCodecs' ImageDecoder (where there is none — Safari — createImageBitmap on one Blob, no URL), once more after retryMs if it fails. Same textures
+//   as three's path (all 2243 of the repo's: format, levels, size, colour space, sampling), pixels ±1 on a few bytes of a 4K JPEG; same source cache and
+//   userData; a picture by URI (none in our files) still takes three's path.
+const DS = { ktx2:0, img:0, retry:0, fail:0 }; DIET_STATE.blobless = DS;
+function blobless(P){ const base = P.loadImageSource;
+  P.loadImageSource = function(i, loader){ const d = this.json.images[i];
+    if(!GLTFLOAD.on || !d || d.bufferView === undefined || this.sourceCache[i] !== undefined || !(loader === _k2 || loader.isImageBitmapLoader)) return base.call(this, i, loader);
+    const k = loader === _k2, O = Object.assign({}, loader.options, { colorSpaceConversion:'none' });
+    const viaBlob = b => createImageBitmap(new Blob([b], { type:d.mimeType }), O), D0 = typeof ImageDecoder !== 'undefined' && GLTFLOAD.decoder;
+    const viaDec = b => { const D = new ImageDecoder({ data:b, type:d.mimeType, colorSpaceConversion:'none', premultiplyAlpha:'none' }); return D.decode().then(r => createImageBitmap(r.image, O).finally(() => { r.image.close(); D.close(); })); };
+    const pic = b => (D0 ? Promise.resolve().then(() => viaDec(b)).catch(() => viaBlob(b)) : viaBlob(b)).then(bm => { const t = new THREE.Texture(bm); t.needsUpdate = true; return t; });
+    const p = this.getDependency('bufferView', d.bufferView).then(b => k ? new Promise((ok, no) => _k2.parse(b.slice(0), ok, no)).then(t => (DS.ktx2++, t))
+        : pic(b).catch(() => { DS.retry++; return new Promise(r => setTimeout(r, GLTFLOAD.retryMs)).then(() => pic(b)); }).then(t => (DS.img++, t)))
+      .then(t => { if(d.extras && typeof d.extras === 'object') Object.assign(t.userData, d.extras); t.userData.mimeType = d.mimeType; return t; })
+      .catch(e => { DS.fail++; console.error('THREE.GLTFLoader: Couldn\'t load texture', 'image ' + i + ' (' + d.mimeType + ')', e && e.message || e); throw e; });
+    this.sourceCache[i] = p; return p; };
+  return { name:'DIET_BLOBLESS' }; }
 export function loadGLB(url){ INFL.n++; return gltfLoader().then(L => L.loadAsync(url)).then(gl => { DIET_STATE.files++; return ASSETDIET.pxFrom.some(s => url.includes(s)) || (gl.parser && (gl.parser.json.skins || []).length) ? withPx(gl) : gl; }).then(gl => { keepLean(gl, url); return lateWarm(gl); }).finally(() => { if(--INFL.n <= 0){ INFL.n = 0; const W = INFL.w.splice(0); for(const f of W) f(); } }); }
 // DIET 10 the model files still on their way: a stage's countdown waits for them (ui/briefing.js beginStage, at most late.waitMs) so SPLIT's 3-2-1 compiles and uploads them
 const INFL = { n:0, w:[] };

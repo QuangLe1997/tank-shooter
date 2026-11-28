@@ -3739,6 +3739,15 @@ export const NOCENTER = {
 //   DIET 6 offThread: render/far-lod.js welds and simplifies in a worker (one big geometry held a frame 690 ms)
 export const ASSETDIET = { ktx2:true, basis:'assets/lib/basis/', simplifier:'assets/lib/meshopt/meshopt_simplifier.module.js', workers:4, probeMs:8000, offThread:true, pxFrom:['/tree/'], late:{ on:!(typeof location !== 'undefined' && /[?&]nolate\b/.test(location.search)), waitMs:4000, linkMs:900, upMs:4, maxMs:2500, matWait:6, matEvery:0.5, matBatch:16 }, drop:!(typeof location !== 'undefined' && /[?&]nodrop\b/.test(location.search)), pxHold:20,
   treeFar:{ on:!(typeof location !== 'undefined' && /[?&]notreefar\b/.test(location.search)), dir:'assets/models/real/tree/m/', at:80, max:0.6 } };
+// GLTF 1 A MODEL'S PICTURES READ STRAIGHT FROM ITS FILE, NO blob: URL (render/asset-diet.js blobless; dev/gltf-trace.js the ledger, ?gltftrace) — three's
+//   GLTFLoader wrapped every embedded picture in a Blob, gave it a blob: URL and fetched it back (a JPEG made a second Blob, the response). A picture
+//   fails exactly as "Couldn't load texture blob:…" (the piece drawn without that map) when the blob fetch fails or the decode does: the files all
+//   decode, nothing revokes a URL early, but Chrome caps the live Blobs' bytes (~500 MB in headless Chrome here) and a used Blob's bytes stay counted
+//   — its URL revoked or not — until its JS object is collected, which V8 does not hurry (it is never told their size): with ~600 MB of Blobs not
+//   yet collected three's own path fails every time. Now no model picture touches the blob store: a KTX2 one's bytes go to the transcoder as they
+//   are, a JPEG / PNG is decoded from its bytes (decoder: WebCodecs' ImageDecoder; without it — Safari — one Blob, no URL), tried again once after
+//   retryMs if it fails. on: off with ?blobs (three's own path, for comparing)
+export const GLTFLOAD = { on:!(typeof location !== 'undefined' && /[?&]blobs\b/.test(location.search)), decoder:true, retryMs:80 };
 // =====================================================================// CONQ 1 CHINH PHẠT 10 THÀNH (campaign/conquest.js · its map: ui/conquest-map.js) — the campaign is a road of ten forts of Hắc Thiết, taken one by one; each
 //   fort's general guards a TREASURE (báu vật) the next fort needs. A fort is a battle (a mode of campaign/mode-run.js: run.conq = the fort's index): its
 //   capital's boss is the fort's general (name, look); his fall takes the fort → the treasure's screen, the next fort opens. Kept in PROFILE.conquest

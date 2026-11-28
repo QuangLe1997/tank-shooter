@@ -324,4 +324,5 @@ export * from './game/coop-glue.js';   // COOP 4–7 the game's side of two-play
 export * from './game/startup.js';
 export * from './dev/hooks.js';
 export * from './dev/bot.js';   // BOT 1 the fighting bot (dev only: ?bot or botStart() from a probe — asleep in normal play)
+export * from './dev/gltf-trace.js';   // GLTF 1 the model loader's blob ledger (dev only: ?gltftrace)
 export * from './dev/pose-studio.js';   // Z349 the pose studio: how a soldier holds each weapon, measured and photographed (window.poseStudio)

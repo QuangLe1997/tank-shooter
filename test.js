@@ -3070,6 +3070,14 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   ok(/'--watchdog'/.test(ts) && /\+opt\('--watchdog', 0\)/.test(ts) && /H\.botStart\(\{ skill:SKILL \}\)/.test(cal) && /H\.composeBattle\(SPEC\)/.test(cal) && /'lockf', '-t', '1800'/.test(cal) && /scoreBattle\(/.test(cal), 'BOT 2: tools/calib.mjs plays specs with the bot through tools/ts.mjs (a longer watchdog, under the GPU lock) and sets them beside scoreBattle');
   { const { MIXER:MX }=await import('./config.js'), Q=MX.score; ok(Q.diffK>=6 && Q.diffK<=24 && Q.intK>=8 && Q.intK<=30 && Q.ref.kpm>3 && Q.ref.kpm<12 && Q.typeMin.hold>=1 && Q.typeMin.hold<Q.typeMin.sabotage && Q.typeMin.sabotage<=4.5 && Q.ref.waveMin>0.5 && Q.ref.waveMin<3,
     'BOT 3: the score block as the bot calibrated it — points per doubling of hardness / pressure, his kills a minute, a hold quicker than a sabotage'); } }
+// GLTF 1 a model's pictures read straight from its file (render/asset-diet.js blobless), the blob ledger asleep unless ?gltftrace (dev/gltf-trace.js)
+{ const fs=await import('node:fs'), C=await import('./config.js'), G=C.GLTFLOAD, rd=f=>fs.readFileSync(f,'utf8'), ad=rd('src/render/asset-diet.js'), tr=rd('src/dev/gltf-trace.js'), hub=rd('src/hub.js');
+  ok(G && G.on===true && G.decoder===true && G.retryMs>=20 && G.retryMs<=1000, 'GLTF 1: GLTFLOAD on outside the page (off only with ?blobs), the WebCodecs decoder first, one retry of a picture after 20–1000 ms');
+  ok((ad.match(/\.register\(blobless\)/g)||[]).length===2 && /_k2\.parse\(b\.slice\(0\), ok, no\)/.test(ad) && /createImageBitmap\(new Blob\(\[b\], \{ type:d\.mimeType \}\), O\)/.test(ad) && /new ImageDecoder\(\{ data:b, type:d\.mimeType, colorSpaceConversion:'none', premultiplyAlpha:'none' \}\)/.test(ad) && !/createObjectURL/.test(ad),
+    'GLTF 1: both model loaders read embedded pictures without a blob: URL — KTX2 bytes to the transcoder, JPEG / PNG to createImageBitmap');
+  ok(/this\.sourceCache\[i\] !== undefined/.test(ad) && /this\.sourceCache\[i\] = p/.test(ad) && /colorSpaceConversion:'none'/.test(ad) && /t\.userData\.mimeType = d\.mimeType/.test(ad),
+    'GLTF 1: the same source cache, colour handling and userData as three\'s own loadImageSource');
+  ok(/\[\?&\]gltftrace\\b/.test(tr) && /^if\(ON\)\{/m.test(tr) && /^export \* from '\.\/dev\/gltf-trace\.js';/m.test(hub), 'GLTF 1: the blob ledger is in the hub and patches nothing unless ?gltftrace'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
