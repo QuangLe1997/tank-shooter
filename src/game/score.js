@@ -1,5 +1,5 @@
 // game/score.js — SCORE / COMBO
-import { HUDCLEAN2 } from '../../config.js';
+import { BAL, HUDCLEAN2 } from '../../config.js';
 import { S, updateHUD } from '../hub.js';
 
 // ----------------------------- SCORE / COMBO -----------------------------
@@ -12,7 +12,7 @@ export function scoreNote(text, col){ const c=chip(); if(!c) return; const s=c.l
   c.classList.remove('fl'); void c.offsetWidth; c.classList.add('fl'); _lnT=performance.now()/1000+HUDCLEAN2.combo.lineT; }
 export function comboTick(now){ if(!_sc) return; const m=comboMult(); if(m!==_m){ _m=m; _sc.firstChild.textContent=m>1 ? '×'+m : ''; }
   if(m<=1 && now>_lnT && _sc.classList.contains('on')){ _sc.classList.remove('on'); _sc.lastChild.textContent=''; } }
-export function comboMult(){ return Math.min(8, 1 + Math.floor(S.combo/2)); }
+export function comboMult(){ return Math.min(BAL.score.comboMax, 1 + Math.floor(S.combo/2)); }   // BAL 7 (was up to ×8: the score ran into six figures in five minutes)
 export function bumpCombo(){ S.combo++; S.comboUntil = performance.now()/1000 + 3;
   const m=comboMult(), c=chip(); if(c && m>1){ _m=m; c.firstChild.textContent='×'+m; c.classList.add('on'); } }
 export function addScore(base, worldPos){   // (worldPos: where it was earned — no longer drawn there)

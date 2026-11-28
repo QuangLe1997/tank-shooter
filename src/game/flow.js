@@ -1,5 +1,6 @@
 // game/flow.js — GAME FLOW: start / pause / quit-to-menu, loadout guns for the run, menu ↔ HUD state, show/hide panels
-import { CAV, CORE_DEF } from '../../config.js';
+import { BAL, CAV, CORE_DEF } from '../../config.js';
+import { blocks, BUMPS, UGRID } from '../hub.js';   // BAL 6
 import { fieldWait, modeSeed, clearBigEvents, clearSideMissions, modelEpoch, veilOrder, askConfirm, confirmOpen, opFor, biomeVi, BIOME, SOLDIER, reportRun, CV, GUNS, cavRespawn, clearSoldierWar, driverBack, magCap, makeCavPlayer, rankReset, squadReset, trooperGuns, duelReset, gpuHeld, gpuRelease, clearGifts, VOICE_RULES, ARENA, MOBILE, PROFILE, S, WAVE, __set__alarmAt, __set_soldierLvl, applyBiome, applyContractHUD, audio, buildBlocks, buildCore, buildLava, buildObjective, buildTrails, buildUnderground, bullets, clearAllyOrdnance, clearEnemyMissiles, clearEquip, clearFieldcraft, clearFireteam, clearHeliDown, clearHelis, clearInfDead, clearLadders, clearLootBeacons, clearObjective, clearParadrops, clearPickups, clearRelic, clearSoldiers, clearSquads, clearSurprises, core, deploySoldiers, dropCavPlayer, enemies, enemyPool, freeEnemyBar, preloadVoices, queueResize, recycleBullet, refreshStartUI, reqFs, saveProfile, scene, sfx, showVeil, skipIntro, startIntro, startMusic, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD, openBattleSetup, clearDroneWar, clearLogistics, clearQuiet, clearFireFX, modeBegin, modeReady, modeQuit, modePauseTx, coopActive, coopFieldBuilt, coopBuildField, medalEnd, medalHush } from '../hub.js';
 import { loadMark, uxPlayNow } from '../hub.js';   // SPLIT 3 (render/quality.js)
 import { sectorBegin, sectorEnd } from '../hub.js';   // SECTOR 1 (campaign/sectors.js)
@@ -57,7 +58,7 @@ export function startGame(arg){
   S.score=stScore; S.stage=stStage; S.loop=stLoop; S.wave=0; S.firing=false; S.combo=0; S.comboUntil=0; S.shake=0;
   S.weapon=0; S.spell=0; S.enemySlowUntil=0;
   if(coopActive()){ coopBuildField(stStage, false); gpuRelease(held); }   // COOP 4 a co-op battle: the same builders, each on its own dice, then the fingerprint for the other page (game/coop-glue.js)
-  else { applyBiome(stStage); buildBlocks(); modeSeed(16); buildObjective(); modeSeed(17); buildLava(); modeSeed(18); buildUnderground(); modeSeed(19); buildTrails(); modeSeed(20); gpuRelease(held); }   // Z187 lava pools go in last (clear of forts and cover) · Z225 the tunnels + the cavern
+  else { applyBiome(stStage); buildBlocks(); modeSeed(16); buildObjective(); modeSeed(17); buildLava(); modeSeed(18); buildUnderground(); modeSeed(19); buildTrails(); modeSeed(20); gpuRelease(held); spawnClear(); }   // BAL 6 (the strip ahead of him cleared) · Z187 lava pools go in last (clear of forts and cover) · Z225 the tunnels + the cavern
   updateWeaponHUD(); updateSpellHUD();
   WAVE.active=false; WAVE.betweenUntil=performance.now()/1000 + 0.6; WAVE.spawnQueue.length=0;
   WAVE.event=null; WAVE.eventBanner=null; WAVE.treasure=false; WAVE.eliteForce=0; WAVE.assault=false;
@@ -81,6 +82,12 @@ export function clearField(){
 }
 // Z180 a new stage: the soldier goes back to the spawn the world generator keeps clear — the last stage's
 // position may be inside a fort, a wall or a building of the next battlefield. Ladder parties let go of the old walls.
+// BAL 6 THE FIRST STEP IS INTO THE FIELD: loose cover (sandbags, HESCO, crates, wrecks…) in a strip w m either side of the spawn and l m ahead of it is taken off the field
+//   once it is built (no wall 3 m in front of him on the first frame); forts, towers, buildings stay. Cover beside the strip stays to hide behind.
+export function spawnClear(){ const p = S.player, Q = BAL.spawn; if(!p || !Q.on) return 0; const x0 = p.pos.x, z0 = p.pos.z, f = p.facing || -Math.PI, sx = Math.sin(f), sz = Math.cos(f); let n = 0;
+  for(let i = blocks.length - 1; i >= 0; i--){ const b = blocks[i]; if(!b.cover || b.fort || b.ours || b.bld) continue; const dx = b.x - x0, dz = b.z - z0, along = dx * sx + dz * sz, across = Math.abs(dx * sz - dz * sx), r = b.r || 1;
+    if(along < -1 || along > Q.l + r || across > Q.w + r) continue; blocks.splice(i, 1); if(b.mesh && b.mesh.parent) b.mesh.parent.remove(b.mesh); if(b.bump){ const j = BUMPS.indexOf(b.bump); if(j >= 0) BUMPS.splice(j, 1); } n++; }
+  if(n) UGRID.blkAt = 0; return n; }
 export function parkAtSpawn(){ const p=S.player; if(!p) return; const sz=ARENA*0.55;
   p.pos.set(0,0,sz); p.vel.set(0,0,0); p.facing=p.aim=p.aimSmoothed=-Math.PI; p.mesh.position.set(0,0,sz); p.mesh.rotation.set(0,p.aim,0);
   clearLadders(); }

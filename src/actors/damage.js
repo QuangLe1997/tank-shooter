@@ -1,6 +1,6 @@
 // actors/damage.js — DAMAGE AND DEATH of an enemy unit: hits (the general's hit cap), the kill (score, coins, loot, the soldier's experience), the fall
 import * as THREE from 'three';
-import { BALANCE, LOOT } from '../../config.js';
+import { BAL, BALANCE, LOOT } from '../../config.js';
 import { S, WAVE, addScore, bigExplode, ringPulse, bumpCombo, diffRewardMul, dropBeam, dropPowerup, enemies, enemyPool, freeEnemyBar, gunshipDown, hitFlash, infantryDown, loopRewardMul, updateHUD, voiceKill, soldierKill, awareHit, awareDeath, dirKill, storyCue, nemSlip, afxBark, coopGuestHit, coopHostDeath, fortBossDmg } from '../hub.js';
 import { scoreNote } from '../hub.js';   // HUDCLEAN 2 (game/score.js)
 
@@ -24,8 +24,8 @@ export function killEnemy(e){
   try{ if(e.def.inf) infantryDown(e);                                                                       // Z79 soldier falls / is crushed
     else gunshipDown(e); }catch(err){ e.mesh.visible=false; (enemyPool[e.type]=enemyPool[e.type]||[]).push(e.mesh); console.error('death fx', err); }   // Z80 an aircraft spirals down · Z121 a broken effect must never stop the kill (score, loot, bar)
   bumpCombo(); soldierKill(e);   // Z350 the soldier's experience · Z352 his weapon on the ground
-  const mult = (e.elite?BALANCE.elite.scoreMul:1) * loopRewardMul() * diffRewardMul();
-  addScore(Math.round(e.def.score*mult), new THREE.Vector3(e.pos.x,1.6,e.pos.z));
+  { const Q = BAL.score, mine = e._mkBy === 1 && performance.now() / 1000 - (e._mkT || 0) < Q.mineT;   // BAL 7 a kill is worth Q.kill — his own in full, his squad's a share; an elite, a vehicle / aircraft, a boss more
+    addScore(Math.round(Q.kill * (e.elite ? Q.elite : 1) * (e.def.inf ? 1 : Q.heavy) * (e.fortBoss || e.general ? Q.boss : 1) * (mine ? 1 : Q.team)), new THREE.Vector3(e.pos.x,1.6,e.pos.z)); }
   const p=S.player; if(p.lifesteal>0 && p.hp<p.maxHp){ p.hp=Math.min(p.maxHp, p.hp+p.lifesteal); updateHUD(); }
   if(e.elite){ if(!e.def.inf) bigExplode(e.pos, 0xffd24a, 2.0); else ringPulse(e.pos, 0xffd24a, 2.4); scoreNote('HẠ TINH NHUỆ', '#ffd24a');   /* HUDCLEAN 2 by the score, not a big word over him */ }
   if(e.loot || WAVE.treasure) dropPowerup(e.pos, e.elite||e.def.hp>=LOOT.source.epicHp ? 2 : e.def.hp>=LOOT.source.rareHp ? 1 : 0);   // Z93 loot quality follows how hard it was to kill   // beacon-marked tanks (and every kill in a TREASURE wave) yield loot

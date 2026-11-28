@@ -3194,6 +3194,11 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
 { const fs=await import('node:fs'), { PERF_BUDGET:PB }=await import('./config.js'), sc=fs.readFileSync('src/campaign/sectors.js','utf8');
   ok(PB.transit.afterPrimeMs>0 && PB.transit.afterPrimeMs<=3000 && /tr\.ph = 'primed';/.test(sc) && /dietIdle\(PERF_BUDGET\.transit\.afterPrimeMs\)\.then\(go\)/.test(sc) && /if\(tr\.ph === 'primed'\)\{/.test(sc),
     'PERF 13: the black waits ≤ '+PB.transit.afterPrimeMs+' ms more for the near levels / sharp maps the prime frames asked for'); }
+// BAL 6–7 the first step is into the field; a score that means something (C1-053, C1-034)
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { BAL:Q, CONQUEST:CQ }=await import('./config.js'), sc=R('src/campaign/sectors.js'), dr=R('src/campaign/director.js'), sp=R('src/campaign/surprises.js');
+  ok(Q.spawn.w>1 && Q.spawn.l>=6 && /export function spawnClear\(\)/.test(R('src/game/flow.js')) && /gpuRelease\(held\); spawnClear\(\);/.test(R('src/game/flow.js')) && /buildTrails\(\); spawnClear\(\);/.test(sc) && /buildTrails\(\); spawnClear\(\);/.test(R('src/loot/upgrades.js')), 'BAL 6: loose cover in a strip ahead of the spawn is taken off the field once it is built');
+  ok(Q.score.kill===100 && Q.score.goal>=500 && Q.score.comboMax<=3 && Q.score.team>0 && Q.score.team<1 && /Math\.min\(BAL\.score\.comboMax/.test(R('src/game/score.js')) && /mine \? 1 : Q\.team/.test(R('src/actors/damage.js')) && !/S\.score = c\.score/.test(sc) && /addScore\(BAL\.score\.goal/.test(sc),
+    'BAL 7: a kill 100 (his own; his squad\'s a share), a goal a thousand, the combo ×' + Q.score.comboMax + ' at most, a replay keeps the score'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

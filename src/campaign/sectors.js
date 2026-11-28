@@ -18,7 +18,7 @@
 //   built at night (rebuild turns the run's hour for it). The rail carries the sector's objective line (g.sub) beside its clock; the side missions' card stays hidden.
 //   Co-op: host-only for now — a co-op room plays the ordinary battle (sectorBegin stays off).
 import * as THREE from 'three';
-import { SECTOR, SIDEMISSION, CONTRACTS, OBJECTIVES, SECROUTE, CONQSTORY } from '../../config.js';
+import { BAL, SECTOR, SIDEMISSION, CONTRACTS, OBJECTIVES, SECROUTE, CONQSTORY } from '../../config.js';
 import { PERF_BUDGET } from '../../config.js';   // PERF 5 the transit's prime frames
 import { dietIdle } from '../hub.js';   // PERF 9 (render/asset-diet.js)
 import { sectorStoryCard } from '../hub.js';   // SECTOR 6
@@ -27,6 +27,7 @@ import { FORTS, startBoss } from '../hub.js';   // SECTOR 4
 import { enemies, bullets, parts, renderer } from '../hub.js';
 import { sectorDeal, forkOpen, forkTake, consWon, consRefillK, routeLive, routeTick, routeEnd } from '../hub.js';   // SECTOR 4 (campaign/sector-route.js)
 import { sectorGoalHas, sectorGoalStart, sectorGoalTick, sectorGoalClock, sectorGoalClear, sectorClimax, conqSectorLive } from '../hub.js';   // SECTOR 2 (campaign/sector-goals.js · campaign/conquest.js)
+import { spawnClear, addScore } from '../hub.js';   // BAL 6 (game/flow.js) · BAL 7 (game/score.js)
 import { ARENA, BIOME, CV, LOGI, OBJ, S, SIDEM, SOLDIER, WAVE, ammoStart, applyBiome, beginStage, bigEventStart, blendScene, buildBlocks, buildLava, buildObjective, buildTrails, buildUnderground, camRestPose, camera,
   cavRespawn, clearField, clearSoldierWar, clearSoldiers, coopActive, compileReady, deploySoldiers, driverBack, gpuHeld, gpuRelease, modeSeed, modelEpoch, parkAtSpawn, radio, rebuildCore, scene,
   sectorRail, sectorTransitBlack, sectorTransitLine, sectorTransitShow, selectGun, gameOver, sfx, edgeNote, modeStageWon, sideMissionStart, squadList, stageWon, updateGunHUD, updateHUD, heightAt } from '../hub.js';
@@ -92,7 +93,7 @@ function snapTake(){ const p = S.player; if(!p) return null;
     squad:squadList().map(r => ({ role:r.role, name:r.name, dead:!!r.dead })) }; }
 function snapPut(c){ const p = S.player; if(!p || !c) return;
   p.maxHp = c.maxHp; p.hp = c.hp; p.lives = c.lives; p.guns.length = 0; for(let k = 0; k < c.guns.length; k++){ c.guns[k].ammo = c.ammo[k]; p.guns.push(c.guns[k]); }   // (the same array: logistics keys its reserves on it)
-  const r = LOGI.res; for(const k in r) delete r[k]; Object.assign(r, c.res); S.score = c.score;
+  const r = LOGI.res; for(const k in r) delete r[k]; Object.assign(r, c.res);   /* BAL 7 the score earned stays through a replay */
   const R = squadList(); R.length = 0; for(const q of c.squad) R.push({ role:q.role, name:q.name, a:null, back:!q.dead, dead:q.dead });
   if(p.gunIdx !== c.gunIdx && c.gunIdx < p.guns.length){ try{ selectGun(c.gunIdx); }catch(e){ p.gunIdx = c.gunIdx; } } }
 // between two sectors: a share of his health, his reserves up to a share of a fresh issue, the men who fell brought back
@@ -137,7 +138,7 @@ export function updateSectors(dt, now){ _starting = false; if(!SECT.on || !S.pla
   rail(); }
 // campaign/boss.js bossStageWon: true in a sector run (the boss sector's goal — any other sector has no general to fall)
 export function sectorStageWon(now, bdef){ if(!SECT.on) return false; const c = sectorCur(); if(c && c.type === 'boss' && SECT.state === 'fight') goalDone(now, bdef); return true; }
-function goalDone(now, bdef){ const last = SECT.i >= SECT.list.length - 1; SECT.stats.won++; consWon(sectorCur()); if(SECT.story && SECT.story.won) SECT.story.won(sectorCur(), SECT.i); note('won', last ? 'last' : '');   /* SECTOR 4 the route's reward */
+function goalDone(now, bdef){ const last = SECT.i >= SECT.list.length - 1; addScore(BAL.score.goal, null);   /* BAL 7 a sector's goal: a round thousand */ SECT.stats.won++; consWon(sectorCur()); if(SECT.story && SECT.story.won) SECT.story.won(sectorCur(), SECT.i); note('won', last ? 'last' : '');   /* SECTOR 4 the route's reward */
   if(last){ const cb = SECT.onWon; SECT.state = 'done'; sectorEnd(); if(cb) cb(now, bdef); else if(!modeStageWon(now, bdef)) stageWon(now, bdef); return; }   // the battle's one win: the declared one (sectorBattle) · a mode's · the stage's (campaign/boss.js)
   SECT.state = 'won'; SECT.t = T.transit.hold; S.awaitingUpgrade = true; S.wave = 0; const p = S.player; if(p) p.invincibleUntil = now + T.transit.hold + 2;   // the director, the waves and the events stop; nothing touches him now
   edgeNote(fill(T.say.won, { n:SECT.i + 1 }), '#8cbf3f'); sfx('levelup'); rail(SECT.i + 1); }
@@ -158,7 +159,7 @@ function transitStart(retry, why){ const c0 = sectorCur(); if(!retry){ SECT.i++;
 const count = () => ({ foes:enemies.length, rounds:bullets.length, parts:parts.length, top:scene.children.length, geo:renderer.info.memory.geometries, tex:renderer.info.memory.textures });
 function rebuild(){ const tr = SECT.tr, t0 = performance.now(), held = gpuHeld(); modelEpoch();
   const n0 = count(); sectorGoalClear(); clearField(); const n1 = count(); const p = S.player; clearSoldierWar(); if(CV.dead || !CV.mounted) cavRespawn(p); driverBack(CV.H); p.mesh.visible = true; p.overUntil = 0; p.burns = [];
-  parkAtSpawn(); { const R = S.run, t0 = R && R.tod, h0 = S.tod, c = sectorCur(); if(R && c && T.types[c.type].night) R.tod = 'night'; applyBiome(S.stage); if(R) R.tod = t0; tr.hour = S.tod !== h0; }   /* SECTOR 2 an infiltration's field at night (the run's own hour for the next) */ buildBlocks(); modeSeed(16); buildObjective(); modeSeed(17); buildLava(); modeSeed(18); buildUnderground(); modeSeed(19); buildTrails(); modeSeed(20);
+  parkAtSpawn(); { const R = S.run, t0 = R && R.tod, h0 = S.tod, c = sectorCur(); if(R && c && T.types[c.type].night) R.tod = 'night'; applyBiome(S.stage); if(R) R.tod = t0; tr.hour = S.tod !== h0; }   /* SECTOR 2 an infiltration's field at night (the run's own hour for the next) */ buildBlocks(); modeSeed(16); buildObjective(); modeSeed(17); buildLava(); modeSeed(18); buildUnderground(); modeSeed(19); buildTrails(); spawnClear();   /* BAL 6 */ modeSeed(20);
   rebuildCore(S.stage); gpuRelease(held); clearSoldiers(); deploySoldiers(SOLDIER.base);
   if(tr.retry) snapPut(SECT.snap); else refill(); p.invincibleUntil = 0; updateGunHUD(); updateHUD();
   S.awaitingUpgrade = false; S.wave = 0; WAVE.active = false; WAVE.betweenUntil = NOW() + 0.6; WAVE.spawnQueue.length = 0; WAVE.event = null; WAVE.eventBanner = null; WAVE.treasure = false; WAVE.eliteForce = 0; WAVE.assault = false;
