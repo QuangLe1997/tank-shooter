@@ -3265,6 +3265,10 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   ok(!/CITADEL:\['sand'/.test(R('src/world/env-events.js')) && /s\[0\]==='sand' && \(S\.weather==='rain'/.test(R('src/world/env-events.js')), 'VIS 10: no sandstorm sweeps in out of a downpour (the citadel\'s surge is a mist)');
   ok(Q.foeNight>0.5 && Q.foeNight<1 && Q.foeGrey>0 && Q.foeGrey<1 && /export function foeNightTint\(/.test(R('src/world/atmosphere.js')) && /foeNightTint\(\);/.test(R('src/actors/real-troops.js')), 'VIS 10: the enemy\'s warm kit dimmed and greyed at night');
   ok(Q.bigTri>V.arm.maxTri && Q.bigR>10 && Q.bigShrink>0.5 && Q.bigShrink<=1 && /ARM\.nBig/.test(R('src/render/cam-arm.js')) && V.frame.maxEl<=46 && V.night.DESERT.moon[1]<0.8, 'VIS 10: the arm keeps the lens out of a building\'s box; a lower ceiling on looking down; a darker desert night'); }
+// BAL 18 a rescue cannot be lost before the player can act (C2-001)
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { BAL:Q, SECTOR:SE, DIRECTOR:D }=await import('./config.js'), sg=R('src/campaign/sector-goals.js'), dr=R('src/campaign/director.js');
+  ok(Q.rescue.minT>=20 && Q.rescue.near>=20 && /g\.g0 = guardsLeft\(g\.zone\)/.test(sg) && /Math\.min\(hit \* K\.dps, K\.hp \/ BAL\.rescue\.minT\)/.test(sg) && /guardsLeft\(g\.zone\) < \(g\.g0 \?\? K\.guards\)/.test(sg),
+    'BAL 18: the hostage is hurt only once the fight round him has started (a posted guard down, he is out, the player near), never in under ' + Q.rescue.minT + ' s'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

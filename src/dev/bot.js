@@ -86,7 +86,7 @@ function goalOf(now, p, R){ if(now < B.goalAt) return B.goal; B.goalAt = now + 0
   if(ty && ty !== 'hold' && ty !== 'sabotage' && ty !== 'boss'){ const g = SGOAL.g || {}, m0 = mk(0), m1 = mk(1), rr = m => m.ring.scale.x * 6;
     if(ty === 'rescue'){ const D = SGOAL.cell && SGOAL.cell.door, hx = m0 ? m0.ring.position.x : 0, hz = m0 ? m0.ring.position.z : 0;   // BAL 1 into the cell by its open end (a straight line ends at a container)
       if(g.ph === 'held' && m0 && D && Math.hypot(p.pos.x - hx, p.pos.z - hz) > 3 && Math.hypot(p.pos.x - D[0], p.pos.z - D[1]) > 2 && lineStop(p.pos.x, heightAt(p.pos.x, p.pos.z) + 1, p.pos.z, hx, heightAt(hx, hz) + 1, hz, _s)) return setG('go', D[0], D[1], 1.5);
-      if(g.ph === 'held' && m0) return setG('go', m0.ring.position.x, m0.ring.position.z, 1.6); if(m1) return setG('ring', m1.ring.position.x, m1.ring.position.z, rr(m1) * 0.5); }
+      if(g.ph === 'held' && m0) return setG('go', m0.ring.position.x, m0.ring.position.z, Math.max(1.2, (g.Y && g.Y.reach || 2.6) - 0.5));   /* (inside his release reach — no closer: he kneels by a wall) */ if(m1) return setG('ring', m1.ring.position.x, m1.ring.position.z, rr(m1) * 0.5); }
     else if(ty === 'breach'){ if(m0) return setG('shoot', m0.ring.position.x, m0.ring.position.z, R * 0.55, null); if(m1) return setG('ring', m1.ring.position.x, m1.ring.position.z, rr(m1) * 0.6); }
     else if(ty === 'infiltrate'){ if(m0) return setG('go', m0.ring.position.x, m0.ring.position.z, 4.5); if(m1) return setG('ring', m1.ring.position.x, m1.ring.position.z, rr(m1) * 0.5); }
     else if(ty === 'pursuit' && m0) return setG('shoot', m0.ring.position.x, m0.ring.position.z, R * 0.5, null); }

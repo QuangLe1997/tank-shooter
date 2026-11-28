@@ -59,16 +59,19 @@ function pen(x, z, face, K){ const out = [], c = Math.cos(face), s = Math.sin(fa
     m.scale.setScalar(COVER_K); m.position.set(wx, heightAt(wx, wz) - 0.05, wz); m.rotation.y = face + rot; scene.add(m);
     const b = Object.assign({ mesh:m, x:wx, z:wz, r:(o && o.r) || 1.6 * COVER_K, hp:K.wallHp, maxHp:K.wallHp, steel:true, heavy:true, cover:true, ms:COVER_K, loot:false, kind, pen:true }, o || {}); blocks.push(b); out.push(b); return b; };
   for(const sd of [-1, 1]) put('container', sd * (gap / 2 + C.hw), 0, 0, { r:C.hl * 0.8, obb:{ f:face, hw:C.hw, hl:C.hl } });   // the two boxes, their long sides the pen's walls
-  const B = box(back); put(back, 0, -C.hl + B.hw * 0.6, Math.PI / 2, { r:Math.max(B.hw, B.hl) * 0.9, obb:{ f:face + Math.PI / 2, hw:B.hw, hl:Math.max(B.hl, gap / 2 + 0.3) } });   // the back closed
+  const B = box(back); put(back, 0, -C.hl - B.hw * BAL.rescue.backOut, Math.PI / 2, { r:Math.max(B.hw, B.hl) * 0.9, obb:{ f:face + Math.PI / 2, hw:B.hw, hl:Math.max(B.hl, gap / 2 + 0.3) } });   // the back closed
   for(const sd of [-1, 1]) put(bag, sd * (gap / 2 + C.hw * 2 + 1.4), C.hl + 1.2, sd * 0.5, { hp:220, maxHp:220, steel:false, heavy:false });   // the guards' sandbag nests at the open end
   const [tx, tz] = W((Math.random() < 0.5 ? -1 : 1) * (gap / 2 + C.hw * 2 + 6), -C.hl - 3); if(inField(tx, tz, 4)) buildTower(tx, tz);   // the guard post over it
-  UGRID.blkAt = 0; return { blocks:out, inner:W(0, -C.hl * 0.35), depth:C.hl, door:W(0, C.hl + 2.5) }; }   // (BAL 1 door: just outside the open end — the bot's way in)
+  UGRID.blkAt = 0; return { blocks:out, inner:W(0, -C.hl * BAL.rescue.innerK), depth:C.hl, door:W(0, C.hl + 2.5) }; }   // BAL 18 the back closed flush behind the boxes and the hostage clear of it (he knelt inside its collider: nobody could get to his side)   // (BAL 1 door: just outside the open end — the bot's way in)
 function rescueStart(g, c, now){ const K = g.Y, p = S.player, [x, z] = spot(K.d[0], K.d[1], K.clear), face = Math.atan2(p.pos.x - x, p.pos.z - z);
   SGOAL.cell = pen(x, z, face, K); const [ix, iz] = SGOAL.cell.inner, m = makeSoldierMesh(); m.scale.setScalar(TROOPS.look.scale); m.userData.gun.visible = false; m.position.set(ix, heightAt(ix, iz), iz); m.rotation.y = face; soldierKneel(m, true); scene.add(m);
   SGOAL.man = m; g.x = x; g.z = z; g.zone = { x, z, r:SGOAL.cell.depth + K.ring }; spawnGuards(g.zone, K.guards, K.rpg); g.home = { x:p.pos.x, z:p.pos.z };
-  g.who = K.who[c.obj] || K.who.civ; g.ph = 'held'; g.hp = K.hp; g.free = 0; g.clock = K.time; g.hx = ix; g.hz = iz; }
+  g.who = K.who[c.obj] || K.who.civ; g.ph = 'held'; g.hp = K.hp; g.free = 0; g.clock = K.time; g.hx = ix; g.hz = iz; g.g0 = guardsLeft(g.zone); }   // (BAL 18 g0: the guards really posted)
 function rescueTick(g, dt, now){ const K = g.Y, p = S.player, m = SGOAL.man; if(!m) return 'CON TIN MẤT TÍCH'; g.clock -= dt;
-  const hit = alerted(g.hx, g.hz, K.fireR); if(hit && (g.ph !== 'held' || guardsLeft(g.zone) < K.guards)) g.hp -= hit * K.dps * dt;   // the crossfire (once the shooting has started round him)
+  // the crossfire once the shooting has started round him — BAL 18 a guard of those posted down, or he is out with us, or the player is within BAL.rescue.near m —
+  //   and never faster than his health over BAL.rescue.minT s (the rail counts his health down: never a sector lost before the player could act)
+  const hit = alerted(g.hx, g.hz, K.fireR), fight = g.ph !== 'held' || guardsLeft(g.zone) < (g.g0 ?? K.guards) || Math.hypot(p.pos.x - g.hx, p.pos.z - g.hz) < BAL.rescue.near;
+  if(hit && fight) g.hp -= Math.min(hit * K.dps, K.hp / BAL.rescue.minT) * dt;
   if(g.hp <= 0){ soldierKneel(m, false); m.rotation.x = -Math.PI / 2; m.position.y = heightAt(g.hx, g.hz) + 0.25; SGOAL.props.push(m); SGOAL.man = null; return fill(SAY.rescueDead, { who:g.who }).toLocaleUpperCase('vi'); }
   if(g.clock <= 0) return 'HẾT GIỜ';
   const d = Math.hypot(p.pos.x - g.hx, p.pos.z - g.hz), hpTx = Math.max(0, Math.round(g.hp / K.hp * 100)) + '%';

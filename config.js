@@ -2453,6 +2453,9 @@ export const BOT = { think:20, sightK:1.5, eye:1.45, losEvery:0.25, losPerTick:2
 //   medal (BAL 13, game/medals.js): only tiers from toastFrom (2 = silver) are toasted mid-battle; the rest wait for the report.
 //   boss (BAL 15 / 17, campaign/sectors.js): revealT s into the general's sector he comes out — through his gate into an open courtyard of arenaR m outside it (his leash
 //     there; a marker on the rail leads to it), so the last fight is in the open, never behind his walls.
+//   rescue (BAL 18, campaign/sector-goals.js): the hostage is hurt only once the fight round him started (a posted guard down, he is out, or the player within near m),
+//     never faster than his health over minT s. The pen: its back wall backOut × its depth behind the containers' ends (flush), the hostage innerK × the containers'
+//     half-length in from the middle — clear of every collider (he knelt inside the back wall's).
 //   hold (BAL 14, campaign/sectors.js): the stuck truck's hold has three beats — at the shares `at` of the hold, n squads come from in front of him / his sides, d m off.
 export const BAL = { fair:{ on:true, every:0.1, r:95, fireT:1.2, maxN:6, size:30, margin:26, color:'#ff3b2b', spreadK:3.2, onT:0.5, warnT:2,
     rear:{ on:!(typeof location !== 'undefined' && /[?&]norear\b/.test(location.search)), ang:2.09, r:60, grace:1.6, graceK:8, k:2.4, beepGap:3 } },
@@ -2461,6 +2464,7 @@ export const BAL = { fair:{ on:true, every:0.1, r:95, fireT:1.2, maxN:6, size:30
   mates:{ dmgK:0.2 },
   start:{ first:45, t:15, spreadK:4 }, surp:{ ambushMax:1, sectorQuiet:20 }, medal:{ toastFrom:2 },
   boss:{ revealT:12, arenaR:16 },
+  rescue:{ near:45, minT:50, backOut:0.3, innerK:0.2 },
   hold:{ on:true, at:[0.12, 0.45, 0.78], n:[1, 2, 2], d:[40, 55], say:['SCH: Chúng đã thấy xe — tốp đầu đang tới!', 'SCH: Chúng dồn lên hai hướng — giữ vòng tròn!', 'SCH: Đợt cuối, đông nhất — cầm cự, xe sắp ra!'] } };
 
 // Z107 FLATTER BATTLEFIELD — mostly level ground so the tank drives freely: only a handful of big rolling hills, very few old craters,
