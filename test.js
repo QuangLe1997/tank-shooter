@@ -3156,8 +3156,8 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
 { const fs=await import('node:fs'), { MIXER:MX }=await import('./config.js'), fz=fs.readFileSync('src/ai/foe-sleep.js','utf8'), tc=fs.readFileSync('src/ai/tactics.js','utf8'), B=MX.budget;
   ok(B.desktop.activeFoes>=20 && B.desktop.activeFoes<=60 && B.phone.activeFoes>=10 && B.phone.activeFoes<=B.desktop.activeFoes && B.desktop.sleepR>=80 && B.desktop.sleepR<=200 && B.phone.sleepR>=60 && B.phone.sleepR<=B.desktop.sleepR,
     'PERF 2: the budget table holds the awake count (desktop '+B.desktop.activeFoes+', phone '+B.phone.activeFoes+') and the sleep radius (m)');
-  ok(/foeSleepTick\(now\);/.test(tc) && /if\(foeAsleep\(e\)\) continue;/.test(tc) && /e\.guard \|\| e\.general \|\| e\.fortBoss/.test(fz) && /e\.hp < e\.maxHp - 0\.5/.test(fz) && /nosleep/.test(fz) && /^export \* from '\.\/ai\/foe-sleep\.js';/m.test(fs.readFileSync('src/hub.js','utf8')),
-    'PERF 2: tactics ranks the men twice a second and skips the sleeping ones; bosses, generals, guards, scripted men and the hurt never sleep; ?nosleep turns it off'); }
+  ok(/foeSleepTick\(now\);/.test(tc) && /if\(foeAsleep\(e\)\) continue;/.test(tc) && /e\.guard\.kind === 'escort'\) \|\| e\.general \|\| e\.fortBoss/.test(fz) && /e\.hp < e\.maxHp - 0\.5/.test(fz) && /nosleep/.test(fz) && /^export \* from '\.\/ai\/foe-sleep\.js';/m.test(fs.readFileSync('src/hub.js','utf8')),
+    'PERF 2: tactics ranks the men twice a second and skips the sleeping ones; bosses, generals, escorts, scripted men and the hurt never sleep; ?nosleep turns it off'); }
 // PERF 3 (critic C1-024 / item 11) the performance budget and the far views of the field-wide instanced families (render/inst-view.js)
 { const fs=await import('node:fs'), { PERF_BUDGET:PB, INSTVIEW:IV }=await import('./config.js'), iv=fs.readFileSync('src/render/inst-view.js','utf8'), V=PB.view;
   ok(['desktop','phone'].every(d=>PB.frame[d].tris>0 && PB.frame[d].tris<=3e6 && PB.frame[d].calls>0 && PB.frame[d].maxMs<=50 && PB.frame[d].startMs<=PB.frame[d].maxMs && PB.frame[d].loadS<=10 && PB.fx[d].particles>0 && PB.fx[d].lights>=1)
