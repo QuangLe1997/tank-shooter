@@ -14,6 +14,7 @@
 //   --cpuprofile s DIET 7 sample the main thread for the fight's first s seconds: out.cpu = { top: self time by function, busy: every 50 ms slice over 35 ms busy and what filled it }
 //   --noperf      DIET 8 without ?perf (the game's own HUD timers off; frame times still come from its probe)
 //   --gc          DIET 4 window.gc() for a probe (collect before reading the JS heap)
+//   --watchdog s  BOT 1 s more before the runner gives up (a probe that plays a whole battle: tools/calib.mjs)
 //   --novsync     frames as fast as the GPU allows (to compare frame times; with vsync every frame over 16.7 ms falls to 33).
 //   Out: { ok, biome, load, frame:{ p50, p95, max, n }, calls, tris, errors:[…], eval, shot } — exit code 0 only when the page logged no error.
 // It serves the repo itself (code never cached, assets cached), keeps ONE Chrome profile between runs (compiled shaders and the files stay, so the
@@ -22,7 +23,7 @@
 import http from 'node:http'; import fs from 'node:fs'; import os from 'node:os'; import path from 'node:path'; import { fileURLToPath, pathToFileURL } from 'node:url';
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url))), argv = process.argv.slice(2);
 const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : d; }, has = k => argv.includes(k);
-const VAL = new Set(['--cpuprofile', '--jsflags', '--seed', '--at', '--eval', '--shot', '--profile', '--level', '--tod', '--wx', '--size', '--query', '--dpr']), pos = [];
+const VAL = new Set(['--watchdog', '--cpuprofile', '--jsflags', '--seed', '--at', '--eval', '--shot', '--profile', '--level', '--tod', '--wx', '--size', '--query', '--dpr']), pos = [];
 for(let i = 0; i < argv.length; i++){ if(VAL.has(argv[i])){ i++; continue; } if(!argv[i].startsWith('--')) pos.push(argv[i]); }
 const biome = (pos[0] || '').toUpperCase(), secs = +(pos[1] || 5);
 if(!biome){ console.log('usage: node tools/ts.mjs <BIOME> [seconds] [--seed n] [--at x,z] [--eval probe.js] [--shot out.jpg] [--novsync]'); process.exit(2); }
@@ -50,7 +51,7 @@ const unlock = () => { try{ fs.rmSync(LOCK, { recursive:true, force:true }); }ca
 
 const out = { ok:false, biome, load:0, frame:null, calls:0, tris:0, errors:[], eval:null, shot:null }; let ctx = null;
 const [W, Hh] = (opt('--size', '1280x720')).split('x').map(Number);
-const kill = setTimeout(() => { out.errors.push('WATCHDOG: took too long'); done(2); }, (secs + 180) * 1000);
+const kill = setTimeout(() => { out.errors.push('WATCHDOG: took too long'); done(2); }, (secs + 180 + +opt('--watchdog', 0)) * 1000);   // BOT 1 --watchdog s: more time for a probe that plays a long while (tools/calib.mjs)
 async function done(code){ clearTimeout(kill); try{ if(ctx) await ctx.close(); }catch(e){} unlock(); srv.close(); console.log(JSON.stringify(out)); process.exit(code); }
 process.on('SIGINT', () => done(2)); process.on('SIGTERM', () => done(2));
 try{

@@ -3065,7 +3065,9 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   ok(['up','down','left','right','sprint','reload','skill','skillNext','crew','camAuto','gunNext','dash','climb','rotL','rotR'].every(id=>A.some(a=>a[0]===id) && new RegExp("KEY\\([^)]*'"+id+"'").test(code)), 'BOT: it presses the bindings\' own keys (config.js ACTIONS) for every action it takes');
   ok(!/\.hp\s*[-+*\/]?=[^=]|\.lives\s*[-+]?=[^=]|\.pos\.(set|copy|x\s*=|z\s*=)|enemies\.(splice|push|length\s*=)|damage(Enemy|Player)|spawnEnemy|invincibleUntil\s*=|S\.mode\s*=[^=]|S\.aimPoint|S\.firing\s*=/.test(code), 'BOT: it never writes health, lives, positions, the enemy list, the aim point, the trigger or the game mode (only key and mouse events)');
   ok(/new KeyboardEvent\(/.test(code) && /new MouseEvent\(down \? 'mousedown' : 'mouseup'/.test(code) && /new MouseEvent\('mousemove'/.test(code) && /lineStop\(/.test(code) && /\[\?&\]bot\\b/.test(code) && /^export \* from '\.\/dev\/bot\.js';/m.test(R('src/hub.js')),
-    'BOT: keys and the mouse as events, a man shot at only on screen with a clear line, asleep unless ?bot or botStart()'); }
+    'BOT: keys and the mouse as events, a man shot at only on screen with a clear line, asleep unless ?bot or botStart()');
+  const ts=R('tools/ts.mjs'), cal=R('tools/calib.mjs');
+  ok(/'--watchdog'/.test(ts) && /\+opt\('--watchdog', 0\)/.test(ts) && /H\.botStart\(\{ skill:SKILL \}\)/.test(cal) && /H\.composeBattle\(SPEC\)/.test(cal) && /'lockf', '-t', '1800'/.test(cal) && /scoreBattle\(/.test(cal), 'BOT 2: tools/calib.mjs plays specs with the bot through tools/ts.mjs (a longer watchdog, under the GPU lock) and sets them beside scoreBattle'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
