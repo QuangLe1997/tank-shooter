@@ -568,11 +568,19 @@
   <div class="sw-obj"><span class="ob-dot"></span><span id="sw-objtx">PHÁ KHO NHIÊN LIỆU</span></div>
 </div></div>
 
-<script type="importmap">
-{ "imports": {
-  "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
-  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
-}}
+<!-- PERF 19 (critic C2-026) ONE BUILD PER PAGE: build.json (tools/build-id.mjs, never cached) gives every module its content hash; the import map sends each
+     module's URL to `?h=<hash>`, so a file still cached from the last build (the browser, GitHub Pages' 10-minute cache, the service worker) is never mixed
+     with this build's — a mix showed as "does not provide an export named …". No build.json (offline without the service worker): the plain URLs, as before.
+     A module that still fails to link reloads the page once. -->
+<script>
+(function(){ var B = null; try{ var x = new XMLHttpRequest(); x.open('GET', 'build.json?t=' + Date.now(), false); x.send(); if(x.status === 200) B = JSON.parse(x.responseText); }catch(e){}
+  var im = { 'three':'https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js', 'three/addons/':'https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/' };
+  var v = function(f){ return B && B.files && B.files[f] ? f + '?h=' + B.files[f] : f; };
+  if(B && B.files){ for(var f in B.files) im['./' + f] = './' + v(f); window.__BUILD = B.id; }
+  document.write('<script type="importmap">' + JSON.stringify({ imports:im }) + '<\/script>');
+  window.__MAIN = './' + v('src/main.js'); window.__CFG = './' + v('config.js');
+  addEventListener('error', function(e){ var m = String(e && e.message || ''); if(/does not provide an export named|Failed to fetch dynamically imported module|error loading dynamically imported module|Importing a module script failed/.test(m)){
+    try{ if(!sessionStorage.getItem('xk.reload')){ sessionStorage.setItem('xk.reload', '1'); location.reload(); } }catch(_){} } }, true); })();
 </script>
 <!-- fetch the whole module graph in PARALLEL (no import waterfall) -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
@@ -590,9 +598,7 @@
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/utils/BufferGeometryUtils.js" crossorigin />
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/geometries/RoundedBoxGeometry.js" crossorigin />
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/environments/RoomEnvironment.js" crossorigin />
-<link rel="modulepreload" href="./config.js" />
-
-<script type="module" src="src/main.js"></script>
+<script>document.write('<link rel="modulepreload" href="' + window.__CFG + '" /><script type="module" src="' + window.__MAIN + '"><\/script>');</script>
 <!-- Z108 offline play once installed to the home screen (https only; ?sw to try it on localhost) -->
 <script>if('serviceWorker' in navigator && (location.protocol==='https:' || /[?&]sw\b/.test(location.search))) addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });</script>
 </body>

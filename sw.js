@@ -17,7 +17,7 @@ self.addEventListener('activate', (e) => e.waitUntil((async () => {
 const keep = async (req, res) => { if(res && (res.ok || res.type === 'opaque')) { const c = await caches.open(CACHE); await c.put(req, res.clone()); } return res; };
 
 async function networkFirst(req, nav){
-  try{ return await keep(req, await fetch(req)); }                  // always the network while there is one, however slow: a fallback
+  try{ return await keep(req, await fetch(req, nav || /\/build\.json/.test(req.url) ? { cache:'no-cache' } : undefined)); }   // always the network while there is one, however slow: a fallback (PERF 19 the page and build.json revalidated past any HTTP cache)
   catch(e){                                                          // on "slow" would mix cached (old) modules with fresh (new) ones
     const r = (await caches.match(req, nav ? { ignoreSearch: true } : undefined)) || (nav ? await caches.match('./', { ignoreSearch: true }) : undefined);
     if(r) return r; throw e;                                         // offline → the copy from the last online launch

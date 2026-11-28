@@ -3235,6 +3235,12 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
 // PERF 18 the 3-2-1 begins once this field's files are in (PERF 17's overlap undone: the arrivals landed at GO)
 { const fs=await import('node:fs'), br=fs.readFileSync('src/ui/briefing.js','utf8');
   ok(/_goWait === 0 && dietFieldBusy\(\)\)\{ _goWait = 1; dietFieldIdle\(ASSETDIET\.late\.waitMs\)/.test(br) && !/_files/.test(br), 'PERF 18: the countdown starts after the field\'s own files (no hold on "1" for them)'); }
+// PERF 19 one build per page: every module at its content hash (build.json), a new build offered with a clean reload (critic C2-026)
+{ const fs=await import('node:fs'), { PERF_BUDGET:PB }=await import('./config.js'), ix=fs.readFileSync('index.html','utf8'), bw=fs.readFileSync('src/ui/build-watch.js','utf8'), B=JSON.parse(fs.readFileSync('build.json','utf8'));
+  ok(B.id && B.files['src/hub.js'] && B.files['config.js'] && Object.keys(B.files).length>=300 && /build\.json\?t=/.test(ix) && /\?h=' \+ B\.files\[f\]/.test(ix) && /<script type="importmap">' \+ JSON\.stringify/.test(ix) && !/<script type="module" src="src\/main\.js">/.test(ix),
+    'PERF 19: build.json fingerprints every module; index.html maps each module URL to ?h=<hash> (no plain main.js)');
+  ok(/does not provide an export named/.test(ix) && /xk\.reload/.test(ix) && PB.build.every>=30 && /cache:'no-store'/.test(bw) && /FIGHT\[S\.mode\]/.test(bw) && /buildWatchTick\(now\)/.test(fs.readFileSync('src/game/loop.js','utf8')) && /tools\/build-id\.mjs/.test(fs.readFileSync('tools/verify.mjs','utf8')),
+    'PERF 19: a module that fails to link reloads once; a new build is offered outside a fight; verify keeps build.json fresh'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

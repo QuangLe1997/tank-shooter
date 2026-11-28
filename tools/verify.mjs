@@ -4,6 +4,7 @@
 import { execFileSync } from 'child_process'; import fs from 'fs'; import path from 'path';
 const ROOT = path.dirname(path.dirname(new URL(import.meta.url).pathname));
 const files = ['config.js','test.js']; (function walk(d){ for(const f of fs.readdirSync(d)){ const p=path.join(d,f); if(fs.statSync(p).isDirectory()) walk(p); else if(f.endsWith('.js')||f.endsWith('.mjs')) files.push(path.relative(ROOT,p)); } })(path.join(ROOT,'src'));
+try{ console.log(execFileSync(process.execPath, ['tools/build-id.mjs'], { cwd:ROOT, stdio:'pipe' }).toString().trim()); }catch(e){ console.log('✗ build.json: '+String(e.stderr||e.message).slice(0, 300)); process.exit(1); }   // PERF 19 the build's fingerprint, fresh in every commit
 let bad=0; for(const f of files){ try{ execFileSync(process.execPath, ['--check', f], { cwd:ROOT, stdio:'pipe' }); } catch(e){ bad++; console.log('✗ syntax '+f+'\n'+String(e.stderr||e.message).split('\n').slice(0,4).join('\n')); } }
 console.log(`syntax: ${files.length} files · ${bad} failed`); if(bad) process.exit(1);
 const deep = fs.existsSync(path.join(ROOT,'node_modules','acorn')) && fs.existsSync(path.join(ROOT,'node_modules','eslint-scope'));
