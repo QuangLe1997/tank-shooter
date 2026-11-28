@@ -195,6 +195,7 @@ export function updateSectorTransit(dt, now){ const tr = SECT.tr; if(!tr){ S.mod
   if(tr.ph === 'build'){ rebuild(); warm(); return; }
   if(tr.ph === 'warming'){ if(tr.p0){ camera.position.copy(tr.p0); camera.lookAt(tr.l0); } return; }
   if(tr.ph === 'prime'){ primeStep(tr); return; }   // PERF 5
+  if(tr.ph === 'primed'){ if(tr.p0){ camera.position.copy(tr.p0); camera.lookAt(tr.l0); } return; }   // PERF 13 (waiting on the files the path asked for)
   if(tr.ph === 'dark'){ if(tr.t >= T.transit.min - T.transit.dark){ camera.position.copy(tr.p1); camera.lookAt(tr.l1); transitEnd(); } return; }   // SECTOR 2 (no ride: the field shows at GO)
   if(tr.ph === 'ride'){ tr.rideT += Math.min(dt, 1 / 30); const u = ease(Math.min(1, tr.rideT / tr.ride));
     camera.position.lerpVectors(tr.p0, tr.p1, u); _look.lerpVectors(tr.l0, tr.l1, u); camera.lookAt(_look);
@@ -208,7 +209,8 @@ export function sectorSkipDraw(){ const tr = SECT.tr; return !!tr && S.mode === 
 //   .prime points of the ride (its start, its end where the 3-2-1 begins, and between), one frame each, before the black lifts: what the ride will show is on the GPU.
 function primeStep(tr){ const n = Math.max(2, PERF_BUDGET.transit.prime), u = ease(Math.min(1, tr.pk / (n - 1)));
   if(tr.p0 && tr.p1){ camera.position.lerpVectors(tr.p0, tr.p1, u); _look = _look || tr.l1.clone(); _look.lerpVectors(tr.l0, tr.l1, u); camera.lookAt(_look); }
-  if(++tr.pk > n){ if(tr.p0){ camera.position.copy(tr.p0); camera.lookAt(tr.l0); } tr.ph = 'warming'; tr.go(); } }
+  if(++tr.pk > n){ if(tr.p0){ camera.position.copy(tr.p0); camera.lookAt(tr.l0); } tr.ph = 'primed';   // PERF 13 the path asked for its near levels / sharp maps: those files in too (bounded), then the ride
+    const go = () => { if(SECT.tr === tr && tr.ph === 'primed'){ tr.ph = 'warming'; tr.go(); } }; if(PERF_BUDGET.transit.waitModels) dietIdle(PERF_BUDGET.transit.afterPrimeMs).then(go); else go(); } }
 // SECTOR 6 THE OPENING: the fort's lines one by one over its field before the first sector (the fight not begun: S.mode 'transit', letterboxed; a centred card is
 //   fine here) — each lineT s, or the next at a tap / click / Enter / Space / the pad's A; Esc skips the rest. Then the first sector goes live as ever.
 function openingStart(lines){ SECT.opened = true; S.mode = 'transit'; S.firing = false; SECT.tr = { ph:'story', t:0, lines, k:-1, left:0, seq:SECT.seq }; note('opening', lines.length + ' lines'); openingNext(SECT.tr); }

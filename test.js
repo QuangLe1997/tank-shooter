@@ -3190,6 +3190,10 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
 { const fs=await import('node:fs'), xe=fs.readFileSync('src/game/xeom.js','utf8'), cv=fs.readFileSync('src/game/cavalry.js','utf8');
   ok(/export function towersIdle\(dt\)\{ updateBeams\(dt\); updateSearchSpot\(/.test(fs.readFileSync('src/world/towers.js','utf8')) && /cavIdle\(dt\); towersIdle\(dt\);/.test(fs.readFileSync('src/game/loop.js','utf8')) && /export function bikeLampsNight\(H\)\{ const b = H && H\.lamps && H\.lamps\.beam; if\(b && b\.visible !== NIGHT\.on\) b\.visible = NIGHT\.on; \}/.test(xe) && /if\(H\.bike\) bikeLampsNight\(H\);/.test(cv),
     'PERF 10: the fly-in and the 3-2-1 set the searchlight\'s and the headlight\'s lights for the night before the shaders are warmed'); }
+// PERF 13 after the prime frames, the files the path itself asked for (bounded) before the ride
+{ const fs=await import('node:fs'), { PERF_BUDGET:PB }=await import('./config.js'), sc=fs.readFileSync('src/campaign/sectors.js','utf8');
+  ok(PB.transit.afterPrimeMs>0 && PB.transit.afterPrimeMs<=3000 && /tr\.ph = 'primed';/.test(sc) && /dietIdle\(PERF_BUDGET\.transit\.afterPrimeMs\)\.then\(go\)/.test(sc) && /if\(tr\.ph === 'primed'\)\{/.test(sc),
+    'PERF 13: the black waits ≤ '+PB.transit.afterPrimeMs+' ms more for the near levels / sharp maps the prime frames asked for'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
