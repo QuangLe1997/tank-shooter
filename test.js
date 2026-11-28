@@ -3170,6 +3170,10 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
 { const fs=await import('node:fs'), { PERF_BUDGET:PB }=await import('./config.js'), cb=fs.readFileSync('src/render/cover-batch.js','utf8');
   ok(PB.cover.far>=30 && PB.cover.far<=120 && PB.cover.keep>0 && PB.cover.keep<0.6 && /farGeo\(g\.geo, PC\.keep\)/.test(cb) && /m\.castShadow && Math\.hypot\(_c\.x - tg\.x, _c\.z - tg\.z\) < sr \+ _sph\.radius\) && loOf\(g\)/.test(cb),
     'PERF 4: a piece of cover past '+PB.cover.far+' m and out of the shadow box wears its light copy; near and shadowing ones stay whole'); }
+// PERF 5 the transit's path drawn once under the black (campaign/sectors.js)
+{ const fs=await import('node:fs'), { PERF_BUDGET:PB }=await import('./config.js'), sc=fs.readFileSync('src/campaign/sectors.js','utf8');
+  ok(Number.isInteger(PB.transit.prime) && PB.transit.prime>=0 && PB.transit.prime<=12 && /tr\.ph = 'prime'/.test(sc) && /function primeStep\(tr\)/.test(sc) && /if\(tr\.ph === 'prime'\)\{ primeStep\(tr\); return; \}/.test(sc),
+    'PERF 5: compiled and still black, the camera visits '+PB.transit.prime+' points of the ride before the black lifts'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

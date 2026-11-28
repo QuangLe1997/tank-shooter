@@ -19,6 +19,7 @@
 //   Co-op: host-only for now — a co-op room plays the ordinary battle (sectorBegin stays off).
 import * as THREE from 'three';
 import { SECTOR, SIDEMISSION, CONTRACTS, OBJECTIVES, SECROUTE, CONQSTORY } from '../../config.js';
+import { PERF_BUDGET } from '../../config.js';   // PERF 5 the transit's prime frames
 import { sectorStoryCard } from '../hub.js';   // SECTOR 6
 import { knobTurn, knobBack } from '../hub.js';   // MIX 1
 import { FORTS, startBoss } from '../hub.js';   // SECTOR 4
@@ -169,6 +170,7 @@ function rebuild(){ const tr = SECT.tr, t0 = performance.now(), held = gpuHeld()
 const ease = u => u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
 function warm(){ const tr = SECT.tr, seq = SECT.seq; tr.ph = 'warming';
   const go = () => { if(SECT.seq !== seq || !SECT.tr) return; tr.warm = Math.round((performance.now() - tr.w0));
+    if(tr.pk == null && PERF_BUDGET.transit.prime > 0){ tr.pk = 0; tr.go = go; tr.ph = 'prime'; return; }   // PERF 5 first the camera's whole path, drawn under the black
     if(tr.hour){ tr.ph = 'dark'; return; }   // SECTOR 2 a new hour: the 3-2-1 compiles what only shows at GO (the props in hand, the troops) — it runs under the black too (sectorLive lifts it)
     tr.ph = 'ride'; sectorTransitBlack(false, T.transit.fade);
     tr.ride = Math.max(T.transit.ride, Math.min(T.transit.max - tr.t, T.transit.min - tr.t)); tr.rideT = 0; };
@@ -190,11 +192,18 @@ export function updateSectorTransit(dt, now){ const tr = SECT.tr; if(!tr){ S.mod
   if(tr.ph === 'fork'){ tr.F.tick(dt); return; }   // SECTOR 4 the card up (the lines go on under it)
   if(tr.ph === 'build'){ rebuild(); warm(); return; }
   if(tr.ph === 'warming'){ if(tr.p0){ camera.position.copy(tr.p0); camera.lookAt(tr.l0); } return; }
+  if(tr.ph === 'prime'){ primeStep(tr); return; }   // PERF 5
   if(tr.ph === 'dark'){ if(tr.t >= T.transit.min - T.transit.dark){ camera.position.copy(tr.p1); camera.lookAt(tr.l1); transitEnd(); } return; }   // SECTOR 2 (no ride: the field shows at GO)
   if(tr.ph === 'ride'){ tr.rideT += Math.min(dt, 1 / 30); const u = ease(Math.min(1, tr.rideT / tr.ride));
     camera.position.lerpVectors(tr.p0, tr.p1, u); _look.lerpVectors(tr.l0, tr.l1, u); camera.lookAt(_look);
     if(tr.rideT >= tr.ride){ transitEnd(); } } }
 let _look = null;
+// PERF 5 (C1-025) THE PATH DRAWN ONCE UNDER THE BLACK: the ride's first second showed 56–111 ms frames as the camera dropped over a field drawn for the first time —
+//   its maps and buffers sent to the GPU, programs finished, light copies swapped in, all in view. Now, compiled and still black, the camera visits PERF_BUDGET.transit
+//   .prime points of the ride (its start, its end where the 3-2-1 begins, and between), one frame each, before the black lifts: what the ride will show is on the GPU.
+function primeStep(tr){ const n = Math.max(2, PERF_BUDGET.transit.prime), u = ease(Math.min(1, tr.pk / (n - 1)));
+  if(tr.p0 && tr.p1){ camera.position.lerpVectors(tr.p0, tr.p1, u); _look = _look || tr.l1.clone(); _look.lerpVectors(tr.l0, tr.l1, u); camera.lookAt(_look); }
+  if(++tr.pk > n){ if(tr.p0){ camera.position.copy(tr.p0); camera.lookAt(tr.l0); } tr.ph = 'warming'; tr.go(); } }
 // SECTOR 6 THE OPENING: the fort's lines one by one over its field before the first sector (the fight not begun: S.mode 'transit', letterboxed; a centred card is
 //   fine here) — each lineT s, or the next at a tap / click / Enter / Space / the pad's A; Esc skips the rest. Then the first sector goes live as ever.
 function openingStart(lines){ SECT.opened = true; S.mode = 'transit'; S.firing = false; SECT.tr = { ph:'story', t:0, lines, k:-1, left:0, seq:SECT.seq }; note('opening', lines.length + ' lines'); openingNext(SECT.tr); }
