@@ -47,6 +47,8 @@ export function dirWin(){ if(PROFILE.dirEase){ PROFILE.dirEase = null; saveProfi
 export const SAFE = { until:0 };
 export function infilHold(){ const g = SGOAL.g; return !!(SECT.on && g && g.type === 'infiltrate'); }   // BAL 21 the whole infiltration (at night, unseen or holding out for the helicopter): they search more than they aim
 export function sneaking(){ const g = SGOAL.g; return !!(SECT.on && g && g.type === 'infiltrate' && g.ph === 'sneak'); }
+// BAL 22 the flank's cue: left or right of where the camera looks, from where the men came in (never 'behind': nothing enters there)
+function cueSide(c){ const p = S.player; if(!p || c.x == null) return c.side === 'rear' ? 'left' : c.side; camera.getWorldDirection(_v); const dx = c.x - p.pos.x, dz = c.z - p.pos.z; return _v.x * dz - _v.z * dx > 0 ? 'right' : 'left'; }
 // a stage begins (ui/briefing.js): everything forgotten but the deaths on it
 export function directorReset(now){ const st = DIR.stats; for(const k in st) st[k] = 0; DIR.log.length = 0; DIR.contact.length = 0; tacticsReset();
   if(!SECT.on || SECT.i === 0 && !SECT.tries){ SAFE.until = now + (S.stage <= 1 ? BAL.start.first : BAL.start.t); SURP.next = Math.max(SURP.next || 0, SAFE.until); }   // BAL 10
@@ -105,7 +107,7 @@ function escalate(now){ const B = D.build, st = DIR.stats; DIR.escAt = now + B.c
     else if(sallyNow(now)){ did += ' sally'; st.sallies++; acts++; } }
   if(did){ st.esc++; note(now, 'escalate', did.slice(1)); } else DIR.escAt = now + 3; }
 function think(now, dt){ const hi = thrHi(), t = now - DIR.phaseAt, crit = DIR.hp < D.thr.crit, st = DIR.stats;
-  if(DIR.cue && now >= DIR.cue.at && !radio.jam){ dirSay(now, DIR.cue.side, true); DIR.cue = null; }   // (EVENT 2 the net jammed: the flank's cue is held until it is back)
+  if(DIR.cue && now >= DIR.cue.at && !radio.jam){ dirSay(now, cueSide(DIR.cue), true); DIR.cue = null; }   // BAL 22 the side as he sees it when it is said   // (EVENT 2 the net jammed: the flank's cue is held until it is back)
   if(DIR.heldAt) st.held += dt;
   if(S.awaitingUpgrade) return;                                                                                    // the stage is won: nothing more is sent at him
   if(sneaking()) return;   // BAL 11 nor while he sneaks in unseen
@@ -162,7 +164,7 @@ export function dirEntry(t){ const F = DIR.flank, p = CO.ai ? coopDirAt(S.player
   for(let k = 0; k < 4 && !q; k++){ const e = edgeFrom(p.pos.x, p.pos.z, F.a + (Math.random() - 0.5) * B.spread * (1 + k * 0.4)); if(e && e.d >= ENTRY.minD && e.d <= B.maxD && !wetAt(e.x, e.z, 3) && !entrySeen(e.x, e.z) && !rearArc(e.x, e.z)) q = e; }
   for(let k = 0; k < 5 && !q; k++){ const a = F.a + (Math.random() - 0.5) * B.spread, d = R2(B.hatchD), x = p.pos.x + Math.sin(a) * d, z = p.pos.z + Math.cos(a) * d; if(inField(x, z, 4) && !wetAt(x, z, 3) && !inCamView(x, z) && !rearArc(x, z)) q = { x, z, hatch:true }; }
   if(!q) return null; F.n--; DIR.stats.fromFlank++; q.dir = F.side; q.alert = true;   // (they come knowing where he is: a flank that wanders off looking for him is no flank)
-  if(!F.said){ F.said = true; DIR.cue = { at:performance.now() / 1000 + B.cueT, side:F.side }; }   // the radio names the side a moment after the first of them is on the field
+  if(!F.said){ F.said = true; DIR.cue = { at:performance.now() / 1000 + B.cueT, side:F.side, x:q.x, z:q.z }; }   // the radio names the side a moment after the first of them is on the field
   return q; }
 // one entry of the wave has been made at sp (waves.js): counted, and checked — an edge entry inside the frame would be a pop-in
 // MODE 1 the night defence's last assault (campaign/night-defence.js): the next n of the queue go in whatever the phase — the general's coming out must not hold his own men back

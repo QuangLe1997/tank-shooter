@@ -3278,6 +3278,9 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
 // BAL 21 fort 10's infiltration can be won: seen, the waves wait, the searchers shoot wide, a larger landing zone, a longer wait (C1-004)
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { BAL:Q, SECTOR:SE, DIRECTOR:D }=await import('./config.js'), sg=R('src/campaign/sector-goals.js'), dr=R('src/campaign/director.js');
   ok(Q.infil.waveT>0 && Q.infil.spreadK>1 && /export function infilHold\(\)/.test(dr) && /infilHold\(\) \? BAL\.infil\.spreadK/.test(R('src/ui/threat-edge.js')) && SE.types.infiltrate.lzR>=8 && SE.types.infiltrate.wait>=50 && /WAVE\.betweenUntil = now \+ BAL\.infil\.waveT/.test(sg), 'BAL 21: an infiltration seen is a hold he can live through and a helicopter he can reach'); }
+// BAL 22 the flank's callout names the side he sees (left / right), never "behind" (C2-008)
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { BAL:Q, SECTOR:SE, DIRECTOR:D }=await import('./config.js'), sg=R('src/campaign/sector-goals.js'), dr=R('src/campaign/director.js');
+  ok(/function cueSide\(c\)/.test(dr) && /dirSay\(now, cueSide\(DIR\.cue\), true\)/.test(dr) && /side = cr > 0 \? 'right' : 'left';/.test(R('src/ai/tiers.js')) && D.build.sides.rear===0, 'BAL 22: the radio names the side as the player sees it when it is said'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

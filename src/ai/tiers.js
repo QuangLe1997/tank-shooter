@@ -55,7 +55,7 @@ function pinEndNow(sq, now){ const m = sq.m; for(let i = 0; i < m.length; i++) m
 export function pinEnd(sq, now){ if(sq.pin) pinEndNow(sq, now); }
 // the cue he can act on: the leader's shout over his head, and our radio naming the side as the player sees it (cueGap s apart)
 function flankCue(sq, fx, fz, now){ const p = S.player, P = T.pin, L = sq.leader; if(!p || now - TAC.cueAt < P.cueGap || (L.pos.x - p.pos.x) ** 2 + (L.pos.z - p.pos.z) ** 2 > P.cueR * P.cueR) return;
-  TAC.cueAt = now; TAC.cues++; camera.getWorldDirection(_cv); const dx = fx - p.pos.x, dz = fz - p.pos.z, cr = _cv.x * dz - _cv.z * dx, dot = _cv.x * dx + _cv.z * dz, side = dot < -Math.abs(cr) ? 'rear' : cr > 0 ? 'right' : 'left';
+  TAC.cueAt = now; TAC.cues++; camera.getWorldDirection(_cv); const dx = L.pos.x - p.pos.x, dz = L.pos.z - p.pos.z, cr = _cv.x * dz - _cv.z * dx, side = cr > 0 ? 'right' : 'left';   // BAL 22 where they are as he sees them now, a side — never 'behind' (he faces only forward)
   _pos.x = L.pos.x; _pos.z = L.pos.z; _pos.y = heightAt(L.pos.x, L.pos.z) + 2.6; floatText('VÒNG SƯỜN!', '#ffb070', _pos, 16); sfx('click', L.pos, 0.6); dirSay(now, side, true); }
 export function pinPlan(sq, now, tx, tz, d, R){ const P = T.pin, m = sq.m, n = m.length, Tg = sq.T; if(tacTier() < 2 || Tg && Tg.you === false && !Tg.lost){ if(sq.pin) pinEndNow(sq, now); return false; }
   let pl = sq.pin;
