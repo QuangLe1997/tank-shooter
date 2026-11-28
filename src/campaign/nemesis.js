@@ -93,7 +93,7 @@ function stripMan(m){ for(let i = WORN.length - 1; i >= 0; i--){ const w = WORN[
   if(w.tint && u.tint) u.tint.copy(w.tint); WORN.splice(i, 1); } }
 const stripLater = m => { if(m) setTimeout(() => stripMan(m), N.scar.keep * 1000); };
 // the boss bar's name plate: his stars and kill marks, the scar's name and colour
-export function nemPlateEl(el, id, name){ const rec = N.on ? peek(id) : null, sc = rec && rec.scar ? N.scar[rec.scar] : null; el.textContent = name + nemBadge(rec) + ' · ' + (sc ? sc.vi : 'BỘ CHIẾN'); el.style.color = sc ? sc.star : ''; }
+export function nemPlateEl(el, id, name){ const rec = N.on ? peek(id) : null, sc = rec && rec.scar ? N.scar[rec.scar] : null; el.textContent = name + nemBadge(rec) + (sc ? ' · ' + sc.vi : '');   /* HUDUX 4 no class tag: the name, his badge, a scar if he has one */ el.style.color = sc ? sc.star : ''; }
 
 // ---- he gets away ----
 // killEnemy asks: does this general die? true = no (he slips away, or is already running)

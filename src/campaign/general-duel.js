@@ -37,7 +37,7 @@ function guards(n){ const e = G.e, c = C(); for(let i = 0; i < n; i++){ const a 
     const [x, z] = clampFieldXZ(e.pos.x + Math.cos(a) * r, e.pos.z + Math.sin(a) * r, 4), g = spawnEnemy(i % 3 === 2 ? 'rpg' : 'rifle', x, z);
     g.genGuard = true; g.maxHp = g.hp = Math.round(g.maxHp * c.guardHpK); g.def = { ...g.def, dmg:g.def.dmg * 1.4 }; g.loot = Math.random() < 0.3; nemGuard(g); G.guards.push(g); } }
 function bar(on){ const bb = document.getElementById('bossbar'); if(!bb) return; bb.style.display = on ? 'block' : 'none'; G.barK = '';
-  if(on){ const nm = document.getElementById('boss-name'); if(nm) nemPlateEl(nm, G.id, G.name); } }   // NEMESIS 3 his stars, his kill marks, his scar (no history: "<name> · BỘ CHIẾN" as before)
+  if(on){ const nm = document.getElementById('boss-name'); if(nm) nemPlateEl(nm, G.id, G.name); } }   // NEMESIS 3 his stars, his kill marks, his scar (no history: his name alone — HUDUX 4)
 function hud(e){ const hp = document.getElementById('boss-hp'); if(hp) hp.style.width = Math.max(0, e.hp / e.maxHp * 100) + '%';
   const live = G.guards.filter(g => enemies.includes(g)).length, k = (G.rage ? 'r' : '') + live, st = document.getElementById('boss-st');
   if(st && G.barK !== k){ G.barK = k; st.textContent = ''; const b = document.createElement('b'); b.className = G.rage ? 'vu' : 'sh'; b.textContent = G.rage ? 'LIỀU MẠNG!' : 'CẬN VỆ · ' + live; st.appendChild(b); } }

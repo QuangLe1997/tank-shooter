@@ -29,32 +29,32 @@ const W = {
   DESERT:['KIM TỰ THÁP NEBRAKHET · XỨ CÁT ĐỎ', ()=>{ for(const [x,z,s,cap] of [[0,0,46,1],[-58,24,38,0],[-98,48,24,0]]) pyramid(x,z,s,cap);
     C(1.6,2.2,22,40,11,-12,0xc8a46e,4); K(2.0,3,40,23.5,-12,0xd8c08a,4);   // obelisk
     sphinx(30,26); }],
-  SAVANNA:['ĐẠI THÁNH ĐƯỜNG ĐẤT DJOUROKA · MIỀN ĐẤT ĐỎ', ()=>{ B(46,11,30,0,5.5,0,0xb0704a); B(48,2,32,0,0.5,0,0xa86a42);
+  SAVANNA:['ĐẠI THÁNH ĐƯỜNG ĐẤT HOÀNG THẢO · MIỀN ĐẤT ĐỎ', ()=>{ B(46,11,30,0,5.5,0,0xb0704a); B(48,2,32,0,0.5,0,0xa86a42);
     for(const x of [-14,0,14]){ add(new THREE.CylinderGeometry(2.0,3.6,22,4),x,11,15.5,0xb87a50,Math.PI/4); add(new THREE.SphereGeometry(0.9,8,6),x,22.6,15.5,0xf4f0e8); }
     for(let x=-22;x<=22;x+=4){ K(1.0,3.2,x,12.6,15.2,0xb0704a,6); K(1.0,3.2,x,12.6,-15.2,0xb0704a,6); }
     for(let x=-22;x<=22;x+=2.4) for(const y of [4,7.5,10]){ const t=new THREE.CylinderGeometry(0.08,0.08,1.4,4); t.rotateX(Math.PI/2); add(t,x,y,15.7,0x6a4a2a); } }],   // toron beams sticking out
-  TUNDRA:['NHÀ THỜ MÁI VÒM ZARYEVSK · XỨ TUYẾT TRẮNG', ()=>{ B(30,10,22,0,5,0,0xc8483a); const domes=[[0,0,6,0xd8a830,30],[-9,-6,3.6,0x2a8a5a,22],[9,-6,3.6,0x3a6ac8,22],[-9,6,3.6,0xc83a3a,22],[9,6,3.6,0x2aa0a0,22]];
+  TUNDRA:['NHÀ THỜ MÁI VÒM BẠCH NGUYÊN · XỨ TUYẾT TRẮNG', ()=>{ B(30,10,22,0,5,0,0xc8483a); const domes=[[0,0,6,0xd8a830,30],[-9,-6,3.6,0x2a8a5a,22],[9,-6,3.6,0x3a6ac8,22],[-9,6,3.6,0xc83a3a,22],[9,6,3.6,0x2aa0a0,22]];
     for(const [x,z,r,col,h] of domes){ C(r*0.7,r*0.8,h-10,x,10+(h-10)/2,z,0xe8e0d0); S(r,x,h+r*0.7,z,col,1.25); K(r*0.35,r*1.4,x,h+r*2.2,z,0xd8a830,8); }
     for(let k=0;k<5;k++) for(const sd of [-1,1]) B(2,4,0.4,-12+k*6,5,sd*11.2,0x3a2a2a); }],
   HILLS:['TRƯỜNG LUỸ ĐÁ XÁM · MIỀN ĐỒI ĐÁ', null],        // built along the ridge (special)
-  MEADOW:['CỐI XAY GIÓ ZEVENWIEK · VÙNG ĐẤT TRŨNG', null],             // three windmills with turning sails (special)
-  CITADEL:['LĂNG CẨM THẠCH VARUNGARH · MIỀN SA THẠCH', ()=>{ B(70,3,70,0,1.5,0,0xe8e0d4); B(30,18,30,0,12,0,0xf4f0ea); for(const sx of [-1,1]) for(const sz of [-1,1]) B(6,16,6,sx*12,11,sz*12,0xf0ebe2);
+  MEADOW:['CỐI XAY GIÓ PHONG XA · VÙNG ĐẤT TRŨNG', null],             // three windmills with turning sails (special)
+  CITADEL:['LĂNG ĐÁ TRẮNG XÍCH THẠCH · MIỀN SA THẠCH', ()=>{ B(70,3,70,0,1.5,0,0xe8e0d4); B(30,18,30,0,12,0,0xf4f0ea); for(const sx of [-1,1]) for(const sz of [-1,1]) B(6,16,6,sx*12,11,sz*12,0xf0ebe2);
     C(9,9,6,0,24,0,0xf4f0ea,24); S(11,0,33,0,0xf8f6f2,1.25); K(1.5,7,0,48,0,0xd8b040,10); for(const sx of [-1,1]) for(const sz of [-1,1]){ C(1.6,2.0,34,sx*30,20,sz*30,0xf2eee6,12); half(2.0,sx*30,37,sz*30,0xf4f0ea); half(3,sx*11,26,sz*11,0xf4f0ea); }
     B(8,12,0.5,0,9,15.3,0x3a3a3a); }],
-  RUINS:['ĐẤU TRƯỜNG CỔ AURELIA · MIỀN PHẾ ĐÔ', ()=>{ const RA=34, RB=28; for(let k=0;k<44;k++){ const a=k/44*6.283, x=Math.cos(a)*RA, z=Math.sin(a)*RB, broken=a>3.6 && a<5.4, tiers=broken?((k%3)+1):4;
+  RUINS:['ĐẤU TRƯỜNG CỔ TRO TÀN · MIỀN PHẾ ĐÔ', ()=>{ const RA=34, RB=28; for(let k=0;k<44;k++){ const a=k/44*6.283, x=Math.cos(a)*RA, z=Math.sin(a)*RB, broken=a>3.6 && a<5.4, tiers=broken?((k%3)+1):4;
       for(let t=0;t<tiers;t++){ const y=t*7.5; B(4.4, 1.2, 3.4, x, y+6.8, z, 0xc8b89a, -a); for(const sd of [-1.7,1.7]){ const c=Math.cos(-a), s=Math.sin(-a); B(0.9,6.2,3.4, x+sd*c, y+3.1, z-sd*s, 0xbcae90, -a); } } } }],
-  ARCTIC:['LÀNG LỀU TUYẾT BOREAS · VÙNG CỰC BẮC', ()=>{ for(const [x,z,r] of [[0,0,5],[12,6,4],[-11,8,4.4],[4,-12,3.6],[-6,-9,3.2]]){ half(r,x,0,z,0xf2f8fc); B(r*0.5,r*0.5,r*0.8,x,r*0.25,z+r*0.9,0xe0ecf4); }
+  ARCTIC:['LÀNG LỀU TUYẾT BẮC PHONG · VÙNG CỰC BẮC', ()=>{ for(const [x,z,r] of [[0,0,5],[12,6,4],[-11,8,4.4],[4,-12,3.6],[-6,-9,3.2]]){ half(r,x,0,z,0xf2f8fc); B(r*0.5,r*0.5,r*0.8,x,r*0.25,z+r*0.9,0xe0ecf4); }
     C(2.2,3.0,26,26,13,-6,0xf2f2f2,16); for(let k=0;k<4;k++) C(2.25+k*0.02,2.35+k*0.02,2.2,26,4+k*6,-6,0xc83a3a,16); C(2.4,2.4,3,26,27.5,-6,0x2a2a2a,12); K(2.6,2.4,26,30.2,-6,0xc83a3a,12); }],
   CITY:['TOÀ THÁP VỌNG HẢI · ĐÔ THỊ HẢI ĐĂNG', ()=>{ const tiers=[[16,40],[13,30],[10,24],[7,18],[4,12]]; let y=0; tiers.forEach(([w,h],i)=>{ B(w,h,w,0,y+h/2,0,i%2?0x7a98ac:0x6a889c); B(w+0.4,0.6,w+0.4,0,y+h,0,0xd8dce0); y+=h; });
     C(0.3,0.3,22,0,y+11,0,0xc8ccd0,6); B(26,6,26,0,3,0,0x8a9aa6); }],
-  FOUNDRY:['XƯỞNG GANG EISENHALL · VÙNG LÒ THAN', ()=>{ C(7,9,34,0,17,0,0x4a3a32,16); C(7.4,7.4,2,0,30,0,0x8a4a2a,16); for(const [x,z] of [[18,6],[24,-6],[-16,10]]) C(1.8,2.6,46,x,23,z,0x6a5a52,12);
+  FOUNDRY:['XƯỞNG GANG THIẾT LÔ · VÙNG LÒ THAN', ()=>{ C(7,9,34,0,17,0,0x4a3a32,16); C(7.4,7.4,2,0,30,0,0x8a4a2a,16); for(const [x,z] of [[18,6],[24,-6],[-16,10]]) C(1.8,2.6,46,x,23,z,0x6a5a52,12);
     B(30,14,14,-14,7,-18,0x5a4a42); for(let k=0;k<5;k++) B(1,1,26,-2+k*0.1,26-k*4,-6,0x3a3a3a); B(4,40,4,32,20,14,0x3a3a3a); B(16,2,2,32,38,14,0x3a3a3a); }],
   // Z187 the three new battlefields
-  STEELMILL:['NHÀ MÁY THÉP IRONHOLLOW · THUNG LŨNG RỈ SÉT', ()=>{ for(const [x,z] of [[-14,0],[0,4],[14,0]]){ C(5,6.5,30,x,15,z,0x5a3424,14); C(5.4,5.4,1.6,x,30.8,z,0x7a4a2a,14); C(1.6,1.6,10,x,36,z,0x3a2a22,10); }   // three rusted blast furnaces
+  STEELMILL:['NHÀ MÁY THÉP THIẾT CỐC · THUNG LŨNG RỈ SÉT', ()=>{ for(const [x,z] of [[-14,0],[0,4],[14,0]]){ C(5,6.5,30,x,15,z,0x5a3424,14); C(5.4,5.4,1.6,x,30.8,z,0x7a4a2a,14); C(1.6,1.6,10,x,36,z,0x3a2a22,10); }   // three rusted blast furnaces
     for(const [x,z] of [[-24,-12],[24,-14]]) C(1.6,2.2,52,x,26,z,0x6a4a3a,12); C(9,11,22,30,11,10,0x8a8278,20);   // two stacks + a cooling tower
     B(56,10,14,0,5,-16,0x4a3a30); for(let k=0;k<8;k++) B(1.2,1.2,12,-28+k*8,10,-16,0x2a2420); B(48,1.4,2.4,-4,22,9,0x3a3a3a,0.18); B(2,22,2,-26,11,6,0x2a2a2a); B(2,18,2,18,9,12,0x2a2a2a); }],   // cast house, conveyor gantry on trestles
   VOLCANO:['MIỆNG NÚI LỬA XÍCH NHAM · ĐẢO ĐÁ ĐEN', ()=>{}],   // Z258 built by world/magma.js (buildVolcano)
-  QUARRY:['MỎ ĐÁ CẨM THẠCH MARMORANO · DÃY NÚI ĐÁ TRẮNG', ()=>{ for(let k=0;k<6;k++) B(80-k*10,6,16-k*1.2,0,3+k*6,-k*2.8,k%2?0xe6e0d4:0xd8d2c4);   // the terraced white wall, bench on bench
+  QUARRY:['MỎ ĐÁ CẨM THẠCH BẠCH SƠN · DÃY NÚI ĐÁ TRẮNG', ()=>{ for(let k=0;k<6;k++) B(80-k*10,6,16-k*1.2,0,3+k*6,-k*2.8,k%2?0xe6e0d4:0xd8d2c4);   // the terraced white wall, bench on bench
     for(const [x,y,z] of [[-30,1.5,10],[-24,1.5,14],[28,1.5,12],[22,4.5,12]]) B(5,3,3,x,y,z,0xf0ebe0);   // cut blocks waiting at the foot
     B(5,3,8,10,1.6,12,0xd8a020); B(1.2,1.2,7,10,5,16,0x3a3a3a,0.6); B(3,2,2,10,7,19,0xd8a020); B(2,30,2,-12,15,4,0xc0302a); B(22,1.2,1.2,-3,30,4,0xc0302a); }],   // a yellow excavator, a red derrick crane
 };
