@@ -21,7 +21,7 @@ export function sectorDeal(tokens, land, seed, night){ const rnd = seededRng(see
   const frees = tokens.reduce((n, t) => n + (t === '*' ? 1 : 0), 0); let seen = 0, since = 0, want = gap(), forked = false;
   tokens.forEach((t, i) => { if(t !== '*'){ const e = entry(t); if(e){ out.push(e); since++; } return; } seen++;
     const prev = out[out.length - 1], next = tokens[i + 1] && tokens[i + 1] !== '*' ? sectorParse(tokens[i + 1]) : null;
-    const fit = deck.filter(x => { const c = sectorParse(x); return (!prev || c.type !== prev.type) && (!next || c.type !== next.type) && !out.some(o => o.tok === x || o.fork && o.fork.some(r => r.tok === x)); });
+    const fit = deck.filter(x => { const c = sectorParse(x); return (!prev || c.type !== prev.type && c.place !== prev.place) && (!next || c.type !== next.type && c.place !== next.place) &&   /* BAL 8 nor the same place as its neighbours (no LÀNG · LÀNG) */ !out.some(o => o.tok === x || o.fork && o.fork.some(r => r.tok === x)); });
     const pool = fit.length >= 2 ? fit : deck.filter(x => !out.some(o => o.tok === x)), a = draw(pool.length ? pool : deck, rnd);
     if((since >= want || seen === frees && !forked) && pool.length >= 2){ const others = pool.filter(x => x !== a && sectorParse(x).type !== sectorParse(a).type), b = draw(others.length ? others : pool.filter(x => x !== a), rnd);
       const A = entry(a), B = entry(b); out.push({ ...A, fork:[A, B], pick:-1 }); since = 0; want = gap(); forked = true; }
