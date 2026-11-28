@@ -2421,6 +2421,21 @@ export const ACTIONS = [
   ['pause','Tạm dừng','KHÁC',['escape','p'],9,0], ['keys','Bảng phím','KHÁC',['h','f1'],8,0], ['music','Bật / tắt nhạc nền','KHÁC',['m'],null,0] ];
 // Z107 SQUAD COMMANDS — T: muster every soldier on the map to the tank · X: assault the nearest open fortress · B: our helicopter drops paratroopers
 export const COMMAND = { musterT:14, assaultT:120, fightNear:{ muster:8, assault:16 }, para:{ cd:38, cdMobile:45, troops:[4,6], troopsMobile:[3,4], extraCap:6 } };
+// BOT 1 THE FIGHTING BOT (src/dev/bot.js — dev only: ?bot[=novice|average|good] or botStart() from a probe, asleep in normal play; tools/calib.mjs plays the mixer's battles with it).
+//   It plays with the keys and the mouse of ACTIONS above and sees what a player sees. think: decisions a second · sightK: how far it looks, × his range · eye: its eye's height
+//   for a clear line (m) · losEvery / losPerTick: a man's line re-checked every s, at most n lines a decision · front.r: the radar's dots within r m make the front it heads for ·
+//   ringIn: how deep into a ring it goes (share of the ring's radius) · cover: a spot within r m looked for every s · nade: a grenade at min+ men within r m of each other, d m off,
+//   thought of every s · skillMin / skillEvery: an air strike or a fireteam when that many are in sight, thought of every s · ride: on the ride for a goal past far m, off within near ·
+//   stuck: under v m/s for t s while pushing = stuck (a side-step of side s, a hop; the third time on one spot a climb) · loot.r: drops it walks to (m) · reloadAt: a reload with nothing in
+//   sight under that share of the magazine · cam: it turns the view 45° toward a shooter / the fight more than off rad off the screen's up, at most every s · onTol: degrees off its own aim it may fire at · cardWait: s before it picks a card (reading it) · fork: the route a skill picks.
+//   skill: react ms (from a new man in sight to the cursor moving), err ° (1σ of the aim, drifting), track /s (how fast the cursor closes on the man), burst (rounds, ×the gun's
+//   rate), pause s between bursts, expose s up at cover before hide s down, retreat: health share it falls back under (retreatFire: the chance it shoots as it goes), keep: the
+//   distance it fights at (× range), strafe, cover / nade / skill / loot / reload: how likely it seeks cover in a fight, throws at a group, calls a skill, notices a drop, reloads early, turns the view
+export const BOT = { think:20, sightK:1.5, eye:1.45, losEvery:0.25, losPerTick:2, front:{ r:65 }, ringIn:0.6, cover:{ r:12, every:2.5 }, nade:{ min:3, r:5, d:[10, 30], every:2.5 },
+  skillMin:4, skillEvery:7, ride:{ far:80, near:35 }, stuck:{ v:0.6, t:1.4, side:1.1 }, loot:{ r:22 }, cam:{ off:1.1, every:1.2 }, reloadAt:0.4, onTol:4, cardWait:1.5, fork:{ novice:'easy', average:'def', good:'hard' },
+  skill:{ novice:{ react:[450, 700], err:5.5, track:4, burst:[3, 7], pause:[0.45, 0.8], expose:3.5, hide:1, retreat:0.18, retreatFire:0.2, keep:0.45, strafe:false, cover:0.3, nade:0.2, skill:0.1, loot:0.55, reload:0.2, cam:0.35 },
+    average:{ react:[260, 400], err:3, track:7, burst:[4, 8], pause:[0.3, 0.55], expose:2.2, hide:1.3, retreat:0.32, retreatFire:0.45, keep:0.6, strafe:false, cover:0.6, nade:0.5, skill:0.25, loot:0.8, reload:0.5, cam:0.7 },
+    good:{ react:[170, 250], err:1.6, track:11, burst:[5, 10], pause:[0.2, 0.35], expose:1.6, hide:1.4, retreat:0.42, retreatFire:0.7, keep:0.72, strafe:true, cover:0.85, nade:0.75, skill:0.45, loot:1, reload:0.8, cam:0.95 } } };
 
 // Z107 FLATTER BATTLEFIELD — mostly level ground so the tank drives freely: only a handful of big rolling hills, very few old craters,
 //   a whisper of surface noise, and shells dig shallower craters (blastK) — the ground no longer fills up with pits.

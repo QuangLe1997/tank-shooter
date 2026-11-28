@@ -323,4 +323,5 @@ export * from './game/coop-team.js';   // COOP 9 the ping, the director for two,
 export * from './game/coop-glue.js';   // COOP 4–7 the game's side of two-player co-op (asleep without ?room=)
 export * from './game/startup.js';
 export * from './dev/hooks.js';
+export * from './dev/bot.js';   // BOT 1 the fighting bot (dev only: ?bot or botStart() from a probe — asleep in normal play)
 export * from './dev/pose-studio.js';   // Z349 the pose studio: how a soldier holds each weapon, measured and photographed (window.poseStudio)
