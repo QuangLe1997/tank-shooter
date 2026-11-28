@@ -3813,7 +3813,8 @@ export const NOCENTER = {
 //   beacon = HUDUX 4 the relic's shaft of light (loot/relic.js): k × its light, w × its width; between near[0] and near[1] m from him it fades to nearK (it was the brightest thing on screen)
 //   goal = HUDUX 5 the on-screen goal marker (ui/hudux.js uxGoalTick): a diamond + metres pinned over the sector's goal (its world mark: hostage, target, gate, general's
 //     arena, evac ring), held inside the screen's safe frame (px from each edge, desk / touch) with an arrow when off screen; a tiny tick, no words, inside the aim zone;
-//     closer than near m it is a tick too; y = m above the ground it points at
+//     closer than near m it is a tick too; y = m above the ground it points at; HUDUX 6 ping = two rings when a new goal shows and every `every` s while he has not
+//     come `gain` m nearer to it; radar = [px from the right, px from the top] of the minimap's corner, which the marker steps below (it sat on the map)
 //   opening = HUDUX 5 a fort's opening lines: the first `cards` as a card (cardT s each), the rest on the radio every radioGap s once he is fighting
 //   mark = a sector goal's world badge: at most px tall on the screen, faint while it is in the top band (y < top px: the score, the sector rail)
 //   board = the leaderboard: names that read as tests are not shown (rx, case-insensitive, the WHOLE trimmed name: a test word and maybe a number — HUDUX 4: "Q.Anh",
@@ -3828,7 +3829,7 @@ export const HUDUX = {
   bars:{ hold:3, near:7 },
   mark:{ px:36, top:96 },
   beacon:{ k:0.4, w:0.5, near:[20, 70], nearK:0.25 },
-  goal:{ on:true, desk:{ top:100, right:22, bottom:98, left:22 }, touch:{ top:64, right:96, bottom:70, left:96 }, near:5, y:2.4 },
+  goal:{ on:true, desk:{ top:100, right:22, bottom:98, left:22, radar:[172, 236] }, touch:{ top:64, right:96, bottom:70, left:96, radar:[124, 176] }, near:5, y:2.4, ping:{ every:20, gain:3 } },
   opening:{ cards:1, cardT:2.6, radioGap:4.2 },
   board:{ rx:/^(qa|test|tester|bench|smoke|critic|bot|calib|perf|probe|debug|hudux)[\s_\-.#]*\d*$/i, minLen:1, query:/[?&](perf|bot|test|smoke|calib|critic|bench|nogov)\b/ },
   quickPlay:true };

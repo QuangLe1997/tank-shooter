@@ -131,18 +131,26 @@ body.hux-nostage #topbar .cell.stage{display:none!important;}
 /* HUDUX 4 the phone: a loot card (top-left, ~3 s) and the ride chip share the corner — the chip steps aside while the card shows (they were written over each other) */
 html body.touch:has(#lootToast.on) #rideCall#rideCall{visibility:hidden!important;}
 
-/* ---- HUDUX 5 the goal marker (ui/hudux.js uxGoalTick): a small diamond in the goal's colour with the metres under it; on the safe frame's edge an arrow toward it;
+/* ---- HUDUX 5–6 the goal marker (ui/hudux.js uxGoalTick): a bright diamond in the goal's colour with a thin dark outline (it reads on sand and snow), the metres bold under it;
+        on the safe frame's edge a big arrow toward it; a ping (two rings, 0.6 s) when a new goal shows and every 20 s while he has not closed on it;
         inside the aim zone (or within a few metres) only a tiny tick — no words over the aim ---- */
-#huxGoal{position:fixed;left:0;top:0;z-index:14;pointer-events:none;will-change:transform;--gc:#ffd27a;}
+#huxGoal{position:fixed;left:0;top:0;z-index:14;pointer-events:none;will-change:transform;--gc:#ffd27a;--gs:17px;}
+body.touch #huxGoal{--gs:20px;}
 #huxGoal.hidden{display:none;}
-#huxGoal .hg-d{position:absolute;left:-7px;top:-7px;width:12px;height:12px;transform:rotate(45deg);border:2px solid var(--gc);background:rgba(9,11,8,.55);box-shadow:0 0 0 1px rgba(0,0,0,.55),0 0 8px color-mix(in srgb,var(--gc) 55%,transparent);}
-#huxGoal .hg-m{position:absolute;left:50%;top:10px;transform:translateX(-50%);white-space:nowrap;font:700 12px/1 var(--k-mono,'Share Tech Mono',monospace);color:#f2eedc;text-shadow:0 1px 2px #000,0 0 5px rgba(0,0,0,.8);letter-spacing:.04em;}
-#huxGoal .hg-a{display:none;position:absolute;left:-15px;top:-15px;width:30px;height:30px;}
-#huxGoal .hg-a::after{content:'';position:absolute;right:-2px;top:50%;margin-top:-5px;border-left:9px solid var(--gc);border-top:5px solid transparent;border-bottom:5px solid transparent;filter:drop-shadow(0 0 2px #000);}
+#huxGoal .hg-d{position:absolute;left:calc(var(--gs)/-2);top:calc(var(--gs)/-2);width:var(--gs);height:var(--gs);box-sizing:border-box;transform:rotate(45deg) scale(.82);border:3px solid var(--gc);background:color-mix(in srgb,var(--gc) 30%,rgba(9,11,8,.5));
+  box-shadow:0 0 0 1.5px rgba(0,0,0,.85),inset 0 0 0 1px rgba(0,0,0,.55),0 0 10px color-mix(in srgb,var(--gc) 70%,transparent);}
+#huxGoal .hg-m{position:absolute;left:50%;top:calc(var(--gs)/2 + 5px);transform:translateX(-50%);white-space:nowrap;font:700 13px/1 var(--k-ui,'Saira Condensed',sans-serif);color:#fff;letter-spacing:.06em;
+  padding:2px 5px 1px;background:rgba(9,11,8,.62);border-bottom:2px solid var(--gc);text-shadow:0 1px 2px #000;}
+body.touch #huxGoal .hg-m{font-size:13px;}
+#huxGoal .hg-a{display:none;position:absolute;left:-22px;top:-22px;width:44px;height:44px;}
+#huxGoal .hg-a::after{content:'';position:absolute;right:-6px;top:50%;margin-top:-9px;border-left:15px solid var(--gc);border-top:9px solid transparent;border-bottom:9px solid transparent;filter:drop-shadow(0 0 1.5px #000) drop-shadow(0 0 1px #000);}
 #huxGoal.off .hg-a{display:block;}
-#huxGoal.tick .hg-d{left:-4px;top:-4px;width:6px;height:6px;border-width:1.5px;box-shadow:0 0 0 1px rgba(0,0,0,.5);}
-#huxGoal.tick .hg-m{display:none;}
-body.touch #huxGoal .hg-m{font-size:11px;}
+#huxGoal .hg-p{position:absolute;left:-14px;top:-14px;width:28px;height:28px;border-radius:50%;border:2px solid var(--gc);opacity:0;box-shadow:0 0 0 1px rgba(0,0,0,.4);}
+#huxGoal.ping .hg-p{animation:hgPing .6s ease-out 1;} #huxGoal.ping .hg-p2{animation-delay:.18s;}
+@keyframes hgPing{0%{opacity:.95;transform:scale(.5);}100%{opacity:0;transform:scale(2.6);}}
+#huxGoal.tick .hg-d{left:-4px;top:-4px;width:8px;height:8px;border-width:2px;box-shadow:0 0 0 1px rgba(0,0,0,.7);}
+#huxGoal.tick .hg-m,#huxGoal.tick .hg-p{display:none;}
+@media (prefers-reduced-motion:reduce){ #huxGoal.ping .hg-p{animation:none;} }
 
 /* ---- HUDUX 5 no battle caption over the pause screen or a menu (round 1 forced #voiceSub to show on a phone; it must still go when the battle is not on screen) ---- */
 html body:not(.hux-play) #voiceSub#voiceSub,html body:not(.hux-play) #radio#radio{display:none!important;}
