@@ -53,7 +53,7 @@ tools/
 test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 ```
 
-### 2.1 Danh mục module (323 module theo thứ tự hub · 34.672 dòng)
+### 2.1 Danh mục module (323 module theo thứ tự hub · 34.771 dòng)
 
 <!-- MODULES:BEGIN (npm run modmap) -->
 | # | Module | Dòng | Nội dung |
@@ -71,7 +71,7 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 10 | `src/data/medal-rules.js` | 83 | MEDAL 1 THE CAREER'S RULES, AS DATA (pure — test.js calls it): the rank an amount of experience is, the insi… |
 | 11 | `src/data/mode-math.js` | 53 | MODE 1–2 THE TWO EXTRA MODES' ARITHMETIC, AS DATA (pure — test.js calls it; the game side is campaign/mode-r… |
 | 12 | `src/data/knob-stack.js` | 16 | MIX 1 THE ONE KNOB STACK (pure: no hub, no DOM — test.js and tools/spec.mjs load it in node). |
-| 13 | `src/data/mixer-math.js` | 260 | MIX 1 THE BATTLE MIXER'S ARITHMETIC (pure: config + data only — tools/spec.mjs and test.js run it in node; t… |
+| 13 | `src/data/mixer-math.js` | 340 | MIX 1 THE BATTLE MIXER'S ARITHMETIC (pure: config + data only — tools/spec.mjs and test.js run it in node; t… |
 | | **net/** — Co-op 2 người: giao thức, đường truyền, phiên — thuần, chạy được bằng node | | |
 | 14 | `src/net/protocol.js` | 208 | COOP 2 THE WIRE FORMAT of two-player co-op: message kinds, version, quantisers, the frame a snapshot is buil… |
 | 15 | `src/net/interp.js` | 61 | COOP 2 THE RECEIVING SIDE'S SNAPSHOT BUFFER: keeps the last few snapshots, draws the world a little in the p… |
@@ -287,7 +287,7 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 131 | `src/ai/cover.js` | 14 | Z104 COVER: a soldier who sees a tank coming puts a wall, rock or sandbag line between it and himself (both … |
 | 132 | `src/ai/spatial.js` | 25 | Z172 UNIT GRID: a uniform hash of every unit (rebuilt once a frame) and of the obstacles (rebuilt when they … |
 | 133 | `src/ai/squads.js` | 136 | Z173 SQUAD TACTICS: enemy foot squads get a leader, a formation and one shared plan (advance → fire-and-mano… |
-| 134 | `src/ai/tiers.js` | 113 | DIR 2 TACTICS BY TIER: what the enemy's foot squads know how to do grows with the stage (tacTier 1…3; DIRECT… |
+| 134 | `src/ai/tiers.js` | 118 | DIR 2 TACTICS BY TIER: what the enemy's foot squads know how to do grows with the stage (tacTier 1…3; DIRECT… |
 | 135 | `src/ai/awareness.js` | 92 | AI 1 WHAT EACH ENEMY SOLDIER KNOWS. Every man on foot used to know where the player was the moment he existe… |
 | 136 | `src/ai/fieldcraft.js` | 88 | Z220 FIELDCRAFT, for the soldiers of BOTH sides: |
 | | **campaign/** — Chiến dịch, đợt, tướng, pháo kích | | |
@@ -307,11 +307,11 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 231 | `src/campaign/artillery.js` | 31 | ARTILLERY STRIKES: a locked spot (the objective battery's), the shell in flight, the burst, shrapnel hit vs … |
 | 267 | `src/campaign/drone-raid.js` | 135 | DRONE 3 THE ENEMY'S DRONES, AND THE JAMMER. A raid is one draw of the surprises' hat (campaign/surprises.js … |
 | 299 | `src/campaign/mode-run.js` | 115 | MODE 3 THE RUN KIT of the two extra modes (night defence: campaign/night-defence.js · the daily challenge: c… |
-| 300 | `src/campaign/night-defence.js` | 186 | MODE 1 NIGHT DEFENCE ("THỦ ĐÊM", config NIGHTDEF; the run kit: campaign/mode-run.js; its arithmetic: data/mo… |
-| 301 | `src/campaign/daily.js` | 80 | MODE 2 THE DAILY CHALLENGE ("THỬ THÁCH HÔM NAY", config DAILY; the run kit: campaign/mode-run.js; the genera… |
+| 300 | `src/campaign/night-defence.js` | 192 | MODE 1 NIGHT DEFENCE ("THỦ ĐÊM", config NIGHTDEF; the run kit: campaign/mode-run.js; its arithmetic: data/mo… |
+| 301 | `src/campaign/daily.js` | 84 | MODE 2 THE DAILY CHALLENGE ("THỬ THÁCH HÔM NAY", config DAILY; the run kit: campaign/mode-run.js; the genera… |
 | 302 | `src/campaign/conquest.js` | 172 | CONQ 1 CHINH PHẠT 10 THÀNH (config CONQUEST; the road on the battle setup: ui/conquest-map.js). The campaign… |
 | 304 | `src/campaign/sectors.js` | 228 | SECTOR 1 A LONG BATTLE IS A CHAIN OF SECTORS (config.js SECTOR · the rail and the transit's overlay: ui/sect… |
-| 305 | `src/campaign/mixer.js` | 79 | MIX 1 composeBattle(spec): ONE BATTLE FROM A BattleSpec (the arithmetic: data/mixer-math.js · the numbers: c… |
+| 305 | `src/campaign/mixer.js` | 83 | MIX 1 composeBattle(spec): ONE BATTLE FROM A BattleSpec (the arithmetic: data/mixer-math.js · the numbers: c… |
 | 307 | `src/campaign/sector-goals.js` | 193 | SECTOR 2 THE FOUR NEW SECTOR MISSIONS (config.js SECTOR.types · the run and its flow: campaign/sectors.js). … |
 | 308 | `src/campaign/sector-route.js` | 86 | SECTOR 4 THE ROUTE OF A LONG BATTLE (config.js SECROUTE · the run itself: campaign/sectors.js · the card, th… |
 | 309 | `src/campaign/conq-story.js` | 42 | SECTOR 6 THE CONQUEST'S STORY, FORT BY FORT (config.js CONQSTORY · text only). A fort's battle is a sector r… |
