@@ -18,10 +18,10 @@
 //   built at night (rebuild turns the run's hour for it). The rail carries the sector's objective line (g.sub) beside its clock; the side missions' card stays hidden.
 //   Co-op: host-only for now — a co-op room plays the ordinary battle (sectorBegin stays off).
 import * as THREE from 'three';
-import { BAL, FORTBOSS, SECTOR, SIDEMISSION, CONTRACTS, OBJECTIVES, SECROUTE, CONQSTORY } from '../../config.js';
+import { BAL, FORTBOSS, SECTOR, SIDEMISSION, CONTRACTS, OBJECTIVES, SECROUTE, CONQSTORY, HUDUX } from '../../config.js';
 import { PERF_BUDGET } from '../../config.js';   // PERF 5 the transit's prime frames
 import { dietFieldIdle as dietIdle } from '../hub.js';   // PERF 9 (render/asset-diet.js) · PERF 16 the new field's own files
-import { sectorStoryCard } from '../hub.js';   // SECTOR 6
+import { sectorStoryCard, uxStoryRest } from '../hub.js';   // SECTOR 6 · HUDUX 5
 import { knobTurn, knobBack } from '../hub.js';   // MIX 1
 import { FORTS, startBoss } from '../hub.js';   // SECTOR 4
 import { enemies, bullets, parts, renderer } from '../hub.js';
@@ -231,8 +231,8 @@ function primeStep(tr){ const n = Math.max(2, PERF_BUDGET.transit.prime), u = ea
 // SECTOR 6 THE OPENING: the fort's lines one by one over its field before the first sector (the fight not begun: S.mode 'transit', letterboxed; a centred card is
 //   fine here) — each lineT s, or the next at a tap / click / Enter / Space / the pad's A; Esc skips the rest. Then the first sector goes live as ever.
 function openingStart(lines){ SECT.opened = true; S.mode = 'transit'; S.firing = false; SECT.tr = { ph:'story', t:0, lines, k:-1, left:0, seq:SECT.seq }; note('opening', lines.length + ' lines'); openingNext(SECT.tr); }
-function openingNext(tr){ if(SECT.tr !== tr) return; tr.k++; if(tr.k >= tr.lines.length){ sectorStoryCard(null); SECT.tr = null; S.mode = 'playing'; return; }
-  tr.left = CONQSTORY.lineT; sectorStoryCard({ line:tr.lines[tr.k], i:tr.k, n:tr.lines.length, hint:CONQSTORY.skip, next:() => openingNext(tr), skip:() => { tr.k = tr.lines.length; openingNext(tr); } }); }
+function openingNext(tr){ if(SECT.tr !== tr) return; tr.k++; if(tr.k >= Math.min(tr.lines.length, HUDUX.opening.cards)){ sectorStoryCard(null); SECT.tr = null; S.mode = 'playing'; uxStoryRest(tr.lines, tr.k, SECT.seq); return; }   // HUDUX 5 one card, the rest on the radio while he fights
+  tr.left = HUDUX.opening.cardT; sectorStoryCard({ line:tr.lines[tr.k], i:tr.k, n:tr.lines.length, hint:CONQSTORY.skip, next:() => openingNext(tr), skip:() => { tr.k = tr.lines.length; openingNext(tr); } }); }
 function openingStep(tr, dt){ if((tr.left -= dt) <= 0) openingNext(tr); }
 // SECTOR 4 a route picked: the sector is that route now, the card says where the column goes, the field is built
 function forkDone(tr, k){ if(SECT.tr !== tr || tr.ph !== 'fork') return; const c = forkTake(SECT.i, k); tr.ph = 'build'; tr.took = k; note('fork', (k ? 'B ' : 'A ') + (c ? c.place + ':' + c.type : ''));

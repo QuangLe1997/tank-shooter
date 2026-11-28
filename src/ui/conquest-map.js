@@ -37,4 +37,4 @@ export function conqSummary(){ const i = conqSel(), f = C.forts[i], st = conqSta
 // XUẤT KÍCH on the Chiến dịch tab (ui/battle-setup.js goBattle): false = the fort is locked
 export function conqGo(){ return conqLaunch(conqSel()); }
 // the home screen's PLAY line (ui/menus.js refreshStartUI): the next fort
-export function conqPlayLine(){ const q = conqStore(), i = Math.min(q.cap, N - 1), f = C.forts[i]; return q.cap >= N ? 'Đã chiếm đủ 10 thành' : fillTx(Y.fort, { n:i + 1 }) + ' · ' + f.name + ' · ' + f.boss; }
+export function conqPlayLine(){ const q = conqStore(), i = Math.min(q.cap, N - 1), f = C.forts[i]; if(q.cap >= N){ const j = Math.max(0, Math.min(N - 1, q.sel | 0)); return 'Đánh lại ' + fillTx(Y.fort, { n:j + 1 }) + ' · ' + C.forts[j].name; } return fillTx(Y.fort, { n:i + 1 }) + ' · ' + f.name + ' · ' + f.boss; }   // HUDUX 5 all ten taken: CHƠI NGAY replays the fort last picked

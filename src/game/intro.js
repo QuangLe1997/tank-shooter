@@ -1,7 +1,7 @@
 // game/intro.js — INTRO CINEMATIC (deploy showcase)
 import * as THREE from 'three';
 import { INTRO, INTRO_CITY, OPERATIONS } from '../../config.js';
-import { battleTitle, compileFor, compileQuiet, placeLine, opTitle, veilStep, ARENA, BIOME, FORTS, MOBILE, PROFILE, RIVER, S, SKY, TOD_LABEL, WAVE, WONDER, arena, biomeVi, camOff, camRestPose, camera, composer, doResize, openBriefing, renderer, saveProfile, scene, smoother, spawnPart, TRAFFIC, heightAt, GROUND_READY, grassReady, loadRealTrees, loadRealCity, buildIntroClouds, clearIntroClouds, updateIntroClouds, blendScene } from '../hub.js';
+import { UX, battleTitle, compileFor, compileQuiet, placeLine, opTitle, veilStep, ARENA, BIOME, FORTS, MOBILE, PROFILE, RIVER, S, SKY, TOD_LABEL, WAVE, WONDER, arena, biomeVi, camOff, camRestPose, camera, composer, doResize, openBriefing, renderer, saveProfile, scene, smoother, spawnPart, TRAFFIC, heightAt, GROUND_READY, grassReady, loadRealTrees, loadRealCity, buildIntroClouds, clearIntroClouds, updateIntroClouds, blendScene } from '../hub.js';
 
 // ----------------------------- INTRO CINEMATIC (deploy showcase) -----------------------------
 // Z239 desktop: ONE grand, wide, unhurried move — the camera opens high over the whole battlefield, glides a quarter of the way round it
@@ -73,7 +73,7 @@ export function startIntro(){
   if(camRestPose(_rp, _rl)){ offs.push([_rp.x-T.x, _rp.y, _rp.z-T.z]); looks.push([_rl.x-T.x, _rl.y, _rl.z-T.z]); } else { offs.push([camOff.x,camOff.y,camOff.z]); looks.push(LOOKS[5]); }
   const mk=a=>new THREE.CatmullRomCurve3(a.map(o=>T.clone().add(new THREE.Vector3(o[0],o[1],o[2]))), false, 'centripetal');   // centripetal: no overshoot loops between close points
   intro.camCurve=mk(offs); intro.lookCurve=mk(looks); intro.t=0; intro.active=true; intro.t0=performance.now()/1000; intro.tc0=0;
-  intro.quick = !!(PROFILE.introSeen && PROFILE.introSeen[BIOME.name]);   // Z152 seen this battlefield's tour before → compile behind the veil, then go
+  intro.quick = !!(PROFILE.introSeen && PROFILE.introSeen[BIOME.name]) || UX.quick;   // HUDUX 5 CHƠI NGAY: no tour, straight on (gun in hand ≤ 12 s)   // Z152 seen this battlefield's tour before → compile behind the veil, then go
   const sub=document.getElementById('cine-sub'); if(sub){ clearTimeout(sub._t); sub._next=null; sub.style.transition='opacity .22s ease'; sub.style.opacity='1'; sub.textContent=stageLine(); }
   { const put=(id, t)=>{ const e=document.getElementById(id); if(e) e.textContent=t; }; put('cineName', biomeVi(BIOME.name)); put('cineTc', '00:00:00:00'); intro.tc='';
     put('cineWhere', (battleTitle() || 'Màn '+S.stage+(S.loop>0?', vòng '+(S.loop+1):''))+' — '+[placeLine(BIOME.name), S.tod ? String(TOD_LABEL[S.tod]).toLocaleLowerCase('vi') : ''].filter(Boolean).join(', '));

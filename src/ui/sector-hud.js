@@ -4,7 +4,7 @@
 //   underneath one line at a time. Pure DOM, made once, changed only when what it says changes (the frame calls it every frame).
 //   SECTOR 4 the rail's tail: the battle's carried consequences as small icons (green good, red bad) and the sector's event card as a chip; and THE FORK CARD in the
 //   transit (a menu moment: the fight is stopped and under the black, so it stands in the middle) — two routes, tap / click / pad / keys 1·2, a clock to the default pick.
-import { svgMarkup } from '../hub.js';   // SECTOR 4
+import { svgMarkup, radio } from '../hub.js';   // SECTOR 4 · HUDUX 5 (campaign/operations.js radio)
 import { STORY } from '../../config.js';   // SECTOR 6 (the speakers' names)
 let _rail = null, _railSig = '', _tr = null, _trLine = '', _main = null, _cons = null, _chip = null;
 const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
@@ -80,4 +80,6 @@ export function sectorStoryCard(o){ const T = trEl(); if(!T) return;
   T.d.classList.add('on', 'story'); document.body.classList.add('sectx'); _sy.classList.remove('hidden');
   if(o.next){ _sy.onclick = () => o.next(); _syKey = e => { if(e.key === 'Escape'){ e.preventDefault(); e.stopPropagation(); o.skip && o.skip(); } else if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); e.stopPropagation(); o.next(); } };
     addEventListener('keydown', _syKey, true); } else _sy.onclick = null; }
+// HUDUX 5 a story line on the radio instead of a card: "SPEAKER: words" (ui/hudux.js uxStoryRest)
+export function sectorStoryRadio(line){ const b = String(line).indexOf('|'), who = b > 0 ? line.slice(0, b) : 'cmd', tx = b > 0 ? line.slice(b + 1) : line; radio(speaker(who) + ': ' + tx); }
 export const sectorStoryShown = () => !!(_sy && !_sy.classList.contains('hidden'));
