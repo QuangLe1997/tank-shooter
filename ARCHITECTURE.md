@@ -53,7 +53,7 @@ tools/
 test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 ```
 
-### 2.1 Danh mục module (334 module theo thứ tự hub · 35.773 dòng)
+### 2.1 Danh mục module (334 module theo thứ tự hub · 35.795 dòng)
 
 <!-- MODULES:BEGIN (npm run modmap) -->
 | # | Module | Dòng | Nội dung |
@@ -106,7 +106,7 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 43 | `src/render/static-batch.js` | 60 | PERF 14 THE SAME PIECE, ONE DRAW: a battlefield holds hundreds of plain meshes that are copies of one anothe… |
 | 44 | `src/render/shadow-twin.js` | 39 | PERF 20 ONE SHADOW DRAW FOR A MANY-MATERIAL MODEL: a street lamp, a kerb set, a café table, a traffic car ar… |
 | 46 | `src/render/see-through.js` | 50 | CAM 3 SEE-THROUGH: what stands between the follow camera and the soldier — a fort's wall, tower or keep, its… |
-| 47 | `src/render/cam-arm.js` | 55 | VIS 2 THE SPRING ARM: the follow camera never sits inside a rock, a ruin's pillar or a wall, nor presses its… |
+| 47 | `src/render/cam-arm.js` | 60 | VIS 2 THE SPRING ARM: the follow camera never sits inside a rock, a ruin's pillar or a wall, nor presses its… |
 | 48 | `src/render/perfhud.js` | 38 | Z240 PERFORMANCE PROBE + HUD: per-frame logic / draw-submit / GPU time (EXT_disjoint_timer_query_webgl2), wo… |
 | 54 | `src/render/mat-norm.js` | 132 | MAT 1 ONE LIGHT FOR EVERY MODEL: the field is furnished from Poly Haven scans, Sketchfab scans, Meshy and Tr… |
 | 55 | `src/render/blend-in.js` | 60 | Z325 EVERYTHING BELONGS TO THE FIELD: forts, the real city, ruins, wonders, props and the 3D models were eac… |
@@ -128,10 +128,10 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 93 | `src/audio/body-hit.js` | 51 | HIT 1 A MAN IS HIT, NOT A HULL: what HE hears when he is struck (game/player-damage.js), synthesised, no fil… |
 | | **world/** — Bản đồ: địa hình, khí quyển, vật cản, công trình | | |
 | 24 | `src/world/field.js` | 63 | Z106 FIELD BOUNDARY: the playable area is an irregular outline (radius per bearing around the Core) — bays, … |
-| 49 | `src/world/atmosphere.js` | 178 | Z97 VISIBLE SKY: a real gradient dome (zenith → horizon haze that melts into the fog), sun glow by day, moon… |
+| 49 | `src/world/atmosphere.js` | 184 | Z97 VISIBLE SKY: a real gradient dome (zenith → horizon haze that melts into the fog), sun glow by day, moon… |
 | 50 | `src/world/sky-photo.js` | 27 | Z255 PHOTOGRAPHED SKY: a real pure-sky HDRI (Poly Haven, CC0; tools/sky-hdri.mjs → assets/sky) laid into the… |
 | 51 | `src/world/ground.js` | 227 | ARENA ground: procedural ground maps per biome, macro variation + patch textures (cached) |
-| 52 | `src/world/ground-photo.js` | 36 | Z250 PHOTO GROUND: the battlefield floor wears photo-scanned CC0 materials (Poly Haven, see config GROUND_PH… |
+| 52 | `src/world/ground-photo.js` | 37 | Z250 PHOTO GROUND: the battlefield floor wears photo-scanned CC0 materials (Poly Haven, see config GROUND_PH… |
 | 53 | `src/world/grass-carpet.js` | 115 | Z251 GRASS CARPET → Z263 PHOTOGRAPHED GRASS: on grassy battlefields a carpet of real grass grows round the c… |
 | 56 | `src/world/heightfield.js` | 251 | HEIGHTFIELD: rolling mounds, shell craters & wind drifts; everything (tanks, props, shells, particles) sits … |
 | 57 | `src/world/river.js` | 194 | Z405 RIVERS: a river and its side stream across the battlefields that have one (config RIVERS) — the bed car… |
@@ -249,7 +249,7 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 131 | `src/actors/paradrop.js` | 105 | Z104 PARATROOPERS: every so often an enemy transport helicopter crosses the field and drops a stick of |
 | 132 | `src/actors/command.js` | 39 | Z107 SQUAD COMMANDS: muster everyone on the map to the tank (T), storm the nearest fortress (X), call our he… |
 | 142 | `src/actors/damage.js` | 36 | DAMAGE AND DEATH of an enemy unit: hits (the general's hit cap), the kill (score, coins, loot, the soldier's… |
-| 175 | `src/actors/real-air.js` | 56 | Z272 REAL AIRCRAFT: Tripo models take the place of the procedural airframes — the attack gunship, the swooping |
+| 175 | `src/actors/real-air.js` | 57 | Z272 REAL AIRCRAFT: Tripo models take the place of the procedural airframes — the attack gunship, the swooping |
 | 205 | `src/actors/squad-mates.js` | 60 | Z351 HIS OWN SQUAD (soldier mode only): he does not fight alone. He starts with two men of his own — a machi… |
 | 211 | `src/actors/fort-boss-look.js` | 92 | BOSS 1 THE FORT BOSS'S LOOK (campaign/fort-boss.js drives him): the enemy rifleman's rig scaled to a 2.6–2.9… |
 | 212 | `src/actors/fort-boss-glb.js` | 136 | BOSS 2 THE FORT BOSS AS A REAL RIGGED MODEL (FORTBOSS.model 'glb', FORTBOSS.looks): a Meshy community charac… |
@@ -284,7 +284,7 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 299 | `src/actors/hang.js` | 19 | HANG 1 WHAT HE WEARS ON HIS BACK HANGS (config HANG): one damped pendulum in the back's own plane, shared by… |
 | 300 | `src/actors/blade.js` | 559 | BLADE 2 THE WUXIA BLADE (config BLADE; ?noblade: none of it runs). The soldier always owns ONE ancient blade… |
 | 301 | `src/actors/gun-fit.js` | 76 | Z360 THE HOLD READ OFF THE GUN ITSELF: no common template — every hand weapon's model is measured once when … |
-| 302 | `src/actors/real-troops.js` | 149 | Z249 REAL INFANTRY at batch cost: one Meshy soldier (Z254: the ~10k-triangle, 2K-texture pass), posed once (… |
+| 302 | `src/actors/real-troops.js` | 150 | Z249 REAL INFANTRY at batch cost: one Meshy soldier (Z254: the ~10k-triangle, 2K-texture pass), posed once (… |
 | 303 | `src/actors/troop-skin.js` | 34 | Z344 THE INFANTRY SKINNED ON THE GPU: every man of a side is one InstancedMesh of the whole body (actors/rea… |
 | 304 | `src/actors/ragdoll.js` | 56 | Z254 A REAL FALL for a man shot down (enemy infantry, our fireteam, a general without his real model): the k… |
 | | **ai/** — Trí tuệ địch | | |
@@ -318,7 +318,7 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 310 | `src/campaign/conquest.js` | 172 | CONQ 1 CHINH PHẠT 10 THÀNH (config CONQUEST; the road on the battle setup: ui/conquest-map.js). The campaign… |
 | 312 | `src/campaign/sectors.js` | 258 | SECTOR 1 A LONG BATTLE IS A CHAIN OF SECTORS (config.js SECTOR · the rail and the transit's overlay: ui/sect… |
 | 313 | `src/campaign/mixer.js` | 83 | MIX 1 composeBattle(spec): ONE BATTLE FROM A BattleSpec (the arithmetic: data/mixer-math.js · the numbers: c… |
-| 315 | `src/campaign/sector-goals.js` | 196 | SECTOR 2 THE FOUR NEW SECTOR MISSIONS (config.js SECTOR.types · the run and its flow: campaign/sectors.js). … |
+| 315 | `src/campaign/sector-goals.js` | 197 | SECTOR 2 THE FOUR NEW SECTOR MISSIONS (config.js SECTOR.types · the run and its flow: campaign/sectors.js). … |
 | 316 | `src/campaign/sector-route.js` | 86 | SECTOR 4 THE ROUTE OF A LONG BATTLE (config.js SECROUTE · the run itself: campaign/sectors.js · the card, th… |
 | 317 | `src/campaign/conq-story.js` | 42 | SECTOR 6 THE CONQUEST'S STORY, FORT BY FORT (config.js CONQSTORY · text only). A fort's battle is a sector r… |
 | 318 | `src/campaign/tyrant.js` | 37 | SECTOR 6 BẠO CHÚA, THE LAST FORT'S GENERAL (config.js CONQSTORY.tyrant). He is the citadel's boss of campaig… |
@@ -389,7 +389,7 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 222 | `src/game/score.js` | 24 | SCORE / COMBO |
 | 223 | `src/game/player-damage.js` | 99 | PLAYER DAMAGE / DEATH |
 | 244 | `src/game/flow.js` | 145 | GAME FLOW: start / pause / quit-to-menu, loadout guns for the run, menu ↔ HUD state, show/hide panels |
-| 263 | `src/game/update.js` | 187 | the camera that follows the soldier, the enemy vehicles' rigs, Vietnamese label helpers (no-tanks: the tank'… |
+| 263 | `src/game/update.js` | 194 | the camera that follows the soldier, the enemy vehicles' rigs, Vietnamese label helpers (no-tanks: the tank'… |
 | 264 | `src/game/intro-clouds.js` | 49 | Z322 THE INTRO'S SKY: high over the field the air is hazy and a thin deck of soft clouds drifts between the … |
 | 265 | `src/game/intro.js` | 172 | INTRO CINEMATIC (deploy showcase) |
 | 305 | `src/game/cavalry.js` | 237 | Z245 CAVALRY MODE: the player is a general in full plate — on his armoured war horse (walk · trot · canter ·… |
