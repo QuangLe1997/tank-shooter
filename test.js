@@ -3206,7 +3206,7 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
       'BAL 8: every fort opens with its own story\'s mission (none with the stuck truck), the gate before the yard, the general last; a dealt sector never shares its neighbour\'s place'); } }
 // BAL 9 the player is the hero (C1-019)
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { BAL:Q, CONQUEST:CQ }=await import('./config.js'), sc=R('src/campaign/sectors.js'), dr=R('src/campaign/director.js'), sp=R('src/campaign/surprises.js');
-  ok(Q.mates.dmgK>0.1 && Q.mates.dmgK<0.8 && (R('src/actors/fireteam.js').match(/BAL\.mates\.dmgK/g)||[]).length>=3, 'BAL 9: his squad pins and he finishes — their rounds hit for a share of what they did'); }
+  ok(Q.mates.dmgK>0.1 && Q.mates.dmgK<0.8 && (R('src/actors/fireteam.js').match(/\*mateK\(\)/g)||[]).length===3 && /Q\.dmgK \* Math\.max\(Q\.lo, Math\.min\(Q\.hi, sh \/ Q\.share\)\)/.test(R('src/actors/fireteam.js')), 'BAL 9: his squad pins and he finishes — their rounds hit for a share of what they did'); }
 // BAL 10–13 a calm start, an infiltration without ambushes, one ambush a battle, bronze medals for the report (C1-003, C1-004, C1-081, C1-082)
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { BAL:Q, CONQUEST:CQ }=await import('./config.js'), sc=R('src/campaign/sectors.js'), dr=R('src/campaign/director.js'), sp=R('src/campaign/surprises.js');
   ok(Q.start.first>=30 && Q.start.first<=60 && Q.start.t>=5 && Q.start.spreadK>1 && /export const SAFE = \{ until:0 \}/.test(dr) && /if\(now < SAFE\.until \|\| sneaking\(\)\) return true;/.test(dr) && /if\(sneaking\(\)\) return;/.test(dr) && /now < SAFE\.until \? BAL\.start\.spreadK/.test(R('src/ui/threat-edge.js')),
@@ -3281,6 +3281,9 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
 // BAL 22 the flank's callout names the side he sees (left / right), never "behind" (C2-008)
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { BAL:Q, SECTOR:SE, DIRECTOR:D }=await import('./config.js'), sg=R('src/campaign/sector-goals.js'), dr=R('src/campaign/director.js');
   ok(/function cueSide\(c\)/.test(dr) && /dirSay\(now, cueSide\(DIR\.cue\), true\)/.test(dr) && /side = cr > 0 \? 'right' : 'left';/.test(R('src/ai/tiers.js')) && D.build.sides.rear===0, 'BAL 22: the radio names the side as the player sees it when it is said'); }
+// BAL 23 the squad's share follows the player's (C1-019)
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { BAL:Q, SECTOR:SE, DIRECTOR:D }=await import('./config.js'), sg=R('src/campaign/sector-goals.js'), dr=R('src/campaign/director.js');
+  ok(Q.mates.share>0.3 && Q.mates.share<0.7 && Q.mates.lo>0 && Q.mates.lo<1 && Q.mates.hi>1, 'BAL 23: the squad hits harder or softer by the player\'s share of the kills ('+Q.mates.lo+'–'+Q.mates.hi+' ×)'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
