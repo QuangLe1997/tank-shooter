@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { BALANCE, ENTRY, INFANTRY } from '../../config.js';
 import { soldierWaveQueue, duelOn, ENEMY_DEFS, FORTS, MOBILE, OBJ, PROFILE, S, UNDER, addScore, applyScriptedWave, cMod, enemies, fieldEdgePoint, fortLaunch, fortSpawnPoint, inField, objMod, opFor, radio, ringPulse, scriptedEvent, sfx, showBanner, spawnEnemy, spawnSquad, startBoss, supplyDmg, tip, trimWaveForSupply, underCut, updateHUD, wetAt, edgeEntry, edgeFrom, entrySeen, entriesPending, hatchEntry, isFoot, dirEntry, dirFinale, dirSpawned, dirWaveGo, dirWaveHold, storyCue } from '../hub.js';
 import { rearArc } from '../hub.js';   // BAL 3 (ui/threat-edge.js: never from behind him)
+import { sneaking } from '../hub.js';   // BAL 30 (campaign/director.js)
 
 // ----------------------------- WAVES -----------------------------
 export const WAVE = { spawnQueue:[], spawnAt:0, betweenUntil:0, active:false, perStage:BALANCE.wave.perStageCount, event:null, eventBanner:null, eventColor:'#9bb0c0', treasure:false, eliteForce:0, assault:false };
@@ -76,7 +77,7 @@ export function updateWaves(dt, now){
   if(UNDER.on) return;                                 // Z226 the surface holds its breath while you are below
   if(S.awaitingUpgrade) return;                        // boss just died, waiting on upgrade pick
   if(!WAVE.active){
-    if(duelOn()) return;                               // the general is on the field → no waves
+    if(duelOn() || sneaking()) return;   // BAL 30 nor while he sneaks into an infiltration (the wave's radio cried ambush at 0.9 s)                               // the general is on the field → no waves
     if(now>WAVE.betweenUntil && dirWaveGo(now)){        // DIR 1 the next wave waits out a peak and its lull (campaign/director.js)
       if(S.wave >= WAVE.perStage && !FORTS.length){ if(dirFinale(now)) startBoss(now); }       // final wave done → summon the stage boss (Z107: with fortresses the boss waits inside the citadel)
       else { S.wave++; startWave(now); }

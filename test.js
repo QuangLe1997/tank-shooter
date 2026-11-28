@@ -3321,6 +3321,10 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { BAL:Q, SECTOR:SE, CONQSTORY:CS }=await import('./config.js'), sg=R('src/campaign/sector-goals.js'), sc=R('src/campaign/sectors.js'), fb=R('src/campaign/fort-boss.js');
   ok(Q.mates.bossK<=0.3 && Q.bossFight.hpBare>1 && CS.tyrant.hpK>=1 && CS.tyrant.hpK<=1.2 && /src === 'squad' \|\| src === 'blast'\) out \*= BAL\.mates\.bossK/.test(fb) && /if\(Q\.on && !mine\)/.test(fb) && /LK\.plates === 'none' \? BAL\.bossFight\.hpBare : 1/.test(fb),
     'BAL 29: the squad\'s and others\' explosions × ' + Q.mates.bossK + ' on a general, the player\'s damage never turned, a general without plates × ' + Q.bossFight.hpBare + ' health'); }
+// BAL 30 an infiltration you can reach: the target ~objD m ahead, a clock that fits, a charge you can plant, no wave (nor its ambush radio) while he sneaks (C1-004 / C3-003)
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { BAL:Q, SECTOR:SE, CONQSTORY:CS }=await import('./config.js'), sg=R('src/campaign/sector-goals.js'), sc=R('src/campaign/sectors.js'), fb=R('src/campaign/fort-boss.js');
+  ok(Q.infil.objD>=40 && Q.infil.objD<=120 && SE.types.infiltrate.time>=360 && SE.types.infiltrate.plantR>=4 && /const inf=\(sectorCur\(\)\|\|\{\}\)\.type==='infiltrate'/.test(R('src/campaign/operations.js')) && /if\(duelOn\(\) \|\| sneaking\(\)\) return;/.test(R('src/campaign/waves.js')),
+    'BAL 30: the infiltration\'s target within reach of the insertion, ' + SE.types.infiltrate.time + ' s, nothing sent while he sneaks'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

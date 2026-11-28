@@ -88,7 +88,7 @@ function goalOf(now, p, R){ if(now < B.goalAt) return B.goal; B.goalAt = now + 0
       if(g.ph === 'held' && m0 && D && Math.hypot(p.pos.x - hx, p.pos.z - hz) > 3 && Math.hypot(p.pos.x - D[0], p.pos.z - D[1]) > 2 && lineStop(p.pos.x, heightAt(p.pos.x, p.pos.z) + 1, p.pos.z, hx, heightAt(hx, hz) + 1, hz, _s)) return setG('go', D[0], D[1], 1.5);
       if(g.ph === 'held' && m0) return setG('go', m0.ring.position.x, m0.ring.position.z, Math.max(1.2, (g.Y && g.Y.reach || 2.6) - 0.5));   /* (inside his release reach — no closer: he kneels by a wall) */ if(m1) return setG('ring', m1.ring.position.x, m1.ring.position.z, rr(m1) * 0.5); }
     else if(ty === 'breach'){ if(m0) return setG('shoot', m0.ring.position.x, m0.ring.position.z, R * 0.55, null); if(m1) return setG('ring', m1.ring.position.x, m1.ring.position.z, rr(m1) * 0.6); }
-    else if(ty === 'infiltrate'){ if(m0) return setG('go', m0.ring.position.x, m0.ring.position.z, 4.5); if(m1) return setG('ring', m1.ring.position.x, m1.ring.position.z, rr(m1) * 0.5); }
+    else if(ty === 'infiltrate'){ if(m0) return setG('go', m0.ring.position.x, m0.ring.position.z, (OBJ && OBJ.def ? OBJ.def.r * 1.5 : 3) + 2.5);   /* BAL 30 by the charge's spot (the target's own walls are solid) */ if(m1) return setG('ring', m1.ring.position.x, m1.ring.position.z, rr(m1) * 0.5); }
     else if(ty === 'pursuit' && m0) return setG('shoot', m0.ring.position.x, m0.ring.position.z, R * 0.5, null); }
   const fortGoal = ty === 'boss' || !SECT.on && S.wave >= WAVE.perStage && !WAVE.active && FORTS.length;
   if(fortGoal){ const f = mainFort(); if(f && !f.captured){ const gx = f.gx != null ? f.gx : f.x, gz = f.gz != null ? f.gz : f.z, atGate = Math.hypot(p.pos.x - gx, p.pos.z - gz) < 10 || B.goal.k === 'fort' && B.goal.o === f;
