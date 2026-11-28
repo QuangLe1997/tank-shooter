@@ -3,7 +3,7 @@
 //   the enemy sends a strike team to stop you — that's the challenge. Woken, the battle freezes and you pick ONE of three big powers
 //   that last until the end of the stage: +1 life, ×2 damage, hard acceleration, ×2 range, ×2 magazine, super reload, steel armour.
 import * as THREE from 'three';
-import { LOOT_REAL, VISLOOK } from '../../config.js';
+import { HUDUX, LOOT_REAL, VISLOOK } from '../../config.js';
 import { beamMat, lootModelInto, lootPreload, ARENA, FORTS, GUNS, MOBILE, S, burst, floatText, heightAt, hide, iconEl, inField, magCap, radio, ringPulse, scene, sfx, show, showBanner, spawnEnemy, spawnPart, updateGunHUD, updateHUD, blPulse, holoArc, holoRing } from '../hub.js';
 
 export const RELIC = { g:null, x:0, z:0, prog:0, alerted:false, live:false, undo:[], hold:5, r:6, t:0, parts:null };
@@ -68,9 +68,12 @@ function challenge(){ const n=2+Math.min(3, Math.floor((S.stage||1)/2)), types=[
   for(let i=0;i<n;i++){ const a=Math.random()*Math.PI*2, d=34+Math.random()*12; let x=RELIC.x+Math.cos(a)*d, z=RELIC.z+Math.sin(a)*d; if(!inField(x,z,6)){ x=RELIC.x-Math.cos(a)*d; z=RELIC.z-Math.sin(a)*d; }
     try{ const e=spawnEnemy(types[i%types.length], x, z); if(e){ e.relicGuard=true; } }catch(err){} }
   showBanner('THÁNH TÍCH ĐANG THỨC GIẤC — ĐỊCH KÉO TỚI PHÁ!', '#ffd27a'); radio('SCH: Địch phát hiện ta ở thánh tích — giữ vị trí, đừng rời vòng sáng!'); sfx('alarm'); }
+// HUDUX 4 the shaft of light is a far sign, not the brightest thing on the screen: thinner, HUDUX.beacon.k of its light, fading to near nothing as he walks up
+function beaconK(p){ const B = HUDUX.beacon, g = RELIC.g; if(g.userData.beam.scale.x !== B.w) g.userData.beam.scale.set(B.w, 1, B.w); if(!p) return B.k;
+  const d = Math.hypot(p.pos.x - g.position.x, p.pos.z - g.position.z); return B.k * Math.min(1, Math.max(B.nearK, (d - B.near[0]) / (B.near[1] - B.near[0]))); }
 export function updateRelic(dt, now){ if(!RELIC.live || !RELIC.g) return; const p=S.player, ud=RELIC.g.userData; RELIC.t+=dt; const t=RELIC.t;
   ud.cr.rotation.y+=dt*1.2; ud.cr.position.y=ud.cy+Math.sin(t*1.8)*0.18; ud.r1.rotation.set(Math.PI/2+Math.sin(t*0.9)*0.5, t*0.8, 0); ud.r2.rotation.set(Math.PI/2+Math.cos(t*0.7)*0.6, -t*0.6, 0);
-  ud.ring.material.opacity=blPulse(t, 'idle', 0.6); ud.beam.material.uniforms.uOp.value=(0.65+0.25*Math.sin(t*2.2)+RELIC.prog*0.4)*1.6*VISLOOK.beam.gain; ud.crystalK=1;
+  ud.ring.material.opacity=blPulse(t, 'idle', 0.6); ud.beam.material.uniforms.uOp.value=(0.65+0.25*Math.sin(t*2.2)+RELIC.prog*0.4)*1.6*VISLOOK.beam.gain*beaconK(p); ud.crystalK=1;
   ud.crM.emissiveIntensity = ud.glow ? ud.glow*(1+RELIC.prog*LOOT_REAL.relic.wake)+Math.sin(t*4)*0.08 : 2.2+RELIC.prog*3+Math.sin(t*4)*0.4;   // (LOOT 1 the real stone glows softer, brighter as it wakes)
   if(Math.random() < (MOBILE?0.25:0.5)){ const a=Math.random()*6.283, r=0.5+Math.random()*1.4; spawnPart(RELIC.x+Math.cos(a)*r, RELIC.g.position.y+1.2+Math.random()*2.5, RELIC.z+Math.sin(a)*r, 0, 1.2+Math.random(), 0, { color:Math.random()<0.5?0xffe2a0:0xffb43c, size:0.22, life:1.2, grav:0.6, drag:1 }); }   // motes rising round the crystal
   if(!p || S.mode!=='playing') return;

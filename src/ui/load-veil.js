@@ -8,11 +8,11 @@ import { BIOMES, BIOME_PLACE, CQ, PROFILE, S, TOD_LABEL, biomeVi, levelInfo, opF
 // where each battlefield's real place is (degrees, minutes; B/N = north/south, Đ/T = east/west)
 const COORD = { DESERT:'29°58′B 31°08′Đ', RUINS:'41°53′B 12°29′Đ', ARCTIC:'63°45′B 68°31′T', FOUNDRY:'49°15′B 6°51′Đ', CITADEL:'27°10′B 78°01′Đ',
   MEADOW:'51°53′B 4°38′Đ', CITY:'10°46′B 106°42′Đ', SAVANNA:'13°54′B 4°33′T', VOLCANO:'19°25′B 155°17′T', QUARRY:'44°05′B 10°06′Đ' };
-// "KHEMARET · XỨ CÁT ĐỎ" → "Khemaret, Xứ Cát Đỏ"; "CHIẾN DỊCH BÃO CÁT" → "Chiến dịch Bão Cát"
+// "XÍCH SA · XỨ CÁT ĐỎ" → "Xích Sa, Xứ Cát Đỏ"; "CHIẾN DỊCH BÃO CÁT" → "Chiến dịch Bão Cát"
 const words = s => String(s || '').toLocaleLowerCase('vi').replace(/(^|[\s(.-])(\S)/g, (m, a, c) => a + c.toLocaleUpperCase('vi'));
 export function placeLine(name){ const P = BIOME_PLACE[name]; return P ? P.at.split(' · ').map(words).join(', ') : ''; }
 export function opTitle(op){ return op ? words(op.title).replace(/^Chiến Dịch /, 'Chiến dịch ') : ''; }
-const lower = s => String(s || '').toLocaleLowerCase('vi');
+const lower = s => String(s || '').toLocaleLowerCase('vi'), capFirst = s => s.charAt(0).toLocaleUpperCase('vi') + s.slice(1);
 const $ = id => document.getElementById(id);
 
 // what the launch is about to build, from the same argument launchGame gets (a campaign level, a custom battle, CONTINUE)
@@ -35,7 +35,7 @@ export function veilOrder(arg){ let o; try{ o = orderOf(arg); }catch(e){ return;
   put('lvKind', 'Lệnh xuất kích' + (fort ? ' — ' + fortTitle(cq) : op ? ' — ' + opTitle(op) : ''));
   put('lvName', biomeVi(name)); put('lvPlace', placeLine(name)); put('lvCoord', COORD[name] || '');
   { const n = $('lvName'); if(n) n.style.setProperty('--len', Math.max(5, biomeVi(name).length)); }   // a long name sets itself smaller
-  put('lvCond', 'Màn ' + o.stage + (o.loop ? ', vòng ' + (o.loop + 1) : '') + ' — ' + lower(TOD_LABEL[o.tod] || '') + ', ' + lower(weatherDef(o.wx).vi));
+  put('lvCond', (fort || own ? '' : 'Màn ' + o.stage + (o.loop ? ', vòng ' + (o.loop + 1) : '') + ' — ') + capFirst(lower(TOD_LABEL[o.tod] || '') + ', ' + lower(weatherDef(o.wx).vi)));   // HUDUX 4 a fort is not "Màn 5, vòng 2"
   put('lvBrief', fort ? fort.blurb || '' : op ? op.brief : '');
   veilStep(0); }
 // k = the step under way (0 the field · 1 the graphics · 2 ready); the ones before it are ticked

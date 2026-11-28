@@ -7,7 +7,7 @@
 //   battle's experience to xp.cap.
 import { BAL, MEDALS } from '../../config.js';
 import { AMBST, CO, CV, MATE, NEM, PROFILE, S, battleXp, carRank, carRankName, gunsOpenedBy, medalBoardLater, medalCareerAdd, medalCareerClean, medalCreditRead, medalCreditWord, medalLedger, medalLedgerClean,
-  medalRankCard, medalTierOf, medalToast, paintChip, saveProfile, voiceStage, radio, radioType } from '../hub.js';
+  medalRankCard, medalTierOf, medalToast, paintChip, saveProfile, voiceStage, radio, radioType, battleTitle } from '../hub.js';
 
 const M = () => MEDALS, NOW = () => performance.now() / 1000;
 export const MDL = { L:medalLedger(), kr:null, ks:0, kl:0, on:false, done:false, base:0, rank:0, live:0, tiers:{}, lastKill:-9, multiN:0, lastHp:-1, low:0, armed:true, ride:null, rx:0, rz:0,
@@ -65,14 +65,14 @@ export function medalTick(){ if(!M().on) return; const p = S.player, now = NOW()
   if(CO.live && !CO.host && MATE.on){ if(MDL.mateDown && !MATE.down && MDL.mateRev > 0.6) medalEvent('save'); MDL.mateDown = !!MATE.down; MDL.mateRev = MATE.revive || 0; }
   if(MDL.dirty || now > MDL.checkAt){ MDL.dirty = false; MDL.checkAt = now + 0.5; check(); } }
 // new medal tiers this battle → a toast each; the experience so far → the career's rank, live
-function check(){ const L = medalLedgerClean(MDL.L);
+function check(){ const L = medalLedgerClean(Object.assign({}, MDL.L));   /* HUDUX 4 a clean COPY: cleaning the live ledger floored its clock every half second (the report said 0:00) */
   for(const d of M().list){ const t = medalTierOf(d, L[d.stat] || 0); if(t > (MDL.tiers[d.id] || 0)){ MDL.tiers[d.id] = t; if(t >= BAL.medal.toastFrom){ MDL.stats.toasts++; medalToast(d, t, L[d.stat]); } } }   // BAL 13 a bronze waits for the battle's report (no toast mid-fight)
   MDL.live = battleXp(L, '').total; const r = carRank(MDL.base + MDL.live).r;
   if(r > MDL.rank){ const was = MDL.rank; MDL.rank = r; MDL.stats.ranks++; medalRankCard(r, gunsOpenedBy(was, r)); paintChip(); } }
 // ---- the battle ends: won · final (the campaign) · lost · quit. The ledger goes into the career, the report opens over the end screen ----
 export function medalEnd(outcome){ if(!M().on || !MDL.on || MDL.done) return null; MDL.done = true; if(MDL.ride && MDL.ride.m >= M().rideM){ MDL.L.rides++; MDL.L.rideM += Math.round(MDL.ride.m); } MDL.ride = null;
   const c = medalCareer(), L = Object.assign({}, MDL.L), res = medalCareerAdd(c, L, outcome, L.t); PROFILE.career = c; saveProfile();
-  MDL.last = { res, L, outcome, stage:S.stage || 1, score:S.score | 0, t:L.t }; if(outcome !== 'quit') medalBoardLater(MDL.last); return MDL.last; }
+  MDL.last = { res, L, outcome, stage:S.stage || 1, score:S.score | 0, t:L.t, title:battleTitle() };   /* (HUDUX 4 the battle's own name: a fort is not "Màn 1") */ if(outcome !== 'quit') medalBoardLater(MDL.last); return MDL.last; }
 // MEDAL 4 the battle is left (the report opens, the battle is quit, the career screen opens): nothing of its radio goes on — the voice queue cleared and the
 //   line playing cut (audio/voice.js voiceStage: the banter too), the SCH panel down, its typing stopped, the spoken line's subtitle gone
 export function medalHush(){ try{ voiceStage(); }catch(e){} if(typeof document === 'undefined') return; clearTimeout(radio._t); clearInterval(radioType._t);

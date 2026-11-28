@@ -1,7 +1,7 @@
 // game/intro.js — INTRO CINEMATIC (deploy showcase)
 import * as THREE from 'three';
 import { INTRO, INTRO_CITY, OPERATIONS } from '../../config.js';
-import { compileFor, compileQuiet, placeLine, opTitle, veilStep, ARENA, BIOME, FORTS, MOBILE, PROFILE, RIVER, S, SKY, TOD_LABEL, WAVE, WONDER, arena, biomeVi, camOff, camRestPose, camera, composer, doResize, openBriefing, renderer, saveProfile, scene, smoother, spawnPart, TRAFFIC, heightAt, GROUND_READY, grassReady, loadRealTrees, loadRealCity, buildIntroClouds, clearIntroClouds, updateIntroClouds, blendScene } from '../hub.js';
+import { battleTitle, compileFor, compileQuiet, placeLine, opTitle, veilStep, ARENA, BIOME, FORTS, MOBILE, PROFILE, RIVER, S, SKY, TOD_LABEL, WAVE, WONDER, arena, biomeVi, camOff, camRestPose, camera, composer, doResize, openBriefing, renderer, saveProfile, scene, smoother, spawnPart, TRAFFIC, heightAt, GROUND_READY, grassReady, loadRealTrees, loadRealCity, buildIntroClouds, clearIntroClouds, updateIntroClouds, blendScene } from '../hub.js';
 
 // ----------------------------- INTRO CINEMATIC (deploy showcase) -----------------------------
 // Z239 desktop: ONE grand, wide, unhurried move — the camera opens high over the whole battlefield, glides a quarter of the way round it
@@ -76,7 +76,7 @@ export function startIntro(){
   intro.quick = !!(PROFILE.introSeen && PROFILE.introSeen[BIOME.name]);   // Z152 seen this battlefield's tour before → compile behind the veil, then go
   const sub=document.getElementById('cine-sub'); if(sub){ clearTimeout(sub._t); sub._next=null; sub.style.transition='opacity .22s ease'; sub.style.opacity='1'; sub.textContent=stageLine(); }
   { const put=(id, t)=>{ const e=document.getElementById(id); if(e) e.textContent=t; }; put('cineName', biomeVi(BIOME.name)); put('cineTc', '00:00:00:00'); intro.tc='';
-    put('cineWhere', 'Màn '+S.stage+(S.loop>0?', vòng '+(S.loop+1):'')+' — '+[placeLine(BIOME.name), S.tod ? String(TOD_LABEL[S.tod]).toLocaleLowerCase('vi') : ''].filter(Boolean).join(', '));
+    put('cineWhere', (battleTitle() || 'Màn '+S.stage+(S.loop>0?', vòng '+(S.loop+1):''))+' — '+[placeLine(BIOME.name), S.tod ? String(TOD_LABEL[S.tod]).toLocaleLowerCase('vi') : ''].filter(Boolean).join(', '));
     put('cine-skip', MOBILE ? 'Chạm để bỏ qua' : 'Bấm phím bất kỳ để bỏ qua'); }   // NO-TANKS 8 the lower third and the feed's words
   document.getElementById('cine').classList.add('on'); document.body.classList.add('cine');
   intro.tour = MOBILE ? null : buildGrandTour(T); intro.tt=0;
@@ -89,7 +89,7 @@ export function startIntro(){
   intro.warm=true; intro.warming=false; veilStep(1); showVeil(true);   // Z119 compile every shader + draw the widest shot once BEHIND the veil, then fly
   S.mode='intro';
 }
-function stageLine(){ const op=OPERATIONS[(S.stage-1)%OPERATIONS.length]; return op ? opTitle(op)+(S.loop>0?' — vòng '+(S.loop+1):'') : biomeVi(BIOME.name); }   // the caption the feed opens and closes on
+function stageLine(){ if(S.run && S.run.offBoard) return battleTitle() || biomeVi(BIOME.name); const op=OPERATIONS[(S.stage-1)%OPERATIONS.length];   /* HUDUX 4 a fort / a mode is not a campaign operation */ return op ? opTitle(op)+(S.loop>0?' — vòng '+(S.loop+1):'') : biomeVi(BIOME.name); }   // the caption the feed opens and closes on
 const capWords=s=>String(s||'').toLocaleLowerCase('vi').replace(/(^|[\s(.-])(\S)/g, (m, a, c)=>a+c.toLocaleUpperCase('vi'));
 // the feed's timecode: hours:minutes:seconds:frames (25 a second) since the flight began
 function tick(now){ const t=Math.max(0, now-(intro.tc0||intro.t0)), f=Math.floor(t*25), p=n=>String(n).padStart(2,'0'), s=p(Math.floor(t/3600))+':'+p(Math.floor(t/60)%60)+':'+p(Math.floor(t)%60)+':'+p(f%25);

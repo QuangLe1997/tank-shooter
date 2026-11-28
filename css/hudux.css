@@ -111,3 +111,22 @@ html body #edgeNote#edgeNote{top:calc(env(safe-area-inset-top,0px) + 104px)!impo
 html body.touch #edgeNote#edgeNote{top:calc(env(safe-area-inset-top,0px) + 70px)!important;font-size:11px!important;}
 /* the phone: while the ride chip (LÊN XE / GỌI XE, top-left) shows, the edge stack's lines go under it (they were written over each other) */
 html body.touch:has(#rideCall[style*="flex"]) #ncFeed#ncFeed{top:calc(max(8px,env(safe-area-inset-top)) + 182px)!important;}
+
+/* HUDUX 4 low health never washes the screen: the low-health pulse (#vignette, fx/soldier-fx.js) and the critical edge (#hpEdge, body.hpcrit) are rims like the hurt
+   edge — clear inside an ellipse of 74 % of the screen, at most ~0.3 red a quarter of the way in, the middle untouched (they were a circle that tinted the top and
+   bottom bands and a full-screen scanline layer: below ~20 % health the whole frame went red) */
+#vignette#vignette{background:radial-gradient(ellipse 72% 76% at 50% 50%,rgba(200,40,30,0) 74%,rgba(200,40,30,.22) 88%,rgba(190,30,22,.5) 100%)!important;}
+#hpEdge#hpEdge{background:radial-gradient(ellipse 72% 76% at 50% 50%,rgba(255,30,20,0) 76%,rgba(255,30,20,.3) 100%)!important;-webkit-mask-image:none!important;mask-image:none!important;}
+/* HUDUX 4 settings → account: the credits fold into their own readable panel (a 9 px block cut by the footer) */
+#setCredits .hux-cred > summary{cursor:pointer;list-style:none;display:flex;flex-direction:column;gap:3px;}
+#setCredits .hux-cred > summary::-webkit-details-marker{display:none;}
+#setCredits .hux-cred > summary i{font-style:normal;font-size:14px;color:var(--k-acc-hi,#ffd27a);} #setCredits .hux-cred[open] > summary i{color:var(--xk-mute,#a9ad98);}
+#setCredits .hux-cred > span{display:block!important;margin-top:8px;font-size:14px!important;line-height:1.55!important;max-height:46vh;overflow-y:auto;max-width:72ch;padding:10px 12px;background:rgba(12,15,9,.6);border:1px solid rgba(214,226,196,.14);}
+/* HUDUX 4 the keys sheet: columns wide enough for their labels (the CHIẾN ĐẤU one was squeezed into 12-line labels); a long label shows whole on hover */
+@media (min-width:900px){ #keysDlg .ks-body{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))!important;} }
+#keysDlg .bind-row .ks-t{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+/* HUDUX 4 a battle off the campaign (Tự chọn, the mixer, a mode) shows no MÀN cell — there is no campaign stage to count */
+body.hux-nostage #topbar .cell.stage{display:none!important;}
+#voiceSub.hux-subhold{visibility:hidden!important;}   /* HUDUX 4 waiting for the radio's line to end (ui/hudux.js subQueue) */
+/* HUDUX 4 the phone: a loot card (top-left, ~3 s) and the ride chip share the corner — the chip steps aside while the card shows (they were written over each other) */
+html body.touch:has(#lootToast.on) #rideCall#rideCall{visibility:hidden!important;}

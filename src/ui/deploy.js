@@ -1,7 +1,7 @@
 // ui/deploy.js — Z105 DEPLOYMENT before every stage: troop strength, key points to post men at,
 //   specialists (MG / mortar / sapper), the soldier's guns & ammo and a map of the field. Confirm → men spawn at their posts.
 import { DEPLOY, TROOPS } from '../../config.js';
-import { ARENA, DEPOTS, GUNS, MOBILE, POWS, PROFILE, RALLY_PT, RIDGES, S, reopenBriefing, clampFieldXZ, clearFireteam, core, escapeHtml, fieldOutline, gunPicHTML, gunShotDmg, hide, iconEl, magCap, saveProfile, sfx, show, spawnAlly, tapEl, tipInline, spellNow } from '../hub.js';
+import { ARENA, DEPOTS, GUNS, MOBILE, POWS, PROFILE, RALLY_PT, RIDGES, S, reopenBriefing, clampFieldXZ, clearFireteam, core, escapeHtml, fieldOutline, gunPicHTML, gunShotDmg, hide, iconEl, magCap, saveProfile, sfx, show, spawnAlly, tapEl, tipInline, spellNow, battleTitle } from '../hub.js';
 
 export let _dp=null;   // { posts:[...], roles:{mg,mortar,sapper}, total, onGo }
 export function squadWant(){ const F=TROOPS.fireteam; return Math.min(MOBILE?F.capMobile:F.cap, Math.round(F.size+(S.stage-1)*F.perStage)); }
@@ -29,7 +29,7 @@ export function openDeploy(onGo, quick){
     for(const k of ['mg','mortar','sapper']) _dp.roles[k]=Math.min(roleMax(k), mem.roles[k]||0); render(); }
   else autoDeploy();
   if(quick){ confirmDeploy(); return; }   // Z152 XUẤT KÍCH from the briefing: the plan is applied without opening this screen
-  document.getElementById('dp-op').textContent='Bố trí trận địa — màn '+S.stage;
+  document.getElementById('dp-op').textContent='Bố trí trận địa — '+(battleTitle() || 'màn '+S.stage);   // HUDUX 4 a fort by its name
   show('deploy'); sfx('powerup'); { const th=document.getElementById('dp-tip'); if(th){ if(!(PROFILE.tips||{}).deploy) tipInline('deploy', th); else th.classList.add('hidden'); } } }   // HUDUX the deployment's note on the deployment screen (it used to pop up later, in the battle)
 function stepper(get, set, max){ const w=document.createElement('div'); w.className='dp-step';
   const m=document.createElement('div'), v=document.createElement('div'), pl=document.createElement('div'); m.className=pl.className='s'; v.className='v'; m.textContent='−'; pl.textContent='+';

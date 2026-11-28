@@ -16,6 +16,7 @@ export function updateLOD(now){ if(now<_at) return; _at=now+LOD.every; const p=S
 }
 // HP bars only when it matters (hurt, elite, commander) — two draws saved per healthy unit
 export function barWanted(e){ if(!(e._bhp >= e.hp)) e._bT = -1e9; else if(e.hp < e._bhp) e._bT = performance.now() / 1000; e._bhp = e.hp;   // HUDUX a bar only while he was just hit or is under the crosshair
+  if(!(e.hp > 0) || e.dying || e.dead) return false; const dx = e.pos.x - camera.position.x, dz = e.pos.z - camera.position.z; if(dx * dx + dz * dz < HUDUX.bars.near * HUDUX.bars.near) return false;   // HUDUX 4 none on a falling man, none filling the lens
   return e.hp < e.maxHp-0.5 && (performance.now() / 1000 - e._bT < HUDUX.bars.hold || XH.tgt === e); }
 // Z190 FOG CULL — the low cinematic camera looks across the whole arena, so ~3,700 draws a frame went on things already lost in the fog.
 //   Anything whose nearest edge is past the distance where the fog is ~92% opaque is moved to a layer the camera does not draw (layers, not

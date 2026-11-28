@@ -49,7 +49,7 @@ function board(){ if(_board && _board.isConnected) return _board; _board = el('d
 export function medalBoardLater(rep){ if(typeof document === 'undefined') return; setTimeout(() => medalBoardOpen(rep), M().board.delay); }
 const mmss = t => { t = Math.max(0, Math.round(t || 0)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
 export function medalBoardOpen(rep){ if(!rep || typeof document === 'undefined') return; const B = board(), R = rep.res, L = rep.L, oc = rep.outcome, won = oc === 'won' || oc === 'final';
-  const kick = oc === 'final' ? 'Chiến dịch hoàn thành' : won ? 'Màn ' + rep.stage + ' · đã thắng' : 'Màn ' + rep.stage + ' · thất bại', mom = medalMoments(L), top = mom[0];
+  const where = rep.title || 'Màn ' + rep.stage, kick = oc === 'final' ? 'Chiến dịch hoàn thành' : won ? where + ' · đã thắng' : where + ' · thất bại',   /* HUDUX 4 the fort's / the mode's name */ mom = medalMoments(L), top = mom[0];
   const tiles = [['Địch anh hạ', fmt(L.kills)], ['Tổ của anh hạ', fmt(L.team)], ['Bắn xa nhất', L.longest ? L.longest + ' m' : '—'], ['Đa sát', L.multiBest ? '×' + L.multiBest : '—'],
     ['Hạ gục êm', fmt(L.stealth)], ['Trúng đạn', fmt(L.hits) + ' lần'], ['Xe ôm', fmt(L.rides) + ' chuyến'], ['Thời gian', mmss(L.t)]];
   const lines = R.lines.slice().sort((a, b) => b.xp - a.xp), shown = lines.slice(0, 5), rest = lines.slice(5).reduce((s, l) => s + l.xp, 0);

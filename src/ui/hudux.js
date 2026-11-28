@@ -5,9 +5,9 @@
 //   · tips only in a lull and at most perBattle a battle (uxTipOk); the leaderboard's test names (uxBoardHidden) and a test run never posting (uxDevRun);
 //   · CHƠI NGAY = one click to the next fort (uxPlayNow), the briefing then goes on by itself (uxQuickGo).
 import { HUDUX } from '../../config.js';
-import { BIOME, CQ, DIR, PROFILE, S, SECT, battleTitle, biomeVi, conqLaunch, conqStore, escapeHtml } from '../hub.js';
+import { BIOME, CQ, DIR, PROFILE, S, SECT, _tipOpen, closeTip, enemies, battleTitle, biomeVi, conqLaunch, conqStore, escapeHtml } from '../hub.js';
 
-export const UX = { k:0, map:null, tips:0, runId:null, notes:[], quick:false, dropped:0, capped:0, iv:0 };
+export const UX = { hitAt:0, hp0:0, tipChk:0, tipOk:false, tipLull:false, k:0, map:null, tips:0, runId:null, notes:[], quick:false, dropped:0, capped:0, iv:0 };
 const PLAY = new Set(['playing', 'countdown', 'transit', 'dying', 'tip']);
 const now = () => performance.now() / 1000;
 
@@ -22,8 +22,11 @@ export function uxNote(text, warn){ const N = HUDUX.notes, t = now(), s = String
 export function uxNoteEl(q, el, life){ if(q && typeof q === 'object'){ q.el = el; if(life) q.life = life; } }
 
 // ---- first-time tips in a battle: in a lull only, at most perBattle a battle ----
-export function uxTipOk(urgent){ const T = HUDUX.tips; if(UX.runId !== S.runId){ UX.runId = S.runId; UX.tips = 0; }
-  if(UX.tips >= T.perBattle) return false; if(!urgent && T.lullOnly && DIR.on && DIR.phase !== 'release') return false; return true; }
+export function uxTipOk(urgent){ const T = HUDUX.tips, t = now(); if(UX.runId !== S.runId){ UX.runId = S.runId; UX.tips = 0; UX.hitAt = t; }
+  if(UX.tips >= T.perBattle || S.mode !== 'playing') return false; if(t < UX.tipChk) return UX.tipOk && (urgent || UX.tipLull); UX.tipChk = t + 0.25;   // (asked every frame while a note waits: judged 4× a second)
+  const p = S.player; let ok = !!p && t - UX.hitAt >= T.quietS && p.hp >= T.hpMin * (p.maxHp || 1) && !(DIR.on && DIR.P > T.pressMax);   // HUDUX 4 a real lull: no hit for quietS s, health up, the pressure low, nobody near
+  if(ok){ const r2 = T.nearR * T.nearR; for(const e of enemies){ if(e.hp > 0 && !e.abandoned){ const dx = e.pos.x - p.pos.x, dz = e.pos.z - p.pos.z; if(dx * dx + dz * dz < r2){ ok = false; break; } } } }
+  UX.tipOk = ok; UX.tipLull = !T.lullOnly || !DIR.on || DIR.phase === 'release'; return ok && (urgent || UX.tipLull); }
 export function uxTipShown(){ UX.tips++; }
 
 // ---- the leaderboard: a name that reads as a test is not shown; a test / bot / automation run never posts ----
@@ -57,8 +60,14 @@ function pauseSide(){ const el = document.getElementById('pauseSide'), pz = docu
 function mapSnap(){ const src = document.getElementById('radar'); if(!src || !src.width) return; if(!UX.map){ UX.map = document.createElement('canvas'); UX.map.width = UX.map.height = 200; }
   try{ const x = UX.map.getContext('2d'); x.clearRect(0, 0, 200, 200); x.drawImage(src, 0, 0, 200, 200); }catch(e){} }
 
+// ---- HUDUX 4 one caption at a time: a spoken line's subtitle that would sit on the radio's text waits (hidden) until the radio is done ----
+function subQueue(){ const v = document.getElementById('voiceSub'), r = document.getElementById('radio'); if(!v) return;
+  let hold = false; if(r && r.classList.contains('show') && +v.style.opacity > 0.05){ const a = v.getBoundingClientRect(), b = r.getBoundingClientRect(); hold = a.width > 0 && b.width > 0 && a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top; }
+  v.classList.toggle('hux-subhold', hold); }
+
 // ---- the clock ----
 function tick(){ if(typeof document === 'undefined' || !document.body) return; const b = document.body, play = PLAY.has(S.mode);
-  b.classList.toggle('hux-play', play); b.classList.toggle('hux-sect', !!(SECT.on || CQ.on)); pauseSide(); if(S.mode === 'playing' && ++UX.k % 4 === 0) mapSnap();
-  const p = S.player; if(play && p && p.maxHp){ const k = Math.max(0, Math.min(1, p.hp / p.maxHp)); b.style.setProperty('--hux-hurt', (1 - 0.55 * k).toFixed(2)); } }
+  b.classList.toggle('hux-play', play); b.classList.toggle('hux-sect', !!(SECT.on || CQ.on)); b.classList.toggle('hux-nostage', !!(S.run && S.run.mode !== 'campaign'));   /* HUDUX 4 a custom / mixer / mode battle has no campaign stage to number */ pauseSide(); subQueue(); if(S.mode === 'playing' && ++UX.k % 4 === 0) mapSnap();
+  const p = S.player; if(p && p.hp < UX.hp0 - 0.01){ UX.hitAt = now(); if(_tipOpen && play) closeTip(true); }   // (a note still up when the shooting starts goes away) if(p) UX.hp0 = p.hp;   // HUDUX 4 the last hit he took (the tips wait quietS s after it)
+  if(play && p && p.maxHp){ const k = Math.max(0, Math.min(1, p.hp / p.maxHp)); b.style.setProperty('--hux-hurt', (1 - 0.55 * k).toFixed(2)); } }
 if(typeof setInterval === 'function' && typeof document !== 'undefined') UX.iv = setInterval(() => { try{ tick(); }catch(e){} }, 250);

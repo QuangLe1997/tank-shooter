@@ -2412,7 +2412,7 @@ export const FEEL = {
 //   pad buttons = standard mapping by position: 0 A · 1 B · 2 X · 3 Y · 4 LB · 5 RB · 6 LT · 7 RT · 8 View · 9 Menu · 10 L3 · 11 R3 · 12-15 D-pad ↑↓←→
 export const ACTIONS = [
   ['up','Tiến / đi lên','DI CHUYỂN',['w','arrowup'],null,1], ['down','Lùi / đi xuống','DI CHUYỂN',['s','arrowdown'],null,1], ['left','Quay / sang trái','DI CHUYỂN',['a','arrowleft'],null,1], ['right','Quay / sang phải','DI CHUYỂN',['d','arrowright'],null,1],
-  ['fire','Bắn (giữ = liên thanh) · chuột trái','CHIẾN ĐẤU',[],7,1], ['dash','Nhảy · trên ngựa / xe: bứt tốc','CHIẾN ĐẤU',[' '],0,0], ['sprint','Chạy nhanh (giữ)','CHIẾN ĐẤU',['shift'],null,1], ['roll','Lăn né đạn','CHIẾN ĐẤU',['alt','l'],null,0], ['blade','Đao ⇄ súng (đao không gây tiếng động) · bấm chuột giữa (không kéo) / nút cạnh chuột · cuộn chuột · tay cầm: LB / RB đi qua đao, hoặc nút M1 / touchpad','CHIẾN ĐẤU',[],17,0], ['knife','Dao găm: áp sát sau lưng / bên sườn địch chưa hay biết, khi hiện nút HẠ GỤC bấm G — hạ gục lặng lẽ','CHIẾN ĐẤU',[],null,0], ['climb','Lính: leo lên đá / tường / cổng / container (bấm lại: buông tay · trên cao: tụt xuống)','CHIẾN ĐẤU',['j'],null,0], ['skill','Dùng kỹ năng · bấm chuột phải · bấm nhanh LT (giữ LT = xoay camera)','CHIẾN ĐẤU',['e'],6,0], ['skillNext','Đổi kỹ năng','CHIẾN ĐẤU',['q'],2,0],
+  ['fire','Bắn (giữ = liên thanh) · chuột trái','CHIẾN ĐẤU',[],7,1], ['dash','Nhảy · trên ngựa / xe: bứt tốc','CHIẾN ĐẤU',[' '],0,0], ['sprint','Chạy nhanh (giữ)','CHIẾN ĐẤU',['shift'],null,1], ['roll','Lăn né đạn','CHIẾN ĐẤU',['alt','l'],null,0], ['blade','Đao ⇄ súng (đao không gây tiếng động) · chuột giữa, nút cạnh chuột, cuộn chuột','CHIẾN ĐẤU',[],17,0], ['knife','Dao găm: áp sát sau lưng / bên sườn địch chưa hay biết, khi hiện nút HẠ GỤC bấm G — hạ gục lặng lẽ','CHIẾN ĐẤU',[],null,0], ['climb','Lính: leo lên đá / tường / cổng / container (bấm lại: buông tay · trên cao: tụt xuống)','CHIẾN ĐẤU',['j'],null,0], ['skill','Dùng kỹ năng · bấm chuột phải · bấm nhanh LT (giữ LT = xoay camera)','CHIẾN ĐẤU',['e'],6,0], ['skillNext','Đổi kỹ năng','CHIẾN ĐẤU',['q'],2,0],
   ['droneRecon','Drone trinh sát: thả lên, đánh dấu địch quanh điểm ngắm (hồi riêng)','CHIẾN ĐẤU',['9'],null,0], ['droneFpv','Drone FPV cảm tử: lái bằng chuột / WASD · BẮN hoặc bấm lại = cho nổ (có hạn mỗi màn)','CHIẾN ĐẤU',['0'],null,0], ['droneJam','Gây nhiễu: drone địch trong 40 m mất lái vài giây (hồi riêng)','CHIẾN ĐẤU',['i'],null,0],
   ['reload','Nạp đạn (băng chưa cạn: thay nhanh, không lên đạn)','CHIẾN ĐẤU',['r'],null,0], ['gunPrev','Súng trước · cuộn chuột','CHIẾN ĐẤU',['o'],4,0], ['gunNext','Súng sau · cuộn chuột','CHIẾN ĐẤU',['f'],5,0], ['autoFire','Bật / tắt tự bắn','CHIẾN ĐẤU',['y'],3,0], ['autoAim','Bật / tắt tự ngắm (nhấn cần phải)','CHIẾN ĐẤU',['k'],11,0],
   ['crew','Xuống / lên xe, ngựa (sát lưng địch chưa hay: dao găm)','QUÂN',['g'],1,1], ['muster','Tập kết toàn quân','QUÂN',['t'],12,0], ['assault','Xung phong vào thành (L3)','QUÂN',['x'],10,0], ['para','Gọi lính dù','QUÂN',['b'],13,0], ['sqOrder','Lệnh tổ bộ binh: tự do → giữ vị trí → tiến công → vòng trái → vòng phải','QUÂN',['u'],null,0],
@@ -3792,21 +3792,25 @@ export const NOCENTER = {
 //     the same words again within `dedupe` s are dropped; `drop` = lines with no action attached, never shown in a battle (the radio / the sound still tell it)
 //   medals = in a battle the medal toasts and the rank-up card wait for the battle report (toast / rankCard false: kept for the end screen)
 //   tips = first-time notes in a battle only in a lull (the director's release phase, or no director) and at most perBattle a battle; offBattle = notes
-//     shown on their own screen instead (the deployment's note on the deployment screen)
+//     shown on their own screen instead (the deployment's note on the deployment screen); HUDUX 4 a lull is real only when he took no hit for quietS s, has at least
+//     hpMin of his health, no enemy is within nearR m and the director's pressure is under pressMax (an urgent note too, but for the cap and the phase)
 //   reload = the reload dial over the soldier: px on the screen (constant whatever the camera distance), no number
-//   bars = an enemy's health bar only while he was hit in the last `hold` s or is under the crosshair
+//   bars = an enemy's health bar only while he was hit in the last `hold` s or is under the crosshair; HUDUX 4 never on a man down, never within `near` m of the lens
+//   beacon = HUDUX 4 the relic's shaft of light (loot/relic.js): k × its light, w × its width; between near[0] and near[1] m from him it fades to nearK (it was the brightest thing on screen)
 //   mark = a sector goal's world badge: at most px tall on the screen, faint while it is in the top band (y < top px: the score, the sector rail)
-//   board = the leaderboard: names that read as tests are not shown (rx, case-insensitive, on the trimmed name; a name of `minLen` characters or fewer too),
+//   board = the leaderboard: names that read as tests are not shown (rx, case-insensitive, the WHOLE trimmed name: a test word and maybe a number — HUDUX 4: "Q.Anh",
+//     "Demo Lâm", "Dev Nguyễn" are real names; a name of `minLen` characters or fewer too),
 //     and a run from a test / bot / automation (?perf ?bot ?test ?smoke ?calib ?critic ?bench ?nogov, navigator.webdriver, a test nickname) never posts its score
 //   quickPlay = CHƠI NGAY goes straight into the next fort with the last kit and the remembered deployment (no setup steps, no briefing click)
 export const HUDUX = {
   notes:{ max:2, dedupe:2.5, drop:/^(ĐÃ ĐÁNH CHẶN|ĐỊCH RÚT LUI|ĐỊCH THẢ KHÓI|▲ BẬC \d)/u },
   medals:{ toast:false, rankCard:false },
-  tips:{ perBattle:2, lullOnly:true, offBattle:['deploy'] },
+  tips:{ perBattle:2, lullOnly:true, offBattle:['deploy'], quietS:8, hpMin:0.5, nearR:40, pressMax:0.15 },
   reload:{ px:34 },
-  bars:{ hold:3 },
+  bars:{ hold:3, near:7 },
   mark:{ px:36, top:96 },
-  board:{ rx:/^(qa|q|test|tester|bench|smoke|critic|bot|calib|perf|probe|dev|debug|demo)(\b|[\s_\-.#]|\d|$)/i, minLen:1, query:/[?&](perf|bot|test|smoke|calib|critic|bench|nogov)\b/ },
+  beacon:{ k:0.4, w:0.5, near:[20, 70], nearK:0.25 },
+  board:{ rx:/^(qa|test|tester|bench|smoke|critic|bot|calib|perf|probe|debug|hudux)[\s_\-.#]*\d*$/i, minLen:1, query:/[?&](perf|bot|test|smoke|calib|critic|bench|nogov)\b/ },
   quickPlay:true };
 // DIET 1–3 resource diet (render/asset-diet.js, tools/asset-diet.mjs): KTX2 maps read compressed (ktx2: off = every texture reads its fallback picture),
 //   the vendored Basis transcoder and meshopt simplifier (basis, simplifier: the shells run offline), the test file's time limit, transcoder workers
