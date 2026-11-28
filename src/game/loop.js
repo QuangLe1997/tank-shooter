@@ -11,6 +11,7 @@ import { bossCam, updateFeelFX } from '../hub.js';   // FEEL 3–4 (fx/feel-fx.j
 import { menuCam, transitHaze } from '../hub.js';   // VIS 4 the menu's backdrop camera (game/update.js) · VIS 5 the transit's haze (world/atmosphere.js)
 import { climbUiTick, rideCallTick } from '../hub.js';   // PERF 1 (game/soldier-climb.js · game/ride-call.js)
 import { sectorSkipDraw } from '../hub.js';   // PERF 7 (campaign/sectors.js)
+import { towersIdle } from '../hub.js';   // PERF 10 (world/towers.js)
 
 // ----------------------------- MAIN LOOP -----------------------------
 const NOGOV=typeof location!=='undefined' && /[?&]nogov\b/.test(location.search);   // PERF 1 ?nogov holds the governor still (the resolution and the occlusion pass stay as they start): for measuring
@@ -98,8 +99,8 @@ export function loop(nowMs){
     if(S.combo>0 && now>S.comboUntil) S.combo=0; comboTick(now);   // HUDCLEAN 2 the combo is its own small chip by the score (game/score.js), no longer the banner
     if(bannerTimer>0 && now>bannerTimer){ document.getElementById('combo').style.opacity='0'; __set_bannerTimer(0); }
   }
-  else if(S.mode==='intro'){ S.timeNow=now; updateIntro(dt, now); updateWildlife(dt, now); cavIdle(dt); updateTraffic(dt); }   // Z288 the city's traffic moves under the opening shots
-  else if(S.mode==='countdown'){ S.timeNow=now; updateCountdown(dt); updateCamera(dt, now); cavIdle(dt); }   // Z136 3 · 2 · 1: the world waits
+  else if(S.mode==='intro'){ S.timeNow=now; updateIntro(dt, now); updateWildlife(dt, now); cavIdle(dt); towersIdle(dt); updateTraffic(dt); }   // (PERF 10 towersIdle: the night's searchlight light is on before the warm-up)   // Z288 the city's traffic moves under the opening shots
+  else if(S.mode==='countdown'){ S.timeNow=now; updateCountdown(dt); updateCamera(dt, now); cavIdle(dt); towersIdle(dt); }   // Z136 3 · 2 · 1: the world waits
   else if(S.mode==='dying'){ S.timeNow=now; updateDeath(dt, now); }   // death → respawn cinematic (flip + burn + close cam)
   else if(S.mode==='transit'){ S.timeNow=now; updateSectorTransit(dt, now); }   // SECTOR 1 between two sectors: the black, the build, the drop onto the new field
   transitHaze(S.mode==='transit');   // VIS 5 the haze thins on the flight between sectors (world/atmosphere.js)

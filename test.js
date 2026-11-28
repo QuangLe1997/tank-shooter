@@ -3186,10 +3186,10 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
 { const fs=await import('node:fs'), { PERF_BUDGET:PB }=await import('./config.js'), sc=fs.readFileSync('src/campaign/sectors.js','utf8');
   ok(typeof PB.transit.waitModels==='boolean' && /if\(PERF_BUDGET\.transit\.waitModels\) P = Promise\.all\(\[P, dietIdle\(ms\)\]\);/.test(sc) && /Promise\.race\(\[P, new Promise\(r => setTimeout\(r, ms\)\)\]\)/.test(sc),
     'PERF 9: the warm-up waits for the compile and the model files together, still bounded by warmMs / warmHour'); }
-// PERF 10 the xe om's headlight follows the night from the stage's first frame (no light switched on at GO: every lit program is keyed on the light count)
+// PERF 10 the searchlight's light and the xe om's headlight follow the night from the stage's first frame (no light switched on at GO: every lit program is keyed on the light count)
 { const fs=await import('node:fs'), xe=fs.readFileSync('src/game/xeom.js','utf8'), cv=fs.readFileSync('src/game/cavalry.js','utf8');
-  ok(/export function bikeLampsNight\(H\)\{ const b = H && H\.lamps && H\.lamps\.beam; if\(b && b\.visible !== NIGHT\.on\) b\.visible = NIGHT\.on; \}/.test(xe) && /if\(H\.bike\) bikeLampsNight\(H\);/.test(cv),
-    'PERF 10: cavIdle (the fly-in, the 3-2-1) sets the headlight\'s light for the night before the shaders are warmed'); }
+  ok(/export function towersIdle\(dt\)\{ updateBeams\(dt\); updateSearchSpot\(/.test(fs.readFileSync('src/world/towers.js','utf8')) && /cavIdle\(dt\); towersIdle\(dt\);/.test(fs.readFileSync('src/game/loop.js','utf8')) && /export function bikeLampsNight\(H\)\{ const b = H && H\.lamps && H\.lamps\.beam; if\(b && b\.visible !== NIGHT\.on\) b\.visible = NIGHT\.on; \}/.test(xe) && /if\(H\.bike\) bikeLampsNight\(H\);/.test(cv),
+    'PERF 10: the fly-in and the 3-2-1 set the searchlight\'s and the headlight\'s lights for the night before the shaders are warmed'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

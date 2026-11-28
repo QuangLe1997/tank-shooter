@@ -74,6 +74,9 @@ export function buildTowers(){
 }
 // guards spot your tank and fire plunging rifle rounds; searchlights sweep at night
 export const _tw=new THREE.Vector3();
+// PERF 10 (C1-091) the searchlights' one real light (a shadow-casting SpotLight, visible at night) set from the fly-in and the 3-2-1 too (game/loop.js): switched
+//   visible only in the first frame of play, it changed the light and shadow count every lit program is keyed on — 53–62 programs rebuilt in one 0.65 s frame at a night fort's GO
+export function towersIdle(dt){ updateBeams(dt); updateSearchSpot(towers.map(t=>t.light), NIGHT.k); }
 export function updateTowers(dt, now){
   updateBeams(dt); updateSearchSpot(towers.map(t=>t.light), NIGHT.k);
   const p=S.player; if(!p) return;
