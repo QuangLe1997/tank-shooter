@@ -3,6 +3,7 @@ import { ASSETDIET, CONTRACTS, DMG_TYPE, LOOT_REAL, OBJECTIVES, OBJ_REWARD } fro
 import { setLootIcon, bladeChip, modeBrief, bigEventsReset, sideMissionsReset, directorReset, opTitle, placeLine, capVi, askConfirm, quitToMenu, openBattleSetup, BS, BIOME, GUNS, PROFILE, S, WAVE, biomeVi, bossForStage, camera, coachFirstRun, conditionsText, escapeHtml, floatText, gunPicEl, hide, iconEl, magCap, opFor, openDeploy, playStageTransition, renderer, resetEnvEvents, resetSurprises, saveProfile, sayVoice, scene, setFocus, setIcon, sfx, show, spawnRelic, storyBrief, storyReset, tapEl, voiceStage, spellNow, briefTeam, nemBrief, droneWarReset, ammoHud, coopActive, coopGate } from '../hub.js';
 import { blendScene, compileFor, dietBusy, dietIdle, fightWarm } from '../hub.js';   // SPLIT 2 (render/fight-warm.js) · DIET 8 (render/blend-in.js)
 import { modeGo, paradropReset } from '../hub.js';   // MIX 1 (campaign/mode-run.js · actors/paradrop.js)
+import { battleTitle, uxBriefTidy, uxQuickGo } from '../hub.js';   // HUDUX CHƠI NGAY in one click (ui/hudux.js)
 
 // ----- STAGE BRIEFING: choose 1 of 3 contracts before the stage's waves begin -----
 export let _brCtx = null;   // what chooseContract should do on confirm: {first?} (stage1) or {stage,biomeName,accentHex} (stage 2+)
@@ -14,11 +15,11 @@ export function openBriefing(opts, offer){
   prewarmStage();   // Z168 compile this stage's shaders in the background while the player reads the briefing (no hitch at the countdown / first frame)
   const bdef = bossForStage(S.stage), SB = storyBrief(S.stage), NB = bdef ? nemBrief(bdef.id) : '';   // Z161 may be one of the new generals · STORY 3 the act, the "previously" line, the general's dossier (campaign/story.js)
   const words=t=>String(t||'').toLocaleLowerCase('vi').replace(/(^|[\s(.-])(\S)/g, (m, a, c)=>a+c.toLocaleUpperCase('vi'));   // a general's name: "BÒ THÉP" → "Bò Thép"
-  const sub=document.getElementById('br-sub'); if(sub) sub.innerHTML = '<b>Màn '+S.stage+' · '+escapeHtml(capVi(biomeVi(BIOME.name)))+'</b>'+(placeLine(BIOME.name)?' — '+escapeHtml(placeLine(BIOME.name)):'')+'<span>Tướng địch giữ thành: '+escapeHtml(bdef?words(bdef.name):'chưa rõ')+'</span>'+(SB.dossier?'<span class="br-dos">'+escapeHtml(SB.dossier)+'</span>':'')+(NB?'<span class="br-dos">'+escapeHtml(NB)+'</span>':'');
+  const sub=document.getElementById('br-sub'); if(sub) sub.innerHTML = '<b>Màn '+S.stage+' · '+escapeHtml(capVi(biomeVi(BIOME.name)))+'</b>'+(placeLine(BIOME.name)?' — '+escapeHtml(placeLine(BIOME.name)):'')+'<span>Tướng địch giữ thành: '+escapeHtml(bdef?words(bdef.name):'chưa rõ')+'</span>'+(SB.dossier?'<span class="br-dos">'+escapeHtml(SB.dossier)+'</span>':'')+(NB?'<span class="br-dos">'+escapeHtml(NB)+'</span>':'')+(conditionsText()?'<span class="br-cond">Điều kiện: '+escapeHtml(conditionsText())+'</span>':'');   // HUDUX the land's conditions here (they were over the field during the 3-2-1)
   { const op=opFor(S.stage), od=OBJECTIVES[op.obj]; const t=document.getElementById('br-op'); if(t) t.textContent=SB.act+' — '+opTitle(op);
     const bf=document.getElementById('br-brief'); if(bf){ const pv=document.createElement('span'); pv.className='br-prev'; pv.textContent=SB.prev; bf.replaceChildren(pv, (op.story && !SB.loop ? op.story+' ' : '')+op.brief); }   // (an NG+ loop: its own framing line stands for the story paragraph)
     const ob=document.getElementById('br-obj'); if(ob) ob.innerHTML='<b>Mục tiêu</b><span>Phá '+escapeHtml(capVi(od.vi||od.name).toLocaleLowerCase('vi'))+'. Khi nó còn đứng: '+escapeHtml((od.effectVi||od.effect).toLowerCase())+'. Phá được: +'+OBJ_REWARD.score.toLocaleString('vi-VN')+' điểm.</span>'; }
-  modeBrief();   // MODE 3 a night defence / a daily challenge: its own rules where the stage's story was (campaign/mode-run.js)
+  modeBrief(); uxBriefTidy(document.getElementById('br-brief'));   // HUDUX a long brief → a short lead + points · MODE 3 a night defence / a daily challenge: its own rules where the stage's story was (campaign/mode-run.js)
   { const bt=document.getElementById('brBackT'); if(bt) bt.textContent = _brCtx.first && S.launchFrom==='setup' ? 'Chọn trận' : 'Trang chủ'; }
   // offer 3: always the STEADY safe baseline + 2 random risk/reward contracts (shuffled) — the same three again when the deployment screen comes back here
   let pick=offer;
@@ -37,6 +38,7 @@ export function openBriefing(opts, offer){
   }
   pickContract(pick.find(c=>c.id===PROFILE.lastContract) || pick.find(c=>c.id==='steady'), true);   // Z152 one is always chosen — XUẤT KÍCH works straight away
   show('briefing'); sfx('powerup');
+  if(uxQuickGo()){ requestAnimationFrame(()=>{ if(S.mode==='briefing') launchStage(false); }); return; }   // HUDUX CHƠI NGAY: the last contract and the remembered deployment, straight to the 3-2-1
   requestAnimationFrame(()=>{ const go=document.getElementById('brGo'); if(go && typeof setFocus==='function' && document.body.classList.contains('pad')) setFocus(go, true); });
 }
 export let _brPick=null;
@@ -55,7 +57,7 @@ export function beginStage(c, ctx){
   if(_goWait === 1) return; if(_goWait === 0 && dietBusy()){ _goWait = 1; dietIdle(ASSETDIET.late.waitMs).then(() => { _goWait = 2; beginStage(c, ctx); }); return; } _goWait = 0;   // DIET 10 the 3-2-1 starts once the field's model files are in (≤ late.waitMs): what lands after GO is compiled and uploaded in the fight
   if(!_graded.has(S.runId + ':' + S.stage)){ _graded.add(S.runId + ':' + S.stage); try{ blendScene(scene); }catch(e){} }   // DIET 8 the field's materials take their grading variant (blendIn3) BEFORE the 3-2-1 compiles them: a load fast enough to reach GO before the floor's photo (blendWhenReady) had them recompiled in the fight's first second — 33 programs, one 0.45–0.6 s frame; the later grading only moves uniforms
   S.mode='countdown'; S.cd=3.05; _go={ c, ctx }; _cdN=0; S.firing=false; prewarmStage(); fightWarm(); voiceStage();   // Z168 the troops / riders / roof gun just deployed: compile them during the 3-2-1
-  { const sub=document.getElementById('cdSub'), op=opFor(S.stage); if(sub){ const ct=conditionsText(); sub.innerHTML='<div>'+escapeHtml(op&&op.title ? opTitle(op)+' — màn '+S.stage : 'Màn '+S.stage)+'</div>'+(ct?'<div class="cdc">'+escapeHtml(ct)+'</div>':''); sub.classList.add('on'); } }   // Z138 the mission line rides under the numbers (NO-TANKS 8: the intro already named the place)
+  { const sub=document.getElementById('cdSub'); if(sub){ const bt=battleTitle(); sub.innerHTML=bt ? '<div>'+escapeHtml(bt)+'</div>' : ''; sub.classList.toggle('on', !!bt); } }   // HUDUX one name for the battle (ui/load-veil.js battleTitle); the conditions are on the briefing, not over the field   // Z138 the mission line rides under the numbers (NO-TANKS 8: the intro already named the place)
   WAVE.active=false; S.wave=0;
   if(S.player) floatText(c.name, '#ffe8b6', S.player.pos, 20);
   sfx('click');
@@ -128,7 +130,7 @@ export function updateSpellHUD(){
   const lk=LOOT_REAL.on && LOOT_REAL.skill[sp.id];   // LOOT 1 a skill that is an item (grenade, smoke, medkit, drone) shows a render of its model
   for(const q of ['#ab-spell .ic', '#mSpell .ic']){ const el=document.querySelector(q); if(lk) setLootIcon(el, lk, sp.svg); else if(el){ el._lk=null; setIcon(el, sp.svg); } }
   const mt=document.querySelector('#mSpell .mbtag'); if(mt) mt.textContent=sp.vi||sp.name;           // Z84: always show WHICH skill is armed
-  const an=document.getElementById('ab-spell-nm'); if(an) an.textContent='Q ‹ '+(sp.vi||sp.name)+' ›';
+  const an=document.getElementById('ab-spell-nm'); if(an) an.textContent='Q · '+(sp.vi||sp.name);
 }
 
 { const g=document.getElementById('brGo'), d=document.getElementById('brDeploy'), b=document.getElementById('brBack'); if(g) tapEl(g, ()=>launchStage(false)); if(d) tapEl(d, ()=>launchStage(true)); if(b) tapEl(b, briefBack); }   // Z152

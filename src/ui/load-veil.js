@@ -2,8 +2,8 @@
 //   the battlefield's own ground under a map grid, its name, the real place and its coordinates, the hour and the sky, the operation's brief, and
 //   the three steps the game really goes through (the field is built · the graphics are readied · ready), each ticked as it is done. The moving
 //   parts are CSS transforms, so they keep running while the main thread is busy building the field.
-import { GROUND_PHOTO, OPERATIONS } from '../../config.js';
-import { BIOMES, BIOME_PLACE, PROFILE, S, TOD_LABEL, biomeVi, levelInfo, weatherDef } from '../hub.js';
+import { CONQUEST, GROUND_PHOTO } from '../../config.js';
+import { BIOMES, BIOME_PLACE, CQ, PROFILE, S, TOD_LABEL, biomeVi, levelInfo, opFor, weatherDef } from '../hub.js';
 
 // where each battlefield's real place is (degrees, minutes; B/N = north/south, Đ/T = east/west)
 const COORD = { DESERT:'29°58′B 31°08′Đ', RUINS:'41°53′B 12°29′Đ', ARCTIC:'63°45′B 68°31′T', FOUNDRY:'49°15′B 6°51′Đ', CITADEL:'27°10′B 78°01′Đ',
@@ -22,15 +22,21 @@ function orderOf(arg){ let cfg = arg && typeof arg === 'object' && arg.mode ? ar
   if(cfg && cfg.mode === 'custom'){ const lv = Math.max(1, cfg.level | 0), I = levelInfo(lv); return { biome:BIOMES[cfg.biome] || I.biome, tod:cfg.tod || I.tod, wx:cfg.wx || 'clear', stage:I.stage, loop:I.loop }; }
   const I = levelInfo(L || Math.max(1, (cfg && cfg.level) | 0)); return { biome:I.biome, tod:I.tod, wx:I.wx, stage:I.stage, loop:I.loop }; }
 
+// HUDUX one name for one battle: a conquest fort is "Thành 3 · Thành Tro" everywhere (veil, 3-2-1); a mode of its own (daily, night, mixer) carries no
+//   campaign operation; the campaign's operation is read with the cast's names filled in (opFor — the raw one showed its name slots unfilled)
+const fortOf = i => CONQUEST.forts[i] || null;
+export function fortTitle(i){ const f = fortOf(i); return f ? 'Thành ' + (i + 1) + ' · ' + String(f.name).replace(/^Thành /, '') : ''; }
+export function battleTitle(){ if(CQ.on && CQ.i >= 0) return fortTitle(CQ.i); if(S.run && S.run.offBoard) return ''; const op = opFor(S.stage || 1); return op && op.title ? opTitle(op) + ' — màn ' + (S.stage || 1) : 'Màn ' + (S.stage || 1); }
 export function veilOrder(arg){ let o; try{ o = orderOf(arg); }catch(e){ return; } if(!o || !o.biome) return;
-  const name = o.biome.name, op = OPERATIONS[(o.stage - 1) % OPERATIONS.length], set = (GROUND_PHOTO.biomes[name] || [])[0];
+  const cq = arg && typeof arg === 'object' && arg.conq ? arg.conq.i : -1, fort = cq >= 0 ? fortOf(cq) : null, own = !fort && arg && typeof arg === 'object' && arg.offBoard;
+  const name = o.biome.name, op = fort || own ? null : opFor(o.stage), set = (GROUND_PHOTO.biomes[name] || [])[0];
   const g = $('lvGround'); if(g) g.style.backgroundImage = set ? 'url("assets/ground/' + set + '/diff.jpg")' : '';
   const put = (id, t) => { const e = $(id); if(e) e.textContent = t; };
-  put('lvKind', 'Lệnh xuất kích' + (op ? ' — ' + opTitle(op) : ''));
+  put('lvKind', 'Lệnh xuất kích' + (fort ? ' — ' + fortTitle(cq) : op ? ' — ' + opTitle(op) : ''));
   put('lvName', biomeVi(name)); put('lvPlace', placeLine(name)); put('lvCoord', COORD[name] || '');
   { const n = $('lvName'); if(n) n.style.setProperty('--len', Math.max(5, biomeVi(name).length)); }   // a long name sets itself smaller
   put('lvCond', 'Màn ' + o.stage + (o.loop ? ', vòng ' + (o.loop + 1) : '') + ' — ' + lower(TOD_LABEL[o.tod] || '') + ', ' + lower(weatherDef(o.wx).vi));
-  put('lvBrief', op ? op.brief : '');
+  put('lvBrief', fort ? fort.blurb || '' : op ? op.brief : '');
   veilStep(0); }
 // k = the step under way (0 the field · 1 the graphics · 2 ready); the ones before it are ticked
 export function veilStep(k){ const v = $('loadVeil'); if(!v) return; v.dataset.step = k;

@@ -68,3 +68,6 @@ select,input[type=number],.mx-name{ background:var(--k-p2); border:1px solid var
 @media (max-width:560px){ .mx-head h1{ font-size:20px; } .mx-faders{ grid-template-columns:repeat(10,62px); overflow-x:auto; } .mx-track,.mx-vr{ height:150px; } .mx-meters{ grid-template-columns:1fr; }
   .mx-knob{ grid-template-columns:96px 1fr 56px 26px; } .mx-knobs{ grid-template-columns:1fr; } .mx-adv{ grid-template-columns:1fr 90px 34px; } .mx-adv small{ display:none; } }
 @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } }
+/* HUDUX a phone: the ten faders in two rows of five (they ran off the side, labels cut), every label whole, the numbers readable */
+@media (max-width:560px){ .mx-faders{ grid-template-columns:repeat(5,minmax(0,1fr)); overflow-x:visible; gap:4px 2px; padding:8px 4px; } .mx-track,.mx-vr{ height:118px; } .mx-fv{ font-size:16px; }
+  .mx-fl{ font-size:10.5px; letter-spacing:0; line-height:1.15; min-height:2.3em; white-space:normal; overflow-wrap:anywhere; } .mx-svg text{ font-size:11px; } }

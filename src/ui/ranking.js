@@ -1,5 +1,5 @@
 // ui/ranking.js — Z163 BẢNG XẾP HẠNG: this week's and all-time best runs (lb/{uid}, lbw/{week}/e/{uid} — written only by the server), your own row and rank
-import { CLOUDSAVE, cloudFB, escapeHtml, hide, initCloud, sfx, show, tapBtn, tapEl } from '../hub.js';
+import { CLOUDSAVE, cloudFB, escapeHtml, hide, initCloud, sfx, show, tapBtn, tapEl, uxBoardHidden } from '../hub.js';
 
 export const RANK = { tab:'week', from:'start', cache:{} };
 // same week key as the server (UTC+7 time, ISO week)
@@ -15,7 +15,7 @@ export async function renderRanking(){ document.querySelectorAll('#ranking .rank
   msg('Đang tải…'); const { FS, db }=F, tab=RANK.tab;
   try{ const col = tab==='week' ? FS.collection(db,'lbw',wk,'e') : FS.collection(db,'lb');
     const top=await FS.getDocs(FS.query(col, FS.orderBy('score','desc'), FS.limit(50))); if(RANK.tab!==tab) return;
-    const rows=top.docs.map(d=>d.data()), body=document.getElementById('rankBody'); body.replaceChildren();
+    const rows=top.docs.map(d=>d.data()).filter(r=>r.uid===CLOUDSAVE.uid || !uxBoardHidden(r.name)), body=document.getElementById('rankBody'); body.replaceChildren();   // HUDUX test names (QA, BENCH, SMOKE, TEST, CRITIC …) are not shown — the stored rows are left alone
     if(!rows.length) { msg(tab==='week' ? 'Tuần này chưa có ai ghi điểm — qua một màn để mở hàng!' : 'Chưa có ai ghi điểm.'); return; }
     rows.forEach((r,i)=>body.appendChild(row(i, r, r.uid===CLOUDSAVE.uid)));
     if(!rows.some(r=>r.uid===CLOUDSAVE.uid)){   // you, below the top 50: your best and your rank (a server-side count)

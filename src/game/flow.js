@@ -1,7 +1,7 @@
 // game/flow.js — GAME FLOW: start / pause / quit-to-menu, loadout guns for the run, menu ↔ HUD state, show/hide panels
 import { CAV, CORE_DEF } from '../../config.js';
 import { fieldWait, modeSeed, clearBigEvents, clearSideMissions, modelEpoch, veilOrder, askConfirm, confirmOpen, opFor, biomeVi, BIOME, SOLDIER, reportRun, CV, GUNS, cavRespawn, clearSoldierWar, driverBack, magCap, makeCavPlayer, rankReset, squadReset, trooperGuns, duelReset, gpuHeld, gpuRelease, clearGifts, VOICE_RULES, ARENA, MOBILE, PROFILE, S, WAVE, __set__alarmAt, __set_soldierLvl, applyBiome, applyContractHUD, audio, buildBlocks, buildCore, buildLava, buildObjective, buildTrails, buildUnderground, bullets, clearAllyOrdnance, clearEnemyMissiles, clearEquip, clearFieldcraft, clearFireteam, clearHeliDown, clearHelis, clearInfDead, clearLadders, clearLootBeacons, clearObjective, clearParadrops, clearPickups, clearRelic, clearSoldiers, clearSquads, clearSurprises, core, deploySoldiers, dropCavPlayer, enemies, enemyPool, freeEnemyBar, preloadVoices, queueResize, recycleBullet, refreshStartUI, reqFs, saveProfile, scene, sfx, showVeil, skipIntro, startIntro, startMusic, tapBtn, updateHUD, updateSpellHUD, updateWeaponHUD, openBattleSetup, clearDroneWar, clearLogistics, clearQuiet, clearFireFX, modeBegin, modeReady, modeQuit, modePauseTx, coopActive, coopFieldBuilt, coopBuildField, medalEnd, medalHush } from '../hub.js';
-import { loadMark } from '../hub.js';   // SPLIT 3 (render/quality.js)
+import { loadMark, uxPlayNow } from '../hub.js';   // SPLIT 3 (render/quality.js)
 import { sectorBegin, sectorEnd } from '../hub.js';   // SECTOR 1 (campaign/sectors.js)
 import { SHOTS } from '../hub.js';   // MIX 1 (actors/gun-feel.js)
 
@@ -122,7 +122,7 @@ export function syncMenuState(){
 }
 export function show(id){ document.getElementById(id).classList.remove('hidden'); syncMenuState(); }
 export function hide(id){ document.getElementById(id).classList.add('hidden'); syncMenuState(); }
-tapBtn('playBtn', ()=>openBattleSetup());   // Z354 PLAY opens CHUẨN BỊ TRẬN at its first step (tank or soldier · his gear · where) — XUẤT KÍCH there still goes in at once with the last choices · (Z152 it went straight into the next campaign level)
+tapBtn('playBtn', ()=>uxPlayNow() || openBattleSetup());   // HUDUX CHƠI NGAY = one click into the next fort (ui/hudux.js; CHỌN TRẬN keeps the full setup) · Z354 PLAY opens CHUẨN BỊ TRẬN at its first step (tank or soldier · his gear · where) — XUẤT KÍCH there still goes in at once with the last choices · (Z152 it went straight into the next campaign level)
 // skip the deploy cinematic on any input (after a short grace window)
 addEventListener('pointerdown', ()=>skipIntro());
 addEventListener('keydown', ()=>skipIntro());
