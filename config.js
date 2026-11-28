@@ -4304,7 +4304,7 @@ export const FEELFX = { on:true,
 //     in between these m of the lens (no long white bars across the screen) · allyK × the glow of every ally-green battle-light ring · cloth = [metalness, roughness] for an aircraft model that is cloth (a parachute's
 //     canopy came as polished metal: a flat cream disc in the night sky) · airMetal = the most metal any aircraft model is (they came as metal 1 / rough 1:
 //     a uniform reflection of the sky — a flat cream shape at night) · (VIS 11 at rest our HQ's dome is not drawn at all — close by, its lattice lay across the view from
-//     outside too; the emergency shield still shows) · plainNight × the plain to the horizon at night (seen from the transit's height it was a white band) · markSmoke = the artillery's marker smoke (a muted signal green, not a glowing neon) · foeNight × the enemy kit's
+//     outside too; the emergency shield still shows) · markSmoke = the artillery's marker smoke (a muted signal green, not a glowing neon) · foeNight × the enemy kit's
 //     colour at night, leaned foeGrey of the way to grey (its warm tint read as self-lit) · bigTri / bigR / bigShrink: the spring arm reads a mesh too big to
 //     ray (up to bigTri triangles, bigR m across) by its box shrunk × bigShrink — the lens inside a building's box comes in to where the ray enters it
 //   horizon: at night the far ranges' colours go night × of the way to the night air's (dark silhouettes, not tan-purple saw teeth) ·
@@ -4326,4 +4326,4 @@ export const VISLOOK = {
   boss:{ k:0.55, t:0.08 },
   transit:{ y0:18, span:60, min:0.3 },
   horizon:{ night:0.55 },
-  r2:{ domeIn:1.08, rainNear:[2.2, 6.5], allyK:0.45, cloth:{ para_trooper:[0, 0.92] }, airMetal:0.35, markSmoke:0x4f7a44, plainNight:0.45, foeNight:0.78, foeGrey:0.45, bigTri:400000, bigR:60, bigShrink:0.9 } };
+  r2:{ domeIn:1.08, rainNear:[2.2, 6.5], allyK:0.45, cloth:{ para_trooper:[0, 0.92] }, airMetal:0.35, markSmoke:0x4f7a44, foeNight:0.78, foeGrey:0.45, bigTri:400000, bigR:60, bigShrink:0.9 } };

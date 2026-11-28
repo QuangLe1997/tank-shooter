@@ -1,7 +1,7 @@
 // world/heightfield.js — HEIGHTFIELD: rolling mounds, shell craters & wind drifts; everything (tanks, props, shells, particles) sits on it; blasts dig new craters
 import * as THREE from 'three';
-import { RELIEF, FIELD, TERRAIN_FLAT, RIVERS, OUTSKIRTS, LANDFORM, WORLD_FLAGS, VISLOOK } from '../../config.js';
-import { BDP, BIOME, GROUND_READY, S, fieldR, FIELD_R, SHADER_HOOKS, AREA_K, ARENA, BIOMES, DECAL, MOBILE, TERRAIN_STYLE, _R, _canvasTex, crushAt, crushables, decalCrater, fieldDepth, groundMaps, macroGround, scene, carveRivers } from '../hub.js';
+import { RELIEF, FIELD, TERRAIN_FLAT, RIVERS, OUTSKIRTS, LANDFORM, WORLD_FLAGS } from '../../config.js';
+import { BDP, BIOME, GROUND_READY, fieldR, FIELD_R, SHADER_HOOKS, AREA_K, ARENA, BIOMES, DECAL, MOBILE, TERRAIN_STYLE, _R, _canvasTex, crushAt, crushables, decalCrater, fieldDepth, groundMaps, macroGround, scene, carveRivers } from '../hub.js';
 
 // ---- HEIGHTFIELD: rolling mounds, shell craters & wind drifts; everything (tanks, props, shells, particles) sits on it; blasts dig new craters ----
 export const HF = { N: Math.min(MOBILE?140:300, Math.round((MOBILE?96:150)*ARENA/60)), S: ARENA*2 };   // Z104 grid scales with the arena (≈1 vertex / 1.3 m), capped for phones
@@ -230,7 +230,7 @@ export function landColours(b){ const L = OUT.lf; if(groundMat.map) outerMat.map
   if(groundMat.map && groundMat.map.repeat) OUTER_TILE.value = Math.max(1e-3, groundMat.map.repeat.x) / (ARENA * 2);
   const a = texAverage(groundMat.map) || new THREE.Color(b.ground); a.multiply(groundMat.color); LANDU.uAvg.value.copy(a); if(!L) return;
   LANDU.uTint.value.copy(a).lerp(_lc.setHex(L.tint), L.shift ?? LANDFORM.shift); LANDU.uRock.value.copy(a).multiplyScalar(0.75).lerp(_lc.setHex(L.rock), 0.55);
-  BDP.u.uPC.value.copy(a).lerp(_lc.setHex(L.col), L.plainShift ?? LANDFORM.plainShift); if(S.tod==='night') BDP.u.uPC.value.multiplyScalar(VISLOOK.r2.plainNight); }   // (VIS 11 the plain sinks into the night: from the transit's height it was a white band)
+  BDP.u.uPC.value.copy(a).lerp(_lc.setHex(L.col), L.plainShift ?? LANDFORM.plainShift); }
 // the tracks that lead away from the field over the hills (behind our lines, toward the enemy's, and off to one side): a ribbon on the ground, its
 //   edges soft, winding as it goes, fading into the plain
 const ROADS = new THREE.Group(); ROADS.name = 'outskirt-roads'; arena.add(ROADS); let _roadTex = null;
