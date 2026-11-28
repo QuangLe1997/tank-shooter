@@ -132,6 +132,7 @@ export * from './actors/paradrop.js';
 export * from './actors/command.js';
 export * from './campaign/operations.js';
 export * from './ai/tactics.js';
+export * from './ai/foe-sleep.js';   // PERF 2 the active-enemy budget: past the nearest activeFoes and sleepR m, a man sleeps
 export * from './ai/cover.js';
 export * from './ai/spatial.js';
 export * from './ai/squads.js';

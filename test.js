@@ -3152,6 +3152,12 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), sc=R('src/game/soldier-climb.js'), rc=R('src/game/ride-call.js'), lp=R('src/game/loop.js');
   ok(!/requestAnimationFrame/.test(sc) && !/requestAnimationFrame/.test(rc) && /export function climbUiTick\(\)/.test(sc) && /export function rideCallTick\(\)/.test(rc) && /climbUiTick\(\); rideCallTick\(\);/.test(lp),
     'PERF 1: the climb button and the ride chip paint from game/loop.js (no frame loop of their own)'); }
+// PERF 2 (critic C1-024) the active-enemy budget: the nearest MIXER.budget[device].activeFoes are awake, plus anyone inside sleepR m or hurt; the rest sleep
+{ const fs=await import('node:fs'), { MIXER:MX }=await import('./config.js'), fz=fs.readFileSync('src/ai/foe-sleep.js','utf8'), tc=fs.readFileSync('src/ai/tactics.js','utf8'), B=MX.budget;
+  ok(B.desktop.activeFoes>=20 && B.desktop.activeFoes<=60 && B.phone.activeFoes>=10 && B.phone.activeFoes<=B.desktop.activeFoes && B.desktop.sleepR>=80 && B.desktop.sleepR<=200 && B.phone.sleepR>=60 && B.phone.sleepR<=B.desktop.sleepR,
+    'PERF 2: the budget table holds the awake count (desktop '+B.desktop.activeFoes+', phone '+B.phone.activeFoes+') and the sleep radius (m)');
+  ok(/foeSleepTick\(now\);/.test(tc) && /if\(foeAsleep\(e\)\) continue;/.test(tc) && /e\.guard \|\| e\.general \|\| e\.fortBoss/.test(fz) && /e\.hp < e\.maxHp - 0\.5/.test(fz) && /nosleep/.test(fz) && /^export \* from '\.\/ai\/foe-sleep\.js';/m.test(fs.readFileSync('src/hub.js','utf8')),
+    'PERF 2: tactics ranks the men twice a second and skips the sleeping ones; bosses, generals, guards, scripted men and the hurt never sleep; ?nosleep turns it off'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

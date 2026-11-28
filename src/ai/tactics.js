@@ -2,6 +2,7 @@
 //   (actors/helis.js) moves and fights (no-tanks: Z95 the tactical director, its armoured vehicles' steering, gun laying, smoke and ramming are gone)
 import { BALANCE, TACTICS } from '../../config.js';
 import { PROFILE, ENEMY_CLASS, ENVMOD, S, armorOf, enemies, heightAt, killEnemy, radio, spawnPart, typeMul, updateEnemyBar, updateHeli, updateInfantry, bloodSpurt, awareFrame, updateEntries, CO, coopFocus, coopFocusEnd } from '../hub.js';
+import { foeAsleep, foeSleepTick } from '../hub.js';   // PERF 2 (ai/foe-sleep.js)
 
 export function aiIQ(){ const T=TACTICS.iq; return Math.max(0, Math.min(T.cap, T.base + T.perStage*(S.stage-1) + (T[PROFILE.difficulty]||0) + (S.loop||0)*T.loop)); }   // Z95 how sharp the enemy fights (the infantry reads it)
 export function updateEnemies(dt, now){
@@ -9,6 +10,7 @@ export function updateEnemies(dt, now){
   const slow = now < S.enemySlowUntil ? 0.35 : 1;     // Time Warp spell
   updateEntries(dt, now);                             // AI 2 the men whose turn it is to climb out of a hatch (campaign/entries.js)
   awareFrame(dt, now);                                // AI 1 how visible the player is this moment, and the shouts of men just alerted (ai/awareness.js)
+  foeSleepTick(now);                                  // PERF 2 the active-enemy budget: the far ones past the nearest MIXER.budget activeFoes sleep (ai/foe-sleep.js)
   for(let i=enemies.length-1;i>=0;i--){
     const e=enemies[i], def=e.def;
     updateEnemyBar(e);                                  // keep the floating HP bar pinned + facing camera every frame
@@ -23,6 +25,7 @@ export function updateEnemies(dt, now){
         e.hp -= F.dps * n * (e.burn.k||1) * dt * typeMul('FIRE', armorOf(e)) * ENVMOD.fire; if(e.hp<=0){ killEnemy(e); continue; }   // burned to death → drop it (mesh already pooled)
       }
     }
+    if(foeAsleep(e)) continue;   // PERF 2 asleep out in the haze: no thought, no step, no shot (his bar, his burning still run above)
     if(e.held) continue;   // BOSS 1 a fort boss in one of his own moves (campaign/fort-boss.js moves and poses him)
     // stunned (EMP / freeze power-up): hold still, no fire
     if(now < e.stunUntil){

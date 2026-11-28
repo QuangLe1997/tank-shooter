@@ -4155,7 +4155,7 @@ export const MIXER = { v:1,
     structure:{ sectors:f.run ? f.run.split(' ') : null }, threat:f.threat ? { id:f.threat.id, knobs:f.threat.knobs.map(k => k.slice()) } : null, general:{ name:f.boss, look:f.look || null },
     storyline:'conquest:' + i, conq:{ i } })) },
   // DEVICE BUDGETS (MOBILE = phone): live infantry at once, the head-count multiplier, the sim's time scale, events in any 5 minutes, live units at the peak
-  budget:{ desktop:{ liveInf:30, countK:1.7, simK:1.4, events5:11, peakUnits:64 }, phone:{ liveInf:18, countK:1.4, simK:1.2, events5:10, peakUnits:36 } },
+  budget:{ desktop:{ liveInf:30, countK:1.7, simK:1.4, events5:11, peakUnits:64, activeFoes:40, sleepR:120 }, phone:{ liveInf:18, countK:1.4, simK:1.2, events5:10, peakUnits:36, activeFoes:24, sleepR:90 } },   // PERF 2 activeFoes / sleepR: awake at once = the nearest activeFoes + anyone within sleepR m (or hurt); the rest sleep (ai/foe-sleep.js)
   // CROSS-RULES (src/data/mixer-math.js rules): thresholds
   rules:{ hardStingy:{ diff:75, bounty:30 }, denseLull:{ density:75, lull:0.85 }, speedDense:{ speed:75, density:70, lull:0.8 }, longTypes:{ min:15, types:3 }, nightMarks:{ aim:70 },
     unfair:{ aware:80, aim:80, density:70, aimCap:75 }, mateGap:25, ttk:{ budget:2.2 }, effClock:2.2 },
