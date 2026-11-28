@@ -32,6 +32,8 @@ function mark(i, x, z, r, icon, col, h){ let M = SGOAL.marks[i]; if(!M){ const r
   _mv.set(x, by, z).project(camera); const sx = (_mv.x + 1) / 2 * innerWidth, sy = (1 - _mv.y) / 2 * innerHeight, q = SECTOR.mark.badge * 14;
   { const k = Math.min(SECTOR.mark.badge, HUDUX.mark.px / Math.max(200, innerHeight) * 2 * camera.position.distanceTo(M.badge.position) * Math.tan(camera.fov * Math.PI / 360)); M.badge.scale.set(k, k, 1); }   // HUDUX at most HUDUX.mark.px on the screen (it grew to ~100 px near)
   M.badge.material.opacity = ncBattle() && _mv.z < 1 && ncHit(sx - q, sy - q, sx + q, sy + q) || ncBattle() && sy < HUDUX.mark.top ? SECTOR.mark.ghost : 1; }   // (HUDUX faint under the top HUD band too)
+// BAL 17 the sector flow's own marker (campaign/sectors.js: the general's arena)
+export function sectorMark(i, x, z, r, icon, col){ if(x == null) unmark(i); else mark(i, x, z, r, icon, col); }
 function unmark(i){ const M = SGOAL.marks[i]; if(M) M.ring.visible = M.badge.visible = false; }
 // a spot d0…d1 m from him, inside the field with m to spare, clear of anything solid; ahead (toward the enemy's side) when it can
 function spot(d0, d1, m){ const p = S.player;

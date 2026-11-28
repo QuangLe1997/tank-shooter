@@ -3213,6 +3213,11 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
     'BAL 10 / 11: a calm first stretch (no escalation, no entries, no surprise, wide rounds); nothing sent at him while he sneaks into an infiltration');
   ok(Q.surp.ambushMax===1 && Q.surp.sectorQuiet>=10 && /export function ambushOk\(now\)/.test(sp) && /k==='ambush' && !ambushOk\(now\)/.test(sp) && /if\(sc==='ambush'\)\{ if\(!ambushOk/.test(R('src/campaign/operations.js')) && Q.medal.toastFrom>=2 && /t >= BAL\.medal\.toastFrom/.test(R('src/game/medals.js')) && Q.fair.warnT>=2,
     'BAL 12 / 13: one ambush a battle, none in a sector\'s first seconds; bronze medals wait for the report; an off-screen round may hit only after 2 s of warning'); }
+// BAL 14–15 / 17 a hold in three beats; the general out within seconds of his sector, in an open courtyard out of his gate (C1-023, C1-022)
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { BAL:Q, CONQUEST:CQ }=await import('./config.js'), sc=R('src/campaign/sectors.js'), dr=R('src/campaign/director.js'), sp=R('src/campaign/surprises.js');
+  ok(Q.hold.at.length===3 && Q.hold.at.every((a, i)=>a>0 && a<1 && (!i || a>Q.hold.at[i-1])) && Q.hold.n.length===3 && Q.hold.say.length===3 && /function beatSquads\(n, d\)/.test(sc) && Q.boss.revealT>0 && Q.boss.revealT<=20 && /SECT\.t >= BAL\.boss\.revealT/.test(sc) && /fortBossWake\(f, now\)/.test(sc)
+    && Q.boss.arenaR>=8 && /function arenaOf\(f\)/.test(sc) && /return f\.arena \|\|/.test(R('src/campaign/fort-boss.js')) && /if\(f\.arena\)/.test(R('src/campaign/fort-boss.js')) && /export function sectorMark\(/.test(R('src/campaign/sector-goals.js')),
+    'BAL 14 / 15 / 17: a hold in three beats from in front of him; the general out within ' + Q.boss.revealT + ' s of his sector, through his gate into an open courtyard, marked'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

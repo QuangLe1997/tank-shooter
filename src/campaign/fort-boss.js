@@ -55,9 +55,10 @@ function hurtAt(x, z, R, dmg, now, kind){ const p = S.player; { const dx = p.pos
   blastAllies(x, z, R, dmg); }
 // BOSS 2 the battle's boss looks fetched once its forts stand (the host's and the guest's page alike)
 function preload(){ if(FBOSS.pre || !FORTS.length || !C.on) return; FBOSS.pre = true; fortBossPreload([...new Set(FORTS.map(f => fortBossLookId(fortBossDef(f))))]); }
-function home(f){ return { x:f.x, z:f.z, r:(f.Rin || f.R) - C.move.leash }; }
+function home(f){ return f.arena || { x:f.x, z:f.z, r:(f.Rin || f.R) - C.move.leash }; }   // (BAL 17 f.arena: the open courtyard out of the gate his sector gives him)
 // where he comes out: the keep's door (the capital) or the command post's, toward the gate, stepped clear of the building
 function doorOf(f){ const gx = f.gx - f.x, gz = f.gz - f.z, gl = Math.hypot(gx, gz) || 1, ux = gx / gl, uz = gz / gl; let cx = f.x, cz = f.z, r = 0;
+  if(f.arena){ const p = { x:f.gx + ux * 4, z:f.gz + uz * 4 }; infPushBlocks(p); return { x:p.x, z:p.z, ux, uz }; }   // BAL 17 out through his gate into the open
   if(f.keepR){ cx = f.x + f.keepX; cz = f.z + f.keepZ; r = f.keepR + 2; } else if(f.coreR){ cx = f.x + f.coreX; cz = f.z + f.coreZ; r = f.coreR + 1.5; }
   const p = { x:cx + ux * r, z:cz + uz * r }; infPushBlocks(p); return { x:p.x, z:p.z, ux, uz }; }
 

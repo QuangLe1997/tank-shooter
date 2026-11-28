@@ -18,7 +18,7 @@
 //   built at night (rebuild turns the run's hour for it). The rail carries the sector's objective line (g.sub) beside its clock; the side missions' card stays hidden.
 //   Co-op: host-only for now — a co-op room plays the ordinary battle (sectorBegin stays off).
 import * as THREE from 'three';
-import { BAL, SECTOR, SIDEMISSION, CONTRACTS, OBJECTIVES, SECROUTE, CONQSTORY } from '../../config.js';
+import { BAL, FORTBOSS, SECTOR, SIDEMISSION, CONTRACTS, OBJECTIVES, SECROUTE, CONQSTORY } from '../../config.js';
 import { PERF_BUDGET } from '../../config.js';   // PERF 5 the transit's prime frames
 import { dietIdle } from '../hub.js';   // PERF 9 (render/asset-diet.js)
 import { sectorStoryCard } from '../hub.js';   // SECTOR 6
@@ -27,7 +27,7 @@ import { FORTS, startBoss } from '../hub.js';   // SECTOR 4
 import { enemies, bullets, parts, renderer } from '../hub.js';
 import { sectorDeal, forkOpen, forkTake, consWon, consRefillK, routeLive, routeTick, routeEnd } from '../hub.js';   // SECTOR 4 (campaign/sector-route.js)
 import { sectorGoalHas, sectorGoalStart, sectorGoalTick, sectorGoalClock, sectorGoalClear, sectorClimax, conqSectorLive } from '../hub.js';   // SECTOR 2 (campaign/sector-goals.js · campaign/conquest.js)
-import { spawnClear, addScore } from '../hub.js';   // BAL 6 (game/flow.js) · BAL 7 (game/score.js)
+import { spawnClear, addScore, spawnSquad, inField, inCamView, wetAt, frontYaw, rearArc, mainFort, fortBossWake, sectorMark, radio as sayRadio } from '../hub.js';   // BAL 6 (game/flow.js) · BAL 7 (game/score.js)
 import { ARENA, BIOME, CV, LOGI, OBJ, S, SIDEM, SOLDIER, WAVE, ammoStart, applyBiome, beginStage, bigEventStart, blendScene, buildBlocks, buildLava, buildObjective, buildTrails, buildUnderground, camRestPose, camera,
   cavRespawn, clearField, clearSoldierWar, clearSoldiers, coopActive, compileReady, deploySoldiers, driverBack, gpuHeld, gpuRelease, modeSeed, modelEpoch, parkAtSpawn, radio, rebuildCore, scene,
   sectorRail, sectorTransitBlack, sectorTransitLine, sectorTransitShow, selectGun, gameOver, sfx, edgeNote, modeStageWon, sideMissionStart, squadList, stageWon, updateGunHUD, updateHUD, heightAt } from '../hub.js';
@@ -87,6 +87,15 @@ export function sectorStory(hooks){ if(SECT.on) SECT.story = hooks || null; }
 // nothing of a run is left: its knobs, its rail, its overlay (a new battle · quitting to the menu)
 export function sectorEnd(){ unknob(); SECT.on = false; SECT.spec = null; SECT.state = ''; SECT.tr = null; SECT.g = null; SECT.onWon = null; SECT.seq++; _starting = false; goQuiet(false); sectorGoalClear(); routeEnd(); railFree(); sectorStoryCard(null); runTag(false); sectorRail(null); sectorTransitShow(null); }
 
+// BAL 17 THE GENERAL FIGHTS IN THE OPEN: an open courtyard out of his citadel's gate (BAL.boss.arenaR m, its centre that far and a few metres more out), clear of the field's edge —
+//   his leash (campaign/fort-boss.js home) and his way out (doorOf) go there; null when the field leaves no room (he keeps his walls)
+function arenaOf(f){ if(f.gx == null) return null; const R = BAL.boss.arenaR, ux = f.gx - f.x, uz = f.gz - f.z, L = Math.hypot(ux, uz) || 1;
+  for(const k of [1, 0.75, 0.55]){ const d = R * k + 4, x = f.gx + ux / L * d, z = f.gz + uz / L * d; if(inField(x, z, R * k * 0.6)) return { x, z, r:R * k }; } return null; }
+// BAL 14 a hold's beat: n squads from in front of him or his sides (out of the frame, d m off), knowing where he is
+function beatSquads(n, d){ const p = S.player; if(!p) return 0; let k = 0;
+  for(let i = 0; i < n; i++){ for(let j = 0; j < 12; j++){ const a = frontYaw(), r = d[0] + Math.random() * (d[1] - d[0]), x = p.pos.x + Math.sin(a) * r, z = p.pos.z + Math.cos(a) * r;
+      if(inField(x, z, 4) && !wetAt(x, z, 3) && !inCamView(x, z) && !rearArc(x, z)){ spawnSquad({ x, z, how:'edge', alert:true }); k++; break; } } }
+  return k; }
 // ---- the checkpoint ----
 function snapTake(){ const p = S.player; if(!p) return null;
   return { hp:p.hp, maxHp:p.maxHp, lives:p.lives, gunIdx:p.gunIdx | 0, guns:p.guns.slice(), ammo:p.guns.map(g => g.ammo), res:Object.assign({}, LOGI.res), score:S.score,
@@ -126,6 +135,7 @@ export function updateSectors(dt, now){ _starting = false; if(!SECT.on || !S.pla
   if(g.type === 'hold'){ const M = SIDEM.cur;
     if(!g.start || !M || M.kind !== 'truck'){ if(g.start && !M) g.start = 0; if((g.again -= dt) <= 0){ g.lost0 = SIDEM.stats.lost; if(sideMissionStart('truck', now)){ g.start = 1; note('truck'); } else g.again = 1; if(!g.start) return; } else { g.k = 0; rail(); return; } }
     const M2 = SIDEM.cur; if(!M2) return; g.k = M2.prog || 0; g.sub = M2.sub || '';
+    { const Q = BAL.hold; g.beat = g.beat || 0; if(Q.on && g.beat < Q.at.length && g.k >= Q.at[g.beat]){ beatSquads(Q.n[g.beat], Q.d); sayRadio(Q.say[g.beat]); g.beat++; note('beat', g.beat); } }   // BAL 14 arrive · push · peak
     if(M2.state === 'won') return goalDone(now, null);
     if(M2.state === 'lost'){ if(SIDEM.stats.lost > g.lost0) return sectorFail('XE TIẾP TẾ BỊ ĐỐT'); g.start = 0; g.again = g.Y.again; note('again'); }   // expired / aborted (a life lost): offered again
     if(g.Y.climax && g.k >= g.Y.climax.at) climax(now); rail(); return; }
@@ -134,6 +144,9 @@ export function updateSectors(dt, now){ _starting = false; if(!SECT.on || !S.pla
   if(g.type === 'sabotage'){ if(OBJ && !OBJ.alive) return goalDone(now, null); g.clock -= dt; g.k = OBJ ? 1 - OBJ.b.hp / OBJ.b.maxHp : 0;
     if(g.Y.climax && (g.k >= g.Y.climax.at || g.clock <= g.Y.time * (1 - g.Y.climax.at))) climax(now);
     if(g.clock <= 0) return sectorFail('HẾT GIỜ'); rail(); return; }
+  if(g.type === 'boss' && !g.noFort && !g.shown && SECT.t >= BAL.boss.revealT){ g.shown = true; const f = mainFort();   // BAL 15 the general shows: he comes out of his keep (not a quarter of an hour of his garrison first)
+    if(f && !f.captured){ g.arena = arenaOf(f); if(g.arena) f.arena = g.arena; if(FORTBOSS.on && !f.boss) fortBossWake(f, now); else if(!FORTBOSS.on && !f.duel){ f.duel = true; startBoss(now, f); } note('general', 'revealed'); } }   // (the gates stand open: world/fortress.js Z315)
+  if(g.type === 'boss' && g.arena){ const f = mainFort(), up = f && f.boss && f.boss.st !== 'dead'; sectorMark(1, up ? g.arena.x : null, g.arena.z, g.arena.r, 'flag', '#ff7a5a'); }   // BAL 17 the way to his arena, shown till he falls
   if(g.type === 'boss' && g.noFort && !g.called && SECT.t >= g.Y.wait){ g.called = true; note('general', 'no citadel'); startBoss(now, null); }   // SECTOR 4 (campaign/boss.js: at the far end of the field)
   rail(); }
 // campaign/boss.js bossStageWon: true in a sector run (the boss sector's goal — any other sector has no general to fall)
