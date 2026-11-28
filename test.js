@@ -3178,6 +3178,10 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
 { const fs=await import('node:fs'), ph=fs.readFileSync('src/render/perfhud.js','utf8');
   ok(/function perfMax\(r, last\)/.test(ph) && /PH\.goN=1; PH\.lm=S\.mode;/.test(ph) && /worst=perfMax\(PH\.frm, S\.mode==='playing' \? Math\.max\(1, PH\.goN\) : 0\)/.test(ph) && /push\(PH\.frm, dtMs\); PH\.goN\+\+;/.test(ph),
     'PERF 6: the HUD\'s worst frame in play is the worst since GO (the ring itself is untouched: tools/ts.mjs reads it by index)'); }
+// PERF 7 nothing drawn while a transit's new field is built and its programs link under the black
+{ const fs=await import('node:fs'), { PERF_BUDGET:PB }=await import('./config.js'), sc=fs.readFileSync('src/campaign/sectors.js','utf8'), lp=fs.readFileSync('src/game/loop.js','utf8');
+  ok(typeof PB.transit.noDrawWarm==='boolean' && /export function sectorSkipDraw\(\)/.test(sc) && /tr\.ph === 'warming' \|\| tr\.ph === 'build'/.test(sc) && /if\(sectorSkipDraw\(\)\)\{ perfRenderBegin\(\); perfFrameEnd\(rawMs\); \}/.test(lp),
+    'PERF 7: the loop skips the draw while the transit builds and links the new field (the prime frames draw it before the black lifts)'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

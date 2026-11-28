@@ -198,6 +198,9 @@ export function updateSectorTransit(dt, now){ const tr = SECT.tr; if(!tr){ S.mod
     camera.position.lerpVectors(tr.p0, tr.p1, u); _look.lerpVectors(tr.l0, tr.l1, u); camera.lookAt(_look);
     if(tr.rideT >= tr.ride){ transitEnd(); } } }
 let _look = null;
+// PERF 7 (C1-025) NOTHING DRAWN WHILE THE NEW FIELD COMPILES UNDER THE BLACK: a frame drawn while the warm-up's programs were still linking waited for every
+//   one of them (one 467 ms frame, then 143 ms ones, the transit's card frozen). game/loop.js skips the draw while this is true; the prime frames draw it.
+export function sectorSkipDraw(){ const tr = SECT.tr; return !!tr && S.mode === 'transit' && PERF_BUDGET.transit.noDrawWarm && (tr.ph === 'warming' || tr.ph === 'build'); }
 // PERF 5 (C1-025) THE PATH DRAWN ONCE UNDER THE BLACK: the ride's first second showed 56–111 ms frames as the camera dropped over a field drawn for the first time —
 //   its maps and buffers sent to the GPU, programs finished, light copies swapped in, all in view. Now, compiled and still black, the camera visits PERF_BUDGET.transit
 //   .prime points of the ride (its start, its end where the 3-2-1 begins, and between), one frame each, before the black lifts: what the ride will show is on the GPU.

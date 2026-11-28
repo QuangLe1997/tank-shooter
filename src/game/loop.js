@@ -10,6 +10,7 @@ import { updateSectors, updateSectorTransit } from '../hub.js';   // SECTOR 1 (c
 import { bossCam, updateFeelFX } from '../hub.js';   // FEEL 3–4 (fx/feel-fx.js)
 import { menuCam, transitHaze } from '../hub.js';   // VIS 4 the menu's backdrop camera (game/update.js) · VIS 5 the transit's haze (world/atmosphere.js)
 import { climbUiTick, rideCallTick } from '../hub.js';   // PERF 1 (game/soldier-climb.js · game/ride-call.js)
+import { sectorSkipDraw } from '../hub.js';   // PERF 7 (campaign/sectors.js)
 
 // ----------------------------- MAIN LOOP -----------------------------
 const NOGOV=typeof location!=='undefined' && /[?&]nogov\b/.test(location.search);   // PERF 1 ?nogov holds the governor still (the resolution and the occlusion pass stay as they start): for measuring
@@ -119,7 +120,8 @@ export function loop(nowMs){
   updateTroopBatch(now);   // Z172 every soldier's joints → the batched body-part meshes
   updateInstViews();   // VIEW 1 the field-wide instanced meshes follow the soldier
   updateBarBatch();   // PERF 5 every health bar showing → two instanced meshes
-  perfRenderBegin(); composer.render(); perfFrameEnd(rawMs);
+  if(sectorSkipDraw()){ perfRenderBegin(); perfFrameEnd(rawMs); }   // PERF 7 (campaign/sectors.js): no draw while a transit's new field compiles under the black
+  else { perfRenderBegin(); composer.render(); perfFrameEnd(rawMs); }
   // adaptive quality: drop internal resolution one-way if frames get heavy
   _fpsAcc+=dt; _fpsN++;
   if(_fpsAcc>=1){ const fps=_fpsN/_fpsAcc; _fpsAcc=0; _fpsN=0; const dprFloor=MOBILE?(APPLE?1.25:0.8):1, dprTop=tierDprTop();   // SPLIT 3 the quality level's top (render/quality.js)
