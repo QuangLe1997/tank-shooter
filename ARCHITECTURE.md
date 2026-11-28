@@ -53,7 +53,7 @@ tools/
 test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 ```
 
-### 2.1 Danh mục module (323 module theo thứ tự hub · 34.771 dòng)
+### 2.1 Danh mục module (324 module theo thứ tự hub · 34.967 dòng)
 
 <!-- MODULES:BEGIN (npm run modmap) -->
 | # | Module | Dòng | Nội dung |
@@ -396,7 +396,8 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | | **dev/** — Móc kiểm thử / gỡ lỗi (không ảnh hưởng gameplay) | | |
 | 306 | `src/dev/mixer-desk.js` | 141 | MIX 3 THE MIXER DESK (mixer.html): ten macro faders, the channel strips, live scores / clamps / warnings / t… |
 | 322 | `src/dev/hooks.js` | 72 | Z103 split from game/loop.js: window._* inspection/driving hooks used by Playwright smoke tests and the |
-| 323 | `src/dev/pose-studio.js` | 129 | Z349 THE POSE STUDIO: calibrate and judge how a soldier holds each of his weapons — for every new soldier mo… |
+| 323 | `src/dev/bot.js` | 196 | BOT 1 THE FIGHTING BOT: a player at the keyboard and mouse for calibrating the battle mixer (tools/calib.mjs… |
+| 324 | `src/dev/pose-studio.js` | 129 | Z349 THE POSE STUDIO: calibrate and judge how a soldier holds each of his weapons — for every new soldier mo… |
 <!-- MODULES:END -->
 
 ---
