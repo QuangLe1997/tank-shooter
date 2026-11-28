@@ -53,7 +53,7 @@ tools/
 test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 ```
 
-### 2.1 Danh mục module (334 module theo thứ tự hub · 35.759 dòng)
+### 2.1 Danh mục module (334 module theo thứ tự hub · 35.773 dòng)
 
 <!-- MODULES:BEGIN (npm run modmap) -->
 | # | Module | Dòng | Nội dung |
@@ -61,7 +61,7 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | | **data/** — DỮ LIỆU THUẦN (registry) — không logic, test được bằng node | | |
 | 1 | `src/data/world.js` | 77 | TIME OF DAY: each stage fights at a different hour — morning · harsh noon · golden sunset · moonlit night un… |
 | 2 | `src/data/scene-solids.js` | 28 | Z433 WHAT STOPS A BODY AT AN ARCH, A GATE, A RUIN: each scenery model's footprint at body height (0.3–3 m ab… |
-| 3 | `src/data/text-vi.js` | 47 | Vietnamese player-facing labels: time of day, difficulty, stage tags, biome & shop-category names |
+| 3 | `src/data/text-vi.js` | 48 | Vietnamese player-facing labels: time of day, difficulty, stage tags, biome & shop-category names |
 | 4 | `src/data/player.js` | 8 | PLAYER tank handling constants (accel, speed, dash, turn, base combat range) |
 | 5 | `src/data/guns.js` | 37 | GUNS registry: damage type, damage, fire rate, magazine, reload, projectile per gun |
 | 6 | `src/data/enemies.js` | 33 | ENEMY_DEFS registry: hp, speed, score, scale, weapon and role per enemy type |
@@ -94,7 +94,7 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 29 | `src/render/air-post.js` | 126 | AIR 1 ONE CINEMATIC PASS: the frame's tail (NaN guard, bloom's additive write-back, tone map + sRGB, the gra… |
 | 30 | `src/render/air-aa.js` | 22 | AIR 4 LESS SHIMMER: what sparkled while the camera moves. Specular anti-aliasing in every lit physical mater… |
 | 32 | `src/render/surface.js` | 103 | Z145 REAL SURFACES: what makes a built wall read as stone instead of painted plastic. |
-| 34 | `src/render/lod.js` | 55 | Z107 RENDER BUDGET: trims draw calls where the eye can't tell — soldier shadows only near the tank, tower / … |
+| 34 | `src/render/lod.js` | 56 | Z107 RENDER BUDGET: trims draw calls where the eye can't tell — soldier shadows only near the tank, tower / … |
 | 35 | `src/render/asset-diet.js` | 120 | DIET 1 ONE LOADER FOR EVERY MODEL FILE: meshopt geometry always (EXT_meshopt_compression), and KTX2 maps (KH… |
 | 36 | `src/render/far-lod.js` | 111 | Z328 FAR LOD: a big static model (a fort's towers and gatehouse, our HQ) swaps to a simplified copy of itsel… |
 | 37 | `src/render/shadow-split.js` | 86 | SPLIT 1 (A1) THE SUN'S SHADOW IN TWO PARTS: what stands still (ground, walls, houses, rocks, trees, the fiel… |
@@ -327,7 +327,7 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 207 | `src/loot/gift-crate.js` | 90 | Z369 / Z370 THE RANK'S SUPPLY BUNDLE (soldier mode): what the HQ drops when he climbs a rank — a real airdro… |
 | 208 | `src/loot/loot-real.js` | 46 | LOOT 1 THE LOOT IS REAL: every pick-up wears a downloaded 3D model at its real size (tools/loot-pack.mjs → a… |
 | 239 | `src/loot/powerups.js` | 166 | Z93 DROPS: the loot is a real object — it pops out of the wreck in an arc, bounces, raises dust, then sits u… |
-| 240 | `src/loot/relic.js` | 98 | Z153 THÁNH TÍCH: one ancient relic per stage — a floating crystal over a rune plinth under a pillar of light. |
+| 240 | `src/loot/relic.js` | 101 | Z153 THÁNH TÍCH: one ancient relic per stage — a floating crystal over a rune plinth under a pillar of light. |
 | 241 | `src/loot/upgrades.js` | 53 | THE STAGE WON: pick 1 of 3 of the soldier's perks (game/soldier-rank.js), then the next battlefield is built… |
 | 277 | `src/loot/beacons.js` | 38 | LOOT MARKERS (crates / towers / huts / tanks that hide a power-up) · Z177 no light columns · Z211 the object… |
 | | **input/** — Bàn phím, chuột, cảm ứng | | |
@@ -354,7 +354,7 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 254 | `src/ui/confirm.js` | 13 | XK-UI ONE CONFIRMATION DIALOG (#xkConfirm) for the choices that throw something away: leaving a battle, rest… |
 | 255 | `src/ui/hud-prefs.js` | 12 | Z324 WHAT THE BATTLE HUD SHOWS (CÀI ĐẶT): the dialogue on screen (the radio box, the driver's and the soldie… |
 | 256 | `src/ui/nocenter.js` | 56 | NOCENTER · no words over the aim. In a battle nothing textual is drawn inside the aim zone (NOCENTER.zone, t… |
-| 257 | `src/ui/hudux.js` | 65 | HUDUX the critic's HUD / UI-UX round 1: one small clock (4×/s) that keeps the battle HUD honest, and the rul… |
+| 257 | `src/ui/hudux.js` | 74 | HUDUX the critic's HUD / UI-UX round 1: one small clock (4×/s) that keeps the battle HUD honest, and the rul… |
 | 258 | `src/ui/loadout.js` | 37 | Z103 split from ui/menus.js. KHO SÚNG — Z411 THE SOLDIER'S ARSENAL (from the start screen, CHUẨN BỊ TRẬN or … |
 | 259 | `src/ui/medals-ui.js` | 116 | MEDAL 3 THE CAREER ON SCREEN: the shoulder board a rank wears, the medal discs, a medal's toast and the rank… |
 | 260 | `src/ui/result-fx.js` | 24 | UIX 3 the end-of-battle numbers count up: when a result screen opens (#gameover, #victory, #modeEnd, the bat… |
