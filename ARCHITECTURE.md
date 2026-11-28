@@ -53,7 +53,7 @@ tools/
 test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 ```
 
-### 2.1 Danh mục module (334 module theo thứ tự hub · 35.795 dòng)
+### 2.1 Danh mục module (334 module theo thứ tự hub · 35.814 dòng)
 
 <!-- MODULES:BEGIN (npm run modmap) -->
 | # | Module | Dòng | Nội dung |
@@ -238,7 +238,7 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | | **actors/** — Đơn vị trên sân (địch, lính, drone, Lõi) | | |
 | 101 | `src/actors/core.js` | 176 | CORE (base to defend) |
 | 102 | `src/actors/enemies.js` | 63 | ENEMY units: spawn (infantry, helicopters; elites, loot), pooled meshes and floating HP bars (no-tanks: no a… |
-| 103 | `src/actors/fireteam.js` | 258 | Z89/Z100 friendly FIRETEAM: called in on foot (no-tanks: no APC, no hull to board), free-roam inside the sol… |
+| 103 | `src/actors/fireteam.js` | 261 | Z89/Z100 friendly FIRETEAM: called in on foot (no-tanks: no APC, no hull to board), free-roam inside the sol… |
 | 104 | `src/actors/escalade.js` | 46 | Z145 ESCALADE: while the gate still holds, every third man of an assault carries a scaling ladder on his sho… |
 | 114 | `src/actors/wildlife.js` | 142 | Z143 WILDLIFE (Z208 real anatomy and coats): herds that graze, wander and bolt from tanks — gazelles, zebras… |
 | 116 | `src/actors/crew.js` | 9 | Z245 the G key and the crew button: get on / off the ride (no-tanks: there is no tank crew to seat on the hu… |
@@ -299,7 +299,7 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | | **campaign/** — Chiến dịch, đợt, tướng, pháo kích | | |
 | 123 | `src/campaign/surprises.js` | 67 | Z223 THE FIGHT SURPRISES YOU: every minute or so, out of a weighted, stage-gated hat, something you didn't p… |
 | 124 | `src/campaign/story.js` | 107 | STORY 1–3 THE CAMPAIGN'S STORY AND THE RADIO THAT FOLLOWS THE FIGHT (config.js STORY: the cast, the five sta… |
-| 125 | `src/campaign/director.js` | 178 | DIR 1 THE BATTLE'S DIRECTOR: reinforcements, surprises and the finale are released by the STATE of the fight… |
+| 125 | `src/campaign/director.js` | 181 | DIR 1 THE BATTLE'S DIRECTOR: reinforcements, surprises and the finale are released by the STATE of the fight… |
 | 126 | `src/campaign/entries.js` | 53 | AI 2 NOBODY POPS INTO EXISTENCE. Every enemy soldier raised during a battle comes onto the field by a way th… |
 | 127 | `src/campaign/side-missions.js` | 217 | EVENT 1 SIDE MISSIONS IN THE MIDDLE OF A FIGHT (config.js SIDEMISSION): when the director has room for more,… |
 | 128 | `src/campaign/big-events.js` | 198 | EVENT 2 BIG BATTLEFIELD EVENTS (config.js BIGEVENT): now and then the battle itself does something big — dra… |
@@ -308,7 +308,7 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 159 | `src/campaign/boss.js` | 41 | THE STAGE'S GENERAL (no-tanks: Z96 the super-heavy, its weak points, armour arcs, phases, shield pylons, min… |
 | 202 | `src/campaign/soldier-war.js` | 24 | Z309 A SOLDIER'S WAR: the waves are men — riflemen and RPG teams, squads, troop helicopters dropping more me… |
 | 209 | `src/campaign/general-duel.js` | 84 | Z353 THE GENERAL ON FOOT (no-tanks: the stage's boss fight): the general waits in his citadel and takes the … |
-| 210 | `src/campaign/fort-boss.js` | 280 | BOSS 1 A BOSS IN EVERY FORT (FORTBOSS; his look: actors/fort-boss-look.js). Every fort holds ONE boss, a mod… |
+| 210 | `src/campaign/fort-boss.js` | 287 | BOSS 1 A BOSS IN EVERY FORT (FORTBOSS; his look: actors/fort-boss-look.js). Every fort holds ONE boss, a mod… |
 | 213 | `src/campaign/nemesis.js` | 191 | NEMESIS 1–3 THE ENEMY GENERAL REMEMBERS YOU (config.js NEMESIS; the record, its sanitiser and the rules are … |
 | 238 | `src/campaign/artillery.js` | 31 | ARTILLERY STRIKES: a locked spot (the objective battery's), the shell in flight, the burst, shrapnel hit vs … |
 | 275 | `src/campaign/drone-raid.js` | 135 | DRONE 3 THE ENEMY'S DRONES, AND THE JAMMER. A raid is one draw of the surprises' hat (campaign/surprises.js … |
@@ -316,9 +316,9 @@ test.js               ← test cân bằng + HỢP ĐỒNG DỮ LIỆU (§4.3)
 | 308 | `src/campaign/night-defence.js` | 192 | MODE 1 NIGHT DEFENCE ("THỦ ĐÊM", config NIGHTDEF; the run kit: campaign/mode-run.js; its arithmetic: data/mo… |
 | 309 | `src/campaign/daily.js` | 84 | MODE 2 THE DAILY CHALLENGE ("THỬ THÁCH HÔM NAY", config DAILY; the run kit: campaign/mode-run.js; the genera… |
 | 310 | `src/campaign/conquest.js` | 172 | CONQ 1 CHINH PHẠT 10 THÀNH (config CONQUEST; the road on the battle setup: ui/conquest-map.js). The campaign… |
-| 312 | `src/campaign/sectors.js` | 258 | SECTOR 1 A LONG BATTLE IS A CHAIN OF SECTORS (config.js SECTOR · the rail and the transit's overlay: ui/sect… |
+| 312 | `src/campaign/sectors.js` | 261 | SECTOR 1 A LONG BATTLE IS A CHAIN OF SECTORS (config.js SECTOR · the rail and the transit's overlay: ui/sect… |
 | 313 | `src/campaign/mixer.js` | 83 | MIX 1 composeBattle(spec): ONE BATTLE FROM A BattleSpec (the arithmetic: data/mixer-math.js · the numbers: c… |
-| 315 | `src/campaign/sector-goals.js` | 197 | SECTOR 2 THE FOUR NEW SECTOR MISSIONS (config.js SECTOR.types · the run and its flow: campaign/sectors.js). … |
+| 315 | `src/campaign/sector-goals.js` | 200 | SECTOR 2 THE FOUR NEW SECTOR MISSIONS (config.js SECTOR.types · the run and its flow: campaign/sectors.js). … |
 | 316 | `src/campaign/sector-route.js` | 86 | SECTOR 4 THE ROUTE OF A LONG BATTLE (config.js SECROUTE · the run itself: campaign/sectors.js · the card, th… |
 | 317 | `src/campaign/conq-story.js` | 42 | SECTOR 6 THE CONQUEST'S STORY, FORT BY FORT (config.js CONQSTORY · text only). A fort's battle is a sector r… |
 | 318 | `src/campaign/tyrant.js` | 37 | SECTOR 6 BẠO CHÚA, THE LAST FORT'S GENERAL (config.js CONQSTORY.tyrant). He is the citadel's boss of campaig… |
