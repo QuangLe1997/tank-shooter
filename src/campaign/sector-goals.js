@@ -11,7 +11,7 @@
 //     A truck takes rounds like a wall piece (world/cover.js damageBlock → its hit), burns, and its crew bails out.
 //   Everything here is taken off the field by sectorGoalClear (the next sector's rebuild, a replay, the battle's end).
 import * as THREE from 'three';
-import { SECTOR, TROOPS } from '../../config.js';
+import { BAL, SECTOR, TROOPS } from '../../config.js';
 import { BIOME, COVER_K, COVER_SET, CONTAINER_PAINT, SECT, buildObjective, buildTower, camera, coverGeo, coverVariant, crushables, makeCoverMesh, ncBattle, ncHit, BUMPS } from '../hub.js';   // SECTOR 3
 import { ARENA, FORTS, OBJ, QUIET, S, TRAIL, UGRID, WAVE, animateSoldier, bigExplode, blocks, buildTransport, clampFieldXZ, damageObjective, edgeEntry, edgeNote, enemies, fieldEdgePoint,
   fireball, guardsLeft, heightAt, holoRing, inField, makeSoldierMesh, makeTruck, radio, ringPulse, scene, sfx, soldierKneel, spawnEnemy, spawnGuards, spawnSquad, svgBadgeTex } from '../hub.js';
@@ -162,12 +162,12 @@ function pursuitStart(g, c, now){ const K = g.Y, R = g.R = road(K); g.cleared = 
     t.b = { mesh:m, x:0, z:0, r:K.r, hp:K.hp, maxHp:K.hp, steel:false, loot:false, kind:'convoy', hit:(dmg) => truckHit(g, t, dmg) }; blocks.push(t.b); SGOAL.trucks.push(t); place(t, R); }
   UGRID.blkAt = 0; g.clock = (R.L - g.s) / K.speed; along(R, R.L, _q); g.ex = _q.x; g.ez = _q.z; sectorSquad(g.ex, g.ez); }
 function place(t, R){ along(R, t.s, _q); const gy = heightAt(_q.x, _q.z); t.g.position.set(_q.x, gy, _q.z); t.g.rotation.set(0, _q.a, 0); t.b.x = _q.x; t.b.z = _q.z; }
-function truckHit(g, t, dmg){ if(!t.alive) return; t.b.hp -= dmg; if(t.b.hp > 0) return; t.alive = false; g.burnt++; const i = blocks.indexOf(t.b); if(i >= 0) blocks.splice(i, 1); UGRID.blkAt = 0;
+function truckHit(g, t, dmg){ if(!t.alive) return; t.b.hp -= dmg; if(dmg >= BAL.pursuit.stopDmg) t.stopUntil = performance.now() / 1000 + BAL.pursuit.stopT;   /* BAL 4 a charge or a rocket: its tyres gone for a moment */ if(t.b.hp > 0) return; t.alive = false; g.burnt++; const i = blocks.indexOf(t.b); if(i >= 0) blocks.splice(i, 1); UGRID.blkAt = 0;
   _pt.x = t.b.x; _pt.z = t.b.z; bigExplode(_pt, 0xff8a3a, 2.2); fireball(_pt, 1.4); sfx('bigexplode'); t.g.rotation.z = 0.25; SGOAL.props.push(t.g);
   for(let k = 0; k < g.Y.bail; k++) spawnEnemy('rifle', t.b.x + (Math.random() - 0.5) * 5, t.b.z + (Math.random() - 0.5) * 5);   // the crew bails out
   edgeNote(fill(SAY.pursuitBurn, { n:g.n - g.burnt }), '#ffb24a'); }
 function pursuitTick(g, dt, now){ const K = g.Y, R = g.R; let lead = -1;
-  for(const t of SGOAL.trucks){ if(!t.alive) continue; t.s += K.speed * dt; place(t, R); if(t.s > lead) lead = t.s; }
+  const P = BAL.pursuit; for(const t of SGOAL.trucks){ if(!t.alive) continue; t.s += now < (t.stopUntil || 0) ? 0 : K.speed * (P.limp + (1 - P.limp) * Math.max(0, t.b.hp) / t.b.maxHp) * dt; place(t, R); if(t.s > lead) lead = t.s; }   // BAL 4 a shot-up truck limps
   if(g.burnt >= g.n) return 'won'; if(lead >= R.L - K.exitR) return SAY.pursuitGone;
   if(((g.ut = (g.ut || 0) + dt)) > 0.4){ g.ut = 0; UGRID.blkAt = 0; }   // (the grid of solid things follows the trucks)
   g.clock = (R.L - lead) / K.speed; g.k = Math.max(g.burnt / g.n, lead / R.L * 0.6); g.sub = fill(SAY.pursuitLeft, { n:g.n - g.burnt, of:g.n });

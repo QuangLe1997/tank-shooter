@@ -2443,8 +2443,10 @@ export const BOT = { think:20, sightK:1.5, eye:1.45, losEvery:0.25, losPerTick:2
 //     margin px, color); such a man's rounds are × spreadK wide until he has been on the screen in the last onT s or on the rim for warnT s.
 //     rear: the player faces only forward — bearings more than ang rad off the camera's heading are behind him: no entry there within r m (the director's flank, the waves' edge,
 //     the ambush, the gunship, the paradrop, a hatch turned to his side); a man there anyway is × graceK wide for grace s after he got there, then × k, his coming beeped (beepGap s apart). ?norear: off.
+//   pursuit (BAL 4, campaign/sector-goals.js): a truck runs at speed × (limp + (1 − limp) × its health share); a hit of stopDmg or more (a charge, a rocket) stops it stopT s.
 export const BAL = { fair:{ on:true, every:0.1, r:95, fireT:1.2, maxN:6, size:30, margin:26, color:'#ff3b2b', spreadK:3.2, onT:0.5, warnT:0.8,
-    rear:{ on:!(typeof location !== 'undefined' && /[?&]norear\b/.test(location.search)), ang:2.09, r:60, grace:1.6, graceK:8, k:2.4, beepGap:3 } } };
+    rear:{ on:!(typeof location !== 'undefined' && /[?&]norear\b/.test(location.search)), ang:2.09, r:60, grace:1.6, graceK:8, k:2.4, beepGap:3 } },
+  pursuit:{ limp:0.4, stopDmg:55, stopT:2.5 } };
 
 // Z107 FLATTER BATTLEFIELD — mostly level ground so the tank drives freely: only a handful of big rolling hills, very few old craters,
 //   a whisper of surface noise, and shells dig shallower craters (blastK) — the ground no longer fills up with pits.
@@ -3875,7 +3877,7 @@ export const SECTOR = { on:true, retries:3,
             who:{ civ:'dân thường', pilot:'phi công', minh:'Minh', miner:'thợ mỏ', family:'vợ con Khang' }, climax:{ at:0.5, ev:'squad' } },
           breach:{ vi:'PHÁ CỔNG', time:420, gateK:3, gateMax:4000, fallback:'command', climax:{ at:0.5, ev:'squad' } },
           infiltrate:{ vi:'ĐỘT NHẬP', night:true, time:300, plantR:3, plant:5, holdT:45, lzD:[30, 55], lzR:6, board:3, wait:40, climax:{ at:0.5, ev:'patrol' } },
-          pursuit:{ vi:'TRUY KÍCH', trucks:3, hp:650, r:3, gap:16, speed:7.5, lead:30, minL:180, exitR:8, bail:2, cell:4, climax:{ at:0.5, ev:'squad' } } },
+          pursuit:{ vi:'TRUY KÍCH', trucks:3, hp:520, r:3, gap:16, speed:5.2, lead:30, minL:180, exitR:8, bail:2, cell:4, climax:{ at:0.5, ev:'squad' } } },
   places:{ outskirts:{ vi:'NGOẠI VI', forts:0, capital:false, cover:1.25, towers:0.7 },
            village:{ vi:'LÀNG', forts:1, capital:false, cover:1.0, towers:1.0 },
            bridge:{ vi:'CẦU', forts:1, capital:false, cover:0.85, towers:1.3 },
