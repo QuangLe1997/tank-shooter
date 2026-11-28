@@ -73,7 +73,7 @@ export function fortBossWake(f, now){ if(!C.on || f.boss || f.captured) return n
   burst({ x:door.x, z:door.z }, BIOME.ground, 10, 4, { y:heightAt(door.x, door.z) + 1, life:1.4, size:2.4, smoke:true, grav:-0.2, drag:1.4, up:2, op:0.55 });
   return B; }
 function spawn(B, now){ const f = B.f, D = B.door, def = B.def, K = def.kind, e = spawnEnemy('rifle', D.x, D.z, 'door'); if(!e) return false;
-  const players = CO.live ? 2 : 1, hp = fortBossHp(def.tier, S.stage, diffHpMul(), loopHpMul(), players); if(def.capital) nemMeet(def.id, def.name);
+  const players = CO.live ? 2 : 1, LK = C.looks[fortBossLookId(def)], hp = Math.round(fortBossHp(def.tier, S.stage, diffHpMul(), loopHpMul(), players) * (LK && LK.plates === 'none' ? BAL.bossFight.hpBare : 1)); if(def.capital) nemMeet(def.id, def.name);   // BAL 29 a general without plates to shoot off: more health (Vệ Binh Thép fell in 28 s; the plated Bạo Chúa takes 4.6 min)
   e.general = true; e.commander = f; e.fortOf = f; e.fortBoss = B; e.loot = false; e.elite = false;   // (general: he knows at once — ai/awareness.js)
  
   e.def = { ...e.def, dmg:C.fire.dmg * (K.dmgK || 1), fireCd:C.fire.fireCd, range:C.move.range, keep:C.move.keep, speed:C.move.speed, score:1500 + 1000 * def.tier, burst:[4, 7], scale:(e.def.scale || TROOPS.look.scale) * (C.h[def.tier - 1] / C.baseH) };
@@ -103,8 +103,8 @@ export function fortBossDmg(e, dmg){ const B = e.fortBoss; if(!B || B.st === 'de
     if(B.pl[z] <= 0){ B.pl[z] = 0; plateGone(B, z, now, -bx, -bz); if(pack) out += hp * C.packBoom; } }
   // BAL 24 what took his health, by who (probes: FBOSS.list[i].src) — and a burst over what his armour can shed is turned (squad focus fire, stacked charges, a barrage):
   //   a bucket refilled at maxHp / burst.t per s, at most burst.max of it; the player's own steady fire never empties it. Turned: sparks and "GIÁP CHẶN" — armour, not a bug
-  { const Q = BAL.bossFight.burst, mine = e._mkBy === 1 && now - (e._mkT || 0) < 0.05, src = e._blast ? (mine ? 'pBlast' : 'blast') : mine ? 'player' : 'squad'; B.src = B.src || { player:0, pBlast:0, squad:0, blast:0, turned:0 }; if(src === 'squad') out *= BAL.mates.bossK;   // (his squad pins the general, the player brings him down: their hits × bossK — 73 % of Vệ Binh Thép was theirs)
-    if(Q.on){ const cap = hp * Q.max; B.bucket = Math.min(cap, (B.bucket ?? cap) + (now - (B.bucketAt || now)) * hp / Q.t); B.bucketAt = now; if(out > B.bucket){ B.src.turned += out - B.bucket; out = Math.max(0, B.bucket);
+  { const Q = BAL.bossFight.burst, mine = e._mkBy === 1 && now - (e._mkT || 0) < 0.05, src = e._blast ? (mine ? 'pBlast' : 'blast') : mine ? 'player' : 'squad'; B.src = B.src || { player:0, pBlast:0, squad:0, blast:0, turned:0 }; if(src === 'squad' || src === 'blast') out *= BAL.mates.bossK;   /* BAL 29 others' explosions too (the mortar, the B40, the barrage slipped past the squad's quarter) */   // (his squad pins the general, the player brings him down: their hits × bossK — 73 % of Vệ Binh Thép was theirs)
+    if(Q.on && !mine){ const cap = hp * Q.max;   /* BAL 29 the player's own damage is never turned */ B.bucket = Math.min(cap, (B.bucket ?? cap) + (now - (B.bucketAt || now)) * hp / Q.t); B.bucketAt = now; if(out > B.bucket){ B.src.turned += out - B.bucket; out = Math.max(0, B.bucket);
         if(now > (B.turnAt || 0)){ B.turnAt = now + 0.6; floatText('GIÁP CHẶN', '#c8d8ff', { x:e.pos.x, y:heightAt(e.pos.x, e.pos.z) + 3, z:e.pos.z }, 14, 'fx'); spawnPart(e.pos.x, heightAt(e.pos.x, e.pos.z) + 1.6, e.pos.z, (Math.random() - 0.5) * 6, 3, (Math.random() - 0.5) * 6, { color:0xffe8b0, size:0.3, life:0.25, grav:10, drag:1.5 }); } }
       B.bucket -= out; }
     B.src[src] += out; }

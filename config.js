@@ -2468,18 +2468,19 @@ export const BOT = { think:20, sightK:1.5, eye:1.45, losEvery:0.25, losPerTick:2
 //     the game (stage 1, sector 1) has firstGuards guards, no clock and no crossfire to lose to.
 //   retry (BAL 26, campaign/sectors.js): from the after-th failure of a sector: his health and his men back, the clock × clockK, the enemy's rounds × spreadK wide, the way shown.
 //   boss.arenaD (BAL 28): a gate farther than that: the courtyard is arenaD m ahead of the player toward it (the general comes on ~40 m off).
+//   BAL 29: mates.bossK applies to others' explosions on a general too, the player's damage is never turned; bossFight.hpBare: a general without plates × that health.
 //   hold (BAL 14, campaign/sectors.js): the stuck truck's hold has three beats — at the shares `at` of the hold, n squads come from in front of him / his sides, d m off.
 export const BAL = { fair:{ on:true, every:0.1, r:95, fireT:1.2, maxN:6, size:30, margin:26, color:'#ff3b2b', spreadK:3.2, onT:0.5, warnT:2,
     rear:{ on:!(typeof location !== 'undefined' && /[?&]norear\b/.test(location.search)), ang:2.09, r:60, grace:1.6, graceK:8, k:4, beepGap:3 } },
   pursuit:{ limp:0.4, stopDmg:55, stopT:2.5 },
   spawn:{ on:true, w:3.5, l:12 }, score:{ kill:100, elite:2, heavy:3, boss:10, team:0.25, mineT:3, comboMax:2, goal:1000 },
-  mates:{ dmgK:0.2, share:0.45, lo:0.3, hi:2.2, bossK:0.25 },
+  mates:{ dmgK:0.2, share:0.45, lo:0.3, hi:2.2, bossK:0.2 },
   start:{ first:45, t:15, spreadK:4 }, surp:{ ambushMax:1, sectorQuiet:20 }, medal:{ toastFrom:2 },
   boss:{ revealT:12, arenaR:16, arenaD:35 },
   rescue:{ minT:50, backOut:0.3, innerK:0.2, routeL:50, routeH:1.4, tries:16, callT:90, fortGap:12, firstGuards:3 },
   beats:{ on:true, at:[30, 60, 95], n:[1, 1, 2], lowP:0.2 },
   infil:{ waveT:10, spreadK:2.2 }, retry:{ after:2, clockK:1.3, spreadK:1.4 },
-  bossFight:{ staggerCd:6, burst:{ on:true, t:90, max:0.08 } },
+  bossFight:{ staggerCd:6, burst:{ on:true, t:90, max:0.08 }, hpBare:3.5 },
   hold:{ on:true, at:[0.12, 0.45, 0.78], n:[1, 2, 2], d:[40, 55], say:['SCH: Chúng đã thấy xe — tốp đầu đang tới!', 'SCH: Chúng dồn lên hai hướng — giữ vòng tròn!', 'SCH: Đợt cuối, đông nhất — cầm cự, xe sắp ra!'] } };
 
 // Z107 FLATTER BATTLEFIELD — mostly level ground so the tank drives freely: only a handful of big rolling hills, very few old craters,
@@ -4115,7 +4116,7 @@ export const CONQSTORY = { on:true, lineT:3.6, closeT:6, skip:'Chạm / Enter: t
       beats:{ 'rescue:family':['intel|Chúng biết rồi. Tôi sẽ giữ sóng của chúng thêm một phút nữa.', 'intel|Bức điện cuối: "Cổng đông. Xác nhận." Tôi sẽ không gọi lại.'],
         boss:['foe|Kẻ phản bội đã bị xử. Cổng đông… không có ai.', 'Khang đã cho ta phút ấy. Đừng phí nó.'] },
       close:['Bạo Chúa ngã trên đỉnh thành. Lõi cuối cùng được giữ lại.', 'Bức điện cuối của Khang vẫn còn trên sóng: "Xác nhận."'] } ],
-  tyrant:{ look:{ base:'revenant', hK:1.32, plate:0x4a1010, glow:0xff3a1a, plateK:1.1, name:'BẠO CHÚA', sub:'PHÁO TAY · GIÁP LÕI' }, hpK:1.15, last:0.15, lastGuards:5, lastFire:0.75,
+  tyrant:{ look:{ base:'revenant', hK:1.32, plate:0x4a1010, glow:0xff3a1a, plateK:1.1, name:'BẠO CHÚA', sub:'PHÁO TAY · GIÁP LÕI' }, hpK:1.0, last:0.15, lastGuards:5, lastFire:0.75,
     rain:{ cd:[0, 15, 11, 8], n:[0, 5, 7, 10], R:4.2, dmg:34, warn:1.6, gap:0.22, spread:9, first:6 },
     say:{ meet:'Học trò cũ. Ngươi tới đây chỉ để chết dưới chân ta.', rain:'MƯA THÉP!', rainR:'Mưa thép! Ra khỏi vòng đỏ ngay!', last:'BẠO CHÚA — TRẬN CUỐI', lastR:'Ta vẽ ra Lõi đầu tiên. Ta sẽ là kẻ dập tắt nó!' } },
   ending:{ paraT:5.5, title:'CHIẾN TRANH DỪNG Ở ĐÂY',
