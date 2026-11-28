@@ -1,0 +1,1 @@
+{"v":1,"id":"ask-1","name":"Đêm mưa giải cứu","world":{"land":"CITY","tod":"night","wx":"rain","level":3},"macro":{"difficulty":55,"tempo":78,"density":62,"chaos":55,"length":75,"drama":70,"variety":65},"structure":{"sectors":["outskirts:hold","*","village:rescue:civ","hq:boss"]},"target":{"difficulty":55,"intensity":70,"minutes":20}}

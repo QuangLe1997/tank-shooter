@@ -4105,6 +4105,8 @@ export const MIXER = { v:1,
     unfair:{ aware:80, aim:80, density:70, aimCap:75 }, mateGap:25, ttk:{ budget:2.2 }, effClock:2.2 },
   // SCORING (first-principles, to be calibrated — tank-shooter-audit/mixer-mapping.md §6): neutral = level 3, every param at 50
   score:{ ref:{ stage:3, ttk:0.55, kpm:6, waveMin:1.25, bossMin:2, transitMin:0.4 }, typeMin:{ hold:3, sabotage:4.5, boss:4, rescue:4.5, breach:4, infiltrate:4.5, pursuit:3.5 },
+    // MIX 7 THE AGENT'S GATE (tools/spec.mjs check · mixerCheck): a "good" battle — these floors, the asked difficulty / minutes within tol (spec.target), none of the hard warnings
+    good:{ appeal:65, fairness:70, joy:50, variety:35, diffTol:10, minTol:0.25, intTol:15, hard:['grind', 'unfair', 'unreadable', 'hot', 'flat', 'short', 'long'] },
     diffK:20, intK:24, warn:{ flat:40, grind:{ diff:85, joy:30 }, unreadable:75, unfair:45, short:4, long:30, samey:25, hot:{ int:85, fair:50 } } },
   // the mixer battle's own words (campaign/mixer.js: the briefing, the radio, the result card — never in the aim zone)
   say:{ op:'TRẬN TỰ DỰNG', kick:'TRẬN TỰ DỰNG', won:'THẮNG TRẬN', lost:'THẤT THỦ', again:'ĐÁNH LẠI', desk:'VỀ BÀN TRỘN', why:'Dự báo: độ khó {d} · khoảng {m} phút',

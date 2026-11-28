@@ -1,0 +1,967 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "xungkich/battle-spec.v1.json",
+ "title": "XUNG KÍCH BattleSpec v1",
+ "type": "object",
+ "additionalProperties": false,
+ "required": [
+  "v",
+  "world"
+ ],
+ "properties": {
+  "v": {
+   "const": 1
+  },
+  "id": {
+   "type": "string"
+  },
+  "name": {
+   "type": "string"
+  },
+  "note": {
+   "type": "string"
+  },
+  "seed": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 4294967295,
+   "description": "master seed (none: a hash of the spec in tools, a fresh one in the game)"
+  },
+  "macro": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "difficulty": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "default": 50,
+     "description": "Độ khó"
+    },
+    "density": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "default": 50,
+     "description": "Mật độ"
+    },
+    "tempo": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "default": 50,
+     "description": "Nhịp độ"
+    },
+    "length": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "default": 50,
+     "description": "Chiều dài"
+    },
+    "chaos": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "default": 50,
+     "description": "Hỗn loạn"
+    },
+    "bounty": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "default": 50,
+     "description": "Hào phóng"
+    },
+    "drama": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "default": 50,
+     "description": "Kịch tính"
+    },
+    "variety": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "default": 50,
+     "description": "Đa dạng"
+    },
+    "speed": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "default": 50,
+     "description": "Tốc độ"
+    },
+    "quality": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "default": 50,
+     "description": "Tinh nhuệ"
+    }
+   }
+  },
+  "world": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "land"
+   ],
+   "properties": {
+    "land": {
+     "enum": [
+      "DESERT",
+      "RUINS",
+      "ARCTIC",
+      "FOUNDRY",
+      "CITADEL",
+      "MEADOW",
+      "CITY",
+      "SAVANNA",
+      "VOLCANO",
+      "QUARRY"
+     ]
+    },
+    "tod": {
+     "enum": [
+      "day",
+      "noon",
+      "sunset",
+      "night"
+     ],
+     "default": "noon"
+    },
+    "wx": {
+     "enum": [
+      "clear",
+      "rain",
+      "sand",
+      "snow",
+      "fog"
+     ],
+     "default": "clear"
+    },
+    "space": {
+     "enum": [
+      "small",
+      "mid",
+      "wide"
+     ],
+     "default": "wide"
+    },
+    "level": {
+     "type": "integer",
+     "minimum": 1,
+     "maximum": 30,
+     "default": 3
+    },
+    "diff": {
+     "enum": [
+      "recruit",
+      "soldier",
+      "veteran"
+     ],
+     "default": "soldier",
+     "description": "scoring hint: the player's difficulty setting"
+    }
+   }
+  },
+  "structure": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "sectors": {
+     "oneOf": [
+      {
+       "type": "null"
+      },
+      {
+       "type": "array",
+       "items": {
+        "type": "string",
+        "pattern": "^(\\*|(outskirts|village|bridge|gate|yard|hq:)?(hold|sabotage|boss|rescue|breach|infiltrate|pursuit)(:[a-z]+)?)$"
+       },
+       "minItems": 1,
+       "maxItems": 6
+      }
+     ],
+     "description": "place:type[:obj] tokens, * = dealt from the land's deck by the seed; none = one stage (auto chain from length ≥ 65)"
+    }
+   }
+  },
+  "enemy": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "count": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {\"density\":1} via curve [0.5,1,1.7] · turns BALANCE.wave.base, BALANCE.wave.perWave, INFANTRY.squad.base, INFANTRY.squad.perWave"
+    },
+    "cap": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {\"density\":1} via curve [0.75,1,1.3] · turns INFANTRY.squad.maxOnField, INFANTRY.squad.maxMobile, BALANCE.wave.capBase, FORT.liveInf, FORT.liveInfMobile"
+    },
+    "cadence": {
+     "type": "number",
+     "minimum": 0.5,
+     "maximum": 1.8,
+     "description": "multiplier · default from macros {\"tempo\":0.6,\"density\":0.4} via curve [0.7,1,1.4] · turns BALANCE.wave.cadence"
+    },
+    "air": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {\"chaos\":0.5,\"difficulty\":0.3} via curve [0.4,1,1.8] · turns CAV.soldier.war.w.heli, PARA.every.*, PARA.everyMobile.*"
+    },
+    "rpg": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {\"difficulty\":0.6} via curve [0.5,1,1.8] · turns CAV.soldier.war.w.rpg"
+    },
+    "waveEvents": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 0.7,
+     "description": "absolute value · default from macros {\"chaos\":0.7,\"variety\":0.3} via curve [0.1,0.34,0.6] · turns BALANCE.wave.eventChance"
+    },
+    "waves": {
+     "type": "integer",
+     "minimum": 2,
+     "maximum": 9,
+     "description": "absolute value · default from macros {\"length\":1} via curve [3,5,8] · turns WAVE.perStage"
+    },
+    "hp": {
+     "type": "number",
+     "minimum": 0.5,
+     "maximum": 2.2,
+     "description": "multiplier · default from macros {\"difficulty\":1} via curve [0.65,1,1.6] · turns BALANCE.difficulty.{d}.hp"
+    },
+    "dmg": {
+     "type": "number",
+     "minimum": 0.4,
+     "maximum": 2.2,
+     "description": "multiplier · default from macros {\"difficulty\":1} via curve [0.55,1,1.6] · turns BALANCE.difficulty.{d}.dmg"
+    },
+    "haste": {
+     "type": "number",
+     "minimum": 0.8,
+     "maximum": 1.6,
+     "description": "multiplier · default from macros {\"speed\":1} via curve [0.9,1,1.15] · turns BALANCE.aggro.rateBase, BALANCE.aggro.rateDrop, AWARE.fire.gap, AWARE.fire.rest.*, AWARE.react.*, ENEMY_DEFS.rifle.speed, ENEMY_DEFS.rpg.speed, ENEMY_DEFS.rpg.fireCd, ROSTER.gunship.gunCd, ROSTER.gunship.burstCd, FIELDCRAFT.nade.cdE.*, DIRECTOR.tactics.marksman.cd, FORTBOSS.fire.fireCd, TROOPER.general.fireCd"
+    }
+   }
+  },
+  "sim": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "timeScale": {
+     "type": "number",
+     "minimum": 0.8,
+     "maximum": 1.4,
+     "description": "multiplier · default from macros {\"speed\":1} via curve [0.9,1,1.25] · turns MIXER.live.simK"
+    }
+   }
+  },
+  "clock": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "events": {
+     "type": "number",
+     "minimum": 0.6,
+     "maximum": 1.8,
+     "description": "multiplier · default from macros {\"speed\":1} via curve [0.85,1,1.3] · turns REAL.surprise.first.*, REAL.surprise.every.*, BIGEVENT.gap, SIDEMISSION.first.*, SIDEMISSION.every.*, DIRECTOR.build.min, DIRECTOR.lull.t.*, BALANCE.wave.cadence, PARA.every.*, PARA.everyMobile.*, DRONEWAR.enemy.gap, FORTBOSS.charge.cd.*, TROOPER.general.fan.cd, TROOPER.general.nade.cd, SECTOR.types.hold.hold"
+    }
+   }
+  },
+  "foe": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "iq": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {\"quality\":1,\"difficulty\":0.3} via curve [0.6,1,1.5] · turns TACTICS.iq.base, FIELDCRAFT.nade.cdE.*, SQUAD_AI.flankMax, DIRECTOR.tactics.pin.share"
+    },
+    "aware": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {\"quality\":1,\"difficulty\":0.3} via curve [0.6,1,1.45] · turns AWARE.see.r, AWARE.hear.shot, AWARE.react.*, AWARE.spot.t.*, AWARE.shout.r"
+    },
+    "aim": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {\"quality\":1,\"difficulty\":0.3} via curve [0.6,1,1.5] · turns AWARE.fire.tight, AWARE.fire.wide, AWARE.zero.gain, BALANCE.aggro.spreadBase"
+    },
+    "tough": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {\"quality\":1,\"difficulty\":0.3} via curve [0.6,1,1.6] · turns ENEMY_DEFS.rifle.hp, ENEMY_DEFS.rpg.hp"
+    },
+    "move": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {\"quality\":1} via curve [0.8,1,1.25] · turns ENEMY_DEFS.rifle.speed, ENEMY_DEFS.rpg.speed, SQUAD_AI.boundT.*"
+    },
+    "aggro": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {\"quality\":0.5,\"tempo\":0.3} via curve [0.7,1,1.4] · turns ENEMY_DEFS.rifle.keep, ENEMY_DEFS.rpg.keep, SQUAD_AI.assaultR, AWARE.idle.max"
+    },
+    "morale": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {\"quality\":1} via curve [0.6,1,1.5] · turns SQUAD_AI.breakMorale, DIRECTOR.tactics.surrender.chance.*"
+    }
+   }
+  },
+  "elite": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "iq": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {\"quality\":1,\"difficulty\":0.4} via curve [0.5,1,1.8] · turns DIRECTOR.tactics.marksman.chance, DIRECTOR.tactics.mg.chance"
+    },
+    "aware": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {\"quality\":1} via curve [0.6,1,1.45] · turns MIXER.live.eliteAware"
+    },
+    "aim": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {\"quality\":1,\"difficulty\":0.4} via curve [0.6,1,1.5] · turns DIRECTOR.tactics.marksman.err, DIRECTOR.tactics.marksman.tel, DIRECTOR.tactics.mg.spreadK"
+    },
+    "tough": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {\"quality\":1,\"difficulty\":0.4} via curve [0.6,1,1.6] · turns DIRECTOR.tactics.mg.hpK, FORTBOSS.guards.hpK, TROOPER.general.guardHpK"
+    },
+    "move": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {\"quality\":1} via curve [0.8,1,1.25] · turns MIXER.live.eliteMove"
+    },
+    "aggro": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {\"quality\":0.5,\"tempo\":0.3} via curve [0.7,1,1.4] · turns MIXER.live.eliteAggro"
+    },
+    "morale": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {\"quality\":1} via curve [0.6,1,1.5] · turns MIXER.live.eliteMorale"
+    }
+   }
+  },
+  "boss": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "iq": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {\"quality\":0.6,\"difficulty\":0.5} via curve [0.6,1,1.5] · turns TROOPER.general.callAt"
+    },
+    "aware": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {\"quality\":0.6} via curve [0.7,1,1.4] · turns FORTBOSS.move.range, TROOPER.general.range"
+    },
+    "aim": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {\"quality\":0.6,\"difficulty\":0.5} via curve [0.6,1,1.5] · turns TROOPER.general.fan.arc, TROOPER.general.nade.scatter"
+    },
+    "tough": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {\"quality\":0.6,\"difficulty\":0.5,\"length\":0.4} via curve [0.6,1,1.6] · turns FORTBOSS.hp.*, TROOPER.general.hpK"
+    },
+    "move": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {\"quality\":0.6} via curve [0.8,1,1.25] · turns FORTBOSS.move.speed, TROOPER.general.speed"
+    },
+    "aggro": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {\"quality\":0.6,\"tempo\":0.3} via curve [0.7,1,1.4] · turns FORTBOSS.charge.cd.*, TROOPER.general.fan.cd, TROOPER.general.nade.cd"
+    },
+    "morale": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {\"quality\":0.6} via curve [0.7,1,1.4] · turns TROOPER.general.rageAt"
+    },
+    "guards": {
+     "type": "integer",
+     "minimum": -2,
+     "maximum": 3,
+     "description": "absolute value · default from macros {\"difficulty\":0.5,\"density\":0.3} via curve [-1,0,2] · turns FORTBOSS.guards.n.*"
+    }
+   }
+  },
+  "mate": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "iq": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {\"difficulty\":-0.2} via curve [0.6,1,1.5] · turns SQUAD.think, FIELDCRAFT.nade.cdA.*, SQUAD.cover.search"
+    },
+    "aware": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {\"difficulty\":-0.2} via curve [0.7,1,1.3] · turns TROOPS.fireteam.detect"
+    },
+    "aim": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {\"difficulty\":-0.2} via curve [0.7,1,1.4] · turns TROOPS.fireteam.dmg"
+    },
+    "tough": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {\"difficulty\":-0.2} via curve [0.6,1,1.6] · turns TROOPS.fireteam.hp"
+    },
+    "move": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {} via curve [0.85,1,1.2] · turns TROOPS.fireteam.speed, TROOPS.fireteam.sprint"
+    },
+    "aggro": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {} via curve [0.7,1,1.4] · turns SQUAD.ai.advK"
+    },
+    "morale": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100,
+     "description": "dial 0–100 (50 = today) · default from macros {\"difficulty\":-0.2} via curve [0.6,1,1.5] · turns SQUAD.ai.fallK, SQUAD.ai.woundedHp"
+    }
+   }
+  },
+  "pace": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "ease": {
+     "type": "number",
+     "minimum": 0.8,
+     "maximum": 1.25,
+     "description": "multiplier · default from macros {\"difficulty\":0.5,\"tempo\":0.5} via curve [0.88,1,1.14] · turns DIRECTOR.diff.{d}.ease"
+    },
+    "lull": {
+     "type": "number",
+     "minimum": 0.5,
+     "maximum": 2,
+     "description": "multiplier · default from macros {\"tempo\":-1} via curve [0.6,1,1.5] · turns DIRECTOR.lull.t.*, DIRECTOR.lull.extra"
+    },
+    "build": {
+     "type": "number",
+     "minimum": 0.6,
+     "maximum": 1.8,
+     "description": "multiplier · default from macros {\"tempo\":-1} via curve [0.75,1,1.4] · turns DIRECTOR.build.min, DIRECTOR.build.first, DIRECTOR.build.escalate"
+    },
+    "peak": {
+     "type": "number",
+     "minimum": 0.6,
+     "maximum": 1.3,
+     "description": "multiplier · default from macros {\"tempo\":1} via curve [0.8,1,1.25] · turns DIRECTOR.peak.max"
+    }
+   }
+  },
+  "events": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "surprise": {
+     "type": "number",
+     "minimum": 0.3,
+     "maximum": 2.2,
+     "description": "multiplier · default from macros {\"chaos\":1} via curve [0.5,1,1.8] · turns REAL.surprise.first.*, REAL.surprise.every.*"
+    },
+    "big": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 4,
+     "description": "absolute value · default from macros {\"chaos\":1} via curve [1,3,4] · turns BIGEVENT.perStage"
+    },
+    "side": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 3,
+     "description": "absolute value · default from macros {\"variety\":0.5,\"chaos\":0.5} via curve [1,2,3] · turns SIDEMISSION.perStage"
+    },
+    "drones": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 2,
+     "description": "multiplier · default from macros {\"chaos\":1} via curve [0.5,1,1.6] · turns DRONEWAR.enemy.gap, DRONEWAR.enemy.w"
+    },
+    "cards": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 2,
+     "description": "multiplier · default from macros {\"chaos\":1} via curve [0.3,1,1.6] · turns SECROUTE.events.chance.*"
+    }
+   }
+  },
+  "loot": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "drop": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 3,
+     "description": "multiplier · default from macros {\"bounty\":1} via curve [0.4,1,2.2] · turns MIXER.live.infDrop, BALANCE.drop.enemy, BALANCE.drop.brick"
+    },
+    "relief": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1.6,
+     "description": "multiplier · default from macros {\"bounty\":1} via curve [0.6,1,1.4] · turns DIRECTOR.lull.drop.hp, DIRECTOR.lull.drop.cd, SECTOR.refill.hp"
+    },
+    "ammo": {
+     "type": "number",
+     "minimum": 0.5,
+     "maximum": 1.8,
+     "description": "multiplier · default from macros {\"bounty\":0.6,\"difficulty\":-0.4} via curve [0.7,1,1.4] · turns LOGISTICS.start.*"
+    }
+   }
+  },
+  "player": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "hp": {
+     "type": "integer",
+     "minimum": 80,
+     "maximum": 300,
+     "description": "absolute value · default from macros {\"difficulty\":-1} via curve [115,150,200] · turns CAV.soldier.hp"
+    },
+    "lives": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 9,
+     "description": "absolute value · default from macros {\"difficulty\":-1} via curve [2,5,7] · set on the soldier"
+    },
+    "squad": {
+     "type": "integer",
+     "minimum": 2,
+     "maximum": 6,
+     "description": "absolute value · default from macros {\"difficulty\":-0.5} via curve [4,6,6] · turns TROOPER.squad.max"
+    }
+   }
+  },
+  "story": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "radio": {
+     "type": "number",
+     "minimum": 0.4,
+     "maximum": 1.8,
+     "description": "multiplier · default from macros {\"drama\":1} via curve [0.6,1,1.5] · turns STORY.gap, DIRECTOR.radio.gap"
+    },
+    "finale": {
+     "type": "number",
+     "minimum": 0.5,
+     "maximum": 1.6,
+     "description": "multiplier · default from macros {\"drama\":1} via curve [0.7,1,1.4] · turns DIRECTOR.finale.lull"
+    }
+   }
+  },
+  "advanced": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "SIDEMISSION.perStage": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 3
+    },
+    "BIGEVENT.perStage": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 4
+    },
+    "BIGEVENT.gap": {
+     "type": "number",
+     "minimum": 30,
+     "maximum": 120
+    },
+    "BALANCE.wave.eventChance": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 0.7
+    },
+    "BALANCE.wave.hordeMul": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "REAL.surprise.w.ambush": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 3
+    },
+    "REAL.surprise.w.heli": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 2
+    },
+    "DIRECTOR.thr.high": {
+     "type": "number",
+     "minimum": 0.45,
+     "maximum": 0.75
+    },
+    "DIRECTOR.lull.drop.hp": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 0.6
+    },
+    "INFANTRY.squad.size.0": {
+     "type": "number",
+     "minimum": 3,
+     "maximum": 6
+    },
+    "INFANTRY.squad.size.1": {
+     "type": "number",
+     "minimum": 4,
+     "maximum": 8
+    },
+    "FORT.sally.0": {
+     "type": "number",
+     "minimum": 6,
+     "maximum": 24
+    },
+    "FORT.sally.1": {
+     "type": "number",
+     "minimum": 8,
+     "maximum": 30
+    },
+    "PARA.troops.0": {
+     "type": "number",
+     "minimum": 3,
+     "maximum": 8
+    },
+    "PARA.troops.1": {
+     "type": "number",
+     "minimum": 4,
+     "maximum": 10
+    },
+    "DRONEWAR.enemy.from": {
+     "type": "number",
+     "minimum": 1,
+     "maximum": 5
+    },
+    "CORE_DEF.hp": {
+     "type": "number",
+     "minimum": 200,
+     "maximum": 800
+    },
+    "SECTOR.types.hold.hold": {
+     "type": "number",
+     "minimum": 40,
+     "maximum": 120
+    },
+    "SECTOR.types.sabotage.time": {
+     "type": "number",
+     "minimum": 150,
+     "maximum": 420
+    },
+    "SECTOR.retries": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 5
+    }
+   }
+  },
+  "threat": {
+   "type": "object",
+   "properties": {
+    "id": {
+     "type": "string"
+    },
+    "knobs": {
+     "type": "array",
+     "items": {
+      "type": "array",
+      "prefixItems": [
+       {
+        "type": "string"
+       },
+       {
+        "enum": [
+         "*",
+         "+",
+         "="
+        ]
+       },
+       {
+        "type": "number"
+       }
+      ],
+      "minItems": 3,
+      "maxItems": 3
+     },
+     "description": "relative knobs on roots REAL, DIRECTOR, FORT, FORTBOSS, BALANCE, DRONEWAR, LOGISTICS, SIDEMISSION; '$d' = the difficulty; each leaf within MIXER.bounds or 0–6× today"
+    }
+   }
+  },
+  "general": {
+   "type": "object",
+   "properties": {
+    "name": {
+     "type": "string"
+    },
+    "look": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "hunt": {
+     "type": "boolean"
+    },
+    "at": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 600
+    }
+   }
+  },
+  "storyline": {
+   "type": "string"
+  },
+  "conq": {
+   "type": "object",
+   "properties": {
+    "i": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 9
+    }
+   }
+  },
+  "seedScheme": {
+   "enum": [
+    "mixer",
+    "daily"
+   ]
+  },
+  "loadout": {
+   "type": "object",
+   "properties": {
+    "guns": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     },
+     "maxItems": 5
+    },
+    "strict": {
+     "type": "boolean"
+    },
+    "spellsOff": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "lootOff": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    }
+   }
+  },
+  "forced": {
+   "type": "object",
+   "properties": {
+    "kind": {
+     "enum": [
+      "bombing",
+      "crash",
+      "fire",
+      "jam"
+     ]
+    },
+    "every": {
+     "type": "number",
+     "minimum": 30,
+     "maximum": 600
+    },
+    "retry": {
+     "type": "number",
+     "minimum": 1,
+     "maximum": 60
+    }
+   }
+  },
+  "daily": {
+   "type": "object",
+   "properties": {
+    "day": {
+     "type": "integer",
+     "minimum": 0
+    }
+   }
+  },
+  "night": {
+   "type": "object",
+   "description": "night defence block (NIGHTDEF where silent; bounds MIXER.night)",
+   "properties": {
+    "night": {
+     "type": "integer",
+     "minimum": 1,
+     "maximum": 9,
+     "default": 1
+    },
+    "base": {
+     "type": "integer",
+     "minimum": 1,
+     "maximum": 30
+    },
+    "len": {
+     "type": "number",
+     "minimum": 240,
+     "maximum": 900
+    },
+    "warn": {
+     "type": "number",
+     "minimum": 3,
+     "maximum": 15
+    },
+    "at": {
+     "type": "array",
+     "items": {
+      "type": "number",
+      "minimum": 0
+     },
+     "maxItems": 10
+    },
+    "assaults": {
+     "type": "array",
+     "maxItems": 10,
+     "items": {
+      "type": "object",
+      "properties": {
+       "n": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 30
+       },
+       "rpg": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 0.6
+       },
+       "squads": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 5
+       },
+       "heli": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 2
+       },
+       "tier": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 3
+       },
+       "extra": {
+        "type": "array"
+       }
+      }
+     }
+    },
+    "flare": {
+     "type": "object",
+     "properties": {
+      "on": {
+       "type": "boolean"
+      }
+     }
+    },
+    "sap": {
+     "type": "object"
+    },
+    "gun": {
+     "type": "object"
+    },
+    "mortar": {
+     "type": "object"
+    }
+   }
+  },
+  "coop": {
+   "type": "boolean"
+  },
+  "target": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "difficulty": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100
+    },
+    "intensity": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100
+    },
+    "minutes": {
+     "type": "number",
+     "minimum": 2,
+     "maximum": 60
+    }
+   },
+   "description": "what was asked — tools/spec.mjs check holds the scores to it"
+  }
+ }
+}

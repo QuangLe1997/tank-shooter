@@ -43,7 +43,7 @@ export function mixToken(t){ if(t === '*') return { tok:'*', type:'*' }; let o =
 function deckTypes(land){ const d = SECROUTE.decks[land] || SECROUTE.decks._ || []; return d.map(x => mixToken(x)).filter(Boolean).map(c => c.type); }
 
 const GROUPS = () => [...new Set(Object.keys(MIXER.params).map(id => id.split('.')[0]))];
-const TOP = ['v', 'id', 'name', 'seed', 'macro', 'world', 'structure', 'advanced', 'coop', 'note', 'threat', 'general', 'storyline', 'conq', 'seedScheme', 'loadout', 'forced', 'daily', 'night'];   // MIX 5 seedScheme · loadout · forced · daily · night   // MIX 3 threat · general · storyline · conq: a scenario's own fields (the conquest's forts)
+const TOP = ['v', 'id', 'name', 'seed', 'macro', 'world', 'structure', 'advanced', 'coop', 'note', 'threat', 'general', 'storyline', 'conq', 'seedScheme', 'loadout', 'forced', 'daily', 'night', 'target'];   // MIX 7 target: what was asked for (the agent's gate compares the scores with it)   // MIX 5 seedScheme · loadout · forced · daily · night   // MIX 3 threat · general · storyline · conq: a scenario's own fields (the conquest's forts)
 
 // ================= NORMALIZE =================
 export function normalizeSpec(spec, opts){ opts = opts || {}; const M = opts.M || MIXER, roots = opts.roots || mixRoots(), device = opts.device === 'phone' ? 'phone' : 'desktop', B = M.budget[device];
@@ -154,6 +154,8 @@ export function normalizeSpec(spec, opts){ opts = opts || {}; const M = opts.M |
     else { const e = clamp(Number(F.every) || Q.every[0], Q.every[0], Q.every[1]), r = clamp(Number(F.retry) || Q.retry[0], Q.retry[0], Q.retry[1]); if(e !== +F.every) C('forced.every', F.every, e, Q.every.join('–') + ' s'); s.forced = { kind:F.kind, every:e, retry:r }; } }
   if(s.daily != null){ const d = Math.floor(Number(s.daily.day)); if(!(d >= 0)){ C('daily.day', s.daily.day, null, 'không phải ngày'); delete s.daily; } else s.daily = { day:d }; }
   if(s.night != null) s.night = nightBlock(s.night, M, C);
+  if(s.target != null){ const t = s.target && typeof s.target === 'object' ? s.target : {}, o = {}; for(const [k, lo, hi] of [['difficulty', 0, 100], ['intensity', 0, 100], ['minutes', 2, 60]]) if(t[k] != null){ const n = Number(t[k]); if(Number.isFinite(n)) o[k] = clamp(n, lo, hi); else C('target.' + k, t[k], null, 'không phải số'); }
+    if(Object.keys(o).length) s.target = o; else delete s.target; }
   if(s.conq){ const i = Math.round(Number(s.conq.i)); if(!(i >= 0 && i < CFG.CONQUEST.forts.length)){ C('conq.i', s.conq.i, null, 'không có thành này'); delete s.conq; } else s.conq = { i }; }
   if(s.storyline != null && typeof s.storyline !== 'string'){ W('storyline', 'Bỏ trường hỏng: storyline'); delete s.storyline; }
   // advanced keys (allow-listed, '=' and clamped)
@@ -302,3 +304,36 @@ export function dailySpec(day, D){ D = D || CFG.DAILY; const ch = dailyChallenge
 export function nightSpec(o){ const lands = MIXER.lands, lv = Math.max(1, o.lvl | 0), q = o.nd || {};
   return { v:1, id:'night-' + (q.night || 1), name:'Thủ đêm · đêm ' + (q.night || 1), world:{ land:lands[o.biome] || lands[0], tod:'night', wx:o.wx || 'clear', space:o.space || 'wide', level:lv },
     night:{ night:q.night || 1, base:q.base || lv, ...(q.pass ? { pass:q.pass } : {}) } }; }
+
+// ================= MIX 7 THE AGENT'S GATE =================
+// a spec (or a normalizeSpec result) → { ok, fails:[{ id, vi }], score } — ok: appeal / fairness / joy / variety at their floors (MIXER.score.good), the asked
+//   difficulty / intensity / minutes (spec.target) within their tolerance, none of the hard warnings. tools/spec.mjs check exits 1 on !ok.
+export function mixerCheck(spec, opts){ const n = spec && spec.plan && spec.clamped ? spec : normalizeSpec(spec, opts), sc = scoreBattle(n), G = MIXER.score.good, f = [], t = n.spec.target || {}, F = (id, vi) => f.push({ id, vi });
+  for(const k of ['appeal', 'fairness', 'joy', 'variety']) if(sc[k] < G[k]) F(k, k + ' ' + sc[k] + ' < ' + G[k]);
+  if(t.difficulty != null && Math.abs(sc.difficulty - t.difficulty) > G.diffTol) F('difficulty', 'difficulty ' + sc.difficulty + ' ≠ ' + t.difficulty + ' ± ' + G.diffTol);
+  if(t.intensity != null && Math.abs(sc.intensity - t.intensity) > G.intTol) F('intensity', 'intensity ' + sc.intensity + ' ≠ ' + t.intensity + ' ± ' + G.intTol);
+  if(t.minutes != null && Math.abs(sc.minutes - t.minutes) > t.minutes * G.minTol) F('minutes', 'minutes ' + sc.minutes + ' ≠ ' + t.minutes + ' ± ' + Math.round(G.minTol * 100) + '%');
+  for(const w of sc.warnings) if(G.hard.includes(w.id)) F('warn:' + w.id, w.vi);
+  return { ok:!f.length, fails:f, score:sc, n }; }
+// the BattleSpec JSON Schema (draft 2020-12), from MIXER itself — tools/specs/battle-spec.schema.json is this, written by `node tools/spec.mjs schema`
+export function mixSchema(){ const M = MIXER, groups = {}, num = (lo, hi, d, int) => ({ type:int ? 'integer' : 'number', minimum:lo, maximum:hi, ...(d != null ? { default:d } : {}) });
+  for(const id in M.params){ const d = M.params[id], [g, k] = [id.split('.')[0], id.slice(id.indexOf('.') + 1)]; (groups[g] = groups[g] || { type:'object', additionalProperties:false, properties:{} });
+    groups[g].properties[k] = { ...(d.in === 'dial' ? num(0, 100, null, false) : num(d.lo, d.hi, null, !!d.int)), description:(d.in === 'dial' ? 'dial 0–100 (50 = today)' : d.in === 'k' ? 'multiplier' : 'absolute value') + ' · default from macros ' + JSON.stringify(d.drive) + ' via curve ' + JSON.stringify(d.curve) + (d.knobs.length ? ' · turns ' + d.knobs.map(q => q[0]).join(', ') : ' · set on the soldier') }; }
+  const tok = { type:'string', pattern:'^(\\*|(' + Object.keys(CFG.SECTOR.places).join('|') + ':)?(' + Object.keys(CFG.SECTOR.types).join('|') + ')(:[a-z]+)?)$' };
+  const knob = { type:'array', prefixItems:[{ type:'string' }, { enum:['*', '+', '='] }, { type:'number' }], minItems:3, maxItems:3 };
+  return { $schema:'https://json-schema.org/draft/2020-12/schema', $id:'xungkich/battle-spec.v1.json', title:'XUNG KÍCH BattleSpec v1', type:'object', additionalProperties:false, required:['v', 'world'],
+    properties:{ v:{ const:1 }, id:{ type:'string' }, name:{ type:'string' }, note:{ type:'string' }, seed:{ type:'integer', minimum:0, maximum:M.seedMax, description:'master seed (none: a hash of the spec in tools, a fresh one in the game)' },
+      macro:{ type:'object', additionalProperties:false, properties:Object.fromEntries(Object.keys(M.macros).map(k => [k, { ...num(0, 100, 50), description:M.macros[k] }])) },
+      world:{ type:'object', additionalProperties:false, required:['land'], properties:{ land:{ enum:M.lands }, tod:{ enum:M.tods, default:M.defaults.tod }, wx:{ enum:M.wxs, default:M.defaults.wx }, space:{ enum:M.spaces, default:M.defaults.space },
+        level:num(M.levels[0], M.levels[1], M.defaults.level, true), diff:{ enum:M.diffs, default:M.defaults.diff, description:'scoring hint: the player\'s difficulty setting' } } },
+      structure:{ type:'object', additionalProperties:false, properties:{ sectors:{ oneOf:[{ type:'null' }, { type:'array', items:tok, minItems:1, maxItems:M.sectors.max }], description:'place:type[:obj] tokens, * = dealt from the land\'s deck by the seed; none = one stage (auto chain from length ≥ ' + M.auto.sectorsFrom + ')' } } },
+      ...groups,
+      advanced:{ type:'object', additionalProperties:false, properties:Object.fromEntries(Object.entries(M.advanced).map(([k, b]) => [k, num(b[0], b[1])])) },
+      threat:{ type:'object', properties:{ id:{ type:'string' }, knobs:{ type:'array', items:knob, description:'relative knobs on roots ' + M.threat.roots.join(', ') + "; '$d' = the difficulty; each leaf within MIXER.bounds or " + M.threat.k.join('–') + '× today' } } },
+      general:{ type:'object', properties:{ name:{ type:'string' }, look:{ type:['string', 'null'] }, hunt:{ type:'boolean' }, at:num(0, 600) } }, storyline:{ type:'string' }, conq:{ type:'object', properties:{ i:num(0, 9, null, true) } },
+      seedScheme:{ enum:['mixer', 'daily'] }, loadout:{ type:'object', properties:{ guns:{ type:'array', items:{ type:'string' }, maxItems:5 }, strict:{ type:'boolean' }, spellsOff:{ type:'array', items:{ type:'string' } }, lootOff:{ type:'array', items:{ type:'string' } } } },
+      forced:{ type:'object', properties:{ kind:{ enum:M.forced.kinds }, every:num(M.forced.every[0], M.forced.every[1]), retry:num(M.forced.retry[0], M.forced.retry[1]) } }, daily:{ type:'object', properties:{ day:{ type:'integer', minimum:0 } } },
+      night:{ type:'object', description:'night defence block (NIGHTDEF where silent; bounds MIXER.night)', properties:{ night:num(1, 9, 1, true), base:num(M.night.base[0], M.night.base[1], null, true), len:num(M.night.len[0], M.night.len[1]), warn:num(M.night.warn[0], M.night.warn[1]),
+        at:{ type:'array', items:{ type:'number', minimum:0 }, maxItems:M.night.assaults[1] }, assaults:{ type:'array', maxItems:M.night.assaults[1], items:{ type:'object', properties:{ n:num(...M.night.assault.n, null, true), rpg:num(...M.night.assault.rpg), squads:num(...M.night.assault.squads, null, true), heli:num(...M.night.assault.heli, null, true), tier:num(...M.night.assault.tier, null, true), extra:{ type:'array' } } } },
+        flare:{ type:'object', properties:{ on:{ type:'boolean' } } }, sap:{ type:'object' }, gun:{ type:'object' }, mortar:{ type:'object' } } },
+      coop:{ type:'boolean' }, target:{ type:'object', additionalProperties:false, properties:{ difficulty:num(0, 100), intensity:num(0, 100), minutes:num(2, 60) }, description:'what was asked — tools/spec.mjs check holds the scores to it' } } }; }

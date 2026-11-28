@@ -3047,6 +3047,14 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   { const lo=X.normalizeSpec({ v:1, world:{ land:'DESERT' }, elite:{ aware:0, morale:0 }, mate:{ iq:0, morale:0 } }).plan.knobs, hi=X.normalizeSpec({ v:1, world:{ land:'DESERT' }, elite:{ aware:100, morale:100 }, mate:{ iq:100, morale:100 } }).plan.knobs, v=(K, p)=>(K.find(q=>q.path===p) || {}).to;
     ok(v(lo,'MIXER.live.eliteAware')<1 && v(hi,'MIXER.live.eliteAware')>1 && v(lo,'SQUAD.think')>C.SQUAD.think && v(hi,'SQUAD.think')<C.SQUAD.think && v(lo,'SQUAD.ai.fallK')<C.SQUAD.ai.fallK && v(hi,'SQUAD.ai.woundedHp')<C.SQUAD.ai.woundedHp, 'the quality dials move the hooks the right way (sharper elites see further, steadier mates fall back later)'); } }
 
+// MIX 7 the AI agent's contract: the BattleSpec JSON Schema (from MIXER), the gate (mixerCheck / tools/spec.mjs check), five specs written from short descriptions that pass it
+{ const fs=await import('node:fs'), cp=await import('node:child_process'), R=f=>fs.readFileSync(f,'utf8'), C=await import('./config.js'), X=await import('./src/data/mixer-math.js'), G=C.MIXER.score.good;
+  ok(R('tools/specs/battle-spec.schema.json').trim()===JSON.stringify(X.mixSchema(), null, 1) && X.mixSchema().required.join()==='v,world' && Object.keys(X.mixSchema().properties).includes('target'), 'tools/specs/battle-spec.schema.json is MIXER\'s schema as it stands (regenerate: node tools/spec.mjs schema)');
+  ok(G.appeal>=60 && G.fairness>=60 && G.joy>=45 && G.diffTol>0 && G.minTol>0 && G.hard.includes('grind') && G.hard.includes('unfair'), 'MIXER.score.good: the floors and tolerances of a good battle');
+  ok([1, 2, 3, 4, 5].every(i=>X.mixerCheck(JSON.parse(R('tools/specs/ask-'+i+'.json'))).ok) && X.mixerCheck(JSON.parse(R('tools/specs/standard.json'))).ok && !X.mixerCheck(JSON.parse(R('tools/specs/broken.json'))).ok, 'the gate: the five worked specs and the standard pass, the broken one does not');
+  { const t=X.mixerCheck({ v:1, world:{ land:'DESERT' }, target:{ difficulty:90, minutes:30 } }); ok(!t.ok && t.fails.some(f=>f.id==='difficulty') && t.fails.some(f=>f.id==='minutes'), 'the gate holds the scores to what was asked (spec.target)'); }
+  { const run=a=>{ try{ cp.execFileSync(process.execPath, ['tools/spec.mjs', 'check', ...a], { stdio:'pipe' }); return 0; }catch(e){ return e.status; } }; ok(run(['ask-1'])===0 && run(['broken'])===1, 'node tools/spec.mjs check exits 0 on a good battle, 1 otherwise'); } }
+
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
