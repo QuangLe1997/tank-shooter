@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { AWARE, BALANCE, DEATH_POP, ENV, EQUIP, FIELDCRAFT, FOEANIM, INFANTRY, REAL, SQUAD, LOGISTICS } from '../../config.js';
 import { ambushHold, ambushScatter, bladeSever, goreK, BIOME, ENVMOD, FT, MOBILE, S, UGRID, _cv, aiIQ, animateSoldier, atCover, burst, cMod, canThrow, clampField, clearGore, combatDive, coverSpot, dazePose, dazed, decalBlood, diffDmgMul, diffScale, dropSoldierGun, endFall, enemies, enemyPool, fortExitDir, fortWallCross, heightAt, inSmoke, infPushBlocks, kitAttach, launchEnemyMissile, loadGLTF, loopDmgMul, losBlocked, makeSoldierMesh, makeSquad, nadeFlee, nadeTarget, peekMove, poseSoldier, reviveSoldierMesh, rifleFX, ringPulse, scene, sfx, smokeSpreadK, soldierReloading, spawnBullet, spawnEnemy, spawnPart, squadMove, throwNade, tracerNext, unitsNear, wantPeek, wrapAngle, asShipped, nearShape, riverWay, wadeAt, gunFlash, awareTick, PL, hatchEntry, riseStep, dirFireK, giveUpStep, markAim, markStep, nemFleeStep, gunSound } from '../hub.js';
 import { swimFoeK } from '../hub.js'; // SWIM 1 (game/swim.js)
+import { offScreenK } from '../hub.js'; // BAL 3 (ui/threat-edge.js)
 import { foeAct, foeLean } from '../hub.js'; // FOE 1 (actors/foe-anim.js)
 import { muzzleFX } from '../hub.js'; // GUNFX 1 (fx/gunfx.js)
 
@@ -68,7 +69,7 @@ export function infThreat(e){ const p=S.player; return e.alert>=2 && e.sees && M
 function fireRound(e, T, d, now, dmgMul, ds){ const def=e.def, F=AWARE.fire, A=BALANCE.aggro, you=T.you; e.mesh.userData.muzzle.getWorldPosition(_cv);
   let tx=T.pos.x, tz=T.pos.z; if(you){ const ft=Math.min(0.7, d/def.bspeed)*F.lead; tx+=T.vel.x*ft; tz+=T.vel.z*ft; }
   const w=(you ? (F.wide+(F.tight-F.wide)*(e.zero||0))*(F.stageK[0]+(F.stageK[1]-F.stageK[0])*ds) : T.supp ? F.wide*F.blindK : Math.max(0.05, A.spreadBase*(1-ds*A.spreadDrop)*1.25))
-    *(d>def.range?F.farK:1)*(you && PL.v>AWARE.zero.runV?F.runK:1)*(ENVMOD.night?ENV.night.enemySpread:1)*smokeSpread(now)*smokeSpreadK(e.pos.x, e.pos.z, T.pos.x, T.pos.z)*(1+1.6*(e.supp||0))*(def.spreadK||1);   // Z173 suppressed men shoot wild · Z220 and through smoke
+    *(d>def.range?F.farK:1)*(you && PL.v>AWARE.zero.runV?F.runK:1)*(ENVMOD.night?ENV.night.enemySpread:1)*smokeSpread(now)*smokeSpreadK(e.pos.x, e.pos.z, T.pos.x, T.pos.z)*(1+1.6*(e.supp||0))*(def.spreadK||1)*(you?offScreenK(e, now):1);   // BAL 3 off the screen and unannounced: wide · Z173 suppressed men shoot wild · Z220 and through smoke
   const a=Math.atan2(tx-_cv.x, tz-_cv.z)+(Math.random()-0.5)*w, tr=tracerNext(e.mesh, def.mg?'mg':'rifle');   // GUNFX 1 an MG man's belt: 1 in 4 (it was every round)
   spawnBullet(_cv.x,_cv.z,a,{owner:'e', inf:true, dmg:def.dmg*dmgMul*(you?F.dmgK:1), speed:def.bspeed, color:tr?REAL.tracer.enemy:0xffd06a, r:tr?0.3:0.22, trailK:tr?2.4:1, tr:tr?1:0, life:1.6, maxDist:def.range*(you||T.supp?F.reachK:1)+3, noArc:true, y:_cv.y, dropTo:1.3}); rifleFX(_cv.x, _cv.y, _cv.z, a, false);   // Z223 green tracer every Nth round · brass + smoke
   muzzleFX(_cv.x,_cv.y,_cv.z, a, def.mg?'mg':'rifle', 'e', 0, e.mesh.userData.muzzle);   // GUNFX 1 the flash of his gun's class, its light, the hot barrel (Z419 shaped along the bore)

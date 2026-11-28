@@ -1337,7 +1337,7 @@ export const DRONEWAR = { on:!(typeof location !== 'undefined' && /[?&]nodrones\
 export const DIRECTOR = { on:true, sample:0.25, nearR:48, airR:70, fireT:1.6, logMax:80,
   tau:{ hurt:5, smooth:1.2 }, w:{ hurt:0.34, hp:0.22, near:0.14, fire:0.22, stall:0.08, calm:0.12 }, ref:{ hurt:0.3, hp:[0.15, 0.6], near:6, fire:4, calm:10, stall:[10, 30] },
   thr:{ low:0.18, high:0.58, off:0.8, hold:1.2, crit:0.3, critT:4 },
-  build:{ min:14, first:18, escalate:8, cd:11, midK:0.4, maxActs:3, meter:0.36, holdMax:18, group:3, reserve:0.4, reserveMax:28, flankN:[3, 5], spread:0.7, maxD:95, hatchD:[40, 55], cueT:1.5, sides:{ left:1, right:1, rear:1.2 }, surCd:45, intelR:150, intelN:10, intelMin:3, intelErr:5, sallyR:160 },
+  build:{ min:14, first:18, escalate:8, cd:11, midK:0.4, maxActs:3, meter:0.36, holdMax:18, group:3, reserve:0.4, reserveMax:28, flankN:[3, 5], spread:0.7, maxD:95, hatchD:[40, 55], cueT:1.5, sides:{ left:1, right:1, rear:0 }, surCd:45, intelR:150, intelN:10, intelMin:3, intelErr:5, sallyR:160 },
   peak:{ min:5, max:16 }, lull:{ t:[10, 20], extra:6, ground:[3, 5], contactR:42, fireK:1.8, surprise:8, drop:{ hp:0.45, cd:90 } }, finale:{ lull:12, ground:[2.5, 4], quiet:25 }, radio:{ gap:14, peakP:0.5, buildP:0.4 },
   say:{ lull:['SCH: Tạm lắng — nạp đạn đi!', 'SCH: Chúng chững lại rồi — thay băng đạn, băng bó nhanh!', 'SCH: Địch nằm im — tranh thủ nạp đạn, đổi vị trí!'],
     drop:['SCH: Anh bị thương nặng — đã thả dù cứu thương và đạn ngay trước mặt!'], peak:['SCH: Chúng dồn lên rồi — bám công sự, giữ vững!', 'SCH: Hoả lực địch rất mạnh — đừng đứng một chỗ!'],
@@ -2438,6 +2438,13 @@ export const BOT = { think:20, sightK:1.5, eye:1.45, losEvery:0.25, losPerTick:2
   skill:{ novice:{ react:[500, 800], err:7, track:3, burst:[3, 7], pause:[0.45, 0.8], expose:4.5, hide:1, retreat:0.12, retreatFire:0.2, keep:0.4, strafe:false, cover:0.15, nade:0.2, skill:0.1, loot:0.55, reload:0.2, cam:0.25, med:0.3 },
     average:{ react:[260, 400], err:3, track:7, burst:[4, 8], pause:[0.3, 0.55], expose:2.2, hide:1.3, retreat:0.32, retreatFire:0.45, keep:0.6, strafe:false, cover:0.6, nade:0.5, skill:0.25, loot:0.8, reload:0.5, cam:0.7, med:0.5 },
     good:{ react:[150, 220], err:1.2, track:12, burst:[5, 10], pause:[0.2, 0.35], expose:1.5, hide:1.4, retreat:0.45, retreatFire:0.7, keep:0.72, strafe:true, cover:0.95, nade:0.75, skill:0.45, loot:1, reload:0.8, cam:0.95, med:0.6 } } };
+// BAL THE BATTLE'S BALANCE AFTER THE BOT'S REVIEW (tools/calib.mjs measured it; DOCS "BAL") —
+//   fair (BAL 3, ui/threat-edge.js): every `every` s the alerted men within r m who aim at him (or fired within fireT s) and are off the screen get a chevron on its rim (maxN, size px,
+//     margin px, color); such a man's rounds are × spreadK wide until he has been on the screen in the last onT s or on the rim for warnT s.
+//     rear: the player faces only forward — bearings more than ang rad off the camera's heading are behind him: no entry there within r m (the director's flank, the waves' edge,
+//     the ambush, the gunship, the paradrop, a hatch turned to his side); a man there anyway is × graceK wide for grace s after he got there, then × k, his coming beeped (beepGap s apart). ?norear: off.
+export const BAL = { fair:{ on:true, every:0.1, r:95, fireT:1.2, maxN:6, size:30, margin:26, color:'#ff3b2b', spreadK:3.2, onT:0.5, warnT:0.8,
+    rear:{ on:!(typeof location !== 'undefined' && /[?&]norear\b/.test(location.search)), ang:2.09, r:60, grace:1.6, graceK:8, k:2.4, beepGap:3 } } };
 
 // Z107 FLATTER BATTLEFIELD — mostly level ground so the tank drives freely: only a handful of big rolling hills, very few old craters,
 //   a whisper of surface noise, and shells dig shallower craters (blastK) — the ground no longer fills up with pits.

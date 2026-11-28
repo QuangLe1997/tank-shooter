@@ -11,6 +11,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { HELI, ROSTER, TROOPS } from '../../config.js';
 import { BIOME, HELI_DOWN, MOBILE, S, _canvasTex, _mergeColored, blocksNear, bullets, cMod, clampField, clampFieldXZ, decal, decalScorch, deformCrater, diffDmgMul, diffScale, dirtGeyser, enemies, enemyGroundStrike, floatText, heightAt, insigniaMat, loopDmgMul, makeSoldierMesh, numMat, radio, scene, sfx, spawnBullet, spawnEnemy, spawnPart, updateGunship, wrapAngle, realAir, playerSeen } from '../hub.js';
 import { muzzleFX } from '../hub.js';   // GUNFX 1 (fx/gunfx.js)
+import { offScreenK } from '../hub.js';   // BAL 3 (ui/threat-edge.js)
 
 const _r=(a,b)=>a+Math.random()*(b-a), _ra=a=>_r(a[0],a[1]);
 function _tx(geo,x,y,z,rx,ry,rz,sx,sy,sz){ geo.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x,y,z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx||0,ry||0,rz||0)), new THREE.Vector3(sx||1,sy||1,sz||1))); return geo; }
@@ -184,7 +185,7 @@ function troopRun(e, dt, now, edt){ const T=HELI.troop, h=e.hs, p=S.player, ud=e
   else if(h.st==='loiter'){ h.orb=(h.orb??Math.atan2(e.pos.z-p.pos.z, e.pos.x-p.pos.x))+dt*0.25; fly(e, p.pos.x+Math.cos(h.orb)*T.loiterR, p.pos.z+Math.sin(h.orb)*T.loiterR, T.cruise*0.8, T.alt, dt, edt, T.turn, false); doorGun(e, now); }
   if(ud.lad){ ud.lad.visible=h.lad>0.01; ud.lad.scale.y=Math.max(0.001, h.lad*h.lad*(3-2*h.lad)); ud.lad.rotation.set(Math.sin(now*1.7+e.ph)*0.05*h.lad-(e.pitch||0), 0, Math.cos(now*1.3)*0.04*h.lad-(e.bank||0)); } }   // the ladder hangs plumb and sways
 function doorGun(e, now){ const T=HELI.troop, p=S.player; if(S.mode!=='playing' || now<(e.fireAt||0)) return; const d=Math.hypot(p.pos.x-e.pos.x, p.pos.z-e.pos.z); if(d>T.gunR || !playerSeen(e.pos.x, e.pos.y, e.pos.z)) return;   // Z377 from up there a man lying flat is lost in the ground
-  e.mesh.userData.door.getWorldPosition(_w); const a=Math.atan2(p.pos.x-_w.x, p.pos.z-_w.z)+(Math.random()-0.5)*0.26;
+  e.mesh.userData.door.getWorldPosition(_w); const a=Math.atan2(p.pos.x-_w.x, p.pos.z-_w.z)+(Math.random()-0.5)*0.26*offScreenK(e, now);   // BAL 3 off the screen and unannounced: wide
   spawnBullet(_w.x, _w.z, a, { owner:'e', inf:true, dmg:T.gunDmg*dmul(), speed:70, color:0xffc070, r:0.22, life:1.4, maxDist:T.gunR+4, noArc:true, y:_w.y+0.6, dropTo:1.3 });
   muzzleFX(_w.x, _w.y+0.6, _w.z, a, 'mg', 'e'); sfx('enemyShoot', e.pos);   // GUNFX 1
   e.burstLeft=(e.burstLeft||T.burst)-1; if(e.burstLeft<=0){ e.burstLeft=T.burst; e.fireAt=now+T.burstCd; } else e.fireAt=now+T.gunCd; }

@@ -8,6 +8,7 @@
 import * as THREE from 'three';
 import { REAL } from '../../config.js';
 import { FT, S, UNDER, aoeDamage, bigExplode, clampFieldXZ, decalCrater, enemies, enemyGroundStrike, floatText, heightAt, radio, ringPulse, sfx, showBanner, spawnEnemy, spawnPart, spawnSquad, tunnelSquad, dirSurpriseOk, droneRaid, droneRaidOk, droneRaidW } from '../hub.js';
+import { viewYaw, frontYaw } from '../hub.js';   // BAL 3 (ui/threat-edge.js: never from behind him)
 
 const rnd = a => a[0]+Math.random()*(a[1]-a[0]);
 export const SURP = { next:0, shells:[], last:null, count:0 };
@@ -18,12 +19,13 @@ const _v=new THREE.Vector3();
 
 // ---- the events ----
 function ambush(now){ const p=S.player;
-  if(tunnelSquad(Math.atan2(-Math.sin(p.facing||0), -Math.cos(p.facing||0)))){ tell('⚠ PHỤC KÍCH TỪ ĐỊA ĐẠO SAU LƯNG!', '#ffb070', 'SCH: Địch chui lên từ hầm ngầm phía sau — quay lại!'); return true; }   // Z225 if they have tunnels, they come up out of one
-  const C=REAL.surprise.ambush, back=Math.atan2(-(p.vel.x||Math.sin(p.aimSmoothed||0)), -(p.vel.z||Math.cos(p.aimSmoothed||0))), n=Math.round(rnd(C.squads));   // they rise behind you
+  const sd=Math.random()<0.5?1:-1, side=viewYaw()+sd*Math.PI*0.5, L=sd>0?'TRÁI':'PHẢI';   // BAL 3 the ambush comes from a side he can turn to, named — never from behind him (he faces only forward)
+  if(tunnelSquad(side)){ tell('⚠ PHỤC KÍCH TỪ ĐỊA ĐẠO BÊN SƯỜN '+L+'!', '#ffb070', 'SCH: Địch chui lên từ hầm ngầm bên sườn '+L.toLowerCase()+' — xoay lại!'); return true; }   // Z225 if they have tunnels, they come up out of one
+  const C=REAL.surprise.ambush, back=side, n=Math.round(rnd(C.squads));   // (BAL 3 was: behind him)
   for(let k=0;k<n;k++){ const a=back+(k-(n-1)/2)*0.9+(Math.random()-0.5)*0.5, r=rnd(C.r), [x,z]=clampFieldXZ(p.pos.x+Math.sin(a)*r, p.pos.z+Math.cos(a)*r, 4);
     setTimeout(()=>{ if(S.mode==='playing') spawnSquad({ x, z, hatch:true, alert:true }); }, 300+k*600); }   // AI 2 a spider hole opens behind him and they climb out one at a time (they used to stand up out of nothing)
-  tell('⚠ PHỤC KÍCH SAU LƯNG!', '#ffb070', 'SCH: Nắp hầm bật mở phía sau — địch đang chui lên, quay lại!'); return true; }
-function heli(now){ const p=S.player, a=Math.random()*6.283, [x,z]=clampFieldXZ(p.pos.x+Math.cos(a)*55, p.pos.z+Math.sin(a)*55, 4); spawnEnemy('gunship', x, z);
+  tell('⚠ PHỤC KÍCH BÊN SƯỜN '+L+'!', '#ffb070', 'SCH: Nắp hầm bật mở bên sườn '+L.toLowerCase()+' — địch đang chui lên, xoay lại!'); return true; }
+function heli(now){ const p=S.player, a=frontYaw(1.4), [x,z]=clampFieldXZ(p.pos.x+Math.sin(a)*55, p.pos.z+Math.cos(a)*55, 4); spawnEnemy('gunship', x, z);   // BAL 3 it comes in where he can see it
   tell('⚠ TRỰC THĂNG ĐỊCH XUẤT HIỆN', '#ff7ae0', 'SCH: Có trực thăng địch vào trận địa — bộ binh chuẩn bị bắn phòng không!'); return true; }
 function friendly(now){ const p=S.player, C=REAL.surprise.friendly; let best=null, bn=0;   // the thickest knot of enemies, well clear of our tank and our men
   for(const e of enemies){ if(e.def.air) continue; if(Math.hypot(e.pos.x-p.pos.x, e.pos.z-p.pos.z)<16) continue; let n=0; for(const o of enemies) if(!o.def.air && (o.pos.x-e.pos.x)**2+(o.pos.z-e.pos.z)**2<100) n++; if(n>bn){ bn=n; best=e; } }

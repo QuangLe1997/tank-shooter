@@ -8,6 +8,7 @@
 import * as THREE from 'three';
 import { ENTRY } from '../../config.js';
 import { DICE, ENEMY_DEFS, S, TUN, UNDER, camera, fieldDepth, fieldEdgePoint, hatchNear, hatchOpen, heightAt, inField, makeSquad, poseSoldier, spawnEnemy, spiderHole, wetAt } from '../hub.js';
+import { rearArc, sideOf } from '../hub.js';   // BAL 3 (ui/threat-edge.js: never from behind him)
 
 const _p = new THREE.Vector3(), PEND = [];
 // is the point inside the camera's frame (a man's chest height; pad = a margin round the frame, in half-screens)
@@ -17,13 +18,13 @@ export function entrySeen(x, z){ const p = S.player; if(!p) return false; const 
 // (a) a point on the field's edge out of the frame and at least minD from him — near bearing a0 (field angle, as fieldEdgePoint) if it can be; null: nowhere
 export function edgeEntry(a0, spread){ const p = S.player, E = ENTRY; let best = null, bs = 1e9;
   for(let k = 0; k < E.tries; k++){ const a = a0 == null ? Math.random() * 6.283 : a0 + (Math.random() - 0.5) * (spread || 1.3) * (1 + k * 0.4), q = fieldEdgePoint(a, E.edgeIn), x = q[0], z = q[1], d = p ? Math.hypot(x - p.pos.x, z - p.pos.z) : 60;
-    if(d < E.minD || wetAt(x, z, 3) || inCamView(x, z)) continue; const s = d > 85 ? d - 85 : 0; if(s < bs){ bs = s; best = { x, z, how:'edge' }; } if(s === 0) break; }
+    if(d < E.minD || wetAt(x, z, 3) || inCamView(x, z) || rearArc(x, z)) continue;   /* BAL 3 never behind him within BAL.fair.rear.r m */ const s = d > 85 ? d - 85 : 0; if(s < bs){ bs = s; best = { x, z, how:'edge' }; } if(s === 0) break; }
   return best; }
 // the field's edge on a bearing from the player (a = atan2(x, z)): the last point still inside, or null when the line leaves at once
 export function edgeFrom(px, pz, a){ let ok = null; for(let d = 30; d < 420; d += 6){ const x = px + Math.sin(a) * d, z = pz + Math.cos(a) * d; if(fieldDepth(x, z) < 4) break; if(inField(x, z, 4)) ok = { x, z, d, how:'edge' }; } return ok; }
 // (b) these men climb out of a hatch at (x, z), one every gap s: types = ['rifle', 'rpg', …]; opt.alert: they come up knowing where he is; opt.squad === false:
 //   each on his own; opt.escort; opt.each(e): called on each man as he comes up. Returns the hatch.
-export function hatchEntry(x, z, types, opt){ const now = performance.now() / 1000, E = ENTRY, H = hatchNear(x, z, E.reuse) || spiderHole(x, z, now);
+export function hatchEntry(x, z, types, opt){ { const q = sideOf(x, z); if(q){ x = q[0]; z = q[1]; } }   /* BAL 3 a hole behind him opens at his side instead (ui/threat-edge.js) */ const now = performance.now() / 1000, E = ENTRY, H = hatchNear(x, z, E.reuse) || spiderHole(x, z, now);
   const g = { left:types.length, out:[], squad:!opt || opt.squad !== false, alert:!!(opt && opt.alert), escort:(opt && opt.escort) || null, each:(opt && opt.each) || null, tg:TUN.g };
   for(let i = 0; i < types.length; i++) PEND.push({ at:now + E.open + i * E.gap, type:types[i], H, g, i });
   hatchOpen(H, true, E.open + types.length * E.gap + E.rise); return H; }

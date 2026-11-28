@@ -13,6 +13,7 @@
 //   and direction reactive. DIRECTOR.on / ?nodirector: off, it still reads the fight (DIR.P, the peaks it would have called) and decides nothing.
 import * as THREE from 'three';
 import { DIRECTOR, ENTRY } from '../../config.js';
+import { rearArc } from '../hub.js';   // BAL 3 (ui/threat-edge.js: never behind him)
 import { CO, coopDirAt, coopDirCountK, FORTS, PROFILE, S, SURP, WAVE, saveProfile, surpriseNow, camera, duelOn, edgeFrom, enemies, entrySeen, inCamView, inField, isFoot, radio, reliefDrop, storyCue, tacticsReset, tacticsTick, wetAt } from '../hub.js';
 
 const D = DIRECTOR, R2 = a => a[0] + Math.random() * (a[1] - a[0]), sat = x => x < 0 ? 0 : x > 1 ? 1 : x, _v = new THREE.Vector3();
@@ -149,8 +150,8 @@ export function dirFinale(now){ if(!DIR.on) return true;
 //   that is out of the frame and neither too near nor too far; else up out of a hatch on that bearing, out of the frame
 export function dirEntry(t){ const F = DIR.flank, p = CO.ai ? coopDirAt(S.player) : S.player, B = D.build;   // (COOP 9 the flank goes at the player who is alone)
   if(!DIR.on || !F || F.n <= 0 || !p || t !== 'squad' && !isFoot(t)) return null; let q = null;
-  for(let k = 0; k < 4 && !q; k++){ const e = edgeFrom(p.pos.x, p.pos.z, F.a + (Math.random() - 0.5) * B.spread * (1 + k * 0.4)); if(e && e.d >= ENTRY.minD && e.d <= B.maxD && !wetAt(e.x, e.z, 3) && !entrySeen(e.x, e.z)) q = e; }
-  for(let k = 0; k < 5 && !q; k++){ const a = F.a + (Math.random() - 0.5) * B.spread, d = R2(B.hatchD), x = p.pos.x + Math.sin(a) * d, z = p.pos.z + Math.cos(a) * d; if(inField(x, z, 4) && !wetAt(x, z, 3) && !inCamView(x, z)) q = { x, z, hatch:true }; }
+  for(let k = 0; k < 4 && !q; k++){ const e = edgeFrom(p.pos.x, p.pos.z, F.a + (Math.random() - 0.5) * B.spread * (1 + k * 0.4)); if(e && e.d >= ENTRY.minD && e.d <= B.maxD && !wetAt(e.x, e.z, 3) && !entrySeen(e.x, e.z) && !rearArc(e.x, e.z)) q = e; }
+  for(let k = 0; k < 5 && !q; k++){ const a = F.a + (Math.random() - 0.5) * B.spread, d = R2(B.hatchD), x = p.pos.x + Math.sin(a) * d, z = p.pos.z + Math.cos(a) * d; if(inField(x, z, 4) && !wetAt(x, z, 3) && !inCamView(x, z) && !rearArc(x, z)) q = { x, z, hatch:true }; }
   if(!q) return null; F.n--; DIR.stats.fromFlank++; q.dir = F.side; q.alert = true;   // (they come knowing where he is: a flank that wanders off looking for him is no flank)
   if(!F.said){ F.said = true; DIR.cue = { at:performance.now() / 1000 + B.cueT, side:F.side }; }   // the radio names the side a moment after the first of them is on the field
   return q; }

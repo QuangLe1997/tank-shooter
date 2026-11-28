@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { BALANCE, ENTRY, INFANTRY } from '../../config.js';
 import { soldierWaveQueue, duelOn, ENEMY_DEFS, FORTS, MOBILE, OBJ, PROFILE, S, UNDER, addScore, applyScriptedWave, cMod, enemies, fieldEdgePoint, fortLaunch, fortSpawnPoint, inField, objMod, opFor, radio, ringPulse, scriptedEvent, sfx, showBanner, spawnEnemy, spawnSquad, startBoss, supplyDmg, tip, trimWaveForSupply, underCut, updateHUD, wetAt, edgeEntry, edgeFrom, entrySeen, entriesPending, hatchEntry, isFoot, dirEntry, dirFinale, dirSpawned, dirWaveGo, dirWaveHold, storyCue } from '../hub.js';
+import { rearArc } from '../hub.js';   // BAL 3 (ui/threat-edge.js: never from behind him)
 
 // ----------------------------- WAVES -----------------------------
 export const WAVE = { spawnQueue:[], spawnAt:0, betweenUntil:0, active:false, perStage:BALANCE.wave.perStageCount, event:null, eventBanner:null, eventColor:'#9bb0c0', treasure:false, eliteForce:0, assault:false };
@@ -66,7 +67,7 @@ export function edgeSpawnPoint(){
   const fp=WAVE.fixedEdge==null ? fortSpawnPoint() : null; if(fp){ fp.how='gate'; return fp; }   // Z107 most reinforcements march out of a fortress gate
   const e=(WAVE.fixedEdge!=null)?WAVE.fixedEdge:Math.floor(Math.random()*4), c=[-Math.PI/2, Math.PI/2, Math.PI, 0][e], p=S.player;
   let best=null, bs=1e9; for(let k=0;k<ENTRY.tries;k++){ const [x,z]=fieldEdgePoint(c+(Math.random()-0.5)*1.3*(1+k*0.2), 4), d=p?Math.hypot(x-p.pos.x, z-p.pos.z):60, s=(d<40?40-d:(d>85?d-85:0)) + (wetAt(x, z, 3) ? 1e4 : 0)   // Z405 never out of a river where it crosses the fence
-      + (d<ENTRY.minD || entrySeen(x, z) ? 1e3 : 0);   // AI 2 never where the player would see them appear: out of the frame and at least minD off
+      + (d<ENTRY.minD || entrySeen(x, z) ? 1e3 : 0) + (rearArc(x, z) ? 600 : 0);   // AI 2 never where the player would see them appear: out of the frame and at least minD off · BAL 3 nor behind him
     if(s<bs){ bs=s; best={ x, z, how:'edge' }; } }
   if(best && bs>=1e3){ const q=edgeEntry(null); if(q) best=q; else { best.hatch=true; best.how=null; } }   // (this stretch of fence is all in view: any other stretch — or, the whole fence in view, up out of a hatch near it)
   return best;
