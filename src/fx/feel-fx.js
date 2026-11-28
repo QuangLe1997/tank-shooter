@@ -4,14 +4,14 @@
 //     him: he stands in a clearing of his own smoke, the enemy beyond it blind, and the view is not swallowed whole
 //   · bossCam — the general's entrance (campaign/fort-boss.js spawn → feelBossReveal): a cut of a couple of seconds, the camera in front of his door looking
 //     at him as he strides out (the slow motion is fort-boss.js's own); then the follow camera glides back by itself (game/update.js: a gap → it settles)
-//   · feelRideCall — G with the ride out of reach (game/cavalry.js cavToggleMount): it is called as before, a chip by the soldier counts the metres down,
-//     and he is up the moment it is there (no second press)
+//   · feelRideCall — G with the ride out of reach (game/cavalry.js cavToggleMount): it is called as before, the ride chip at the lower-left edge counts the
+//     metres down (game/ride-call.js; FEEL 6: not a label over him — that sat in the aim zone), and he is up the moment it is there (no second press)
 import * as THREE from 'three';
 import { CAV, FEELFX } from '../../config.js';
-import { CV, MOBILE, S, camera, cavToggleMount, fxp, heightAt, renderer, rideCanCome } from '../hub.js';
+import { CV, MOBILE, S, camera, cavToggleMount, fxp, heightAt, rideCanCome } from '../hub.js';
 
 const R = (a, b) => a + Math.random() * (b - a), _v = new THREE.Vector3(), _l = new THREE.Vector3();
-export const FEELX = { smoke:0, smokeSkip:0, cut:null, cuts:0, chip:null, chipUntil:0, want:false, mounts:0 };
+export const FEELX = { smoke:0, smokeSkip:0, cut:null, cuts:0, chipUntil:0, want:false, mounts:0 };
 
 // ---- the smoke grenade's screen: rate puffs a second while it lasts (thinning over its last seconds) ----
 let _acc = 0;
@@ -31,14 +31,9 @@ export function bossCam(dt){ const K = FEELX.cut; if(!K) return false; const C =
   _v.set(e.pos.x + ux * (C.back - k * 1.5) + uz * 2.2, gy + C.up - k * 0.4, e.pos.z + uz * (C.back - k * 1.5) - ux * 2.2);   // in front of the door, a little to one side, pushing in
   _v.y = Math.max(_v.y, heightAt(_v.x, _v.z) + 1.2); camera.position.copy(_v); camera.lookAt(_l.set(e.pos.x, gy + C.look * (e.rK || 1), e.pos.z)); camera.updateMatrixWorld(); return true; }
 
-// ---- G with the ride on its way: the chip by him, and up when it comes ----
+// ---- G with the ride on its way: up the moment it comes (the metres: the ride chip at the lower-left edge, game/ride-call.js) ----
 export function feelRideCall(){ FEELX.want = true; FEELX.chipUntil = performance.now() / 1000 + FEELFX.horse.chip; }
-export function updateFeelFX(){ const p = S.player; if(!FEELX.want){ chip(false); return; }
-  const now = performance.now() / 1000; if(!p || !p.cav || CV.mounted || S.mode !== 'playing' || now > FEELX.chipUntil){ FEELX.want = false; chip(false); return; }
+export function updateFeelFX(){ const p = S.player; if(!FEELX.want) return;   // (FEEL 6 the count itself is on the ride chip at the screen's lower-left edge: game/ride-call.js — never a label over him in the aim zone)
+  const now = performance.now() / 1000; if(!p || !p.cav || CV.mounted || S.mode !== 'playing' || now > FEELX.chipUntil){ FEELX.want = false; return; }
   const d = Math.hypot(CV.hPos.x - p.pos.x, CV.hPos.z - p.pos.z);
-  if(d <= CAV.mountR && rideCanCome() && !CV.trans){ FEELX.want = false; chip(false); FEELX.mounts++; cavToggleMount(); return; }
-  chip(true, p, (CV.H && CV.H.bike ? 'XE ÔM ' : 'NGỰA ') + Math.max(0, Math.round(d - CAV.mountR)) + ' m'); }
-function chip(on, p, txt){ let el = FEELX.chip; if(!on){ if(el) el.style.display = 'none'; return; }
-  if(!el){ el = FEELX.chip = document.createElement('div'); el.id = 'feelRideChip'; el.style.cssText = 'position:fixed;transform:translate(-50%,-100%);padding:2px 8px;border-radius:9px;background:rgba(20,24,16,.72);color:#e8f0c8;font:700 12px/1.3 system-ui,sans-serif;pointer-events:none;z-index:30;white-space:nowrap'; document.body.appendChild(el); }
-  _v.set(p.pos.x, heightAt(p.pos.x, p.pos.z) + 2.3, p.pos.z).project(camera); const c = renderer.domElement.getBoundingClientRect();
-  if(_v.z > 1){ el.style.display = 'none'; return; } el.style.display = 'block'; el.style.left = (c.left + (_v.x * 0.5 + 0.5) * c.width) + 'px'; el.style.top = (c.top + (0.5 - _v.y * 0.5) * c.height) + 'px'; if(el.textContent !== txt) el.textContent = txt; }
+  if(d <= CAV.mountR && rideCanCome() && !CV.trans){ FEELX.want = false; FEELX.mounts++; cavToggleMount(); } }

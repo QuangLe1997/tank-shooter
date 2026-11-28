@@ -4161,7 +4161,7 @@ export const MIXER = { v:1,
 //   carry: a weapon on his back longer than long m (the B41) lies at tilt rad from upright (was ≤ 0.5), its top lift m lower — no antenna over his head
 //   foot: the clip his legs and rifle play follows the speed he REALLY makes (smoothed realK /s) + slack m/s, not the push he gives — against a wall he stands
 //   ride: the xe ôm moves off at once: the first launch s of a push give accel m/s² (an engine already running) and a shudder buzz m (game/cavalry.js)
-//   horse: G with the ride out of reach — it is called (or still on its way), a chip by him counts the metres down (at most chip s) and he is up the moment it is there
+//   horse: G with the ride out of reach — it is called (or still on its way), the ride chip at the lower-left edge counts the metres down (game/ride-call.js; at most chip s — never a label over him in the aim zone) and he is up the moment it is there
 //   boss: the general's fort — at most within s after he comes within nearR m of its wall the general comes out whoever still holds it; his entrance is a cut
 //     of cut s: the camera back m in front of his door, up m high, on him look m over his feet (fx/feel-fx.js bossCam; the follow camera glides back after); his own motif
 //   voice: the squad's calls (audio/afx-mix.js barks) spoken when the files are there (keys: kind → the line, its takes cycled) — the floating text then goes;

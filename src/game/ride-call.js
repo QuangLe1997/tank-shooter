@@ -3,8 +3,8 @@
 //   sets off the moment he can). He rides straight to you; when you are far off, or he is stuck behind a wall, he comes round by the streets: after a short
 //   wait he turns up a block away from you and rides in. He stops beside you; after a spill, if you stayed by it, you climb straight back on.
 //   The button is its own: it shows itself only in soldier mode, on foot, in play (HUDCLEAN 1: a small chip at the lower left, see below).
-import { CAV, HUDCLEAN, XEOM } from '../../config.js';
-import { CV, MOBILE, S, blocks, cavToggleMount, driverReady, inField } from '../hub.js';
+import { CAV, FEELFX, HUDCLEAN, XEOM } from '../../config.js';
+import { CV, FEELX, MOBILE, S, blocks, cavToggleMount, driverReady, inField } from '../hub.js';
 
 const now = () => performance.now() / 1000;
 const isBike = () => !!(CV.H && CV.H.bike);
@@ -52,7 +52,7 @@ function paint(){ const K = HUDCLEAN.chip, p = S.player, t = now(), live = !!(p 
     else if(bike && CV.H.onBreak){ i = '🚬'; txt = 'BÁC TÀI ĐANG NGHỈ'; col = '#ffcf5a'; off = !!CV.call; }   // Z363 his break
     else if(bike && !driverReady(CV.H)){ txt = 'ĐANG DỰNG XE'; col = '#ffcf5a'; off = !!CV.call; }
     else if(d <= CAV.mountR){ txt = bike ? 'LÊN XE' : 'LÊN NGỰA'; key = 'G'; }
-    else if(CV.call){ const e = Math.max(0, eta ?? 0); txt = (bike ? 'BÁC TÀI TỚI · ' : 'NGỰA TỚI · ') + Math.ceil(e) + 's'; off = true; if(e > eta0) eta0 = e; k = eta0 > 0 ? 1 - e / eta0 : 1; }
+    else if(CV.call){ const e = Math.max(0, eta ?? 0); txt = (bike ? 'BÁC TÀI TỚI · ' : 'NGỰA TỚI · ') + (FEELFX.on && FEELX.want ? Math.max(0, Math.round(d - CAV.mountR)) + ' m · TỰ LÊN' : Math.ceil(e) + 's'); /* FEEL 6 G pressed: the metres counted down here, at the edge (not over him), and he gets on when it is there */ off = true; if(e > eta0) eta0 = e; k = eta0 > 0 ? 1 - e / eta0 : 1; }
     else { i = bike ? '📞' : '🐎'; txt = (bike ? 'GỌI XE · ' : 'GỌI NGỰA · ') + Math.round(d) + 'm'; key = 'G'; idle = true; }
     if(!CV.call) eta0 = 0; }
   if(note){ txt = note.text; col = note.col; idle = false; key = ''; k = -1; }

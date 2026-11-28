@@ -39,7 +39,7 @@ export function ncArrow(s, color){ if(typeof document === 'undefined' || !docume
   clearTimeout(a._k); a._k = setTimeout(() => { a.style.opacity = '0'; a._on = false; }, A.hold * 1000); }
 
 // ---- the last net: HUD text cards that would cross the zone stay hidden while they do ----
-const GUARD = '#combo,#coach,#mdlToasts .mdl-toast,.mdl-rankup,#tipCard .tc-box,#radio,#voiceSub,#sideChip,#bossbar,#contractChip,#objChip,#lootToast,#corewarn,#coreArrow,#edgeNote,#ncFeed,#scoreChip,#fortHud,#sqHud,#weaponchip,#droneWarn,#hud > [data-nc]';
+const GUARD = '#combo,#coach,#mdlToasts .mdl-toast,.mdl-rankup,#tipCard .tc-box,#radio,#voiceSub,#sideChip,#bossbar,#contractChip,#objChip,#lootToast,#corewarn,#coreArrow,#edgeNote,#ncFeed,#scoreChip,#fortHud,#sqHud,#weaponchip,#rideCall,#droneWarn,#hud > [data-nc]';
 function guard(){ if(!ncBattle()){ if(NCZ.hid.size){ for(const e of NCZ.hid) e.classList.remove('nc-off'); NCZ.hid.clear(); } return; }
   for(const e of document.querySelectorAll(GUARD)){ if(!e.textContent.trim()){ continue; } const r = e.getBoundingClientRect(); if(r.width < 2 || r.height < 2){ continue; }
     const hit = ncHit(r.left, r.top, r.right, r.bottom), was = NCZ.hid.has(e);
