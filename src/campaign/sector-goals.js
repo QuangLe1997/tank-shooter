@@ -16,7 +16,7 @@ import { BIOME, COVER_K, COVER_SET, CONTAINER_PAINT, SECT, buildObjective, build
 import { ARENA, FORTS, OBJ, QUIET, S, TRAIL, UGRID, WAVE, animateSoldier, bigExplode, blocks, buildTransport, clampFieldXZ, damageObjective, edgeEntry, edgeNote, enemies, fieldEdgePoint,
   fireball, guardsLeft, heightAt, inField, makeSoldierMesh, makeTruck, radio, ringPulse, scene, sfx, soldierKneel, spawnEnemy, spawnGuards, spawnSquad, svgBadgeTex } from '../hub.js';
 import { zoneMark } from '../hub.js';   // VIS 10 (world/zone-mark.js)
-import { blocksNear, inBlock, blockTop, fortIntactCross } from '../hub.js';   // BAL 25
+import { blocksNear, inBlock, blockTop, SIDEM, fortIntactCross } from '../hub.js';   // BAL 25 / 27
 
 const Y = SECTOR.types, SAY = SECTOR.say, _pt = { x:0, y:0, z:0 };
 const fill = (t, o) => String(t ?? '').replace(/\{(\w+)\}/g, (m, k) => o && o[k] != null ? o[k] : '');
@@ -207,4 +207,14 @@ export function sectorGoalClear(){ const C = SGOAL.cell; if(C){ for(const b of C
   for(const m of SGOAL.props) scene.remove(m); SGOAL.props.length = 0; if(SGOAL.heli) SGOAL.heli.visible = false; for(let i = 0; i < SGOAL.marks.length; i++) unmark(i); SGOAL.g = null; SECT.forceObj = '';
   if(WAVE.betweenUntil >= 1e11) WAVE.betweenUntil = 0; }   // (an infiltration's held waves let go)
 // dev / probes: the goal in a line
+// BAL 27 WHERE THE SECTOR'S GOAL IS (for the on-screen marker — ui of HUDUX): { x, z, r, kind, type, way } or null. kind: 'goal' (the hostage, a target to plant on or shoot,
+//   the lead truck), 'ring' (a ring to stand in: the truck's hold, the evacuation, the landing zone, the yard), 'target' (the sabotage objective), 'arena' (the general's courtyard),
+//   'general' (him, once he is out). way: true from the third try of the sector — show the path to it.
+export function sectorGoalPos(){ if(!SECT.on || SECT.state !== 'fight') return null; const g = SECT.g || {}, ty = g.type; let q = null;
+  const mk = i => { const M = SGOAL.marks[i]; return M && M.ring.visible ? { x:M.ring.position.x, z:M.ring.position.z, r:M.ring.scale.x * 6 } : null; };
+  if(ty === 'hold'){ const M = SIDEM.cur; if(M && M.state === 'go') q = { x:M.x, z:M.z, r:M.K.r, kind:'ring' }; }
+  else if(ty === 'sabotage'){ if(OBJ && OBJ.alive) q = { x:OBJ.x, z:OBJ.z, r:(OBJ.def && OBJ.def.r) || 4, kind:'target' }; }
+  else if(ty === 'boss'){ const f = FORTS.find(o => o.tier === 3), e = f && f.boss && f.boss.e; if(e && e.hp > 0) q = { x:e.pos.x, z:e.pos.z, r:3, kind:'general' }; else if(g.arena) q = { x:g.arena.x, z:g.arena.z, r:g.arena.r, kind:'arena' }; }
+  else { const a = mk(0), b = mk(1); if(a) q = { ...a, kind:'goal' }; else if(b) q = { ...b, kind:'ring' }; }
+  if(q){ q.type = ty; q.way = (SECT.tries | 0) >= BAL.retry.after; } return q; }
 export function sectorGoalState(){ const g = SGOAL.g; return g ? { type:g.type, ph:g.ph || '', k:+(g.k || 0).toFixed(2), clock:+(g.clock || 0).toFixed(1), sub:g.sub, hp:g.hp, burnt:g.burnt, trucks:SGOAL.trucks.length } : null; }
