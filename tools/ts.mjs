@@ -14,6 +14,7 @@
 //   --cpuprofile s DIET 7 sample the main thread for the fight's first s seconds: out.cpu = { top: self time by function, busy: every 50 ms slice over 35 ms busy and what filled it }
 //   --noperf      DIET 8 without ?perf (the game's own HUD timers off; frame times still come from its probe)
 //   --gc          DIET 4 window.gc() for a probe (collect before reading the JS heap)
+//   --frames dir  BAL 2 a probe may call window.__frame(name): a JPEG of the page into dir (tools/calib.mjs: every 20 s and at the battle's moments)
 //   --watchdog s  BOT 1 s more before the runner gives up (a probe that plays a whole battle: tools/calib.mjs)
 //   --novsync     frames as fast as the GPU allows (to compare frame times; with vsync every frame over 16.7 ms falls to 33).
 //   Out: { ok, biome, load, frame:{ p50, p95, max, n }, calls, tris, errors:[…], eval, shot } — exit code 0 only when the page logged no error.
@@ -23,7 +24,7 @@
 import http from 'node:http'; import fs from 'node:fs'; import os from 'node:os'; import path from 'node:path'; import { fileURLToPath, pathToFileURL } from 'node:url';
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url))), argv = process.argv.slice(2);
 const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : d; }, has = k => argv.includes(k);
-const VAL = new Set(['--watchdog', '--cpuprofile', '--jsflags', '--seed', '--at', '--eval', '--shot', '--profile', '--level', '--tod', '--wx', '--size', '--query', '--dpr']), pos = [];
+const VAL = new Set(['--frames', '--watchdog', '--cpuprofile', '--jsflags', '--seed', '--at', '--eval', '--shot', '--profile', '--level', '--tod', '--wx', '--size', '--query', '--dpr']), pos = [];
 for(let i = 0; i < argv.length; i++){ if(VAL.has(argv[i])){ i++; continue; } if(!argv[i].startsWith('--')) pos.push(argv[i]); }
 const biome = (pos[0] || '').toUpperCase(), secs = +(pos[1] || 5);
 if(!biome){ console.log('usage: node tools/ts.mjs <BIOME> [seconds] [--seed n] [--at x,z] [--eval probe.js] [--shot out.jpg] [--novsync]'); process.exit(2); }
@@ -62,6 +63,8 @@ try{
   p.on('console', m => { if(m.type() === 'error' && out.errors.length < 8 && !/favicon|ERR_|404/.test(m.text())) out.errors.push('console: ' + m.text().slice(0, 300)); });
   const prof = Object.assign({ nickname:'TEST', onboarded:true, coached:true, quality:'high', introSeen:{ DESERT:1, RUINS:1, FOUNDRY:1, CITADEL:1, MEADOW:1, CITY:1, SAVANNA:1, ARCTIC:1, VOLCANO:1, QUARRY:1 }, tips:{ all:1 } }, JSON.parse(opt('--profile', '{}')));
   await p.addInitScript(pr => { try{ localStorage.setItem('steelsiege.profile', JSON.stringify(pr)); }catch(e){} }, prof);
+  if(opt('--frames')){ const dir = opt('--frames'); fs.mkdirSync(dir, { recursive:true });   // BAL 2 window.__frame(name) for a probe: a JPEG of the page (HUD and all) into that folder
+    await p.exposeFunction('__frame', async name => { const f = path.join(dir, String(name).replace(/[^\w.-]/g, '_') + '.jpg'); try{ await p.screenshot({ path:f, type:'jpeg', quality:70 }); return f; }catch(e){ return ''; } }); }
   if(has('--gpumem')) await p.addInitScript(() => {   // DIET 1 the GPU tally (see --gpumem): texture bytes per (texture, face, level), buffers by size, renderbuffers
     try{ performance.setResourceTimingBufferSize(20000); }catch(e){}
     const P = WebGL2RenderingContext.prototype, TX = window.__gpuTX = new Map(), BF = new Map(), RB = new Map(), cur = { tex:{}, unit:0, buf:{}, rb:null }, FMT = {};

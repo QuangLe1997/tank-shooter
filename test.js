@@ -3084,6 +3084,10 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
   ok(BT.steer.probe.length>=2 && BT.steer.fan.every(a=>a>0 && a<Math.PI) && /function steer\(p, wx, wz\)/.test(bot) && /function viaGate\(p, g\)/.test(bot) && /f\.gate\.hp > 0\) return setG\('shoot'/.test(bot) && /FBOSS\.list/.test(bot) && BT.ride.chase>0 && BT.ride.surge>0,
     'BAL 1: feelers ahead and a turn to the clear side, round by a fort\'s gate, a shut citadel gate shot in, the fort\'s boss hunted, a convoy chased on the ride');
   ok(BT.skill.novice.err>BT.skill.average.err && BT.skill.average.err>BT.skill.good.err && BT.skill.novice.med<BT.skill.average.med && BT.skill.average.med<BT.skill.good.med && BT.skill.novice.cover<BT.skill.good.cover, 'BAL 1: the levels further apart (aim, bandaging, cover)'); }
+// BAL 2 the harness: frames of the battle, the pressure timeline beside the bot's state, hits by bearing, entries behind him, off-screen hits by shooter, the bosses timed
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), cal=R('tools/calib.mjs'), ts=R('tools/ts.mjs');
+  ok(/exposeFunction\('__frame'/.test(ts) && /'--frames'/.test(ts) && /frame\('boss'\)/.test(cal) && /frame\('death'\)/.test(cal) && /frame\('fork'\)/.test(cal) && /fortBossDebugClear/.test(cal) && /function targets\(ALL\)/.test(cal) && /M\.bear\[/.test(cal) && /rearNear/.test(cal) && /M\.offBy\[k\]/.test(cal) && /BS\.mode/.test(cal),
+    'BAL 2: the harness saves frames (every 20 s, sectors, fork, death, boss), logs pressure beside the bot\'s state, hits by bearing and entries behind him, times the bosses, prints the review\'s targets'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');
