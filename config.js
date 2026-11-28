@@ -4150,3 +4150,35 @@ export const MIXER = { v:1,
   say:{ op:'TRẬN TỰ DỰNG', kick:'TRẬN TỰ DỰNG', won:'THẮNG TRẬN', lost:'THẤT THỦ', again:'ĐÁNH LẠI', desk:'VỀ BÀN TRỘN', why:'Dự báo: độ khó {d} · khoảng {m} phút',
     brief:'Trận dựng từ bàn trộn — dự báo độ khó {d}, độ căng {i}, khoảng {m} phút.', obj:'Hạ tướng địch', objSect:'Chiếm từng khu, tới khu cuối',
     radio:'SCH: Trận này do bàn trộn dựng — độ khó dự báo {d}, chừng {m} phút. Vào vị trí!', st:{ time:'Thời gian', kills:'Hạ địch', acc:'Chính xác', dmg:'Máu đã mất' } } };
+// FEEL 1–4 THE CRITIC'S ROUND 1 — FX · ANIM · AUDIO (fx/feel-fx.js, fx/gunfx.js, fx/blasts.js, fx/fire-fx.js, actors/gun-carry.js, audio/*). on:false = every one of them as before.
+//   gun: HIS OWN shots — flash × flashK, × up to far[1] more as the camera pulls back (from far[0] m), on screen ≥ frames rendered frames and life s; the muzzle light
+//     × lightK, held hold s before it dies (it reaches his hands and the ground), warm col; the shoulder's kick × kick (actors/real-cav.js holdReal's spring)
+//   blast: a grenade / shell (fx/blasts.js heBlast) gets a FIREBALL in layers (fire.n rolling puffs + lick tongues), debris more clods, and its hanging dust lives
+//     hang s (was 3–5) — × nearK as many when it bursts within nearR m of the camera: the dust clears in about a second instead of veiling the screen
+//   smoke: the smoke grenade's screen (combat/spells.js updateEquip) — puffs born in a ring r m round where it fell, never within clear m of him or lane m of the
+//     line from the camera to him (his silhouette stays), rate a second (× mob on a phone), size / life, a grey that takes the scene's light, op
+//   night: smoke and dust after dark — their lit body × body (the moonlit grey, not a glowing white), the fires' light on them × fire (orange from the flames)
+//   carry: a weapon on his back longer than long m (the B41) lies at tilt rad from upright (was ≤ 0.5), its top lift m lower — no antenna over his head
+//   foot: the clip his legs and rifle play follows the speed he REALLY makes (smoothed realK /s) + slack m/s, not the push he gives — against a wall he stands
+//   ride: the xe ôm moves off at once: the first launch s of a push give accel m/s² (an engine already running) and a shudder buzz m (game/cavalry.js)
+//   horse: G with the ride out of reach — it is called (or still on its way), a chip by him counts the metres down (at most chip s) and he is up the moment it is there
+//   boss: the general's fort — at most within s after he comes within nearR m of its wall the general comes out whoever still holds it; his entrance is a cut
+//     of cut s: the camera back m in front of his door, up m high, on him look m over his feet (fx/feel-fx.js bossCam; the follow camera glides back after); his own motif
+//   voice: the squad's calls (audio/afx-mix.js barks) spoken when the files are there (keys: kind → the line, its takes cycled) — the floating text then goes;
+//     no file: the text and the click as before. kill: the soldier's "Hạ một!" only for a kill of his own (a round of his within mine s before)
+//   music: each land its own variation of the score — key (semitones over D minor), bpm, drum pattern (0 taiko · 1 march · 2 sparse), lead voice (osc type);
+//     a general with no motif of his own gets one made from his id (one of motifs)
+export const FEELFX = { on:true,
+  gun:{ flashK:1.5, far:[5, 2.2], frames:3, life:0.06, lightK:2.2, hold:0.05, col:0xffb060, kick:1.6 },
+  blast:{ fire:{ n:6, life:[0.3, 0.55], size:1.35, born:0.08 }, lick:4, debris:8, hang:[0.6, 1.1], nearR:12, nearK:0.45 },
+  smoke:{ r:[2.6, 8], clear:3.4, lane:2.2, rate:30, mob:0.5, size:[2.4, 3.6], life:[2.6, 3.4], col:0xa3a7a0, op:0.62 },
+  night:{ body:0.4, fire:2 },
+  carry:{ long:0.95, tilt:0.68, lift:0.1 },
+  foot:{ realK:10, slack:0.2 },
+  ride:{ launch:0.45, accel:9, buzz:0.012 },
+  horse:{ chip:12 },
+  boss:{ within:14, nearR:14, cut:2.4, back:9, up:2.2, look:1.8 },
+  voice:{ keys:{ reload:'m_cover', nade:'m_throw', down:'m_down', kill:'m_kill', flank_left:'m_left', flank_right:'m_right', flank_rear:'m_rear' }, kill:{ mine:0.6 } },
+  music:{ lands:{ DESERT:[0, 96, 0, 'sawtooth'], RUINS:[-2, 88, 2, 'triangle'], ARCTIC:[-5, 84, 2, 'triangle'], FOUNDRY:[1, 104, 1, 'square'], CITADEL:[-3, 92, 1, 'sawtooth'],
+      MEADOW:[2, 90, 2, 'triangle'], CITY:[3, 100, 1, 'square'], SAVANNA:[-1, 98, 0, 'sawtooth'], VOLCANO:[1, 108, 0, 'square'], QUARRY:[-4, 94, 1, 'sawtooth'] },
+    motifs:[[0, 3, 7, 3], [0, null, 5, 7], [0, -2, -5, -2], [7, 5, 3, 0], [0, 0, 6, null], [0, 12, 10, 7], [0, 1, 5, 1], [3, 2, 0, -5]] } };

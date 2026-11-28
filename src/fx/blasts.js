@@ -12,8 +12,8 @@
 //   · flameJet — the flamethrower: burning fuel drawn out along its flight, yellow at the nozzle, orange, red, then black smoke rolling off the far end; it leaves the ground burning.
 //   · tracerHit, lobTrail, dirtSpout, dustRing, smokeRoll — the small ones. Every particle is scheduled at the burst and never touched again.
 import * as THREE from 'three';
-import { FIREFX } from '../../config.js';
-import { BIOME, CINE, FXK, MOBILE, NIGHT, S, blastFeel, blastLight, decalAsh, decalCrater, decalScorch, fireLight, fxLight, fxTier, fxp, gunLight, heightAt, muzzleLight, wetAt } from '../hub.js';
+import { FEELFX, FIREFX } from '../../config.js';
+import { camera, BIOME, CINE, FXK, MOBILE, NIGHT, S, blastFeel, blastLight, decalAsh, decalCrater, decalScorch, fireLight, fxLight, fxTier, fxp, gunLight, heightAt, muzzleLight, wetAt } from '../hub.js';
 
 const F = FIREFX, R = (a, b) => a + Math.random() * (b - a), RR = a => a[0] + Math.random() * (a[1] - a[0]), TAU = 6.2832, N = fxTier;
 const isNight = () => NIGHT.on || S.tod === 'night', glowK = () => isNight() ? 1 : F.light.glowDay;   // (by day a blast barely lights the ground)
@@ -58,9 +58,11 @@ export function heatBlast(x, y, z, s){ const C = F.heat, gy = heightAt(x, z), q 
   blastFeel(x, z, s * C.shake); }
 // ---- high explosive (a grenade ≈ 0.9, a mortar shell ≈ 1.6, a bomb 2–3.5): earth first ----
 export function heBlast(x, y, z, s){ const C = F.he, gy = heightAt(x, z), q = Math.sqrt(s), E = earthCol(); y = y == null ? gy + 0.5 : Math.max(y, gy + 0.3); const air = y - gy > 2.5, wet = wetAt(x, z);
+  const FB = FEELFX.blast, on = FEELFX.on, cp = camera.position, hk = on && (cp.x - x) ** 2 + (cp.z - z) ** 2 < FB.nearR * FB.nearR ? FB.nearK : 1;   // FEEL 2 near the lens: less of the dust that hangs
   flashAt(x, y + 0.2, z, s * 0.66, C.flash);
+  if(on && !wet) feelBall(x, y, z, s, q, gy);   // FEEL 2 a fireball in layers, then its debris
   if(!air && !wet){ dustRing(x, z, q, N(C.ring.n), C.ring.sp, C.ring.life, gy);
-    for(let i = 0, n = N(C.hang.n * q); i < n; i++){ const a = Math.random() * TAU, r = R(0.5, 2) * s, v = R(0.5, 2); fxp('dust', x + Math.cos(a) * r, gy + 0.5, z + Math.sin(a) * r, Math.cos(a) * v, R(0.3, 1), Math.sin(a) * v, 3.2 * s * R(0.8, 1.2), RR(C.hang.life), RR(C.hang.born), E.dust, 1, gy); }   // the dust that hangs when the earth has fallen back
+    for(let i = 0, n = N(C.hang.n * q * hk); i < n; i++){ const a = Math.random() * TAU, r = R(0.5, 2) * s, v = R(0.5, 2); fxp('dust', x + Math.cos(a) * r, gy + 0.5, z + Math.sin(a) * r, Math.cos(a) * v, R(0.3, 1), Math.sin(a) * v, 3.2 * s * R(0.8, 1.2), RR(on ? FB.hang : C.hang.life), RR(C.hang.born), E.dust, 1, gy); }   // the dust that hangs when the earth has fallen back
     dirtSpout(x, z, s, N(C.dirt.n * s), N(C.clods * q), C.dirt.up, C.dirt.life, gy); }
   smokeRoll('grey', x, y, z, s, N(C.smoke.n * q), C.smoke.born, [1.2, 2.4], C.smoke.life, 3.4, gy);
   for(let i = 0, n = N(C.core.n * q); i < n; i++){ const a = Math.random() * TAU, v = R(1, 3.5) * q; fxp('heat', x, y + Math.random() * 0.4 * s, z, Math.cos(a) * v, R(1, 3), Math.sin(a) * v, C.core.size * s * R(0.8, 1.2), RR(C.core.life), 0, null, 1, gy); }   // the charge's own fire: a blink
@@ -68,6 +70,12 @@ export function heBlast(x, y, z, s){ const C = F.he, gy = heightAt(x, z), q = Ma
   lightUp(x, y, z, C.light, q); blastLight(x, z, (50 + s * 22) * glowK(), 0.35);
   if(!air && !wet){ mark(x, z, s, 0.6, s >= 0.9); aftermath(x, z, s, C, gy, null); }
   blastFeel(x, z, s * C.shake); }
+// FEEL 2 a grenade's / a shell's own fire, in layers: rolling puffs that burn out to soot over half a second, flame tongues licking up out of them,
+//   then the debris — lumps of earth and hot fragments on their arcs (all on the fire / smoke layer's budget, scheduled once)
+function feelBall(x, y, z, s, q, gy){ const B = FEELFX.blast, Fi = B.fire;
+  for(let i = 0, n = N(Fi.n * q); i < n; i++){ const a = Math.random() * TAU, v = R(0.8, 2.6) * q; fxp('fuel', x + Math.cos(a) * R(0, 0.5) * s, y + R(0, 0.6) * s, z + Math.sin(a) * R(0, 0.5) * s, Math.cos(a) * v, R(1.2, 3.6) * q, Math.sin(a) * v, Fi.size * s * R(0.75, 1.3), RR(Fi.life), R(0, Fi.born), null, 1, gy); }
+  for(let i = 0, n = N(B.lick); i < n; i++) fxp('lick', x + R(-0.5, 0.5) * s, y + 0.1, z + R(-0.5, 0.5) * s, R(-0.6, 0.6), R(2, 4) * q, R(-0.6, 0.6), 0.9 * s * R(0.8, 1.2), R(0.25, 0.45), R(0, 0.06), null, 1, gy);
+  for(let i = 0, n = N(B.debris * q); i < n; i++){ const a = Math.random() * TAU, v = R(3, 9) * q; fxp(i % 3 ? 'clod' : 'frag', x, y + 0.2, z, Math.cos(a) * v, R(5, 12) * q, Math.sin(a) * v, i % 3 ? R(0.16, 0.34) : R(0.08, 0.14), R(0.9, 1.6), 0, i % 3 ? earthCol().soil : null, 1, gy); } }
 // ---- fuel (a drum, a truck, an aircraft): the rolling fireball and the black mushroom over it; the ground left burning ----
 export function fuelBurst(x, y, z, s){ const C = F.fuel, gy = heightAt(x, z), q = Math.sqrt(s); y = y == null ? gy + 1.2 : Math.max(y, gy + 0.4); const air = y - gy > 4;
   flashAt(x, y + 0.3, z, s * 0.8, C.flash);

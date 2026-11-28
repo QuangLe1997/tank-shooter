@@ -7,6 +7,7 @@ import { updateFortBoss } from '../hub.js';   // BOSS 1 (campaign/fort-boss.js)
 import { tierDprTop } from '../hub.js';   // SPLIT 3 (render/quality.js)
 import { comboTick } from '../hub.js';   // HUDCLEAN 2 (game/score.js)
 import { updateSectors, updateSectorTransit } from '../hub.js';   // SECTOR 1 (campaign/sectors.js)
+import { bossCam, updateFeelFX } from '../hub.js';   // FEEL 3–4 (fx/feel-fx.js)
 
 // ----------------------------- MAIN LOOP -----------------------------
 const NOGOV=typeof location!=='undefined' && /[?&]nogov\b/.test(location.search);   // PERF 1 ?nogov holds the governor still (the resolution and the occlusion pass stay as they start): for measuring
@@ -84,7 +85,8 @@ export function loop(nowMs){
     updateCmdUI(now);                    // Z107 paratrooper cooldown on the phone strip
     updateLOD(now);                      // Z107 render budget: near-only soldier shadows, far guards hidden
     updateBuffHUD(now); updateSquadHud(now);   // Z220 squad panel
-    if(!fpvCam(dt, now)) updateCamera(dt, now);   // DRONE 2 the view from the FPV drone's nose while he flies it (combat/drone-skills.js), else the follow camera
+    if(bossCam(dt)){}   // FEEL 4 the general's entrance: a cut on him (fx/feel-fx.js)
+    else if(!fpvCam(dt, now)) updateCamera(dt, now);   // DRONE 2 the view from the FPV drone's nose while he flies it (combat/drone-skills.js), else the follow camera
     updateWorldBars();
     updateAbilityUI(now);
     if(PERF.fc%(MOBILE?3:2)===0) drawRadar();   // Z239 desktop too: every 2nd frame (a canvas repaint the eye can't tell from every frame)   // Z92 the 2D radar is a canvas repaint → every 3rd frame on phones
@@ -102,7 +104,7 @@ export function loop(nowMs){
   if(S.mode!=='playing'){ droneWarIdle(); updateSquadHud(now); gradePass.uniforms.aberr.value*=0.85; rangeRing.visible=false; radarCtx.clearRect(0,0,radarCanvas.width,radarCanvas.height); }
   S.timeScale += (1 - S.timeScale) * Math.min(1, dt*1.8);   // ease slow-mo back to normal
   updateCore(dt, now); updateCoreAlarm(now); updateCelebration(dt, now);   // Z140 fireworks + cheering after a win
-  updateRings(dt); updateFlashes(dt); updateParticles(dt); updateFireFX(dt); updateTrails(dt); updateSmokeTrails(dt); updateDebris(dt); updateShatter(dt); updateTreeFall(dt); updateTowerFalls(dt); updateBolts(dt); updateGunFX(dt); updateRocketAim(now); flushParticles();   // Z419 shaped flashes, brass, the muzzle light's strobe
+  updateRings(dt); updateFlashes(dt); updateParticles(dt); updateFireFX(dt); updateTrails(dt); updateSmokeTrails(dt); updateDebris(dt); updateShatter(dt); updateTreeFall(dt); updateTowerFalls(dt); updateBolts(dt); updateGunFX(dt); updateFeelFX(); updateRocketAim(now); flushParticles();   // Z419 shaped flashes, brass, the muzzle light's strobe
   updateWaterSpray(dt);   // HSWIM 2 the water's spray, crowns, foam and rings (fx/water-spray.js)
   if(muzzleLight.intensity>0) muzzleLight.intensity = Math.max(0, muzzleLight.intensity - dt*12);
   if(HF.dirty){ HF.dirty=false; syncTerrainMesh(HF.dj0, HF.dj1); HF.dj0=HF.dj1=undefined; }   // apply this frame's new craters (one rebuild max)

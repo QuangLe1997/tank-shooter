@@ -11,7 +11,7 @@
 //   bounce (ejectBrass, one instanced draw call), and a bullet strike in the colour of what it hit (bulletImpact: dirt / stone / metal / wood / sand / water)
 //   (the chips / clods / splinters are solid little meshes from the brass pool: a smoke-layer speck can never be opaque — keep its op ≤ 2, the HDR target does not clamp alpha)
 import * as THREE from 'three';
-import { GUNFX, REAL, SHOTFX } from '../../config.js';
+import { FEELFX, GUNFX, REAL, SHOTFX } from '../../config.js';
 import { BIOME, MOBILE, NIGHT, RIVER, S, WX, afxBrass, afxImpact, afxOn, bullets, camera, heightAt, muzzleLight, renderer, scene, spawnPart } from '../hub.js';
 
 // ---- ribbon pool ----
@@ -109,13 +109,13 @@ const _fl = (()=>{ const S2=0.75, z0=0.02, P=[0,-.5,0, 0,.5,0, 0,.5,1, 0,-.5,1, 
     sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying float vFace;').replace('#include <map_fragment>','#include <map_fragment>\n  diffuseColor.a *= vFace;'); };   // its class's row of the atlas
   const m=new THREE.InstancedMesh(geo, mat, FLN);
   m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); m.setColorAt(0, _fc.setRGB(1,1,1)); m.instanceColor.setUsage(THREE.DynamicDrawUsage); m.count=0; m.frustumCulled=false; m.renderOrder=8; scene.add(m);
-  for(let i=0;i<FLN;i++) FL.push({ on:false, life:0, max:1, fr:0, k:1, col:0xffffff, row:0, m:new THREE.Matrix4() }); return m; })();
+  for(let i=0;i<FLN;i++) FL.push({ on:false, life:0, max:1, fr:0, minFr:2, k:1, col:0xffffff, row:0, m:new THREE.Matrix4() }); return m; })();
 const _q=new THREE.Quaternion(), _q2=new THREE.Quaternion(), _e=new THREE.Euler(), _p=new THREE.Vector3(), _sc=new THREE.Vector3(), _Zax=new THREE.Vector3(0,0,1);
 // a flash at the muzzle (x,y,z) pointing along yaw ang (pitch up by pit): len m along the bore, wid m across, col tint, k brightness, row the atlas row — 1–2 rendered frames
 export function gunFlash(x, y, z, ang, len, wid, col=0xfff0d0, k=1, pit=0, row=0){ let f=null, old=null;
   for(const r of FL){ if(!r.on){ f=r; break; } if(!old || r.life<old.life) old=r; } f=f||old;
   const j=0.8+Math.random()*0.4; _e.set(-pit, ang, 0, 'YXZ'); _q.setFromEuler(_e); _q2.setFromAxisAngle(_Zax, Math.random()*6.283); _q.multiply(_q2);   // a random roll about the bore: never the same flash twice
-  f.m.compose(_p.set(x,y,z), _q, _sc.set(wid*j*(Math.random()<0.5?-1:1), wid*j*(0.8+Math.random()*0.4), len*(0.75+Math.random()*0.5))); f.on=true; f.fr=0; f.life=f.max=GUNFX.flash.life; f.k=k*GUNFX.flash.hot; f.col=col; f.row=row+4*(Math.random()*4|0); }   // GUNFX 2 one of four variants of its row, mirrored at random
+  f.m.compose(_p.set(x,y,z), _q, _sc.set(wid*j*(Math.random()<0.5?-1:1), wid*j*(0.8+Math.random()*0.4), len*(0.75+Math.random()*0.5))); f.on=true; f.fr=0; f.life=f.max=GUNFX.flash.life; f.k=k*GUNFX.flash.hot; f.col=col; f.row=row+4*(Math.random()*4|0); f.minFr=2; return f; }   // GUNFX 2 one of four variants of its row, mirrored at random
 // a gun's light is a strobe: it snaps up for the shot and dies in a few frames (an explosion keeps the slow fade in game/loop.js)
 export function gunLight(x, y, z, col, I){ muzzleLight.position.set(x,y,z); muzzleLight.color.setHex(col); if(I>=muzzleLight.intensity){ muzzleLight.intensity=I; muzzleLight.userData.fast=true; } }
 // the muzzle brake: gas and flame thrown out of the side ports (sd = ±1 sides), the smoke rolling away sideways
@@ -179,9 +179,10 @@ export function gunCls(g){ return !g ? 'rifle' : g.ammo === 'blade' ? 'blade' : 
 export function muzzleFX(x, y, z, ang, cls='rifle', side='e', pit=0, src=null, k=1){ const C=SHOTFX.cls[cls] || SHOTFX.cls.rifle, F=C.f, cp=camera.position;
   if(!SHOTFX.on){ gunFlash(x, y, z, ang, F[0]*k, F[1]*k, 0xfff0c0, 0.9, pit, 0); return; }   // (off: the Z419 flash alone — the A/B switch)
   const d2=(x-cp.x)**2+(y-cp.y)**2+(z-cp.z)**2, fx=Math.sin(ang), fz=Math.cos(ang);
-  gunFlash(x, y, z, ang, F[0]*k, F[1]*k, 0xffc27a, F[2], pit, C.row);   // warm: the overlapping petals burn white-yellow at the core, orange at the tips
+  const G=FEELFX.gun, me=side === 'p' && FEELFX.on, fk=me ? G.flashK*Math.min(G.far[1], Math.max(1, Math.sqrt(d2)/G.far[0])) : 1;   // FEEL 1 his own flash: bigger, more so as the camera pulls back
+  const fl=gunFlash(x, y, z, ang, F[0]*k*fk, F[1]*k*fk, me ? G.col : 0xffc27a, F[2], pit, C.row); if(me){ fl.minFr=G.frames; fl.life=fl.max=G.life; }   // warm: the overlapping petals burn white-yellow at the core, orange at the tips
   const L=SHOTFX.light, lk=lightK(), R=isNight() ? L.R : L.Rday;   // the one shared light: the strongest strobe near the camera this frame wins it
-  if(side === 'p' || d2 < R*R){ const fall = side === 'p' ? 1 : 1-Math.sqrt(d2)/R*0.6; gunLight(x+fx*0.5, y+0.25, z+fz*0.5, 0xffc27a, C.light*k*fall*(side === 'p' ? 1 : 0.8)); }
+  if(side === 'p' || d2 < R*R){ const fall = side === 'p' ? 1 : 1-Math.sqrt(d2)/R*0.6; gunLight(x+fx*0.5, y+0.25, z+fz*0.5, me ? G.col : 0xffc27a, C.light*k*fall*(side === 'p' ? 1 : 0.8)*(me ? G.lightK : 1)); if(me) muzzleLight.userData.hold=G.hold; }   // FEEL 1 held a beat: it reaches his hands and the ground
   if(C.splash && lk > 0.02 && d2 < 3600) splashAt(x+fx*C.splash*0.25, z+fz*C.splash*0.25, C.splash*k, lk);
   if(C.smoke && d2 < 2500 && (!MOBILE || Math.random() < 0.35)){ const w=WX.wind, s=C.smoke*k;   // a puff out of the muzzle, carried off on the wind
     spawnPart(x+fx*0.3, y+0.02, z+fz*0.3, fx*1.6*s+w.x*0.5, 0.3, fz*1.6*s+w.y*0.5, { color:0xc4c0b8, size:0.3+0.4*s, life:1.0+Math.random()*0.6, smoke:true, grav:0.35, drag:2.0, grow:1.5+s, op:0.14+0.12*s, keep:true }); }
@@ -287,8 +288,8 @@ function updateStreaks(dt){ _sn=0; const T=SHOTFX.tracer, ST=SHOTFX.streak, cp=c
 
 // per frame: flashes (fade over their 1–2 frames, packed into the instance list), brass, the muzzle light's strobe
 export function updateGunFX(dt){ let n=0;
-  for(const f of FL){ if(!f.on) continue; f.life-=dt; if(dt>0 && f.fr++>=1 && f.life<=0){ f.on=false; continue; }   // (a frame that stands still — dt 0 — does not use the flash up)
+  for(const f of FL){ if(!f.on) continue; f.life-=dt; if(dt>0 && f.fr++>=f.minFr-1 && f.life<=0){ f.on=false; continue; }   // (a frame that stands still — dt 0 — does not use the flash up)
     _fl.setMatrixAt(n, f.m); _fl.setColorAt(n, _fc.setHex(f.col).multiplyScalar(f.k*Math.max(0.4, f.life/f.max))); _fl.geometry.attributes.aRow.setX(n, f.row); n++; }
   _fl.count=n; if(n){ _fl.instanceMatrix.needsUpdate=true; _fl.instanceColor.needsUpdate=true; _fl.geometry.attributes.aRow.needsUpdate=true; }
   updateBrass(dt); updateSplash(dt); updateBarrels(dt); updateStreaks(dt);   // GUNFX 1
-  const L=muzzleLight; if(L.userData.fast){ L.intensity=Math.max(0, L.intensity-dt*GUNFX.light.decay); if(L.intensity<=0) L.userData.fast=false; } }
+  const L=muzzleLight; if(L.userData.fast && L.userData.hold>0) L.userData.hold-=dt; else if(L.userData.fast){ L.intensity=Math.max(0, L.intensity-dt*GUNFX.light.decay); if(L.intensity<=0) L.userData.fast=false; } }

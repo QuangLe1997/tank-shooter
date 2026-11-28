@@ -15,7 +15,7 @@
 //   · a hard budget (FIREFX.max live + scheduled): past FIREFX.thin of it the cheap kinds are dropped more and more often, the heart of an effect never.
 //   · the old spawnPart smoke and fire (every caller in the game) are drawn here too (fxShim) — the same puffs, lit, on the same budget. ?oldfx: none of it.
 import * as THREE from 'three';
-import { FIREFX, MATLOOK } from '../../config.js';
+import { FEELFX, FIREFX, MATLOOK } from '../../config.js';
 import { MATSW, MOBILE, NIGHT, PERF, PROFILE, S, SUN_DIR, WX, ambient, gradePass, heightAt, hemi, renderPass, renderer, scene, sun } from '../hub.js';
 
 const F = FIREFX, P = MATLOOK.pfx, RAMPS = Object.assign({}, F.ramps, P.ramps), KINDS = Object.assign({}, F.kinds, P.kinds), MAX = MOBILE ? F.maxMobile : F.max, STR = 32, NL = F.lights;
@@ -178,11 +178,11 @@ const LT = []; for(let i = 0; i < 12; i++) LT.push({ t:0, t0:1, x:0, y:0, z:0, r
 export function fxLight(x, y, z, hex, power, rad, life, fl, key){ if(!FX.on) return; let L = null; if(key) for(const q of LT) if(q.key === key && q.t > 0){ L = q; break; }
   if(!L){ let w = 1e9; for(const q of LT){ const v = q.t > 0 ? q.p * q.t / q.t0 : -1; if(v < w){ w = v; L = q; } } }
   _c.setHex(hex); L.x = x; L.y = y; L.z = z; L.r = _c.r; L.g = _c.g; L.b = _c.b; L.p = power; L.rad = rad; L.t = L.t0 = life; L.fl = fl || 0; L.key = key || null; }
-const _top = [];
+const _top = [], NK = { fire:1 };
 function lightsFrame(dt, now){ _top.length = 0; for(const q of LT){ if(q.t <= 0) continue; q.t -= dt; if(q.t <= 0) continue; const k = q.t / q.t0;
     q.i = q.p * (q.fl ? Math.min(1, k * 4) * (0.72 + 0.2 * Math.sin(now * q.fl + q.ph) + 0.08 * Math.sin(now * q.fl * 2.7 + q.ph * 3)) : k * k); _top.push(q); }
   _top.sort((a, b) => b.i - a.i);
-  for(let i = 0; i < NL; i++){ const q = _top[i], P = U.uFL.value[i], C = U.uFC.value[i]; if(q){ P.set(q.x, q.y, q.z, q.rad); C.set(q.r, q.g, q.b).multiplyScalar(q.i * F.light.fire); } else { P.set(0, -1e4, 0, 1); C.set(0, 0, 0); } } }
+  for(let i = 0; i < NL; i++){ const q = _top[i], P = U.uFL.value[i], C = U.uFC.value[i]; if(q){ P.set(q.x, q.y, q.z, q.rad); C.set(q.r, q.g, q.b).multiplyScalar(q.i * F.light.fire * NK.fire); } else { P.set(0, -1e4, 0, 1); C.set(0, 0, 0); } } }
 
 // ---- a blast felt: the exposure kick at once (light is instant), the shake by distance — and, far off, when the blast wave gets there ----
 const SHK = [];
@@ -200,7 +200,7 @@ export function updateFireFX(dt){ const now = (U.uNow.value += dt); let live = 0
   { const on = P.on && MATSW.pfx, hi = on && PROFILE.quality !== 'low'; U.uSoftK.value.w = on ? 1 : 0;   // (low quality: the lens fade only)   // MAT 2 this frame's shadow map, and last frame's camera for the scene depth it left behind
     if(SH_ON){ const sm = sun.shadow && sun.shadow.map; U.uShP.value.x = hi && sm && sun.castShadow ? P.shadow : 0; if(U.uShP.value.x){ U.uShT.value = sm.texture; U.uShM.value.copy(sun.shadow.matrix); U.uShP.value.y = P.shadowTap / (sm.width || 2048); } }
     if(SD_ON){ const c = renderPass.camera; U.uNF.value.w = hi && c.isPerspectiveCamera && renderPass.scene === scene ? 1 : 0; U.uDepth.value = renderPass.rt.depthTexture; U.uPrevVP.value.multiplyMatrices(c.projectionMatrix, c.matrixWorldInverse); U.uNF.value.x = c.near; U.uNF.value.y = c.far; } }
-  const L = F.light, night = NIGHT.on || S.tod === 'night', nk = night ? L.night : 1; U.uSunC.value.copy(sun.color).multiplyScalar(sun.intensity * L.sun * nk);
+  const L = F.light, night = NIGHT.on || S.tod === 'night', nk = night ? L.night * (FEELFX.on ? FEELFX.night.body : 1) : 1; NK.fire = night && FEELFX.on ? FEELFX.night.fire : 1; /* FEEL 2 after dark a puff is a moonlit grey, and the flames colour it */ U.uSunC.value.copy(sun.color).multiplyScalar(sun.intensity * L.sun * nk);
   U.uAmbC.value.copy(hemi.color).multiplyScalar(hemi.intensity * L.amb * nk).add(_lc.copy(ambient.color).multiplyScalar(ambient.intensity * L.amb * nk));
   U.uHot.value = night ? F.hot.night : F.hot.day; if(scene.fog){ U.uFogC.value.copy(scene.fog.color); U.uFogD.value = scene.fog.density || 0; }
   const w = WX.wind, wl = Math.hypot(w.x, w.y) || 1, wk = Math.min(F.wind.max, wl * F.wind.k) / wl; U.uWind.value.set(w.x * wk, w.y * wk); }

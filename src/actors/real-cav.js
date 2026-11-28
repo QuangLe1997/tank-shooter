@@ -54,6 +54,7 @@ function holdGun(R, G){ const p = S.player, id = p && p.guns && p.guns.length ? 
   else { R.cb.add(u.muzzle); u.muzzle.position.fromArray(want === '_carbine' ? REALCAV.carbine.muzzle : R.arms[want].userData.muzzle); } }
 import { carryAfter, carryGun } from '../hub.js';   // CARRY 1 (actors/gun-carry.js)
 import { BODYFULL } from '../../config.js';   // BODY 10 the cheek on the stock in the saddle, the B41's loading hand
+import { FEELFX } from '../../config.js';   // FEEL 1 (his kick) · FEEL 3 (the clip follows the speed he really makes)
 // Z297 THE SOLDIER'S HOLD: the gun first — its butt in his shoulder pocket (on top of the shoulder for the RPG, at the hip for the minigun and flamethrower),
 //   its bore along where he aims (up / down to the target too) — then his hands onto it by IK: the right on the pistol grip, trigger finger along the guard,
 //   the left under the handguard; fingers closed round both. Every shot kicks it STRAIGHT BACK along the bore with a little muzzle climb, a spring
@@ -113,7 +114,7 @@ function holdReal(R, G, dt, P){ const met = R.arms._metric && R.arms._metric[R.a
   // recoil: a shot is a new fireAt; the impulse goes into a damped spring (back along the bore, muzzle up)
   // Z360 every weapon's own recoil (actors/gun-fit.js gunRecoil: its round's push over its weight) and a random twitch aside and round its bore with it
   const rc = R.rc || (R.rc = { z:0, zv:0, a:0, av:0, y:0, yv:0, r:0, rv:0, last:0 }), KK = GUNKICK[R.armK] || g;
-  if(p && p.fireAt > rc.last + 1e-4){ if(rc.last){ const j = H.k * 0.12, sh = KK.shake; rc.zv += KK.kick[0] * j; rc.av += KK.kick[1] * j; if(sh){ rc.yv += (Math.random() * 2 - 1) * sh[0] * j; rc.rv += (Math.random() * 2 - 1) * sh[1] * j; } rc.shot = true; } rc.last = p.fireAt; }
+  if(p && p.fireAt > rc.last + 1e-4){ if(rc.last){ const j = H.k * 0.12 * (FEELFX.on && p === S.player ? FEELFX.gun.kick : 1), sh = KK.shake;   /* FEEL 1 his own shoulder takes the kick you can see */ rc.zv += KK.kick[0] * j; rc.av += KK.kick[1] * j; if(sh){ rc.yv += (Math.random() * 2 - 1) * sh[0] * j; rc.rv += (Math.random() * 2 - 1) * sh[1] * j; } rc.shot = true; } rc.last = p.fireAt; }
   const c = 2 * Math.sqrt(H.k) * H.damp; for(const [x, v] of [['z', 'zv'], ['a', 'av'], ['y', 'yv'], ['r', 'rv']]){ rc[v] += (-H.k * rc[x] - c * rc[v]) * dt; rc[x] += rc[v] * dt; }
   const foot = !!(p && p.cav && !p.cav.mounted && !p.cav.trans), wrists = foot || !!(BODYMEND.rideWrist && p && p.cav && !p.cav.trans), FH = GUNFEEL.hold, eyeW = foot || !!(BODYFULL.ride && p && p.cav && p.cav.mounted && !p.cav.trans);   // (BODY 10 eyeW: the cheek laid on the stock as on foot, in the saddle too)   // GUN 1 on his feet: the hold held to his own joints (actors/gun-hands.js); mounted it is as it was
   const prone = !!(p && p.cav && !p.cav.mounted && p.cav.stance === 'prone'), reachL = prone ? (foot ? FH.reach.hardProne : H.reachProne ?? H.reach) : H.reach, hip = g.hold === 'hip' && !(foot && prone && FH.hipProne);   // (GUN 1 lying down a hip-fired gun goes to the shoulder: at the hip it stood 20 cm over him, his right arm folded to a quarter)   // (Z326 lying flat he cannot lean back to an aircraft · Z416 lying, the support arm goes out straighter: the elbow is on the ground)

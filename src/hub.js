@@ -162,6 +162,7 @@ export * from './fx/hitfx.js';   // Z192 shell streaks, missile smoke ribbons, a
 export * from './fx/explosions.js';
 export * from './fx/wallmarks.js';   // Z204 rounds go off against walls / cover / forts and leave their marks
 export * from './fx/gunfx.js';   // Z149 per-class muzzle fx, lightning / rail beams, ricochets
+export * from './fx/feel-fx.js';   // FEEL 1–4 the critic's round 1: the smoke grenade's screen, the general's entrance cut, the ride-call chip
 export * from './fx/debris.js';
 export * from './fx/shatter.js';   // Z261 props break into pieces of themselves
 export * from './world/tree-fall.js';   // Z262 trees topple for real

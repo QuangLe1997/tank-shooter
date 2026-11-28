@@ -1,14 +1,16 @@
 // combat/spells.js — the soldier's SKILLS in hand (one picked, cast on cooldown: combat/trooper-spells.js), his smoke screen, and the blasts every
 //   weapon shares — AoE damage, a shell bursting on its spot, enemy ground strikes (no-tanks: the tank's equipment — smoke, APS, mines — is gone)
 import * as THREE from 'three';
-import { EQUIP, LETHAL, REAL } from '../../config.js';
+import { EQUIP, FEELFX, LETHAL, REAL } from '../../config.js';
 import { bladeSpecial, TROOPER_SPELLS, COVER_HP, MOBILE, S, fpvDetonate, fpvFlying, armorOf, bigExplode, blastAllies, blocks, burst, cityBlast, concuss, core, damageBlock, damageCore, damageEnemy, damagePlayer, decalScorch, deformCrater, enemies, envDmg, fenceBlast, fortIntactCross, heightAt, ringPulse, sfx, siegeMul, spawnPart, structMul, suppress, tunnelBlast, typeMul, updateSpellHUD, blastTrees, sandBlastProof } from '../hub.js';
 import { swimNoSkill } from '../hub.js';   // SWIM 1 (game/swim.js)
+import { smokeScreen } from '../hub.js';   // FEEL 2 (fx/feel-fx.js)
 
 export function inSmoke(now){ const p=S.player; return !!(p && now<(p.smokeUntil||0) && Math.hypot(p.pos.x-p.smokeX, p.pos.z-p.smokeZ) < EQUIP.smoke.radius); }
 export function updateEquip(dt, now){
   const p=S.player; if(!p) return;
   if(now<(p.smokeUntil||0)){ const left=p.smokeUntil-now, R=EQUIP.smoke.radius;                    // the screen billows, then thins out
+    if(FEELFX.on){ smokeScreen(dt, p, left); return; }   // FEEL 2 a ring round where it fell, lit grey, his own clearing and the lens's lane kept open
     for(let k=0;k<(MOBILE?2:3);k++) if(Math.random()<Math.min(1,left/2)){ const a=Math.random()*6.283, r=Math.sqrt(Math.random())*R;
       spawnPart(p.smokeX+Math.cos(a)*r, heightAt(p.smokeX,p.smokeZ)+0.8+Math.random()*1.5, p.smokeZ+Math.sin(a)*r, (Math.random()-0.5)*0.8, 0.3+Math.random()*0.4, (Math.random()-0.5)*0.8, {color:0xd8dcd4, size:3+Math.random()*2, life:2.2, smoke:true, grav:-0.05, drag:0.8, grow:1.6, op:0.5}); } }
 }
