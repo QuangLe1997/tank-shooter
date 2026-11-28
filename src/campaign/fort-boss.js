@@ -58,7 +58,7 @@ function preload(){ if(FBOSS.pre || !FORTS.length || !C.on) return; FBOSS.pre = 
 function home(f){ return f.arena || { x:f.x, z:f.z, r:(f.Rin || f.R) - C.move.leash }; }   // (BAL 17 f.arena: the open courtyard out of the gate his sector gives him)
 // where he comes out: the keep's door (the capital) or the command post's, toward the gate, stepped clear of the building
 function doorOf(f){ const gx = f.gx - f.x, gz = f.gz - f.z, gl = Math.hypot(gx, gz) || 1, ux = gx / gl, uz = gz / gl; let cx = f.x, cz = f.z, r = 0;
-  if(f.arena){ const p = { x:f.gx + ux * 4, z:f.gz + uz * 4 }; infPushBlocks(p); return { x:p.x, z:p.z, ux, uz }; }   // BAL 17 out through his gate into the open
+  if(f.arena){ const p = f.arena.near ? { x:f.arena.x + (f.gx - f.arena.x) / (Math.hypot(f.gx - f.arena.x, f.gz - f.arena.z) || 1) * f.arena.r * 0.6, z:f.arena.z + (f.gz - f.arena.z) / (Math.hypot(f.gx - f.arena.x, f.gz - f.arena.z) || 1) * f.arena.r * 0.6 } : { x:f.gx + ux * 4, z:f.gz + uz * 4 }; infPushBlocks(p); return { x:p.x, z:p.z, ux, uz }; }   // BAL 17 out through his gate into the open · BAL 28 (a far gate: he comes on at the courtyard's far side, ~40 m from the player)
   if(f.keepR){ cx = f.x + f.keepX; cz = f.z + f.keepZ; r = f.keepR + 2; } else if(f.coreR){ cx = f.x + f.coreX; cz = f.z + f.coreZ; r = f.coreR + 1.5; }
   const p = { x:cx + ux * r, z:cz + uz * r }; infPushBlocks(p); return { x:p.x, z:p.z, ux, uz }; }
 

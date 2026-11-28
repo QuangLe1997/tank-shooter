@@ -3314,6 +3314,9 @@ grp('BLADE 15 the blade\'s mends: the wrists in a cut, the slung rifle, the worn
 // BAL 27 where the sector's goal is, for the on-screen marker: sectorGoalPos()
 { const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { BAL:Q, SECTOR:SE, CONQSTORY:CS }=await import('./config.js'), sg=R('src/campaign/sector-goals.js'), sc=R('src/campaign/sectors.js'), fb=R('src/campaign/fort-boss.js');
   ok(/export function sectorGoalPos\(\)/.test(sg) && /q\.way = \(SECT\.tries \| 0\) >= BAL\.retry\.after/.test(sg), 'BAL 27: sectorGoalPos() gives the goal (x, z, r, kind, type, way) for the marker'); }
+// BAL 28 the general meets the player: a far gate brings his courtyard arenaD m ahead of him (C3-005)
+{ const fs=await import('node:fs'), R=f=>fs.readFileSync(f,'utf8'), { BAL:Q, SECTOR:SE, CONQSTORY:CS }=await import('./config.js'), sg=R('src/campaign/sector-goals.js'), sc=R('src/campaign/sectors.js'), fb=R('src/campaign/fort-boss.js');
+  ok(Q.boss.arenaD>=20 && Q.boss.arenaD<=60 && /BAL\.boss\.arenaD/.test(sc) && /near:true/.test(sc) && /f\.arena\.near/.test(fb), 'BAL 28: the general comes on ~40 m from the player, not 130'); }
 // Z141 realistic water + flora
 { const fs=await import('node:fs'); const h=fs.readFileSync('src/world/heightfield.js','utf8'), f=fs.readFileSync('src/world/flora.js','utf8'), d=fs.readFileSync('src/world/decor.js','utf8');
   ok(/depthTex/.test(h) && /foam/.test(h) && /WTIME/.test(h), 'water is depth-tinted with foam and moving ripples');

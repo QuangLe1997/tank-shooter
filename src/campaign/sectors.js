@@ -90,7 +90,9 @@ export function sectorEnd(){ unknob(); SECT.on = false; SECT.spec = null; SECT.s
 
 // BAL 17 THE GENERAL FIGHTS IN THE OPEN: an open courtyard out of his citadel's gate (BAL.boss.arenaR m, its centre that far and a few metres more out), clear of the field's edge —
 //   his leash (campaign/fort-boss.js home) and his way out (doorOf) go there; null when the field leaves no room (he keeps his walls)
-function arenaOf(f){ if(f.gx == null) return null; const R = BAL.boss.arenaR, ux = f.gx - f.x, uz = f.gz - f.z, L = Math.hypot(ux, uz) || 1;
+function arenaOf(f){ if(f.gx == null) return null; const R = BAL.boss.arenaR, ux = f.gx - f.x, uz = f.gz - f.z, L = Math.hypot(ux, uz) || 1, p = S.player;
+  if(p){ const vx = f.gx - p.pos.x, vz = f.gz - p.pos.z, vd = Math.hypot(vx, vz) || 1;   // BAL 28 when his gate is far: the courtyard comes to meet the player — arenaD m ahead of him toward the gate
+    if(vd > BAL.boss.arenaD + R){ for(const k of [1, 0.75, 0.55]){ const x = p.pos.x + vx / vd * BAL.boss.arenaD, z = p.pos.z + vz / vd * BAL.boss.arenaD; if(inField(x, z, R * k * 0.6)) return { x, z, r:R * k, near:true }; } } }
   for(const k of [1, 0.75, 0.55]){ const d = R * k + 4, x = f.gx + ux / L * d, z = f.gz + uz / L * d; if(inField(x, z, R * k * 0.6)) return { x, z, r:R * k }; } return null; }
 // BAL 14 a hold's beat: n squads from in front of him or his sides (out of the frame, d m off), knowing where he is
 function beatSquads(n, d){ const p = S.player; if(!p) return 0; let k = 0;
