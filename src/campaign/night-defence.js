@@ -18,7 +18,8 @@
 //   faced the last one is out of ammunition: he re-arms it by standing by it. Smoke, the recon drone, the fireteam and the ammunition point are the campaign's.
 import * as THREE from 'three';
 import { NIGHTDEF, SIDEMISSION, SPACE, WEATHER } from '../../config.js';
-import { BIOME, BIOMES, CORE_DEF, MODE, RECON, S, SURP, TROOPER_SPELLS, WAVE, WX, _canvasTex, ambient, applyAtmosphere, applyWeather, biomeVi, blHot, bossForStage, capVi, celebrate, clampFieldXZ, computeEnv, core, damageCore, dirCount, dirDiff, dirNoFlank, dirPass, droneRaid, duelOn, duelReset, enemies, fieldEdgePoint, fillTx, floatText, generalStart, hatchEntry, heightAt, lowVi, modeCard, modeChip, modeDefine, modeKnob, modeLaunch, modeNum, modeOn, modeSay, modeShare, modeStats, modeStore, modeUndo, modeWhere, ndClock, ndQueue, ndScore, openBattleSetup, pickTx, saveProfile, scene, sfx, showBanner, spawnPart, stealthLight, tapBtn, updateHUD, updateSpellHUD } from '../hub.js';
+import { MIX, composeBattle, nightSpec, mixBegin, mixGo, mixSeed, mixNightApply } from '../hub.js';   // MIX 5 a night IS a battle spec with a night block (data/mixer-math.js nightSpec / nightBlock · campaign/mixer.js)
+import { BIOME, BIOMES, CORE_DEF, MODE, RECON, S, SURP, TROOPER_SPELLS, WAVE, WX, _canvasTex, ambient, applyAtmosphere, applyWeather, biomeVi, blHot, bossForStage, capVi, celebrate, clampFieldXZ, computeEnv, core, damageCore, dirCount, dirDiff, dirNoFlank, dirPass, droneRaid, duelOn, duelReset, enemies, fieldEdgePoint, fillTx, floatText, generalStart, hatchEntry, heightAt, lowVi, modeCard, modeChip, modeDefine, modeKnob, modeNum, modeOn, modeSay, modeShare, modeStats, modeStore, modeUndo, modeWhere, ndClock, ndQueue, ndScore, openBattleSetup, pickTx, saveProfile, scene, sfx, showBanner, spawnPart, stealthLight, tapBtn, updateHUD, updateSpellHUD } from '../hub.js';
 
 const C = NIGHTDEF, Y = C.say, EDGE = [-Math.PI / 2, Math.PI / 2, Math.PI, 0], OPP = [1, 0, 3, 2], R2 = a => a[0] + Math.random() * (a[1] - a[0]);   // EDGE: campaign/waves.js's four sides (their side · ours · west · east) as world/field.js bearings
 // the night as it stands (dev / probes read it): t — seconds of the night · k — the assault in hand (−1: none yet) · phase first | warn | assault | lull | wait
@@ -32,7 +33,7 @@ const foe = e => !e.guard && !e.fortOf && !e.abandoned;
 // ---- from the menus ----
 // CHUẨN BỊ TRẬN's third tab (ui/battle-setup.js): the battlefield, weather, size and enemy level of a custom battle — the hour is the night
 export function nightDefSetup(o){ const b = BIOMES[o.biome] || BIOMES[0]; return { kick:fillTx(Y.kick, { h0:hh(0), h1:hh(1) }), sum:fillTx(Y.sum, { b:capVi(biomeVi(b.name)), wx:lowVi(WEATHER[o.wx].vi), sp:lowVi(SPACE[o.space].vi), lvl:o.lvl }) }; }
-export function nightDefLaunch(o){ modeLaunch({ level:o.lvl, biome:o.biome, tod:'night', wx:o.wx, space:o.space, nd:{ night:1, base:o.lvl } }); }
+export function nightDefLaunch(o){ composeBattle(nightSpec({ ...o, nd:{ night:1, base:o.lvl } })); }   // MIX 5 the night's spec (its night block: clock, assaults, lulls, flare, sappers, the wall's guns)
 if(typeof document !== 'undefined') tapBtn('nightBtn', () => openBattleSetup('night'));
 
 // ---- the flares: his (ours: a pool of light on the ground, marks, the lift) and the enemy's signal (a red star over the fence) ----
@@ -146,19 +147,24 @@ function card(won, reason){ const st = modeStats(), W = modeWhere(), E = Y.end, 
   modeCard({ kick:fillTx(won ? E.kickWon : E.kickLost, o), lost:!won, big:won ? E.won : E.lost, why:fillTx(won ? E.whyWon : /MẠNG/.test(reason || '') ? E.whyDead : E.whyCore, o),
     stats:[[E.stats[0], o.score], [E.stats[1], ND.survived + '/' + N], [E.stats[2], o.core + '%'], [E.stats[3], o.acc + '%']], best:(beat ? E.newBest : '') + fillTx(E.best, { n:M.nights, s:modeNum(M.score) }), newBest:beat,
     hint:won ? E.hintWon : E.hintLost, go:more ? E.next : E.retry, share:modeShare(o, Y.share), copy:{ label:Y.copy, done:Y.copied, fail:Y.copyFail },
-    onGo:() => { if(more){ _pass = 'n' + night + ':' + MODE.seq; modeLaunch({ ...cfg, level:base + 5 * night, nd:{ night:night + 1, base, pass:_pass } }); } else modeLaunch({ ...cfg, level:base, nd:{ night:1, base } }); } }); }
+    onGo:() => { if(more){ _pass = 'n' + night + ':' + MODE.seq; composeBattle(nightSpec({ ...cfg, lvl:base + 5 * night, nd:{ night:night + 1, base, pass:_pass } })); } else composeBattle(nightSpec({ ...cfg, lvl:base, nd:{ night:1, base } })); } }); }   // MIX 5 (as specs)
 
 // ---- the mode (campaign/mode-run.js calls these) ----
 modeDefine('nd', {
   // the run is known, the world not yet built: which night this is (a later one only with NEXT NIGHT's word), the side missions off (their card is the clock)
   begin(run){ const q = run.nd || {}, ok = (q.night | 0) > 1 && !!q.pass && q.pass === _pass; _pass = null;
     Object.assign(ND, { night:ok ? Math.min(C.maxNight, q.night | 0) : 1, base:Math.max(1, (q.base | 0) || (run.level | 0) || 1), t:0, k:-1, phase:'first', dir:-1, open:false, ax:0, survived:0, genDown:false, done:false, won:false, doneT:0, dawnIn:0, pre:false, pushAt:0, sapAt:0, sapSay:-99, sapRadio:-1, hudAt:0, flAt:0, tier:null });
-    ND.ex.length = 0; ND.guns.length = 0; ND.nDry = 0; ND.gunSay = -99; for(const k in ND.stats) ND.stats[k] = 0; modeKnob(SIDEMISSION, 'on', false); },
+    ND.ex.length = 0; ND.guns.length = 0; ND.nDry = 0; ND.gunSay = -99; for(const k in ND.stats) ND.stats[k] = 0;
+    // MIX 5 the night's spec: the mixer's plan (its numbers, its seed) and its night block turned onto NIGHTDEF (only what differs from today's) — the queue below runs from it
+    if(!(MIX.spec && MIX.spec.night)){ MIX.spec = nightSpec({ lvl:run.level, biome:run.biome, wx:run.wx, space:run.space, nd:run.nd }); MIX.score = null; }   // (a launch that did not come through composeBattle)
+    mixBegin(null); mixNightApply(); modeKnob(SIDEMISSION, 'on', false); },
+  seed(k){ mixSeed(k); },
+  go(now, first){ mixGo(first); },
   // the soldier stands ready: the night's loop (one harder a night), the flare in his skill wheel and in hand, the flare's two materials on the field for the
   //   shader warm-up the briefing and the countdown run (ui/briefing.js prewarmStage) — the first one he fires must not hitch
   ready(p){ const lv = ND.base + 5 * (ND.night - 1); S.loop = Math.floor((lv - 1) / 5); if(S.run){ S.run.level = lv; S.run.nd = { night:ND.night, base:ND.base }; } if(S.runCfg){ S.runCfg.level = lv; S.runCfg.nd = { night:ND.night, base:ND.base }; }
-    if(!TROOPER_SPELLS.includes(FLARE)) TROOPER_SPELLS.push(FLARE); modeUndo(() => { const i = TROOPER_SPELLS.indexOf(FLARE); if(i >= 0) TROOPER_SPELLS.splice(i, 1); if(S.spell >= TROOPER_SPELLS.length) S.spell = 0; updateSpellHUD(); });
-    S.spell = TROOPER_SPELLS.indexOf(FLARE); updateSpellHUD();
+    if(!(MIX.plan && MIX.plan.night && MIX.plan.night.flare.on === false) && !TROOPER_SPELLS.includes(FLARE)) TROOPER_SPELLS.push(FLARE); modeUndo(() => { const i = TROOPER_SPELLS.indexOf(FLARE); if(i >= 0) TROOPER_SPELLS.splice(i, 1); if(S.spell >= TROOPER_SPELLS.length) S.spell = 0; updateSpellHUD(); });   // (MIX 5 a night block may leave the flare out)
+    S.spell = Math.max(0, TROOPER_SPELLS.indexOf(FLARE)); updateSpellHUD();
     if(p){ const o = ND.warm = flareObj(); o.sp.position.set(p.pos.x, 3, p.pos.z); o.pool.position.set(p.pos.x, 0.3, p.pos.z); o.sp.scale.setScalar(0.5); o.pool.scale.setScalar(0.5); o.sp.material.opacity = o.pool.material.opacity = 0.004; o.sp.visible = o.pool.visible = true; }
     updateHUD(); },
   // the fight goes live: dusk

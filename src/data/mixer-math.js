@@ -6,7 +6,8 @@
 //   SCORES are first-principles estimates around today's battle (level 3, every param 50) — to be calibrated against measured battles (mixer-mapping.md §6).
 import * as CFG from '../../config.js';
 import { ENEMY_DEFS } from './enemies.js';
-import { modeHash, knobApply } from './mode-math.js';
+import { modeHash, knobApply, dailyChallenge } from './mode-math.js';
+import { GUNS } from './guns.js';
 
 const { MIXER, BALANCE, SECTOR, SECROUTE } = CFG;
 const clamp = (x, a, b) => x < a ? a : x > b ? b : x, r3 = x => Math.round(x * 1000) / 1000;
@@ -42,7 +43,7 @@ export function mixToken(t){ if(t === '*') return { tok:'*', type:'*' }; let o =
 function deckTypes(land){ const d = SECROUTE.decks[land] || SECROUTE.decks._ || []; return d.map(x => mixToken(x)).filter(Boolean).map(c => c.type); }
 
 const GROUPS = () => [...new Set(Object.keys(MIXER.params).map(id => id.split('.')[0]))];
-const TOP = ['v', 'id', 'name', 'seed', 'macro', 'world', 'structure', 'advanced', 'coop', 'note', 'threat', 'general', 'storyline', 'conq'];   // MIX 3 threat · general · storyline · conq: a scenario's own fields (the conquest's forts)
+const TOP = ['v', 'id', 'name', 'seed', 'macro', 'world', 'structure', 'advanced', 'coop', 'note', 'threat', 'general', 'storyline', 'conq', 'seedScheme', 'loadout', 'forced', 'daily', 'night'];   // MIX 5 seedScheme · loadout · forced · daily · night   // MIX 3 threat · general · storyline · conq: a scenario's own fields (the conquest's forts)
 
 // ================= NORMALIZE =================
 export function normalizeSpec(spec, opts){ opts = opts || {}; const M = opts.M || MIXER, roots = opts.roots || mixRoots(), device = opts.device === 'phone' ? 'phone' : 'desktop', B = M.budget[device];
@@ -142,7 +143,17 @@ export function normalizeSpec(spec, opts){ opts = opts || {}; const M = opts.M |
         for(const lp of ls){ const L = leaf(lp, 'threat'); L.to = knobApply(L.to, op, Number(x)); L.read = 'build'; L.wide = true; } }
       s.threat = { id:String(th.id || ''), knobs:ok }; } }
   for(const k of ['general', 'conq']) if(s[k] != null && (typeof s[k] !== 'object' || Array.isArray(s[k]))){ W(k, 'Bỏ trường hỏng: ' + k); delete s[k]; }
-  if(s.general) s.general = { name:String(s.general.name || ''), look:s.general.look ? String(s.general.look) : null };
+  if(s.general){ const g = s.general; s.general = { name:String(g.name || ''), look:g.look ? String(g.look) : null }; if(g.hunt){ s.general.hunt = true; const a = Number(g.at) || 0; s.general.at = clamp(a, 0, 600); if(a !== s.general.at) C('general.at', a, s.general.at, '0–600 s'); } }
+  // MIX 5 a scenario's player-side rules (the daily challenge's modifiers): the issued guns (strict = nothing else), skills taken off the wheel, pickups that do nothing;
+  //   a big event forced on a clock; the field's seed scheme ('daily': the day's own — Math.random = the seed's stream, each build step modeHash(seed, k), no play stream)
+  if(s.seedScheme != null && s.seedScheme !== 'daily' && s.seedScheme !== 'mixer'){ W('seedScheme', 'Bỏ kiểu hạt lạ: ' + s.seedScheme); delete s.seedScheme; }
+  if(s.loadout != null){ const L = s.loadout && typeof s.loadout === 'object' ? s.loadout : {}, ids = a => (Array.isArray(a) ? a : []).filter(x => typeof x === 'string' && /^[\w-]{1,24}$/.test(x)).slice(0, 8);
+    const guns = ids(L.guns).filter(id => { if(GUNS[id]) return true; W('loadout', 'Không có súng: ' + id); return false; }).slice(0, 5);
+    s.loadout = { guns, strict:!!L.strict && guns.length > 0, spellsOff:ids(L.spellsOff), lootOff:ids(L.lootOff) }; }
+  if(s.forced != null){ const F = s.forced, Q = M.forced; if(!F || !Q.kinds.includes(F.kind)){ W('forced', 'Bỏ sự kiện ép lạ'); delete s.forced; }
+    else { const e = clamp(Number(F.every) || Q.every[0], Q.every[0], Q.every[1]), r = clamp(Number(F.retry) || Q.retry[0], Q.retry[0], Q.retry[1]); if(e !== +F.every) C('forced.every', F.every, e, Q.every.join('–') + ' s'); s.forced = { kind:F.kind, every:e, retry:r }; } }
+  if(s.daily != null){ const d = Math.floor(Number(s.daily.day)); if(!(d >= 0)){ C('daily.day', s.daily.day, null, 'không phải ngày'); delete s.daily; } else s.daily = { day:d }; }
+  if(s.night != null) s.night = nightBlock(s.night, M, C);
   if(s.conq){ const i = Math.round(Number(s.conq.i)); if(!(i >= 0 && i < CFG.CONQUEST.forts.length)){ C('conq.i', s.conq.i, null, 'không có thành này'); delete s.conq; } else s.conq = { i }; }
   if(s.storyline != null && typeof s.storyline !== 'string'){ W('storyline', 'Bỏ trường hỏng: storyline'); delete s.storyline; }
   // advanced keys (allow-listed, '=' and clamped)
@@ -156,9 +167,10 @@ export function normalizeSpec(spec, opts){ opts = opts || {}; const M = opts.M |
     L.to = L.int ? Math.round(v) : v; }   // (MIX 3 no rounding: a fort's threat lands on exactly the number the old conquest code made)
   const knobs = [...leaves.values()].filter(L => L.to !== L.from).map(L => ({ path:L.path, from:L.from, to:L.to, read:L.read, by:L.by }));
   const stage = ((level - 1) % 5) + 1, loop = Math.floor((level - 1) / 5);
-  const plan = { v:1, seed, seeds:{ build:modeHash(seed, 1), deal:modeHash(seed, 2), play:modeHash(seed, 3) }, device, coop,
+  const plan = { v:1, seed, seeds:{ build:modeHash(seed, 1), deal:modeHash(seed, 2), play:modeHash(seed, 3), scheme:s.seedScheme === 'daily' ? 'daily' : 'mixer' }, device, coop,
     world:{ land, biome:M.lands.indexOf(land), tod, wx, space, level, stage, loop, diff }, structure:{ sectors:toks ? toks.slice() : null, auto, stars:toks ? toks.filter(t => t === '*').length : 0 },
-    macro, params:vals, player:{ lives:vals['player.lives'].v }, knobs, conq:s.conq ? s.conq.i : null, storyline:s.storyline || null };
+    macro, params:vals, player:{ lives:vals['player.lives'].v, livesSet:!!(spec && spec.player && spec.player.lives != null) }, knobs, conq:s.conq ? s.conq.i : null, storyline:s.storyline || null,
+    loadout:s.loadout || null, general:s.general || null, forced:s.forced || null, daily:s.daily || null, night:s.night || null };
   return { spec:s, plan, clamped, warnings }; }
 
 // ---- events in five minutes (surprises · big events · side missions · drone raids), from the params ----
@@ -257,3 +269,36 @@ export function planCurve(n, sc){ sc = sc || scoreBattle(n); const p = n.plan, V
     for(let i = 0; i < waves; i++){ marks.push({ t:+t.toFixed(2), label:'Đ' + (i + 1) }); const r = 0.75 + 0.25 * (i + 1) / waves; at(t + d * 0.45, pk * r * 0.7); at(t + d * 0.62, pk * r); at(t + d * 0.8, lo); t += d; }
     marks.push({ t:+t.toFixed(2), label:'Tướng' }); at(t + boss * 0.4, pk * 0.8); at(t + boss * 0.85, Math.min(1, pk * 1.05)); at(total, lo); }
   return { pts, marks, total }; }
+
+// ================= MIX 5 THE NIGHT BLOCK (night defence as a spec) =================
+// raw → the whole night (NIGHTDEF's numbers where the spec is silent), every number inside MIXER.night's bounds; C(key, from, to, why) records a pull-back
+export function nightBlock(raw, M, C){ M = M || MIXER; C = C || (() => {}); const N = CFG.NIGHTDEF, B = M.night, r = raw && typeof raw === 'object' ? raw : {}, num = (k, v, d, b, int) => { if(v == null) return d; let n = Number(v); if(!Number.isFinite(n)){ C('night.' + k, v, d, 'không phải số'); return d; }
+    let c = clamp(n, b[0], b[1]); if(int) c = Math.round(c); if(c !== n) C('night.' + k, n, c, 'biên ' + b[0] + '–' + b[1]); return c; };
+  const o = { night:num('night', r.night, 1, [1, N.maxNight], true), base:num('base', r.base, 1, B.base, true), pass:typeof r.pass === 'string' ? r.pass : null,
+    len:num('len', r.len, N.len, B.len), warn:num('warn', r.warn, N.warn, B.warn), fastK:num('fastK', r.fastK, N.fastK, B.fastK), nightK:num('nightK', r.nightK, N.nightK, B.nightK) };
+  const l = r.lull || {}; o.lull = { min:num('lull.min', l.min, N.lull.min, B.lull) }; o.lull.max = num('lull.max', l.max, N.lull.max, [o.lull.min, B.lull[1]]);
+  let at = Array.isArray(r.at) ? r.at.map(Number) : N.at.slice(), as = Array.isArray(r.assaults) ? r.assaults : N.assaults;
+  if(at.length > B.assaults[1]){ C('night.at', at.length, B.assaults[1], 'tối đa ' + B.assaults[1] + ' đợt'); at = at.slice(0, B.assaults[1]); }
+  const n = Math.max(B.assaults[0], Math.min(at.length, as.length)); if(at.length !== as.length) C('night.assaults', as.length, n, 'mỗi đợt một mốc giờ');
+  at = at.slice(0, n); let prev = -1; o.at = at.map((t, i) => { let c = clamp(Number.isFinite(t) ? t : prev + B.gap, i ? prev + B.gap : 0, o.len - B.tail); if(c !== t) C('night.at.' + i, t, c, 'tăng dần, cách ≥ ' + B.gap + ' s, trước bình minh'); prev = c; return c; });
+  o.assaults = as.slice(0, n).map((a, i) => { a = a && typeof a === 'object' ? a : {}; const A = B.assault, q = 'assaults.' + i + '.';
+    return { n:num(q + 'n', a.n, 5, A.n, true), rpg:num(q + 'rpg', a.rpg, 0, A.rpg), squads:num(q + 'squads', a.squads, 0, A.squads, true), heli:num(q + 'heli', a.heli, 0, A.heli, true), tier:num(q + 'tier', a.tier, 0, A.tier, true),
+      extra:(Array.isArray(a.extra) ? a.extra : []).filter(x => x && B.extra.includes(x.k)).slice(0, 4).map(x => { const y = { k:x.k, t:num(q + 'extra.t', x.t, 0, A.t) }; if(x.k === 'drone') y.kind = x.kind === 'kami' ? 'kami' : 'spot'; return y; }) }; });
+  const sub = (k, keys) => { const v = r[k] || {}, out = {}; for(const j of keys) out[j] = num(k + '.' + j, v[j], N[k][j], B[k][j], Number.isInteger(N[k][j]) && j !== 'dps'); return out; };
+  o.sap = sub('sap', ['r', 'arm', 'dps', 'maxN']); o.gun = sub('gun', ['shells', 'rounds', 't']); o.mortar = sub('mortar', ['n', 'dmg']); o.flare = { on:!(r.flare && r.flare.on === false), ...sub('flare', ['cd', 'burn', 'R']) };
+  return o; }
+// the knobs a night block turns on NIGHTDEF (only what differs from today's): [object path, key, value] — campaign/mixer.js mixNightApply turns them
+export function nightKnobs(o){ const N = CFG.NIGHTDEF, out = []; if(!o) return out; const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  for(const k of ['len', 'warn', 'fastK', 'nightK']) if(o[k] !== N[k]) out.push(['', k, o[k]]);
+  for(const k of ['min', 'max']) if(o.lull[k] !== N.lull[k]) out.push(['lull', k, o.lull[k]]);
+  if(!same(o.at, N.at)) out.push(['', 'at', o.at.slice()]); if(!same(o.assaults, N.assaults)) out.push(['', 'assaults', JSON.parse(JSON.stringify(o.assaults))]);
+  for(const g of ['sap', 'gun', 'mortar', 'flare']) for(const k in o[g]) if(k !== 'on' && o[g][k] !== N[g][k]) out.push([g, k, o[g][k]]);
+  return out; }
+// ---- the presets the modes launch: the day's challenge, a night of night defence ----
+export function dailySpec(day, D){ D = D || CFG.DAILY; const ch = dailyChallenge(day, D), m = D.mods.find(x => x.id === ch.mod) || D.mods[0], sp = { v:1, id:'daily-' + ch.date, name:'Thử thách ' + ch.date, seed:ch.seed, seedScheme:'daily',
+    world:{ land:ch.biome, tod:ch.tod, wx:ch.wx, space:ch.space, level:ch.level }, loadout:{ guns:ch.guns.slice(), strict:!!m.strict, spellsOff:(m.spellsOff || []).slice(), lootOff:(m.lootOff || []).slice() }, daily:{ day:ch.day } };
+  if(m.set) sp.threat = { id:m.id, knobs:m.set.map(k => k.slice()) }; if(m.lives != null) sp.player = { lives:m.lives }; if(m.general) sp.general = { name:'', hunt:true, at:D.hunterAt }; if(m.event) sp.forced = { ...m.event };
+  return sp; }
+export function nightSpec(o){ const lands = MIXER.lands, lv = Math.max(1, o.lvl | 0), q = o.nd || {};
+  return { v:1, id:'night-' + (q.night || 1), name:'Thủ đêm · đêm ' + (q.night || 1), world:{ land:lands[o.biome] || lands[0], tod:'night', wx:o.wx || 'clear', space:o.space || 'wide', level:lv },
+    night:{ night:q.night || 1, base:q.base || lv, ...(q.pass ? { pass:q.pass } : {}) } }; }

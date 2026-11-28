@@ -4087,7 +4087,12 @@ export const MIXER = { v:1,
   auto:{ sectorsFrom:65, n:[[65, 2], [75, 3], [88, 4], [97, 5]], fixedBelow:35 },
   sectors:{ max:6, coop:false },
   // MIX 3 a scenario's own relative knobs (spec.threat — a conquest fort's): the roots it may name and the range of a leaf it turns (× today, unless MIXER.bounds names it)
-  threat:{ roots:['REAL', 'DIRECTOR', 'FORT', 'FORTBOSS', 'BALANCE'], k:[0.2, 6] },
+  threat:{ roots:['REAL', 'DIRECTOR', 'FORT', 'FORTBOSS', 'BALANCE', 'DRONEWAR', 'LOGISTICS', 'SIDEMISSION'], k:[0, 6] },   // MIX 5 + the daily modifiers' roots; a threat may zero a number (the daily's 'nomed', 'nogive')
+  // MIX 5 a forced big event on a clock (spec.forced — the daily's 'blackout') · the night block's bounds (spec.night — night defence; NIGHTDEF's numbers where silent)
+  forced:{ kinds:['bombing', 'crash', 'fire', 'jam'], every:[30, 600], retry:[1, 60] },
+  night:{ base:[1, 30], len:[240, 900], warn:[3, 15], fastK:[1, 4], nightK:[0, 0.5], lull:[10, 90], assaults:[1, 10], gap:20, tail:30, extra:['mortar', 'drone', 'hatch', 'general'],
+    assault:{ n:[1, 30], rpg:[0, 0.6], squads:[0, 5], heli:[0, 2], tier:[0, 3], t:[0, 60] }, sap:{ r:[10, 50], arm:[1, 8], dps:[0, 6], maxN:[1, 8] }, gun:{ shells:[0, 20], rounds:[0, 200], t:[0.5, 5] },
+    mortar:{ n:[0, 16], dmg:[0, 80] }, flare:{ cd:[8, 60], burn:[6, 40], R:[12, 45] } },
   // MIX 3 PRESET SPECS — the ten conquest forts as battle specs (the battle of CONQUEST.forts[i]: its land, hour, weather, level, sector run, threat, general and story;
   //   the map's own fields — name, blurb, prize, act — stay in CONQUEST). campaign/conquest.js conqLaunch composes these; the mixer desk lists them.
   presets:{ conquest:CONQUEST.forts.map((f, i) => ({ v:1, id:'conq-' + (i + 1), name:'Thành ' + (i + 1) + ' · ' + f.name, world:{ land:f.biome, tod:f.tod, wx:f.wx, space:'wide', level:f.lvl },

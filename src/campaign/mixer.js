@@ -10,8 +10,8 @@
 //   (mixer.html): its card goes back to the desk, and every battle's prediction and measurement are kept in localStorage (xk.mixlog) for calibration.
 //   Dev: ?spec=<name> (tools/specs/<name>.json) · ?spec=_session (the desk's spec in sessionStorage xk.mixspec) · ?mixspec=<url-encoded JSON> (dev/hooks.js).
 //   Co-op: not supported yet (a guest would not hold the same knobs).
-import { MIXER } from '../../config.js';
-import { normalizeSpec, scoreBattle, mixRoots, mixRef, modeRng, modeHash, modeDefine, modeKnob, modeUndo, modeLaunch, modeCard, modeStats, modeSay, modeTime, modeNum, sectorBattle,
+import { MIXER, NIGHTDEF } from '../../config.js';
+import { normalizeSpec, scoreBattle, mixRoots, mixRef, nightKnobs, modeRng, modeHash, modeDefine, modeKnob, modeUndo, modeLaunch, modeCard, modeStats, modeSay, modeTime, modeNum, sectorBattle,
   coopActive, launchGame, modeEnd, sectorEnd, DIR, MOBILE, PROFILE, S, SECT, WAVE } from '../hub.js';
 
 // spec = the normalized spec in hand · plan / score of the battle · meas = what the battle measured · log = the last battles (prediction beside measurement)
@@ -27,6 +27,8 @@ export function composeBattle(spec, o){ o = o && typeof o === 'object' ? o : { f
   const n = normalizeSpec(spec, op), sc = scoreBattle(n);
   Object.assign(MIX, { spec:n.spec, plan:n.plan, score:sc, clamped:n.clamped, warnings:n.warnings, fromHome:!!o.fromHome, desk:!!o.desk, ladder:!!o.ladder && !n.spec.conq });
   const w = n.plan.world, run = { biome:w.biome, tod:w.tod, wx:w.wx, space:w.space, level:w.level, mix:{ seed:n.plan.seed } }; if(n.spec.conq) run.conq = { i:n.spec.conq.i };   // (a conquest fort: its own mode runs the plan)
+  if(n.spec.daily) run.daily = { day:n.spec.daily.day };   // MIX 5 the day's challenge (campaign/daily.js runs the plan)
+  if(n.spec.night){ const q = n.spec.night; run.nd = { night:q.night, base:q.base, ...(q.pass ? { pass:q.pass } : {}) }; run.tod = 'night'; }   // MIX 5 a night of night defence (campaign/night-defence.js)
   if(MIX.ladder) launchGame({ mode:'custom', ...run }); else modeLaunch(run, o.fromHome);   // TỰ CHỌN stays on the board (the leaderboard, the next stage); everything else is one battle off it
   return { ok:true, spec:n.spec, plan:n.plan, clamped:n.clamped, warnings:n.warnings, score:sc }; }
 // the plan's leaves of one read time turned through the mode's knobs (put back by modeEnd)
@@ -35,13 +37,15 @@ function turn(plan, read){ const R = roots(); let n = 0; for(const q of plan.kno
 // ---- the plan's steps (the mix mode's and the conquest's) ----
 // begin: the plan on the pristine config, Math.random on the build stream, the BUILD leaves, the sector chain (its win: onWon)
 export function mixBegin(onWon){ const n = normalizeSpec(MIX.spec || { v:1, world:{ land:'DESERT' } }, opts()); MIX.plan = n.plan; const p = n.plan;
-  const r0 = Math.random; Math.random = modeRng(p.seeds.build); modeUndo(() => { Math.random = r0; });   // seeded from here: the build step by step, then the play stream
+  const r0 = Math.random; Math.random = modeRng(p.seeds.scheme === 'daily' ? p.seed : p.seeds.build); modeUndo(() => { Math.random = r0; });   // seeded from here: the build step by step, then the play stream (MIX 5 the daily's own scheme: the seed itself)
   turn(p, 'build'); MIX.meas = { n:0, pSum:0, pPeak:0, dmg:0, lives:0, hp:-1, lv:-1, at:0 };
   if(p.structure.sectors) sectorBattle(p.structure.sectors, onWon, p.seeds.deal); return p; }
 // a build step: its own stream — per stage and per sector, so a new stage / sector is a new field
-export function mixSeed(k){ if(MIX.plan) Math.random = modeRng(modeHash(MIX.plan.seeds.build, k + 64 * ((S.stage | 0) + 8 * (SECT.on ? SECT.i | 0 : 0)))); }
+export function mixSeed(k){ const p = MIX.plan; if(!p) return; Math.random = modeRng(p.seeds.scheme === 'daily' ? modeHash(p.seed, k) : modeHash(p.seeds.build, k + 64 * ((S.stage | 0) + 8 * (SECT.on ? SECT.i | 0 : 0)))); }   // (MIX 5 'daily': the day's own steps, as campaign/daily.js always built them)
 // the battle's first GO: the GO leaves, Math.random on the play stream
-export function mixGo(first){ if(!first || !MIX.plan) return; turn(MIX.plan, 'go'); Math.random = modeRng(MIX.plan.seeds.play); }
+export function mixGo(first){ if(!first || !MIX.plan) return; turn(MIX.plan, 'go'); if(MIX.plan.seeds.scheme !== 'daily') Math.random = modeRng(MIX.plan.seeds.play); }   // ('daily': play goes on from the last build step's stream, as it always did)
+// MIX 5 the night block onto NIGHTDEF (only what differs from today's — campaign/night-defence.js reads NIGHTDEF as before; put back with the mode)
+export function mixNightApply(){ const o = MIX.plan && MIX.plan.night; let n = 0; for(const [g, k, v] of nightKnobs(o)){ modeKnob(g ? NIGHTDEF[g] : NIGHTDEF, k, v); n++; } return n; }
 // every frame: what the battle measures
 export function mixFrame(dt){ const m = MIX.meas, p = S.player; if(!m || !p) return;
   if(m.hp >= 0 && p.hp < m.hp && p.lives === m.lv) m.dmg += m.hp - p.hp; if(m.lv >= 0 && p.lives < m.lv) m.lives += m.lv - p.lives; m.hp = p.hp; m.lv = p.lives;
